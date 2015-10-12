@@ -1,4 +1,4 @@
-package com.orange.elpasso.autosleep;
+package org.cloudfoundry.autosleep;
 
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;

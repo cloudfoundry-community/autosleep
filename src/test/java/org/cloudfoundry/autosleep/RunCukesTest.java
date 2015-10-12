@@ -1,4 +1,4 @@
-package com.orange.elpasso.autosleep;
+package org.cloudfoundry.autosleep;
 
 import cucumber.api.CucumberOptions;
 import cucumber.api.junit.Cucumber;
@@ -11,7 +11,7 @@ import org.springframework.boot.test.IntegrationTest;
 @RunWith(Cucumber.class)
 @CucumberOptions(
         features = "src/test/resources"
-        ,glue={"com.orange.elpasso.autosleep"}
+        ,glue={"org.cloudfoundry.autosleep"}
 )
 public class RunCukesTest {
 }
