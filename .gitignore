@@ -1,0 +1,7 @@
+# IntellIj Resources
+*.iml
+.idea/
+# Gradle resources and directory
+.gradle/
+build/
+

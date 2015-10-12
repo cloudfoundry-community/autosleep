@@ -1,0 +1,72 @@
+buildscript {
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.6.RELEASE")
+    }
+    repositories {
+        mavenLocal()
+        jcenter()
+    }
+}
+apply plugin: 'java'
+apply plugin: 'spring-boot'
+
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    jcenter()
+}
+
+//TODO: remove if project is war file
+configurations {
+    providedCompile
+    cucumberRuntime {
+        extendsFrom testRuntime
+    }
+}
+
+def testPackage = "$domainName.$projectName"
+
+task cucumber() {
+    dependsOn assemble, compileTestJava, processTestResources
+    doLast {
+        javaexec {
+            main = "cucumber.api.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = ['--plugin', 'pretty', '--glue', testPackage, 'src/test/resources']
+        }
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = "2.7"
+}
+
+
+tasks.test.dependsOn(cucumber)
+
+dependencies {
+    // Lombok
+    providedCompile  "org.projectlombok:lombok:$lombokVersion"
+    //Spring boot
+    compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+    //Logs
+    compile "org.slf4j:slf4j-api:$slf4jVersion"
+    compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+
+    //Cucumber for tests
+    testCompile "info.cukes:cucumber-java8:$cucumberVersion"
+    testCompile "info.cukes:cucumber-junit:$cucumberVersion"
+    testCompile "info.cukes:cucumber-spring:$cucumberVersion"
+
+    //Starter tests: spring test, mockito, ...
+    testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+
+
+}
+
+sourceSets.main.compileClasspath += configurations.providedCompile
+sourceSets.test.compileClasspath += configurations.providedCompile
+sourceSets.test.runtimeClasspath += configurations.providedCompile
