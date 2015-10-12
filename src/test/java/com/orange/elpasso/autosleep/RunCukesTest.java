@@ -9,6 +9,9 @@ import org.springframework.boot.test.IntegrationTest;
  * Created by buce8373 on 09/10/2015.
  */
 @RunWith(Cucumber.class)
-@CucumberOptions
+@CucumberOptions(
+        features = "src/test/resources"
+        ,glue={"com.orange.elpasso.autosleep"}
+)
 public class RunCukesTest {
 }
