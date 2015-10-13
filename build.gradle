@@ -9,9 +9,8 @@ buildscript {
 }
 apply plugin: 'java'
 apply plugin: 'spring-boot'
-apply plugin: 'findbugs'
-apply plugin: 'pmd'
-
+apply from: 'test.gradle'
+apply from: 'maven.gradle'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -21,37 +20,12 @@ repositories {
     jcenter()
 }
 
-//TODO: remove if project is war file
-configurations {
-    providedCompile
-    cucumberRuntime {
-        extendsFrom testRuntime
-    }
-}
 
-def testPackage = "$domainName.$projectName"
-
-task cucumber() {
-    dependsOn assemble, compileTestJava, processTestResources
-    doLast {
-        javaexec {
-            main = "cucumber.api.cli.Main"
-            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
-            args = ['--plugin', 'pretty', '--glue', testPackage, 'src/test/resources']
-        }
-    }
-}
 
 task wrapper(type: Wrapper) {
     gradleVersion = "2.7"
 }
 
-
-tasks.test.dependsOn(cucumber)
-
-pmd {
-    consoleOutput true
-}
 
 dependencies {
     // Lombok
@@ -61,15 +35,6 @@ dependencies {
     //Logs
     compile "org.slf4j:slf4j-api:$slf4jVersion"
     compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
-
-    //Cucumber for tests
-    testCompile "info.cukes:cucumber-java8:$cucumberVersion"
-    testCompile "info.cukes:cucumber-junit:$cucumberVersion"
-    testCompile "info.cukes:cucumber-spring:$cucumberVersion"
-
-    //Starter tests: spring test, mockito, ...
-    testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-
 
 }
 

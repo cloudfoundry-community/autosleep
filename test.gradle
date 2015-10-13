@@ -1,0 +1,39 @@
+apply plugin: 'findbugs'
+apply plugin: 'pmd'
+apply plugin: 'jacoco'
+
+//TODO: remove if project is war file
+configurations {
+    providedCompile
+    cucumberRuntime {
+        extendsFrom testRuntime
+    }
+}
+
+def testPackage = "$domainName.$projectName"
+
+test {
+    jacoco {
+        append = false
+        destinationFile = file("$buildDir/jacoco/jacocoTest.exec")
+        classDumpFile = file("$buildDir/jacoco/classpathdumps")
+    }
+    doLast {
+        javaexec {
+            main = "cucumber.api.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = ['--plugin', 'pretty', '--glue', testPackage, 'src/test/resources']
+        }
+    }
+}
+
+
+dependencies {
+    //Cucumber
+    testCompile "info.cukes:cucumber-java8:$cucumberVersion"
+    testCompile "info.cukes:cucumber-junit:$cucumberVersion"
+    testCompile "info.cukes:cucumber-spring:$cucumberVersion"
+
+    //Starter tests: spring test, mockito, ...
+    testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+}
