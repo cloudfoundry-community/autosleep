@@ -9,6 +9,8 @@ buildscript {
 }
 apply plugin: 'java'
 apply plugin: 'spring-boot'
+apply plugin: 'findbugs'
+apply plugin: 'pmd'
 
 
 sourceCompatibility = 1.8
@@ -46,6 +48,10 @@ task wrapper(type: Wrapper) {
 
 
 tasks.test.dependsOn(cucumber)
+
+pmd {
+    consoleOutput true
+}
 
 dependencies {
     // Lombok
