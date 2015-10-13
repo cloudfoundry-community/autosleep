@@ -11,6 +11,7 @@ apply plugin: 'java'
 apply plugin: 'spring-boot'
 apply plugin: 'findbugs'
 apply plugin: 'pmd'
+apply plugin: 'jacoco'
 
 
 sourceCompatibility = 1.8
@@ -31,8 +32,13 @@ configurations {
 
 def testPackage = "$domainName.$projectName"
 
-task cucumber() {
-    dependsOn assemble, compileTestJava, processTestResources
+
+test {
+    jacoco {
+        append = false
+        destinationFile = file("$buildDir/jacoco/jacocoTest.exec")
+        classDumpFile = file("$buildDir/jacoco/classpathdumps")
+    }
     doLast {
         javaexec {
             main = "cucumber.api.cli.Main"
@@ -46,12 +52,6 @@ task wrapper(type: Wrapper) {
     gradleVersion = "2.7"
 }
 
-
-tasks.test.dependsOn(cucumber)
-
-pmd {
-    consoleOutput true
-}
 
 dependencies {
     // Lombok
