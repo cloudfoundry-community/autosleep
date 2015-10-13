@@ -1,0 +1,16 @@
+apply plugin: 'maven'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "file://localhost/tmp/myRepo/")
+        }
+    }
+}
+
+/*gradle.taskGraph.whenReady {taskGraph ->
+    if (taskGraph.hasTask(test)) {
+        version = version+'SNAPSHOT'
+    }
+    println 'Version = $version'
+}*/
