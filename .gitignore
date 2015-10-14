@@ -4,4 +4,7 @@
 # Gradle resources and directory
 .gradle/
 build/
+#Customized by user
+manifest.yml
+
 

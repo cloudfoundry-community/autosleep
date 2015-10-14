@@ -2,15 +2,25 @@ apply plugin: 'findbugs'
 apply plugin: 'pmd'
 apply plugin: 'jacoco'
 
-//TODO: remove if project is war file
 configurations {
-    providedCompile
     cucumberRuntime {
         extendsFrom testRuntime
     }
 }
 
 def testPackage = "$domainName.$projectName"
+
+task cucumber() {
+    dependsOn assemble, compileTestJava , processTestResources
+    doLast {
+        System.out.println("Tests loaded from $testPackage")
+        javaexec {
+            main = "cucumber.api.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = ['--plugin', 'pretty', '--glue', testPackage, 'src/test/resources']
+        }
+    }
+}
 
 test {
     jacoco {
@@ -33,6 +43,9 @@ dependencies {
     testCompile "info.cukes:cucumber-java8:$cucumberVersion"
     testCompile "info.cukes:cucumber-junit:$cucumberVersion"
     testCompile "info.cukes:cucumber-spring:$cucumberVersion"
+
+    //Client basic auth
+    testCompile "org.apache.httpcomponents:httpclient:$httpClientVersion"
 
     //Starter tests: spring test, mockito, ...
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"

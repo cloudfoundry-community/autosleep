@@ -7,17 +7,30 @@ buildscript {
         jcenter()
     }
 }
+
+
 apply plugin: 'java'
 apply plugin: 'spring-boot'
+apply plugin: 'war'
 apply from: 'test.gradle'
 apply from: 'maven.gradle'
+
+
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+
+war {
+    baseName = "$domainName.$projectName"
+    version =  version
+}
+
 repositories {
     mavenLocal()
     jcenter()
+    //Forced to use it for org.cloudfoundry:spring-boot-cf-service-broker
+    maven { url "http://repo.spring.io/libs-snapshot" }
 }
 
 
@@ -32,6 +45,8 @@ dependencies {
     providedCompile  "org.projectlombok:lombok:$lombokVersion"
     //Spring boot
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+    //API Service broker
+    compile("org.cloudfoundry:spring-boot-cf-service-broker:$cfServiceBrokerVersion")
     //Logs
     compile "org.slf4j:slf4j-api:$slf4jVersion"
     compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"

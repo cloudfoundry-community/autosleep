@@ -1,0 +1,10 @@
+applications:
+- name: autosleep
+  memory: 1G
+  instances: 1
+  host: autosleep-${random-word}
+  domain: cf.ns.nd-paas.itn.ftgroup
+  path: build/libs/org.cloudfoundry.autosleep-0.1.0-SNAPSHOT.war
+  services:
+    - logs
+  buildpack: java_buildpack
