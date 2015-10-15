@@ -7,16 +7,19 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
-/**
- * Created by BUCE8373 on 13/10/2015.
- */
+
+
 @Configuration
 public class CatalogConfiguration {
-    @Bean(autowire= Autowire.BY_TYPE)
+    @Bean(autowire = Autowire.BY_TYPE)
     public Catalog catalog() {
-        return new Catalog( Arrays.asList(
+        return new Catalog(Arrays.asList(
                 new ServiceDefinition(
                         "autosleep",
                         "autosleep",
@@ -34,30 +37,31 @@ public class CatalogConfiguration {
                         null)));
     }
 
-/* Used by Pivotal CF console */
+    /* Used by Pivotal CF console */
 
-    private Map<String,Object> getServiceDefinitionMetadata() {
-        Map<String,Object> sdMetadata = new HashMap<>();
+    private Map<String, Object> getServiceDefinitionMetadata() {
+        Map<String, Object> sdMetadata = new HashMap<>();
         sdMetadata.put("displayName", "Autosleep");
-        sdMetadata.put("imageUrl","https://en.wikipedia.org/wiki/Sleep#/media/File:WLA_metmuseum_Bronze_statue_of_Eros_sleeping_7.jpg");
-        sdMetadata.put("longDescription","Autosleep Service");
-        sdMetadata.put("providerDisplayName","Orange");
-        sdMetadata.put("documentationUrl","https://github.com/Orange-OpenSource/autosleep");
-        sdMetadata.put("supportUrl","https://github.com/Orange-OpenSource/autosleep");
+        sdMetadata.put("imageUrl", "https://en.wikipedia"
+                + ".org/wiki/Sleep#/media/File:WLA_metmuseum_Bronze_statue_of_Eros_sleeping_7.jpg");
+        sdMetadata.put("longDescription", "Autosleep Service");
+        sdMetadata.put("providerDisplayName", "Orange");
+        sdMetadata.put("documentationUrl", "https://github.com/Orange-OpenSource/autosleep");
+        sdMetadata.put("supportUrl", "https://github.com/Orange-OpenSource/autosleep");
         return sdMetadata;
     }
 
-    private Map<String,Object> getPlanMetadata() {
-        Map<String,Object> planMetadata = new HashMap<>();
+    private Map<String, Object> getPlanMetadata() {
+        Map<String, Object> planMetadata = new HashMap<>();
         planMetadata.put("costs", getCosts());
         planMetadata.put("bullets", getBullets());
         return planMetadata;
     }
 
-    private List<Map<String,Object>> getCosts() {
-        Map<String,Object> costsMap = new HashMap<>();
+    private List<Map<String, Object>> getCosts() {
+        Map<String, Object> costsMap = new HashMap<>();
 
-        Map<String,Object> amount = new HashMap<>();
+        Map<String, Object> amount = new HashMap<>();
         amount.put("eur", 0.0D);
 
         costsMap.put("amount", amount);

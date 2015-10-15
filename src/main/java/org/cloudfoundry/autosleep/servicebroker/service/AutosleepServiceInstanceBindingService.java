@@ -6,7 +6,6 @@ import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
 import org.cloudfoundry.community.servicebroker.service.ServiceInstanceBindingService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by BUCE8373 on 13/10/2015.
- */
+
 @Service
 @Slf4j
 public class AutosleepServiceInstanceBindingService implements ServiceInstanceBindingService {
@@ -25,7 +22,8 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
     protected Clock clock;
 
     @Override
-    public ServiceInstanceBinding createServiceInstanceBinding(CreateServiceInstanceBindingRequest request) throws ServiceInstanceBindingExistsException, ServiceBrokerException {
+    public ServiceInstanceBinding createServiceInstanceBinding(CreateServiceInstanceBindingRequest request) throws
+            ServiceInstanceBindingExistsException, ServiceBrokerException {
         String bindingId = request.getBindingId();
         String serviceId = request.getServiceInstanceId();
         log.debug("createServiceInstanceBinding - {}", request.getBindingId());
@@ -34,13 +32,16 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
                 null/*TODO credentials*/,
                 ""/*TODO log url*/,
                 request.getAppGuid());
-        Runnable r = () -> log.info("--this is the click from a service biding instance {} <--> {}", serviceId, request.getBindingId());
-        clock.startTimer(request.getBindingId(), 0, 1, TimeUnit.SECONDS, r);
+        Runnable logRunnable = () -> log.info("--this is the click from a service biding instance {} <--> {}",
+                serviceId,
+                request.getBindingId());
+        clock.startTimer(request.getBindingId(), 0, 1, TimeUnit.SECONDS, logRunnable);
         return serviceInstanceBinding;
     }
 
     @Override
-    public ServiceInstanceBinding deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest request) throws ServiceBrokerException {
+    public ServiceInstanceBinding deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest request) throws
+            ServiceBrokerException {
         log.debug("deleteServiceInstanceBinding - {}", request.getBindingId());
         clock.stopTimer(request.getBindingId());
         return null;

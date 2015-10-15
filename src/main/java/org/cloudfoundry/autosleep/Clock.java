@@ -4,11 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
@@ -16,10 +17,10 @@ import java.util.concurrent.*;
 public class Clock {
 
     //TODO redis that
-    private final Map<String/**serviceInstanceId*/, ScheduledFuture<?>> tasks = new HashMap<>();
+    private final Map<String/*taskId*/, ScheduledFuture<?>> tasks = new HashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    /**
+    /**Timer start.
      * @param id            task id, will be used to stop timer
      * @param initialDelay the time to delay first execution
      * @param period       the period between successive executions
@@ -31,7 +32,7 @@ public class Clock {
         tasks.put(id, handle);
     }
 
-    /**
+    /**Timer stop.
      * @param id id given when started the task
      */
     public void stopTimer(String id) {
