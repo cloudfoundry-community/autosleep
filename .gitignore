@@ -6,5 +6,7 @@
 build/
 #Customized by user
 manifest.yml
+#local slf4j config
+src/main/resources/logback.xml
 
 

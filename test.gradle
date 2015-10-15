@@ -1,6 +1,15 @@
 apply plugin: 'findbugs'
 apply plugin: 'pmd'
+apply plugin: 'checkstyle'
 apply plugin: 'jacoco'
+
+pmd {
+    consoleOutput = true
+}
+
+checkstyle {
+    toolVersion = "6.11.2"
+}
 
 
 test {
@@ -10,9 +19,6 @@ test {
         classDumpFile = file("$buildDir/jacoco/classpathdumps")
     }
 }
-
-
-
 
 dependencies {
     //Client basic auth
