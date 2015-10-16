@@ -1,7 +1,7 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.Clock;
+import org.cloudfoundry.autosleep.servicebroker.scheduling.Clock;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;

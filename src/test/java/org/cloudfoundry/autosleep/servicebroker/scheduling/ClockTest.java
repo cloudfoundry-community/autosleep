@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep;
+package org.cloudfoundry.autosleep.servicebroker.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Application.class)
+@SpringApplicationConfiguration(classes = org.cloudfoundry.autosleep.Application.class)
 @WebIntegrationTest("server.port:0")//random port
 @Slf4j
 public class ClockTest {
@@ -24,7 +24,7 @@ public class ClockTest {
     private static final String TEST_ID = "93847";
 
     @Autowired
-    protected Clock clock;
+    protected org.cloudfoundry.autosleep.servicebroker.scheduling.Clock clock;
     long lastLaunchTime;
     private int count = 0;
 

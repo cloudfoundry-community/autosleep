@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep;
+package org.cloudfoundry.autosleep.servicebroker.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;

@@ -21,7 +21,6 @@ import static org.junit.Assert.assertThat;
 public class BasicAuthTest extends AbstractRestTest {
 
 
-
     @Value("${security.user.name}")
     private String username;
 
@@ -33,22 +32,24 @@ public class BasicAuthTest extends AbstractRestTest {
 
     @Test
     public void userCallWithoutCredentials() {
-        assertThat(prepare(CatalogController.BASE_PATH, HttpMethod.GET, null, Catalog.class).call()
-                .getStatusCode(), is(equalTo(HttpStatus.UNAUTHORIZED)));
+        assertThat(prepare(CatalogController.BASE_PATH, HttpMethod.GET, null, Catalog.class).call().getStatusCode(),
+                is(equalTo(HttpStatus.UNAUTHORIZED)));
     }
 
     @Test
     public void userCallWithWrongCredentials() {
         assertThat(prepare(CatalogController.BASE_PATH, HttpMethod.GET, null, Catalog.class)
-                .withBasicAuthentication(username, password + "123").call().getStatusCode(), is(equalTo
-                (HttpStatus.UNAUTHORIZED)));
+                        .withBasicAuthentication(username, password + "123").call().getStatusCode(),
+                is(equalTo(HttpStatus.UNAUTHORIZED)));
     }
 
     @Test
     public void userCallWithGoodCredentials() {
-        assertThat(prepare(CatalogController.BASE_PATH, HttpMethod.GET, null, Catalog.class)
-                .withBasicAuthentication(username, password).withHeader(BrokerApiVersion.DEFAULT_API_VERSION_HEADER,
-                        apiVersion.getApiVersion()).call().getStatusCode(), is(equalTo(HttpStatus
-                .OK)));
+        assertThat(
+                prepare(CatalogController.BASE_PATH, HttpMethod.GET, null, Catalog.class)
+                        .withBasicAuthentication(username, password)
+                        .withHeader(BrokerApiVersion.DEFAULT_API_VERSION_HEADER,
+                                apiVersion.getApiVersion()).call().getStatusCode(),
+                is(equalTo(HttpStatus.OK)));
     }
 }
