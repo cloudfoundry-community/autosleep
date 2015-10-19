@@ -28,7 +28,6 @@ war {
 
 repositories {
     mavenLocal()
-    mavenCentral()
     jcenter()
     //Forced to use it for org.cloudfoundry:spring-boot-cf-service-broker
     maven { url "http://repo.spring.io/libs-snapshot" }
