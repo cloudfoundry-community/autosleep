@@ -28,6 +28,7 @@ war {
 
 repositories {
     mavenLocal()
+    mavenCentral()
     jcenter()
     //Forced to use it for org.cloudfoundry:spring-boot-cf-service-broker
     maven { url "http://repo.spring.io/libs-snapshot" }
@@ -47,6 +48,8 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
     //API Service broker
     compile("org.cloudfoundry:spring-boot-cf-service-broker:$cfServiceBrokerVersion")
+    //Client library
+    compile "org.cloudfoundry:cloudfoundry-client-lib:$cfClientLibVersion"
     //Logs
     compile "org.slf4j:slf4j-api:$slf4jVersion"
     compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
