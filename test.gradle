@@ -20,9 +20,6 @@ test {
 }
 
 dependencies {
-    //Client basic auth
-    testCompile "org.apache.httpcomponents:httpclient:$httpClientVersion"
-
     //Starter tests: spring test, mockito, ...
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
 }
