@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep.servicebroker.dao;
+package org.cloudfoundry.autosleep.dao;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.servicebroker.configuration.CatalogConfiguration;

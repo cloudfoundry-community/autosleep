@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep.servicebroker.dao;
+package org.cloudfoundry.autosleep.dao;
 
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
