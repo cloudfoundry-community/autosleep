@@ -1,8 +1,7 @@
-package org.cloudfoundry.autosleep.servicebroker.dao;
+package org.cloudfoundry.autosleep.dao;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
 

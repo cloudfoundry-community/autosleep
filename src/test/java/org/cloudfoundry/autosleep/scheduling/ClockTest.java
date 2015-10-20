@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep.servicebroker.scheduling;
+package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -24,7 +24,7 @@ public class ClockTest {
     private static final String TEST_ID = "93847";
 
     @Autowired
-    protected org.cloudfoundry.autosleep.servicebroker.scheduling.Clock clock;
+    protected org.cloudfoundry.autosleep.scheduling.Clock clock;
     long lastLaunchTime;
     private int count = 0;
 
