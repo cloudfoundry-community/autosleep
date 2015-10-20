@@ -20,6 +20,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -67,6 +68,10 @@ public class ServiceInstanceDaoTest {
     private int nbBindingInserted;
 
 
+    /** Init DAO with test data
+     *
+     * @throws ServiceInstanceDoesNotExistException
+     */
     @Before
     public void populateDao() throws ServiceInstanceDoesNotExistException {
         assertTrue("Catalog must a least contain a catalog definition", catalog.getServiceDefinitions().size() > 0);
@@ -82,7 +87,7 @@ public class ServiceInstanceDaoTest {
         Arrays.asList(InsertedInstanceIds.values()).forEach(serviceInstanceId -> {
             try {
                 dao.insertService(new ServiceInstance(createInstanceTemplate.withServiceInstanceId(serviceInstanceId
-                        .name())));
+                        .name())), Duration.ofSeconds(1));
             } catch (ServiceInstanceExistsException s) {
                 log.error("error while inserting " + serviceInstanceId + ". It already exists");
             }
@@ -103,11 +108,11 @@ public class ServiceInstanceDaoTest {
     @Test
     public void testInsertService() throws ServiceInstanceExistsException {
         dao.insertService(new ServiceInstance(
-                createInstanceTemplate.withServiceInstanceId("testInsertServiceSuccess")));
+                createInstanceTemplate.withServiceInstanceId("testInsertServiceSuccess")), Duration.ofSeconds(1));
         assertThat(countServices(), is(equalTo(nbServicesInit + 1)));
         try {
             dao.insertService(new ServiceInstance(
-                    createInstanceTemplate.withServiceInstanceId("testInsertServiceFail")));
+                    createInstanceTemplate.withServiceInstanceId("testInsertServiceFail")), Duration.ofSeconds(1));
             fail("Succeed in inserting a service that already existed");
         } catch (ServiceInstanceExistsException s) {
             log.debug("{} occurred as expected", s.getClass().getSimpleName());
@@ -140,7 +145,7 @@ public class ServiceInstanceDaoTest {
                     .getPlanId()
                     + "-next");
             dao.updateService(new ServiceInstance(updateRequest.withInstanceId(InsertedInstanceIds
-                    .testUpdateServiceSuccess.name())));
+                    .testUpdateServiceSuccess.name())), Duration.ofSeconds(1));
             fail("update should not be supported");
         } catch (ServiceInstanceUpdateNotSupportedException s) {
             log.debug("{} occurred as expected", s.getClass().getSimpleName());

@@ -8,25 +8,26 @@ import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by buce8373 on 15/10/2015.
- */
+
 @Service
 public class ServiceInstanceDao implements ServiceInstanceDaoService {
 
 
     private Map<String, ServiceInstanceContainer> serviceInstances = new HashMap<>();
-    
+
 
     @Override
-    public void insertService(ServiceInstance serviceInstance) throws ServiceInstanceExistsException {
+    public void insertService(ServiceInstance serviceInstance, Duration interval) throws
+            ServiceInstanceExistsException {
         if (serviceInstances.containsKey(serviceInstance.getServiceInstanceId())) {
             throw new ServiceInstanceExistsException(serviceInstance);
         } else {
-            serviceInstances.put(serviceInstance.getServiceInstanceId(), new ServiceInstanceContainer(serviceInstance));
+            serviceInstances.put(serviceInstance.getServiceInstanceId(), new ServiceInstanceContainer(
+                    serviceInstance, interval));
         }
 
     }
@@ -44,6 +45,16 @@ public class ServiceInstanceDao implements ServiceInstanceDaoService {
     @Override
     public void listServices(ReadCallback<ServiceInstance> callback) {
         serviceInstances.values().forEach(container -> callback.read(container.getServiceInstance()));
+    }
+
+    @Override
+    public void updateService(ServiceInstance serviceInstance, Duration interval) throws
+            ServiceInstanceDoesNotExistException,
+            ServiceInstanceUpdateNotSupportedException {
+        //Due to a bug in service broker layer, we won't support
+        //TODO: support it when pull request accepted: https://github
+        // .com/cloudfoundry-community/spring-boot-cf-service-broker/pull/35
+        throw new ServiceInstanceUpdateNotSupportedException("update not supported");
     }
 
     @Override
@@ -81,7 +92,7 @@ public class ServiceInstanceDao implements ServiceInstanceDaoService {
     @Override
     public void listBinding(String serviceInstanceId, ReadCallback<ServiceInstanceBinding> callback) throws
             ServiceInstanceDoesNotExistException {
-        getContainer(serviceInstanceId).getBindings().values().forEach(binding -> callback.read(binding));
+        getContainer(serviceInstanceId).getBindings().values().forEach(callback::read);
     }
 
     @Override
