@@ -42,6 +42,16 @@ public class ServiceInstanceDao implements ServiceInstanceDaoService {
         }
     }
 
+    public Duration getServiceInstanceInactivityParam(String serviceInstanceId) {
+        ServiceInstanceContainer container = serviceInstances.get(serviceInstanceId);
+        if (container == null) {
+            return null;
+        } else {
+            return container.getInterval();
+        }
+    }
+
+
     @Override
     public void listServices(ReadCallback<ServiceInstance> callback) {
         serviceInstances.values().forEach(container -> callback.read(container.getServiceInstance()));

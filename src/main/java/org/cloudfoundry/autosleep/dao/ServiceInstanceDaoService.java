@@ -21,6 +21,8 @@ public interface ServiceInstanceDaoService {
 
     ServiceInstance getService(String serviceInstanceId);
 
+    Duration getServiceInstanceInactivityParam(String serviceInstanceId);
+
     void listServices(ReadCallback<ServiceInstance> callback);
 
     void updateService(ServiceInstance serviceInstance, Duration interval) throws
