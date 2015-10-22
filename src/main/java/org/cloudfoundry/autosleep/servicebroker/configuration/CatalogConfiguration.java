@@ -13,8 +13,8 @@ import java.util.*;
 @Configuration
 public class CatalogConfiguration {
 
-    private static final String OPTIN_GUID="78C0A1DB-ACC9-4B6D-AF22-A1EF63C2CE06";
-    private static final String OPTOUT_GUID="FE16E9E3-0D61-4D65-8A2F-2AFDD093E674";
+    private static final String OPTIN_GUID = "78C0A1DB-ACC9-4B6D-AF22-A1EF63C2CE06";
+    private static final String OPTOUT_GUID = "FE16E9E3-0D61-4D65-8A2F-2AFDD093E674";
 
     @Bean(autowire = Autowire.BY_TYPE)
     public Catalog catalog() {
