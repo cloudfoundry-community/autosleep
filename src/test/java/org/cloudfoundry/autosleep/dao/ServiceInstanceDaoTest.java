@@ -68,9 +68,9 @@ public class ServiceInstanceDaoTest {
     private int nbBindingInserted;
 
 
-    /** Init DAO with test data
+    /** Init DAO with test data.
      *
-     * @throws ServiceInstanceDoesNotExistException
+     * @throws ServiceInstanceDoesNotExistException when no correspondance in db
      */
     @Before
     public void populateDao() throws ServiceInstanceDoesNotExistException {

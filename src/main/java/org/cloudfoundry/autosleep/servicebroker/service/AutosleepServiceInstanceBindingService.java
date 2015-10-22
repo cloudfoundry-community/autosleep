@@ -2,6 +2,9 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.ServiceInstanceDaoService;
+import org.cloudfoundry.autosleep.remote.ApplicationInfo;
+import org.cloudfoundry.autosleep.remote.IRemote;
+import org.cloudfoundry.autosleep.scheduling.AppStateChecker;
 import org.cloudfoundry.autosleep.scheduling.Clock;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
@@ -12,6 +15,8 @@ import org.cloudfoundry.community.servicebroker.service.ServiceInstanceBindingSe
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
 
@@ -23,10 +28,13 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
 
     private ServiceInstanceDaoService dao;
 
+    private IRemote remote;
+
     @Autowired
-    public AutosleepServiceInstanceBindingService(ServiceInstanceDaoService dao, Clock clock) {
+    public AutosleepServiceInstanceBindingService(ServiceInstanceDaoService dao, Clock clock, IRemote remote) {
         this.dao = dao;
         this.clock = clock;
+        this.remote = remote;
     }
 
     @Override
@@ -41,11 +49,16 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
                 null/*TODO credentials*/,
                 ""/*TODO log url*/,
                 request.getAppGuid());
-        Runnable logRunnable = () -> log.info("--this is the click from a service biding instance {} <--> {}",
-                serviceId,
-                request.getBindingId());
-        dao.addBinding(serviceId,serviceInstanceBinding);
-        clock.startTimer(request.getBindingId(), 0, 1, TimeUnit.SECONDS, logRunnable);
+
+        dao.addBinding(serviceId, serviceInstanceBinding);
+
+        AppStateChecker checker = new AppStateChecker(request.getAppGuid(),
+                request.getBindingId(),
+                dao.getServiceInstanceInactivityParam(serviceId),
+                remote,
+                clock);
+        checker.start();
+
         return serviceInstanceBinding;
     }
 
