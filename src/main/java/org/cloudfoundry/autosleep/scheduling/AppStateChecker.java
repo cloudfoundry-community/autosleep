@@ -1,13 +1,13 @@
 package org.cloudfoundry.autosleep.scheduling;
 
-import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.IRemote;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-@Data
+@AllArgsConstructor
 @Slf4j
 public class AppStateChecker implements Runnable {
 
@@ -33,6 +33,7 @@ public class AppStateChecker implements Runnable {
         log.debug("last event:  {}", lastEvent.toString());
 
         if (nextStartTime.isBefore(LocalDateTime.now())) {
+            log.debug("Inactivity detected");
             remote.stopApplication(appGuid);
         } else {
             //rescheduled itself
@@ -41,6 +42,10 @@ public class AppStateChecker implements Runnable {
             clock.scheduleTask(taskId, delta, this);
         }
 
+    }
+
+    public void stop() {
+        clock.stopTimer(taskId);
     }
 
 

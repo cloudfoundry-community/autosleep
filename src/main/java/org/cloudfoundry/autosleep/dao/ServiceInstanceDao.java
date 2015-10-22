@@ -42,6 +42,7 @@ public class ServiceInstanceDao implements ServiceInstanceDaoService {
         }
     }
 
+    @Override
     public Duration getServiceInstanceInactivityParam(String serviceInstanceId) {
         ServiceInstanceContainer container = serviceInstances.get(serviceInstanceId);
         if (container == null) {
