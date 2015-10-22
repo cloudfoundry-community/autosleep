@@ -11,7 +11,7 @@ public class BrokerConfiguration {
 
     @Bean
     public BrokerApiVersion brokerApiVersion() {
-        return new BrokerApiVersion("2.6");
+        return new BrokerApiVersion("2.7");
     }
 
 }
