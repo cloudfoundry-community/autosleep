@@ -2,7 +2,6 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.ServiceInstanceDaoService;
-import org.cloudfoundry.autosleep.remote.ApplicationInfo;
 import org.cloudfoundry.autosleep.remote.IRemote;
 import org.cloudfoundry.autosleep.scheduling.AppStateChecker;
 import org.cloudfoundry.autosleep.scheduling.Clock;
@@ -15,10 +14,6 @@ import org.cloudfoundry.community.servicebroker.service.ServiceInstanceBindingSe
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
-
 
 @Service
 @Slf4j
@@ -30,6 +25,7 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
 
     private IRemote remote;
 
+    /** Constructor with autowired args.*/
     @Autowired
     public AutosleepServiceInstanceBindingService(ServiceInstanceDaoService dao, Clock clock, IRemote remote) {
         this.dao = dao;
