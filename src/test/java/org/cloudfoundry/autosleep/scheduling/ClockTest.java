@@ -36,6 +36,7 @@ public class ClockTest {
 
     @Test(timeout = 5000)
     public void testStartTimer() throws Exception {
+        count = 0;
         clock.startTimer(TEST_ID, Duration.ofSeconds(0), PERIOD, runnable);
         while (count < 3) {
             Thread.sleep(PERIOD.toMillis() / 10);
@@ -44,12 +45,24 @@ public class ClockTest {
         assert true;
     }
 
+    @Test
+    public void testStartTask() throws Exception {
+        count = 0;
+        clock.scheduleTask(TEST_ID, PERIOD,runnable);
+        Thread.sleep(PERIOD.toMillis() / 2);
+        assertTrue("Task should not has started",count == 0);
+        Thread.sleep(PERIOD.toMillis());
+        assertTrue("Task should has been executed",count == 1);
+        Thread.sleep(PERIOD.toMillis());
+        assertTrue("Task should not been executed naymore",count == 1);
+    }
+
 
     @Test
     public void testStopTimer() throws Exception {
         clock.startTimer(TEST_ID, Duration.ofSeconds(0), PERIOD, runnable);
-        Thread.sleep(PERIOD.toMillis() * 3 );
-        log.debug("last launch {} is after {} ",lastLaunchTime,LocalDateTime.now().minus(PERIOD) );
+        Thread.sleep(PERIOD.toMillis() * 3);
+        log.debug("last launch {} is after {} ", lastLaunchTime, LocalDateTime.now().minus(PERIOD));
         assertTrue(lastLaunchTime.isAfter(LocalDateTime.now().minus(PERIOD)));
         clock.stopTimer(TEST_ID);
         Thread.sleep(PERIOD.toMillis() * 2);

@@ -7,16 +7,16 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import java.util.*;
 
 
 @Configuration
 public class CatalogConfiguration {
+
+    private static final String OPTIN_GUID = "78C0A1DB-ACC9-4B6D-AF22-A1EF63C2CE06";
+    private static final String OPTOUT_GUID = "FE16E9E3-0D61-4D65-8A2F-2AFDD093E674";
+
+    /** Return AutoSleep catalog configuration.*/
     @Bean(autowire = Autowire.BY_TYPE)
     public Catalog catalog() {
         return new Catalog(Arrays.asList(
@@ -27,10 +27,12 @@ public class CatalogConfiguration {
                         true,
                         false,
                         Arrays.asList(
-                                new Plan("autosleep-plan",
-                                        "Default autosleep Plan",
-                                        "This is a default autosleep plan.  All services are created equally.",
-                                        getPlanMetadata())),
+                                new Plan(OPTIN_GUID,
+                                        "opt-in",
+                                        "This is a default autosleep plan.  Binded apps will be stopped when idle."),
+                                new Plan(OPTOUT_GUID,
+                                        "opt-out",
+                                        "All apps will be stopped when idle, EXCEPTED binded apps.")),
                         Arrays.asList("autosleep", "document"),
                         getServiceDefinitionMetadata(),
                         null,
@@ -51,26 +53,5 @@ public class CatalogConfiguration {
         return sdMetadata;
     }
 
-    private Map<String, Object> getPlanMetadata() {
-        Map<String, Object> planMetadata = new HashMap<>();
-        planMetadata.put("costs", getCosts());
-        planMetadata.put("bullets", getBullets());
-        return planMetadata;
-    }
 
-    private List<Map<String, Object>> getCosts() {
-        Map<String, Object> costsMap = new HashMap<>();
-
-        Map<String, Object> amount = new HashMap<>();
-        amount.put("eur", 0.0D);
-
-        costsMap.put("amount", amount);
-        costsMap.put("unit", "MONTHLY");
-
-        return Collections.singletonList(costsMap);
-    }
-
-    private List<String> getBullets() {
-        return Collections.singletonList("Shared autosleep service");
-    }
 }
