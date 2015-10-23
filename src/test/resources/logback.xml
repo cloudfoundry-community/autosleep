@@ -11,6 +11,10 @@
         <level value="DEBUG" />
     </logger>
 
+    <logger name="org.apache.http.wire">
+        <level value="DEBUG" />
+    </logger>
+
     <root>
         <appender-ref ref="stdout" />
         <!--<level value="OFF" />-->
