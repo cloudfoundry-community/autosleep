@@ -2,7 +2,7 @@ package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.remote.IRemote;
+import org.cloudfoundry.autosleep.remote.CloudFoundryApi;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -15,7 +15,7 @@ public class AppStateChecker implements Runnable {
     protected final String taskId;
     protected final Duration period;
 
-    protected final IRemote remote;
+    protected final CloudFoundryApi remote;
     protected final Clock clock;
 
     public void start() {
@@ -26,7 +26,7 @@ public class AppStateChecker implements Runnable {
     public void run() {
         log.debug("Checking on app {} state, for taskId {}", appGuid, taskId);
         //retrieve updated info
-        LocalDateTime lastEvent = remote.getApplicationInfo(appGuid).getLastDeployed();
+        LocalDateTime lastEvent = remote.getApplicationInfo(appGuid).getLastEvent();
 
         //TODO check if LocalDate issue between remote dates and app time
         LocalDateTime nextStartTime = lastEvent.plus(period);

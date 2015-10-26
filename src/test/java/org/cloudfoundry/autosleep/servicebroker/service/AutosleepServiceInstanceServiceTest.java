@@ -64,15 +64,6 @@ public class AutosleepServiceInstanceServiceTest {
             log.debug("{} occurred as expected", s.getClass().getSimpleName());
         }
 
-        try {
-            log.debug("Creating service instance with request " + baseRequest.toString());
-            service.createServiceInstance( baseRequest );
-            log.debug("Service instance created");
-            fail("Succeed in creating service with a request without parameters");
-        } catch (ServiceBrokerException s) {
-            log.debug("{} occurred as expected", s.getClass().getSimpleName());
-        }
-
         Map<String, Object> params = new HashMap<>();
         params.put("inactivity","10H");
         try {

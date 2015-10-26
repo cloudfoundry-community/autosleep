@@ -15,9 +15,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-/**
- * Created by buce8373 on 14/10/2015.
- */
+
 
 public class CatalogConfigurationTest extends AbstractRestTest{
 
@@ -38,16 +36,15 @@ public class CatalogConfigurationTest extends AbstractRestTest{
     @Test
     public void userForgetsTheHeader() {
         assertThat(prepare(CatalogController.BASE_PATH, HttpMethod.GET, null, Catalog.class)
-                .withBasicAuthentication(username, password).call().getStatusCode(), is(equalTo(HttpStatus
-                .PRECONDITION_FAILED)));
+                .withBasicAuthentication(username, password).call().getStatusCode(), is(equalTo(HttpStatus.OK)));
     }
 
     @Test
     public void userAsksTheWrongVersion() {
         assertThat(prepare(CatalogController.BASE_PATH, HttpMethod.GET, null, Catalog.class)
                 .withBasicAuthentication(username, password).withHeader(BrokerApiVersion.DEFAULT_API_VERSION_HEADER,
-                        apiVersion.getApiVersion() + ".2").call().getStatusCode(), is(equalTo(HttpStatus
-                .PRECONDITION_FAILED)));
+                        apiVersion.getApiVersion() + ".2").call().getStatusCode(),
+                is(equalTo(HttpStatus.OK)));
     }
 
     @Test

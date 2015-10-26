@@ -9,5 +9,6 @@ manifest.yml
 #local slf4j config
 src/main/resources/logback.xml
 #Local config for cloudfoundry client test
-src/test/resources/cloundfoundry_client.properties
+src/test/resources/cloudfoundry_client.properties
+src/main/resources/cloudfoundry_client.properties
 

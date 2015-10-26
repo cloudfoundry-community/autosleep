@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.Config;
 import org.cloudfoundry.autosleep.dao.ServiceInstanceDaoService;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
@@ -34,14 +35,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             ServiceInstanceExistsException, ServiceBrokerException {
         log.debug("createServiceInstance - {}", request.getServiceInstanceId());
         ServiceInstance serviceInstance = new ServiceInstance(request);
-        if (request.getParameters() == null) {
-            throw new ServiceBrokerException("No parameter given");
-        }
         Duration interval = getDurationParameters(request.getParameters());
-        if (interval == null) {
-            //no params, or wrong params
-            throw new ServiceBrokerException("'inactivity' param missing, or badly formatted (ISO-8601)");
-        }
         dao.insertService(serviceInstance, interval);
         return serviceInstance;
     }
@@ -75,20 +69,22 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
         return dao.deleteService(request.getServiceInstanceId());
     }
 
-    private Duration getDurationParameters(Map<String, Object> params) {
+    private Duration getDurationParameters(Map<String, Object> params) throws ServiceBrokerException {
         Duration result = null;
+        if (params == null || params.get("inactivity") == null) {
+            return Config.defaultInactivityPeriod;
+        }
         String inactivityPattern = (String) params.get("inactivity");
         log.debug("pattern " + inactivityPattern);
-        if (inactivityPattern == null) {
-            log.error("no 'inactivity' param");
-        } else {
-            try {
-                result = Duration.parse(inactivityPattern);
-            } catch (DateTimeParseException e) {
-                log.error("Wrong format for inactivity duration - format should respect ISO-8601 duration format "
-                        + "PnDTnHnMn");
-            }
+        try {
+            result = Duration.parse(inactivityPattern);
+        } catch (DateTimeParseException e) {
+            log.error("Wrong format for inactivity duration - format should respect ISO-8601 duration format "
+                    + "PnDTnHnMn");
+            throw new ServiceBrokerException("'inactivity' param badly formatted (ISO-8601). Example: \"PT15M\" for "
+                    + "15mn");
         }
+
         return result;
     }
 }

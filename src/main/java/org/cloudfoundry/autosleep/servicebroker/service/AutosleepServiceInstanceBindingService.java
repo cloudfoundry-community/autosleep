@@ -2,7 +2,7 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.ServiceInstanceDaoService;
-import org.cloudfoundry.autosleep.remote.IRemote;
+import org.cloudfoundry.autosleep.remote.CloudFoundryApi;
 import org.cloudfoundry.autosleep.scheduling.AppStateChecker;
 import org.cloudfoundry.autosleep.scheduling.Clock;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
@@ -23,11 +23,11 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
 
     private ServiceInstanceDaoService dao;
 
-    private IRemote remote;
+    private CloudFoundryApi remote;
 
     /** Constructor with autowired args.*/
     @Autowired
-    public AutosleepServiceInstanceBindingService(ServiceInstanceDaoService dao, Clock clock, IRemote remote) {
+    public AutosleepServiceInstanceBindingService(ServiceInstanceDaoService dao, Clock clock, CloudFoundryApi remote) {
         this.dao = dao;
         this.clock = clock;
         this.remote = remote;
@@ -43,7 +43,7 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
         ServiceInstanceBinding serviceInstanceBinding = new ServiceInstanceBinding(bindingId,
                 serviceId,
                 null/*TODO credentials*/,
-                ""/*TODO log url*/,
+                null,
                 request.getAppGuid());
 
         dao.addBinding(serviceId, serviceInstanceBinding);
