@@ -61,7 +61,7 @@ public class ClockTest {
     @Test
     public void testStopTimer() throws Exception {
         clock.startTimer(TEST_ID, Duration.ofSeconds(0), PERIOD, runnable);
-        Thread.sleep(PERIOD.toMillis() * 3);
+        Thread.sleep(PERIOD.toMillis() * 3 + PERIOD.toMillis() / 4 );
         log.debug("last launch {} is after {} ", lastLaunchTime, LocalDateTime.now().minus(PERIOD));
         assertTrue(lastLaunchTime.isAfter(LocalDateTime.now().minus(PERIOD)));
         clock.stopTimer(TEST_ID);
