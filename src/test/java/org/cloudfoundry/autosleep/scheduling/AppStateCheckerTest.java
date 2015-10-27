@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static org.mockito.Mockito.*;
 
@@ -15,7 +16,7 @@ import static org.mockito.Mockito.*;
 @Slf4j
 public class AppStateCheckerTest {
 
-    private static final String APP_UID = "987987";
+    private static final UUID APP_UID = UUID.fromString("9AF63B10-9D25-4162-9AD2-5AA8173FFC3B");
     private static final String TASK_ID = "DP98USD";
     private static final Duration INTERVAL = Duration.ofMillis(300);
 

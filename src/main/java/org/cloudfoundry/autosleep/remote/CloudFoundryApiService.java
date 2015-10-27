@@ -5,6 +5,7 @@ import org.cloudfoundry.autosleep.client.model.ClientConfiguration;
 import org.cloudfoundry.client.lib.CloudCredentials;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
 import org.cloudfoundry.client.lib.domain.ApplicationLog;
+import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -47,6 +49,9 @@ public class CloudFoundryApiService implements CloudFoundryApi {
                     true);
             client.login();
 
+            client.getApplications().forEach(cloudApplication -> log.info("App detected : {} {}", cloudApplication
+                    .getName(), cloudApplication.getSpace()));
+
 
         } catch (MalformedURLException e) {
             log.error("No remote configuration given or malformed URL. Check cloudfoundry_client.tmpl file");
@@ -55,40 +60,68 @@ public class CloudFoundryApiService implements CloudFoundryApi {
     }
 
     @Override
-    public ApplicationInfo getApplicationInfo(String appName) {
+    public ApplicationInfo getApplicationInfo(UUID appUid) {
+        try {
+            CloudApplication app = client.getApplication(appUid);
+            if (app != null) {
+                log.debug("Getting application info for app {}", app.getName());
+                List<ApplicationLog> lastLogs = client.getRecentLogs(app.getName());
+                List<CloudEvent> events = client.getApplicationEvents(app.getName());
+                Date lastLogTime = null;
+                Date lastEventTime = null;
 
-        List<ApplicationLog> lastLogs = client.getRecentLogs(appName);
-        List<CloudEvent> events = client.getApplicationEvents(appName);
-        Date lastLogTime = null;
-        Date lastEventTime = null;
+                if (lastLogs.size() > 0) {
+                    lastLogTime = lastLogs.get(lastLogs.size() - 1).getTimestamp();
+                }
+                if (events.size() > 0) {
+                    lastEventTime = events.get(events.size() - 1).getTimestamp();
+                }
 
-        if (lastLogs.size() > 0) {
-            lastLogTime = lastLogs.get(lastLogs.size() - 1).getTimestamp();
+                //conversion to LocalDateTime
+                LocalDateTime lastLogLocalTime = lastLogTime == null ? null : LocalDateTime.ofInstant(lastLogTime
+                                .toInstant(),
+                        ZoneId.systemDefault());
+                LocalDateTime lastEventLocalTime = lastEventTime == null ? null : LocalDateTime.ofInstant(lastEventTime
+                        .toInstant(), ZoneId.systemDefault());
+                return new ApplicationInfo(lastEventLocalTime, lastLogLocalTime);
+            } else {
+                log.error("No app found for UID {}", appUid);
+            }
+        } catch (Throwable t) {
+            log.error("error", t);
         }
-        if (events.size() > 0) {
-            lastEventTime = events.get(events.size() - 1).getTimestamp();
-        }
-
-        //conversion to LocalDateTime
-        LocalDateTime lastLogLocalTime = lastLogTime == null ? null : LocalDateTime.ofInstant(lastLogTime.toInstant(),
-                ZoneId.systemDefault());
-        LocalDateTime lastEventLocalTime = lastEventTime == null ? null : LocalDateTime.ofInstant(lastEventTime
-                .toInstant(), ZoneId.systemDefault());
-
-        return new ApplicationInfo(lastEventLocalTime, lastLogLocalTime);
+        return null;
     }
 
 
     @Override
-    public void stopApplication(String appName) {
-        log.info("Stopping app {}", appName);
-        client.startApplication(appName);
+    public void stopApplication(UUID appUid) {
+        try {
+            CloudApplication app = client.getApplication(appUid);
+            if (app != null) {
+                log.info("Stopping app {}", app.getName());
+                client.stopApplication(app.getName());
+            } else {
+                log.error("No app found for UID {}", appUid);
+            }
+        } catch (Throwable t) {
+            log.error("error", t);
+        }
     }
 
     @Override
-    public void startApplication(String appName) {
-        log.info("Starting app {}", appName);
-        client.stopApplication(appName);
+    public void startApplication(UUID appUid) {
+        try {
+            CloudApplication app = client.getApplication(appUid);
+            if (app != null) {
+                log.info("Starting app {}", app.getName());
+                client.startApplication(app.getName());
+            } else {
+                log.error("No app found for UID {}", appUid);
+            }
+        } catch (Throwable t) {
+            log.error("error", t);
+        }
     }
 
     @Override

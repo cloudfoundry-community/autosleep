@@ -6,12 +6,13 @@ import org.cloudfoundry.autosleep.remote.CloudFoundryApi;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @AllArgsConstructor
 @Slf4j
 public class AppStateChecker implements Runnable {
 
-    protected final String appGuid;
+    protected final UUID appUid;
     protected final String taskId;
     protected final Duration period;
 
@@ -24,9 +25,9 @@ public class AppStateChecker implements Runnable {
 
     @Override
     public void run() {
-        log.debug("Checking on app {} state, for taskId {}", appGuid, taskId);
+        log.debug("Checking on app {} state, for taskId {}", appUid, taskId);
         //retrieve updated info
-        LocalDateTime lastEvent = remote.getApplicationInfo(appGuid).getLastEvent();
+        LocalDateTime lastEvent = remote.getApplicationInfo(appUid).getLastEvent();
 
         //TODO check if LocalDate issue between remote dates and app time
         LocalDateTime nextStartTime = lastEvent.plus(period);
@@ -34,7 +35,7 @@ public class AppStateChecker implements Runnable {
 
         if (nextStartTime.isBefore(LocalDateTime.now())) {
             log.debug("Inactivity detected");
-            remote.stopApplication(appGuid);
+            remote.stopApplication(appUid);
         } else {
             //rescheduled itself
             Duration delta = Duration.between(LocalDateTime.now(), nextStartTime);
@@ -47,7 +48,6 @@ public class AppStateChecker implements Runnable {
     public void stop() {
         clock.stopTimer(taskId);
     }
-
 
 
 }
