@@ -12,7 +12,7 @@
     </logger>
 
     <logger name="org.apache.http.wire">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
 
     <root>

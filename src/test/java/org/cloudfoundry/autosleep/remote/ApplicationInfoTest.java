@@ -15,12 +15,12 @@ public class ApplicationInfoTest {
     @Test
     public void testGetLastEventTime() throws Exception {
         ApplicationInfo info = new ApplicationInfo(yesterday, now);
-        assertEquals("Most recent date should be last log", info.getLastLog(), info.getLastEventTime());
-        assertEquals("Last event should return most recent date", info.getLastEventTime(), now);
+        assertEquals("Most recent date should be last log", info.getLastLog(), info.getLastActionDate());
+        assertEquals("Last event should return most recent date", info.getLastActionDate(), now);
 
         info = new ApplicationInfo(now, yesterday);
-        assertEquals("Last event should return most recent date", info.getLastEventTime(), now);
-        assertEquals("Most recent date should be last deployed", info.getLastDeployed(), info.getLastEventTime());
+        assertEquals("Last event should return most recent date", info.getLastActionDate(), now);
+        assertEquals("Most recent date should be last deployed", info.getLastEvent(), info.getLastActionDate());
 
     }
 }

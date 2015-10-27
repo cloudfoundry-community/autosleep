@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep.client;
+package org.cloudfoundry.autosleep.remote;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
 @Configuration
-@PropertySource(value = "classpath:cloundfoundry_client.properties", ignoreResourceNotFound = true)
+@PropertySource(value = "classpath:cloudfoundry_client.properties", ignoreResourceNotFound = true)
 @EnableAutoConfiguration
 @Getter
 @Slf4j
@@ -35,7 +35,6 @@ public class ClientConfigurationBuilder {
 
     @Bean
     public ClientConfiguration buildConfiguration() {
-        return new ClientConfiguration(targetEndpoint, skipSslValidation, clientId, clientSecret);
+        return new ClientConfiguration(targetEndpoint, skipSslValidation, clientId, clientSecret, username, password);
     }
-
 }
