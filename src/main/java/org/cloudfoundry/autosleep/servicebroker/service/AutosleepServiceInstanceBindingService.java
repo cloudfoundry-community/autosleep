@@ -14,6 +14,8 @@ import org.cloudfoundry.community.servicebroker.service.ServiceInstanceBindingSe
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 
 @Service
 @Slf4j
@@ -48,7 +50,7 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
 
         dao.addBinding(serviceId, serviceInstanceBinding);
 
-        AppStateChecker checker = new AppStateChecker(request.getAppGuid(),
+        AppStateChecker checker = new AppStateChecker(UUID.fromString(request.getAppGuid()),
                 request.getBindingId(),
                 dao.getServiceInstanceInactivityParam(serviceId),
                 remote,

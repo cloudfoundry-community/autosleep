@@ -28,4 +28,7 @@ public class ApplicationInfo {
 
         return lastEvent.isAfter(lastLog) ? lastEvent : lastLog;
     }
+
+
+
 }
