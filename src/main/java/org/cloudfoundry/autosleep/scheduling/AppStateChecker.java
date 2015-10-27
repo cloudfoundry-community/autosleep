@@ -2,7 +2,7 @@ package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.remote.CloudFoundryApi;
+import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -16,7 +16,7 @@ public class AppStateChecker implements Runnable {
     protected final String taskId;
     protected final Duration period;
 
-    protected final CloudFoundryApi remote;
+    protected final CloudFoundryApiService remote;
     protected final Clock clock;
 
     public void start() {

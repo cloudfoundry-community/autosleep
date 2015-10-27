@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep;
+package org.cloudfoundry.autosleep.config;
 
 import java.time.Duration;
 

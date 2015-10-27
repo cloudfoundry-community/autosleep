@@ -58,6 +58,15 @@ dependencies {
     //Logs
     compile "org.slf4j:slf4j-api:$slf4jVersion"
     compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+    // Spring Data
+    compile "org.springframework.data:spring-data-jpa"
+    compile "org.springframework.data:spring-data-redis"
+
+    // Redis Persistence
+    compile "redis.clients:jedis"
+    // Spring Cloud
+    compile "org.springframework.cloud:spring-cloud-spring-service-connector"
+    compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector"
 
 }
 

@@ -1,7 +1,7 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.dao.ServiceInstanceDao;
+import org.cloudfoundry.autosleep.repositories.ram.RamServiceRepository;
 import org.cloudfoundry.autosleep.servicebroker.configuration.CatalogConfiguration;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
@@ -12,6 +12,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -24,7 +26,8 @@ import static org.junit.Assert.*;
 @Slf4j
 @ContextConfiguration(classes = {CatalogConfiguration.class,
         AutosleepServiceInstanceService.class,
-        ServiceInstanceDao.class})
+        RamServiceRepository.class})
+@ActiveProfiles("in-memory")
 public class AutosleepServiceInstanceServiceTest {
 
     private static final String ORG_TEST = "orgTest";
@@ -71,7 +74,7 @@ public class AutosleepServiceInstanceServiceTest {
             service.createServiceInstance( baseRequest );
 
             fail("Succeed in creating service with a request with wrong parameters");
-        } catch (ServiceBrokerException s) {
+        } catch (HttpMessageNotReadableException s) {
             log.debug("{} occurred as expected", s.getClass().getSimpleName());
         }
 

@@ -1,8 +1,8 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.Config;
-import org.cloudfoundry.autosleep.dao.ServiceInstanceDaoService;
+import org.cloudfoundry.autosleep.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
@@ -15,76 +15,60 @@ import org.cloudfoundry.community.servicebroker.service.ServiceInstanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.time.format.DateTimeParseException;
-import java.util.Map;
-
 @Service
 @Slf4j
 public class AutosleepServiceInstanceService implements ServiceInstanceService {
 
-    private ServiceInstanceDaoService dao;
+    private ServiceRepository repository;
 
     @Autowired
-    public AutosleepServiceInstanceService(ServiceInstanceDaoService dao) {
-        this.dao = dao;
+    public AutosleepServiceInstanceService(ServiceRepository repository) {
+        this.repository = repository;
     }
 
     @Override
     public ServiceInstance createServiceInstance(CreateServiceInstanceRequest request) throws
             ServiceInstanceExistsException, ServiceBrokerException {
         log.debug("createServiceInstance - {}", request.getServiceInstanceId());
-        ServiceInstance serviceInstance = new ServiceInstance(request);
-        Duration interval = getDurationParameters(request.getParameters());
-        dao.insertService(serviceInstance, interval);
+
+        AutoSleepServiceInstance serviceInstance = repository.findOne(request.getServiceInstanceId());
+        if (serviceInstance != null) {
+            throw new ServiceInstanceExistsException(serviceInstance);
+        } else {
+            serviceInstance = new AutoSleepServiceInstance(request);
+            repository.save(serviceInstance);
+        }
         return serviceInstance;
     }
 
     @Override
     public ServiceInstance getServiceInstance(String serviceInstanceId) {
         log.debug("getServiceInstance - {}", serviceInstanceId);
-        return dao.getService(serviceInstanceId);
+        return repository.findOne(serviceInstanceId);
     }
 
     @Override
     public ServiceInstance updateServiceInstance(UpdateServiceInstanceRequest request) throws
             ServiceInstanceUpdateNotSupportedException, ServiceBrokerException, ServiceInstanceDoesNotExistException {
-        log.debug("updateServiceInstance - {}", request.getServiceInstanceId());
-        ServiceInstance serviceInstance = new ServiceInstance(request);
-        if (request.getParameters() != null) {
-            Duration interval = getDurationParameters(request.getParameters());
-            if (interval == null) {
-                //no params, or wrong params
-                throw new ServiceBrokerException("'inactivity' param missing, or badly formatted (ISO-8601)");
-            }
-            dao.updateService(serviceInstance, interval);
+        String serviceId = request.getServiceInstanceId();
+        log.debug("updateServiceInstance - {}", serviceId);
+        AutoSleepServiceInstance serviceInstance = repository.findOne(serviceId);
+        if (serviceInstance == null) {
+            throw new ServiceInstanceDoesNotExistException(serviceId);
+        } else {
+            serviceInstance = new AutoSleepServiceInstance(request);
+            repository.save(serviceInstance);
         }
-        dao.updateService(serviceInstance);
         return serviceInstance;
     }
 
     @Override
     public ServiceInstance deleteServiceInstance(DeleteServiceInstanceRequest request) throws ServiceBrokerException {
         log.debug("deleteServiceInstance - {}", request.getServiceInstanceId());
-        return dao.deleteService(request.getServiceInstanceId());
+        AutoSleepServiceInstance serviceInstance = repository.findOne(request.getServiceInstanceId());
+        repository.delete(request.getServiceInstanceId());
+        return serviceInstance;
     }
 
-    private Duration getDurationParameters(Map<String, Object> params) throws ServiceBrokerException {
-        Duration result = null;
-        if (params == null || params.get("inactivity") == null) {
-            return Config.defaultInactivityPeriod;
-        }
-        String inactivityPattern = (String) params.get("inactivity");
-        log.debug("pattern " + inactivityPattern);
-        try {
-            result = Duration.parse(inactivityPattern);
-        } catch (DateTimeParseException e) {
-            log.error("Wrong format for inactivity duration - format should respect ISO-8601 duration format "
-                    + "PnDTnHnMn");
-            throw new ServiceBrokerException("'inactivity' param badly formatted (ISO-8601). Example: \"PT15M\" for "
-                    + "15mn");
-        }
 
-        return result;
-    }
 }
