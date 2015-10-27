@@ -49,6 +49,8 @@ dependencies {
     providedCompile  "org.projectlombok:lombok:$lombokVersion"
     //Spring boot
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+    //Groovy templates
+    compile "org.codehaus.groovy:groovy-templates:${groovyVersion}"
     //API Service broker
     compile("org.cloudfoundry:spring-boot-cf-service-broker:$cfServiceBrokerVersion")
     //Client library
