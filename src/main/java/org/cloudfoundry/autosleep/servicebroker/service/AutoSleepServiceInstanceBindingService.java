@@ -2,6 +2,7 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.AppStateChecker;
 import org.cloudfoundry.autosleep.scheduling.Clock;
@@ -20,21 +21,22 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-public class AutosleepServiceInstanceBindingService implements ServiceInstanceBindingService {
+public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBindingService {
 
-    protected Clock clock;
-
+    private Clock clock;
     private CloudFoundryApiService remote;
-
     private ServiceRepository serviceRepository;
+    private BindingRepository bindingRepository;
 
 
     /** Constructor with autowired args.*/
     @Autowired
-    public AutosleepServiceInstanceBindingService(Clock clock, CloudFoundryApiService remote,ServiceRepository serviceRepository) {
+    public AutoSleepServiceInstanceBindingService(Clock clock, CloudFoundryApiService remote, ServiceRepository
+            serviceRepository, BindingRepository bindingRepository) {
         this.clock = clock;
         this.remote = remote;
         this.serviceRepository = serviceRepository;
+        this.bindingRepository = bindingRepository;
     }
 
     @Override
@@ -44,13 +46,13 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
         String bindingId = request.getBindingId();
         String serviceId = request.getServiceInstanceId();
         log.debug("createServiceInstanceBinding - {}", request.getBindingId());
-        AutoSleepServiceBinding serviceInstanceBinding = new AutoSleepServiceBinding(bindingId,
+        AutoSleepServiceBinding binding = new AutoSleepServiceBinding(bindingId,
                 serviceId,
-                null/*TODO credentials*/,
+                null/*TODO credentials?*/,
                 null,
                 request.getAppGuid());
 
-        //TODO dao.addBinding(serviceId, serviceInstanceBinding);
+        bindingRepository.save(binding);
 
         AppStateChecker checker = new AppStateChecker(UUID.fromString(request.getAppGuid()),
                 request.getBindingId(),
@@ -59,17 +61,17 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
                 clock);
         checker.start();
 
-        return serviceInstanceBinding;
+        return binding;
     }
 
     @Override
     public ServiceInstanceBinding deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest request) throws
             ServiceBrokerException {
-        log.debug("deleteServiceInstanceBinding - {}", request.getBindingId());
-        /*TODO remove binding ServiceInstanceBinding result = dao.removeBinding(request.getInstance().getServiceInstanceId(),
-                request.getBindingId());*/
-        clock.stopTimer(request.getBindingId());
-        //TODO return unbinded object
-        return null;
+        String bindingId = request.getBindingId();
+        log.debug("deleteServiceInstanceBinding - {}", bindingId);
+        AutoSleepServiceBinding binding = bindingRepository.findOne(bindingId);
+        bindingRepository.delete(bindingId);
+        clock.stopTimer(bindingId);
+        return binding;
     }
 }

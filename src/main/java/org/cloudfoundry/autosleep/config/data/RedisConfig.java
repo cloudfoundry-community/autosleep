@@ -23,14 +23,14 @@ public class RedisConfig {
 
     @Bean
     public RedisTemplate<String, AutoSleepServiceInstance> redisTemplate(RedisConnectionFactory
-                                                                                     redisConnectionFactory) {
+                                                                                 redisConnectionFactory) {
         RedisTemplate<String, AutoSleepServiceInstance> template = new RedisTemplate<>();
 
         template.setConnectionFactory(redisConnectionFactory);
 
         RedisSerializer<String> stringSerializer = new StringRedisSerializer();
-        RedisSerializer<AutoSleepServiceInstance> serviceSerializer = new JacksonJsonRedisSerializer<>
-                (AutoSleepServiceInstance.class);
+        RedisSerializer<AutoSleepServiceInstance> serviceSerializer = new JacksonJsonRedisSerializer<>(
+                AutoSleepServiceInstance.class);
 
         template.setKeySerializer(stringSerializer);
         template.setValueSerializer(serviceSerializer);

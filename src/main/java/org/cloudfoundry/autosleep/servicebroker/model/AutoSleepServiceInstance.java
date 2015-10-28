@@ -26,6 +26,7 @@ public class AutoSleepServiceInstance extends ServiceInstance {
         setDurationFromParams(request.getParameters());
     }
 
+
     public AutoSleepServiceInstance(UpdateServiceInstanceRequest request) throws HttpMessageNotReadableException,
             ServiceInstanceUpdateNotSupportedException {
         super(request);

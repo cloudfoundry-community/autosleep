@@ -17,12 +17,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class AutosleepServiceInstanceService implements ServiceInstanceService {
+public class AutoSleepServiceInstanceService implements ServiceInstanceService {
 
     private ServiceRepository repository;
 
     @Autowired
-    public AutosleepServiceInstanceService(ServiceRepository repository) {
+    public AutoSleepServiceInstanceService(ServiceRepository repository) {
         this.repository = repository;
     }
 

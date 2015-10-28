@@ -5,11 +5,15 @@ import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.repositories.ram.RamServiceRepository;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
-import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,7 +25,9 @@ import static org.junit.Assert.*;
 
 
 @Slf4j
-
+@RunWith(SpringJUnit4ClassRunner.class)
+@ActiveProfiles("in-memory")
+@ContextConfiguration(classes = {RamServiceRepository.class})
 public class ServiceRepositoryTest {
 
     private static final String ORG_TEST = "orgTest";
@@ -29,6 +35,7 @@ public class ServiceRepositoryTest {
     private static final String SERVICE_DEFINITION_ID = "TESTS";
     private static final String SERVICE_PLAN_ID = "PLAN";
 
+    @Autowired
     private ServiceRepository dao;
 
     private enum InsertedInstanceIds {
@@ -37,7 +44,6 @@ public class ServiceRepositoryTest {
         testDeleteServiceByInstanceSuccess,
         testDeleteMass01,
         testDeleteMass02,
-        testBinding
     }
 
     private CreateServiceInstanceRequest createRequestTemplate;
@@ -45,29 +51,25 @@ public class ServiceRepositoryTest {
     private long nbServicesInit;
 
 
-
     /**
      * Init DAO with test data.
-     *
-     * @throws ServiceInstanceDoesNotExistException when no correspondance in db
      */
     @Before
-    public void populateDao() throws ServiceInstanceDoesNotExistException {
-        dao = new RamServiceRepository();
-        createRequestTemplate = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, SERVICE_PLAN_ID, ORG_TEST, SPACE_TEST);
+    public void populateDao() {
+        createRequestTemplate = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, SERVICE_PLAN_ID, ORG_TEST,
+                SPACE_TEST);
 
         dao.deleteAll();
 
-        Arrays.asList(InsertedInstanceIds.values()).forEach(serviceInstanceId -> {
-            dao.save(new AutoSleepServiceInstance(createRequestTemplate.withServiceInstanceId(serviceInstanceId
-                    .name())));
-        });
+        Arrays.asList(InsertedInstanceIds.values()).forEach(serviceInstanceId -> dao.save(new
+                AutoSleepServiceInstance(createRequestTemplate.withServiceInstanceId(serviceInstanceId
+                .name()))));
         nbServicesInit = countServices();
 
     }
 
     @Test
-    public void testInsert() throws ServiceInstanceExistsException, ServiceBrokerException {
+    public void testInsert() {
         dao.save(new AutoSleepServiceInstance(createRequestTemplate.withServiceInstanceId("testInsertServiceSuccess")));
         assertThat(countServices(), is(equalTo(nbServicesInit + 1)));
     }
@@ -76,13 +78,13 @@ public class ServiceRepositoryTest {
     public void testMultipleInsertsAndRetrieves() throws ServiceInstanceExistsException, ServiceBrokerException {
         List<String> ids = Arrays.asList("testInsertServiceSuccess1", "testInsertServiceSuccess2");
         List<AutoSleepServiceInstance> initialList = new ArrayList<>();
-        ids.forEach(id -> initialList.add(new AutoSleepServiceInstance(createRequestTemplate.withServiceInstanceId
-                (id))));
+        ids.forEach(id -> initialList.add(new AutoSleepServiceInstance(createRequestTemplate.withServiceInstanceId(
+                id))));
 
         //test save all
         dao.save(initialList);
-        assertThat("Count should be equal to the initial amount plus inserted", countServices(), is(equalTo
-                (nbServicesInit + initialList.size())));
+        assertThat("Count should be equal to the initial amount plus inserted", countServices(), is(equalTo(
+                nbServicesInit + initialList.size())));
 
         //test "exist"
         ids.forEach(id -> assertThat("Each element should exist in DAO", dao.exists(id), is(true)));
@@ -90,7 +92,7 @@ public class ServiceRepositoryTest {
         //test that retrieving all elements give the same amount
         Iterable<AutoSleepServiceInstance> storedElement = dao.findAll();
         int count = 0;
-        for (AutoSleepServiceInstance object : storedElement) {
+        for (AutoSleepServiceInstance ignored : storedElement) {
             count++;
         }
         assertTrue("Retrieving all elements should return the same quantity", count == nbServicesInit + initialList
@@ -149,7 +151,6 @@ public class ServiceRepositoryTest {
         assertTrue(countServices() == 0);
 
     }
-
 
 
     private long countServices() {
