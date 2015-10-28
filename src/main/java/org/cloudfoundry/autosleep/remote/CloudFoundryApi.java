@@ -48,11 +48,6 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                     new URL(clientConfiguration.getTargetEndpoint()),
                     true);
             client.login();
-
-            client.getApplications().forEach(cloudApplication -> log.info("App detected : {} {}", cloudApplication
-                    .getName(), cloudApplication.getSpace()));
-
-
         } catch (MalformedURLException e) {
             log.error("No remote configuration given or malformed URL. Check cloudfoundry_client.tmpl file");
         }
