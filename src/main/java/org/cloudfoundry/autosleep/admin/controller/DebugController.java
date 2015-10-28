@@ -35,8 +35,7 @@ public class DebugController {
     @Autowired
     private BindingRepository bindingRepository;
 
-
-    @RequestMapping("/services_instances/")
+    @RequestMapping("/")
     public ModelAndView serviceInstances() {
         log.debug("serviceInstances - rendering view");
         Map<String, Object> parameters = new HashMap<>();
@@ -47,7 +46,7 @@ public class DebugController {
         return new ModelAndView("views/admin/debug/service_instances", parameters);
     }
 
-    @RequestMapping("/services_bindings/{instanceId}")
+    @RequestMapping("/{instanceId}/bindings/")
     public ModelAndView serviceBindings(@PathVariable("instanceId") String serviceInstanceId) {
         log.debug("serviceInstances - rendering view - ", serviceInstanceId);
         Map<String, Object> parameters = new HashMap<>();
@@ -66,8 +65,8 @@ public class DebugController {
         log.debug("listServiceInstances");
         List<ServiceInstance> result = new ArrayList<>();
         serviceRepository.findAll().forEach(service ->
-                        result.add(new ServiceInstance(service.getServiceInstanceId(),
-                                service.getServiceDefinitionId(), service.getPlanId())));
+                result.add(new ServiceInstance(service.getServiceInstanceId(),
+                        service.getServiceDefinitionId(), service.getPlanId())));
         return result;
     }
 
@@ -77,8 +76,12 @@ public class DebugController {
             throws ServiceInstanceDoesNotExistException {
         log.debug("listServiceBindings - {}", serviceInstanceId);
         List<ServiceBinding> result = new ArrayList<>();
-        bindingRepository.findAll().forEach(serviceBinding ->
-                result.add(new ServiceBinding(serviceBinding.getAppGuid(), serviceBinding.getId())));
+        bindingRepository.findAll().forEach(serviceBinding -> {
+                    if (serviceInstanceId.equals(serviceBinding.getServiceInstanceId())) {
+                        result.add(new ServiceBinding(serviceBinding.getAppGuid(), serviceBinding.getId()));
+                    }
+                }
+        );
         return result;
     }
 

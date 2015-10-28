@@ -26,6 +26,12 @@ public abstract class AbstractRestTest {
     @Value("${local.server.port}")   // access to the port used
     private int port;
 
+    @Value("${security.user.name}")
+    protected String username;
+
+    @Value("${security.user.password}")
+    protected String password;
+
 
     protected static class Call<B, R> {
         private HttpHeaders headers = new HttpHeaders();

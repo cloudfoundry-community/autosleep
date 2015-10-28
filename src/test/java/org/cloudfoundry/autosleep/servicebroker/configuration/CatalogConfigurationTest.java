@@ -6,7 +6,6 @@ import org.cloudfoundry.community.servicebroker.model.BrokerApiVersion;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +18,6 @@ import static org.junit.Assert.assertThat;
 
 public class CatalogConfigurationTest extends AbstractRestTest{
 
-
-    @Value("${security.user.name}")
-    private String username;
-
-    @Value("${security.user.password}")
-    private String password;
 
     @Autowired
     private BrokerApiVersion apiVersion;

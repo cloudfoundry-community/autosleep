@@ -1,12 +1,16 @@
-package org.cloudfoundry.autosleep.client.model;
+package org.cloudfoundry.autosleep.remote;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.net.URL;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class ClientConfiguration {
-    private String targetEndpoint;
+    private URL targetEndpoint;
 
     private boolean enableSelfSignedCertificates;
 

@@ -1,3 +1,4 @@
+package templates.layouts
 yieldUnescaped '<!DOCTYPE html>'
 html {
     head {
@@ -8,17 +9,14 @@ html {
 
         script(src: "/javascript/jquery.min.js", "")
         script(src: "/javascript/boost.min.js", "")
+        script(src: "/javascript/main.js", "")
         additionalScripts()
     }
     body {
         div(class: 'container') {
-            div(class: 'navbar') {
-                div(class: 'navbar-inner') {
-                    a(class: 'brand',
-                            href: '/admin/debug/services_instances/',
-                            'Services')
-                }
-            }
+            div(class: "alert alert-success", id: "successMessage", hidden: "true","")
+            div(class: "alert alert-danger", id: "dangerMessage", hidden: "true", "")
+            include template: 'layouts/navbar.tpl'
             mainBody()
         }
     }

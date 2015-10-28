@@ -10,6 +10,7 @@ layout 'layouts/main.tpl',
                 yield "$serviceInstance"
                 yieldUnescaped '";'
                 yieldUnescaped 'window.onload = function(){'
+                yieldUnescaped 'initNavbar();'
                 yieldUnescaped 'helper = new ServicesHelper("'
                 yield "$pathServiceInstances"
                 yieldUnescaped '", "'

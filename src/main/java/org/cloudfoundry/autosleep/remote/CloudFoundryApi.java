@@ -1,7 +1,7 @@
 package org.cloudfoundry.autosleep.remote;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.client.model.ClientConfiguration;
 import org.cloudfoundry.client.lib.CloudCredentials;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
 import org.cloudfoundry.client.lib.domain.ApplicationLog;
@@ -10,9 +10,6 @@ import org.cloudfoundry.client.lib.domain.CloudEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -25,33 +22,20 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
     private CloudFoundryClient client;
 
-    @Autowired
-    private ClientConfigurationBuilder builder;
-
+    @Getter
+    private ClientConfiguration clientConfiguration;
 
     /**
      * Init cloudFoundryClient.
      */
-
-    @PostConstruct
-    public void init() {
-        ClientConfiguration clientConfiguration = null;
-        try {
-            clientConfiguration = builder.buildConfiguration();
-            log.debug("login to {}", clientConfiguration.getTargetEndpoint());
-            CloudCredentials cloudCredentials = new CloudCredentials(
-                    clientConfiguration.getUsername(),
-                    clientConfiguration.getPassword(),
-                    clientConfiguration.getClientId(),
-                    clientConfiguration.getClientSecret());
-            client = new CloudFoundryClient(cloudCredentials,
-                    new URL(clientConfiguration.getTargetEndpoint()),
-                    true);
-            client.login();
-        } catch (MalformedURLException e) {
-            log.error("No remote configuration given or malformed URL. Check cloudfoundry_client.tmpl file");
+    @Autowired
+    public CloudFoundryApi(ClientConfigurationBuilder builder) {
+        ClientConfiguration clientConfiguration = builder.buildConfiguration();
+        if (clientConfiguration != null) {
+            setClientConfiguration(clientConfiguration);
+        } else {
+            log.warn("no configuration provided");
         }
-
     }
 
     @Override
@@ -122,5 +106,30 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     @Override
     public List<String> getApplicationsNames() {
         return null;
+    }
+
+    public void setClientConfiguration(ClientConfiguration clientConfiguration) {
+        if (clientConfiguration == null) {
+            this.clientConfiguration = null;
+            this.client = null;
+        } else {
+            try {
+                log.debug("setClientConfiguration - {}", clientConfiguration.getTargetEndpoint());
+                CloudCredentials cloudCredentials = new CloudCredentials(
+                        clientConfiguration.getUsername(),
+                        clientConfiguration.getPassword(),
+                        clientConfiguration.getClientId(),
+                        clientConfiguration.getClientSecret());
+                CloudFoundryClient client = new CloudFoundryClient(cloudCredentials,
+                        clientConfiguration.getTargetEndpoint(),
+                        clientConfiguration.isEnableSelfSignedCertificates());
+                client.login();
+                this.client = client;
+                this.clientConfiguration = clientConfiguration;
+            } catch (RuntimeException r) {
+                log.error("setClientConfiguration - failure while login", r);
+                throw r;
+            }
+        }
     }
 }
