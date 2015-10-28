@@ -3,21 +3,13 @@ package org.cloudfoundry.autosleep.repositories;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.repositories.ram.RamServiceRepository;
-import org.cloudfoundry.autosleep.servicebroker.configuration.CatalogConfiguration;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
-import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
-import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,22 +19,16 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+
 @Slf4j
-@ActiveProfiles("in-memory")
-@ContextConfiguration(classes = {CatalogConfiguration.class, RamServiceRepository.class}) //TODO investigate
+
 public class ServiceRepositoryTest {
 
     private static final String ORG_TEST = "orgTest";
-
     private static final String SPACE_TEST = "spaceTest";
+    private static final String SERVICE_DEFINITION_ID = "TESTS";
+    private static final String SERVICE_PLAN_ID = "PLAN";
 
-    private static final String APP_TEST = "appTest";
-
-    @Autowired
-    private Catalog catalog;
-
-    @Autowired
     private ServiceRepository dao;
 
     private enum InsertedInstanceIds {
@@ -54,15 +40,10 @@ public class ServiceRepositoryTest {
         testBinding
     }
 
-    private enum InsertedBindingIds {
-        testRemoveBindingSuccess
-    }
-
-    private final InsertedInstanceIds idForBindingTest = InsertedInstanceIds.testBinding;
-
     private CreateServiceInstanceRequest createRequestTemplate;
 
     private long nbServicesInit;
+
 
 
     /**
@@ -72,13 +53,8 @@ public class ServiceRepositoryTest {
      */
     @Before
     public void populateDao() throws ServiceInstanceDoesNotExistException {
-        assertTrue("Catalog must a least contain a catalog definition", catalog.getServiceDefinitions().size() > 0);
-        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
-        assertTrue("Service definition " + serviceDefinition.getId() + " must at least contain a plan",
-                serviceDefinition.getPlans().size() > 0);
-        createRequestTemplate = new CreateServiceInstanceRequest(serviceDefinition.getId(), serviceDefinition
-                .getPlans().get(0).getId(), ORG_TEST, SPACE_TEST);
-
+        dao = new RamServiceRepository();
+        createRequestTemplate = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, SERVICE_PLAN_ID, ORG_TEST, SPACE_TEST);
 
         dao.deleteAll();
 
