@@ -17,6 +17,7 @@ import java.util.Map;
 
 @Data()
 @EqualsAndHashCode(callSuper = true)
+
 @Slf4j
 public class AutoSleepServiceInstance extends ServiceInstance {
     private Duration interval;
@@ -26,6 +27,13 @@ public class AutoSleepServiceInstance extends ServiceInstance {
         setDurationFromParams(request.getParameters());
     }
 
+    /**
+     * Should never be called. Only for JSON auto serialization.
+     */
+    @SuppressWarnings("unused")
+    private AutoSleepServiceInstance() {
+        super(new CreateServiceInstanceRequest());
+    }
 
     public AutoSleepServiceInstance(UpdateServiceInstanceRequest request) throws HttpMessageNotReadableException,
             ServiceInstanceUpdateNotSupportedException {

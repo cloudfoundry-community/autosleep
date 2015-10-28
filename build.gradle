@@ -65,6 +65,8 @@ dependencies {
     // Spring Data
     compile "org.springframework.data:spring-data-jpa"
     compile "org.springframework.data:spring-data-redis"
+    //JSon support for java.time
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonJsr310Version"
 
     // Redis Persistence
     compile "redis.clients:jedis"
