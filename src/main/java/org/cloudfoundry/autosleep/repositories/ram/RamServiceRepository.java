@@ -2,13 +2,13 @@ package org.cloudfoundry.autosleep.repositories.ram;
 
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-@Service
-@Profile("in-memory")
+
 public class RamServiceRepository implements ServiceRepository {
 
     private Map<String, AutoSleepServiceInstance> serviceInstances = new HashMap<>();

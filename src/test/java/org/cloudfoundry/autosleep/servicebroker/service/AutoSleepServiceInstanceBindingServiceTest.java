@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
 @Slf4j
 @ContextConfiguration(classes = {CatalogConfiguration.class,
         RamBindingRepository.class})
-@ActiveProfiles("in-memory")
+@ActiveProfiles("default")
 public class AutoSleepServiceInstanceBindingServiceTest {
 
     private static final String APPUID = "DB1F7D54-7A6A-4F7C-A06E-43EF9B9E3144";

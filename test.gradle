@@ -11,12 +11,12 @@ checkstyle {
     toolVersion = "6.11.2"
 }
 
-
 test {
     testLogging {
         events "passed", "skipped", "failed",  "standardError"
         displayGranularity 2
     }
+    systemProperties = System.properties
 }
 
 dependencies {

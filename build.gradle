@@ -44,6 +44,10 @@ task wrapper(type: Wrapper) {
 }
 
 
+bootRun {
+    systemProperties = System.properties
+}
+
 dependencies {
     // Lombok
     providedCompile  "org.projectlombok:lombok:$lombokVersion"

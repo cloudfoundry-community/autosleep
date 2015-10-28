@@ -11,8 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@Service
-@Profile("redis")
+
 public class RedisServiceRepository implements ServiceRepository {
     public static final String SERVICE_KEY = "services";
 

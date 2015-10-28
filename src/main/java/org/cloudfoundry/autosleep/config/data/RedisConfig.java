@@ -1,5 +1,6 @@
 package org.cloudfoundry.autosleep.config.data;
 
+import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.repositories.redis.RedisServiceRepository;
@@ -12,9 +13,17 @@ import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import javax.annotation.PostConstruct;
+
 @Configuration
 @Profile("redis")
+@Slf4j
 public class RedisConfig {
+
+    @PostConstruct
+    public void logProfile() {
+        log.debug("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  loading REDIS profile   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    }
 
     @Bean
     public ServiceRepository redisRepository(RedisTemplate<String, AutoSleepServiceInstance> redisTemplate) {
