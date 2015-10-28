@@ -2,7 +2,9 @@ package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.remote.ApplicationInfo;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
+import org.cloudfoundry.client.lib.domain.CloudApplication;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -26,23 +28,37 @@ public class AppStateChecker implements Runnable {
     @Override
     public void run() {
         log.debug("Checking on app {} state, for taskId {}", appUid, taskId);
-        //retrieve updated info
-        LocalDateTime lastEvent = remote.getApplicationInfo(appUid).getLastEvent();
+        ApplicationInfo applicationInfo = remote.getApplicationInfo(appUid);
 
-        //TODO check if LocalDate issue between remote dates and app time
-        LocalDateTime nextStartTime = lastEvent.plus(period);
-        log.debug("last event:  {}", lastEvent.toString());
-
-        if (nextStartTime.isBefore(LocalDateTime.now())) {
-            log.debug("Inactivity detected");
-            remote.stopApplication(appUid);
+        if (CloudApplication.AppState.STOPPED.equals(applicationInfo.getState())) {
+            log.debug("App already stopped.");
+            rescheduleWithDefaultPeriod();
         } else {
-            //rescheduled itself
-            Duration delta = Duration.between(LocalDateTime.now(), nextStartTime);
-            log.debug("Rescheduling for {}", delta.toString());
-            clock.scheduleTask(taskId, delta, this);
-        }
+            //retrieve updated info
+            LocalDateTime lastEvent = applicationInfo.getLastEvent();
+            //TODO check if LocalDate issue between remote dates and app time
+            LocalDateTime nextStartTime = lastEvent.plus(period);
+            log.debug("last event:  {}", lastEvent.toString());
 
+            if (nextStartTime.isBefore(LocalDateTime.now())) {
+                log.debug("Inactivity detected, stopping application");
+                remote.stopApplication(appUid);
+                rescheduleWithDefaultPeriod();
+            } else {
+                //rescheduled itself
+                Duration delta = Duration.between(LocalDateTime.now(), nextStartTime);
+                reschedule(delta);
+            }
+        }
+    }
+
+    protected void reschedule(Duration delta) {
+        log.debug("Rescheduling in {}", delta.toString());
+        clock.scheduleTask(taskId, delta, this);
+    }
+
+    protected void rescheduleWithDefaultPeriod() {
+        reschedule(period);
     }
 
     public void stop() {

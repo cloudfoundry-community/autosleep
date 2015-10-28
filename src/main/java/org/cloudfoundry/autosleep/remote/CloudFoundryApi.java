@@ -62,7 +62,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                         ZoneId.systemDefault());
                 LocalDateTime lastEventLocalTime = lastEventTime == null ? null : LocalDateTime.ofInstant(lastEventTime
                         .toInstant(), ZoneId.systemDefault());
-                return new ApplicationInfo(lastEventLocalTime, lastLogLocalTime);
+                return new ApplicationInfo(lastEventLocalTime, lastLogLocalTime, app.getState());
             } else {
                 log.error("No app found for UID {}", appUid);
             }

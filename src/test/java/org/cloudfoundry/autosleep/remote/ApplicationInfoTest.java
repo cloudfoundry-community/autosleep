@@ -14,11 +14,11 @@ public class ApplicationInfoTest {
 
     @Test
     public void testGetLastEventTime() throws Exception {
-        ApplicationInfo info = new ApplicationInfo(yesterday, now);
+        ApplicationInfo info = new ApplicationInfo(yesterday, now,null);
         assertEquals("Most recent date should be last log", info.getLastLog(), info.getLastActionDate());
         assertEquals("Last event should return most recent date", info.getLastActionDate(), now);
 
-        info = new ApplicationInfo(now, yesterday);
+        info = new ApplicationInfo(now, yesterday,null);
         assertEquals("Last event should return most recent date", info.getLastActionDate(), now);
         assertEquals("Most recent date should be last deployed", info.getLastEvent(), info.getLastActionDate());
 
