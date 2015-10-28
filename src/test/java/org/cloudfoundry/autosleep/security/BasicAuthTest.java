@@ -14,10 +14,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-/**
- * Created by buce8373 on 14/10/2015.
- */
-
 public class BasicAuthTest extends AbstractRestTest {
 
 

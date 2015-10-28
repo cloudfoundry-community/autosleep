@@ -2,7 +2,7 @@ package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.ApplicationInfo;
-import org.cloudfoundry.autosleep.remote.CloudFoundryApi;
+import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,7 +21,7 @@ public class AppStateCheckerTest {
     private static final Duration INTERVAL = Duration.ofMillis(300);
 
     private Clock clock;
-    private CloudFoundryApi mockRemote;
+    private CloudFoundryApiService mockRemote;
     private ApplicationInfo applicationInfo = mock(ApplicationInfo.class);
     private AppStateChecker spyChecker;
 
@@ -29,7 +29,7 @@ public class AppStateCheckerTest {
     /** Build mocks. */
     @Before
     public void buildMocks() {
-        mockRemote = mock(CloudFoundryApi.class);
+        mockRemote = mock(CloudFoundryApiService.class);
         clock = mock(Clock.class);
         when(mockRemote.getApplicationInfo(APP_UID)).thenReturn(applicationInfo);
         spyChecker = spy(new AppStateChecker(APP_UID, TASK_ID, INTERVAL, mockRemote,clock));
