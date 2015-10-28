@@ -1,0 +1,5 @@
+/* boost - version 2.0.0 - 20-02-2015
+Booststrap Open Orange Simplicity Toolkit
+ &#169 2015 EASE - accessibility.support@orange.com */
+
+html{font-size:62.5%}.btn:focus{outline:dotted 2px #000}div.active:focus{outline:dotted 1px #000}a:focus{outline:dotted 1px #000}.close:hover,.close:focus{outline:dotted 1px #000}.nav>li>a:hover,.nav>li>a:focus{outline:dotted 1px #000}.carousel-inner>.item{position:absolute;top:-999999em;display:block;-webkit-transition:.6s ease-in-out left;transition:.6s ease-in-out left}.carousel-inner>.active{top:0}.carousel-inner>.active,.carousel-inner>.next,.carousel-inner>.prev{position:relative}.carousel-inner>.next,.carousel-inner>.prev{position:absolute;top:0;width:100%}.glyphicon{color:#f16e00}
