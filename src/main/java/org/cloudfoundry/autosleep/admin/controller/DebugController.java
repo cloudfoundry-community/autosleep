@@ -3,7 +3,8 @@ package org.cloudfoundry.autosleep.admin.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.admin.model.ServiceBinding;
 import org.cloudfoundry.autosleep.admin.model.ServiceInstance;
-import org.cloudfoundry.autosleep.dao.ServiceInstanceDaoService;
+import org.cloudfoundry.autosleep.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.repositories.ServiceRepository;
 import org.cloudfoundry.community.servicebroker.controller.ServiceInstanceController;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
@@ -29,7 +30,10 @@ public class DebugController {
     private Catalog catalog;
 
     @Autowired
-    private ServiceInstanceDaoService dao;
+    private ServiceRepository serviceRepository;
+
+    @Autowired
+    private BindingRepository bindingRepository;
 
 
     @RequestMapping("/services_instances/")
@@ -61,8 +65,7 @@ public class DebugController {
     public List<ServiceInstance> listServiceInstances() {
         log.debug("listServiceInstances");
         List<ServiceInstance> result = new ArrayList<>();
-        dao.listServices(
-                service ->
+        serviceRepository.findAll().forEach(service ->
                         result.add(new ServiceInstance(service.getServiceInstanceId(),
                                 service.getServiceDefinitionId(), service.getPlanId())));
         return result;
@@ -74,7 +77,7 @@ public class DebugController {
             throws ServiceInstanceDoesNotExistException {
         log.debug("listServiceBindings - {}", serviceInstanceId);
         List<ServiceBinding> result = new ArrayList<>();
-        dao.listBinding(serviceInstanceId, serviceBinding ->
+        bindingRepository.findAll().forEach(serviceBinding ->
                 result.add(new ServiceBinding(serviceBinding.getAppGuid(), serviceBinding.getId())));
         return result;
     }
