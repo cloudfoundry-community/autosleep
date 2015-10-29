@@ -80,14 +80,18 @@ public class BindingRepositoryTest {
     public void testEquality() {
         String bindingId = "bidingIdEquality";
         String serviceId = "serviceIdEquality";
-        dao.save(new AutoSleepServiceBinding(bindingId, serviceId, null, null, APP_GUID));
+        AutoSleepServiceBinding original = new AutoSleepServiceBinding(bindingId, serviceId, null, null, APP_GUID);
+        dao.save(original);
         AutoSleepServiceBinding binding = dao.findOne(bindingId);
         assertFalse("Service binding should have been found", binding == null);
         assertThat(binding.getServiceInstanceId(), is(equalTo(serviceId)));
         assertThat(binding.getAppGuid(), is(equalTo(APP_GUID)));
         assertThat(binding.getId(), is(equalTo(bindingId)));
+        assertThat(binding, is(equalTo(original)));
         assertTrue("Succeed in getting a binding that does not exist", dao.findOne("testGetServiceFail") == null);
     }
+
+
 
     @Test
     public void testCount() {

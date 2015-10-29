@@ -11,7 +11,7 @@ import java.util.Set;
 
 
 public class RedisServiceRepository implements ServiceRepository {
-    public static final String SERVICE_KEY = "services";
+    public static final String SERVICE_KEY = "service_store";
 
     private final HashOperations<String, String, AutoSleepServiceInstance> hashOps;
 

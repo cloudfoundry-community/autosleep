@@ -39,6 +39,7 @@ public class RedisConfig {
     }
 
 
+    /** Init serializers for ServiceInstances in Redis. */
     @Bean
     public RedisTemplate<String, AutoSleepServiceInstance> serviceRedisTemplate(RedisConnectionFactory
                                                                                         redisConnectionFactory) {
@@ -49,6 +50,7 @@ public class RedisConfig {
         RedisSerializer<String> stringSerializer = new StringRedisSerializer();
         RedisSerializer<AutoSleepServiceInstance> serviceSerializer = new Jackson2JsonRedisSerializer<>(
                 AutoSleepServiceInstance.class);
+
         template.setKeySerializer(stringSerializer);
         template.setValueSerializer(serviceSerializer);
         template.setHashKeySerializer(stringSerializer);
@@ -56,6 +58,7 @@ public class RedisConfig {
         return template;
     }
 
+    /** Init serializers for ServiceBindings in Redis. */
     @Bean
     public RedisTemplate<String, AutoSleepServiceBinding> bindingRedisTemplate(RedisConnectionFactory
                                                                                        redisConnectionFactory) {

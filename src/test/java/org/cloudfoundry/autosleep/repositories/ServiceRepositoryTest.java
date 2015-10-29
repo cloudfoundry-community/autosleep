@@ -98,14 +98,30 @@ public class ServiceRepositoryTest {
 
         //test find with all inserted ids
         storedElement = dao.findAll(ids);
+        log.debug("initial list {}", initialList.size());
+        for (AutoSleepServiceInstance object : initialList) {
+            log.debug("initial object {} ", object.getServiceInstanceId());
+        }
         for (AutoSleepServiceInstance object : storedElement) {
+            log.debug("found object {} , checking if in initial list", object.getServiceInstanceId());
             assertTrue("Retrieved element should be the same as initial element", initialList.contains(object));
         }
 
     }
 
     @Test
-    public void testGetService() {
+    public void testGetServiceEquality() {
+        String serviceId = "GetTest";
+        AutoSleepServiceInstance originalService = new AutoSleepServiceInstance(createRequestTemplate
+                .withServiceInstanceId(serviceId));
+        dao.save(originalService);
+        AutoSleepServiceInstance serviceInstance = dao.findOne(serviceId);
+        assertThat("Two objects should be equal", serviceInstance, is(equalTo(originalService)));
+    }
+
+    @Test
+    public void testGetServiceByFields() {
+
         AutoSleepServiceInstance serviceInstance = dao.findOne(InsertedInstanceIds.testGetServiceSuccess.name());
         assertFalse("Service should have been found", serviceInstance == null);
         assertThat(serviceInstance.getServiceInstanceId(), is(
@@ -117,6 +133,7 @@ public class ServiceRepositoryTest {
         assertThat(serviceInstance.getSpaceGuid(), is(equalTo(SPACE_TEST)));
         assertThat(serviceInstance.getInterval(), is(equalTo(Config.defaultInactivityPeriod)));
         assertTrue("Succeed in getting a service that does not exist", dao.findOne("testGetServiceFail") == null);
+
     }
 
     @Test

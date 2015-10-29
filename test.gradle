@@ -15,7 +15,11 @@ test {
     testLogging {
         events "passed", "skipped", "failed",  "standardError"
         displayGranularity 2
+        /* uncomment to show test details
+        showStandardStreams = true
+        */
     }
+    // to retrieve profile using -Dspring.profiles.active={PROFILE}
     systemProperties = System.properties
 }
 

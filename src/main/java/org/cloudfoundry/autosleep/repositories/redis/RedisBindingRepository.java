@@ -11,7 +11,7 @@ import java.util.Set;
 
 
 public class RedisBindingRepository implements BindingRepository {
-    public static final String BINDING_KEY = "binding";
+    public static final String BINDING_KEY = "binding_store";
 
     private final HashOperations<String, String, AutoSleepServiceBinding> hashOps;
 
@@ -21,7 +21,7 @@ public class RedisBindingRepository implements BindingRepository {
 
     @Override
     public <S extends AutoSleepServiceBinding> S save(S binding) {
-        hashOps.put(BINDING_KEY, binding.getServiceInstanceId(), binding);
+        hashOps.put(BINDING_KEY, binding.getId(), binding);
         return binding;
     }
 
