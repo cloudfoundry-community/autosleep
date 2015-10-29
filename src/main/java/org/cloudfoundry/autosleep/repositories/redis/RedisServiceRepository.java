@@ -2,19 +2,16 @@ package org.cloudfoundry.autosleep.repositories.redis;
 
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@Service
-@Profile("redis")
+
 public class RedisServiceRepository implements ServiceRepository {
-    public static final String SERVICE_KEY = "services";
+    public static final String SERVICE_KEY = "service_store";
 
     private final HashOperations<String, String, AutoSleepServiceInstance> hashOps;
 

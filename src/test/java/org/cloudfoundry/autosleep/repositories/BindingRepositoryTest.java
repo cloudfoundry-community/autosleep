@@ -1,13 +1,12 @@
 package org.cloudfoundry.autosleep.repositories;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.repositories.ram.RamBindingRepository;
+import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceBinding;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -23,8 +22,7 @@ import static org.junit.Assert.*;
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
-@ActiveProfiles("in-memory")
-@ContextConfiguration(classes = {RamBindingRepository.class})
+@ContextConfiguration(classes = {RepositoryConfig.class})
 public class BindingRepositoryTest {
 
     private static final String APP_GUID = "UUID";
@@ -82,14 +80,18 @@ public class BindingRepositoryTest {
     public void testEquality() {
         String bindingId = "bidingIdEquality";
         String serviceId = "serviceIdEquality";
-        dao.save(new AutoSleepServiceBinding(bindingId, serviceId, null, null, APP_GUID));
+        AutoSleepServiceBinding original = new AutoSleepServiceBinding(bindingId, serviceId, null, null, APP_GUID);
+        dao.save(original);
         AutoSleepServiceBinding binding = dao.findOne(bindingId);
         assertFalse("Service binding should have been found", binding == null);
         assertThat(binding.getServiceInstanceId(), is(equalTo(serviceId)));
         assertThat(binding.getAppGuid(), is(equalTo(APP_GUID)));
         assertThat(binding.getId(), is(equalTo(bindingId)));
+        assertThat(binding, is(equalTo(original)));
         assertTrue("Succeed in getting a binding that does not exist", dao.findOne("testGetServiceFail") == null);
     }
+
+
 
     @Test
     public void testCount() {

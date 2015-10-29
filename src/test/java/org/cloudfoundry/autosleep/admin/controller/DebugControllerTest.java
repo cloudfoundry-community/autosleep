@@ -21,7 +21,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 
-@ActiveProfiles("in-memory")
 public class DebugControllerTest extends AbstractRestTest {
 
     private static final String serviceInstanceId = "serviceInstanceId";

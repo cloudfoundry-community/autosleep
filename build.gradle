@@ -1,13 +1,12 @@
 buildscript {
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.6.RELEASE")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
     }
     repositories {
         mavenLocal()
         jcenter()
     }
 }
-
 
 apply plugin: 'java'
 apply plugin: 'spring-boot'
@@ -24,7 +23,6 @@ tasks.withType(JavaCompile) {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 
-
 war {
     baseName = "$domainName.$projectName"
     version =  version
@@ -33,7 +31,8 @@ war {
 repositories {
     mavenLocal()
     jcenter()
-    //Forced to use it for org.cloudfoundry:spring-boot-cf-service-broker
+    //Forced to use it for org.cloudfoundry:spring-boot-cf-service-broker,
+    // spring-cloud-spring-service-connector, spring-cloud-cloudfoundry-connector/
     maven { url "http://repo.spring.io/libs-snapshot" }
 }
 
@@ -44,9 +43,14 @@ task wrapper(type: Wrapper) {
 }
 
 
+bootRun {
+    // to retrieve profile using -Dspring.profiles.active={PROFILE}
+    systemProperties = System.properties
+}
+
 dependencies {
     // Lombok
-    providedCompile  "org.projectlombok:lombok:$lombokVersion"
+    providedCompile "org.projectlombok:lombok:$lombokVersion"
     //Spring boot
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
     //Groovy templates
@@ -59,14 +63,14 @@ dependencies {
     compile "org.slf4j:slf4j-api:$slf4jVersion"
     compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     // Spring Data
-    compile "org.springframework.data:spring-data-jpa"
-    compile "org.springframework.data:spring-data-redis"
+    compile "org.springframework.data:spring-data-jpa:$springDataJpaVersion"
+    compile "org.springframework.data:spring-data-redis:$springDataRedisVersion"
 
     // Redis Persistence
-    compile "redis.clients:jedis"
+    compile "redis.clients:jedis:$redisJedisVersion"
     // Spring Cloud
-    compile "org.springframework.cloud:spring-cloud-spring-service-connector"
-    compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector"
+    compile "org.springframework.cloud:spring-cloud-spring-service-connector:$springCloudServiceConnectorVersion"
+    compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector:$springCloudCFConnectorVersion"
 
 }
 

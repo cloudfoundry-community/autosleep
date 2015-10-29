@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(classes = {CatalogConfiguration.class,
         AutoSleepServiceInstanceService.class,
         RamServiceRepository.class})
-@ActiveProfiles("in-memory")
+@ActiveProfiles("default")
 public class AutosleepServiceInstanceServiceTest {
 
     private static final String ORG_TEST = "orgTest";

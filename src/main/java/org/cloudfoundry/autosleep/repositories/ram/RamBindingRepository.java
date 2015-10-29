@@ -11,8 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service
-@Profile("in-memory")
+
 public class RamBindingRepository implements BindingRepository {
 
     private Map<String, AutoSleepServiceBinding> bindings = new HashMap<>();
