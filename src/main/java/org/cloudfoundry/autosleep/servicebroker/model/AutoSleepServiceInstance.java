@@ -30,8 +30,8 @@ import java.util.Map;
 @Setter
 @Slf4j
 public class AutoSleepServiceInstance extends ServiceInstance {
+    public static final String INACTIVITY_PARAMETER = "inactivity";
 
-    @JsonProperty("interval")
     @JsonSerialize(using = IntervalSerializer.class)
     @JsonDeserialize(using = IntervalDeserializer.class)
     private Duration interval;
@@ -53,9 +53,6 @@ public class AutoSleepServiceInstance extends ServiceInstance {
             ServiceInstanceUpdateNotSupportedException {
         super(request);
         setDurationFromParams(request.getParameters());
-        //TODO: support it when pull request accepted: https://github
-        // .com/cloudfoundry-community/spring-boot-cf-service-broker/pull/35
-        throw new ServiceInstanceUpdateNotSupportedException("update not supported");
     }
 
     public AutoSleepServiceInstance(DeleteServiceInstanceRequest request) {
@@ -64,10 +61,10 @@ public class AutoSleepServiceInstance extends ServiceInstance {
 
     private void setDurationFromParams(Map<String, Object> params) throws HttpMessageNotReadableException {
 
-        if (params == null || params.get("inactivity") == null) {
+        if (params == null || params.get(INACTIVITY_PARAMETER) == null) {
             interval = Config.defaultInactivityPeriod;
         } else {
-            String inactivityPattern = (String) params.get("inactivity");
+            String inactivityPattern = (String) params.get(INACTIVITY_PARAMETER);
             log.debug("pattern " + inactivityPattern);
             try {
                 interval = Duration.parse(inactivityPattern);
