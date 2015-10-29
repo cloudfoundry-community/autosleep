@@ -9,7 +9,7 @@ ext {
             'line'       : 50,
             'complexity' : 30,
             'method'     : 30,
-            'class'      : 75
+            'class'      : 74
     ]
 }
 

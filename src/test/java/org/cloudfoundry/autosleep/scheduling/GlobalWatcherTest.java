@@ -33,10 +33,13 @@ public class GlobalWatcherTest {
 
     @Mock
     private Clock clock;
+
     @Mock
     private CloudFoundryApiService mockRemote;
+
     @Mock
     private ServiceRepository mockServiceRepo;
+
     @Mock
     private BindingRepository mockBindingRepo;
 

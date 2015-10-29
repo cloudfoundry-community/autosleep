@@ -1,10 +1,10 @@
 package org.cloudfoundry.autosleep.remote;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.client.lib.CloudCredentials;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
 import org.cloudfoundry.client.lib.domain.ApplicationLog;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
+import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.cloudfoundry.client.lib.domain.CloudEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,27 +19,8 @@ import java.util.UUID;
 @Service
 public class CloudFoundryApi implements CloudFoundryApiService {
 
-    private CloudFoundryClient client;
-
     @Autowired
-    public CloudFoundryApi(ClientConfiguration clientConfiguration) {
-        try {
-            log.debug("CloudFoundryApi - {}", clientConfiguration.getTargetEndpoint());
-            CloudCredentials cloudCredentials = new CloudCredentials(
-                    clientConfiguration.getUsername(),
-                    clientConfiguration.getPassword(),
-                    clientConfiguration.getClientId(),
-                    clientConfiguration.getClientSecret());
-            CloudFoundryClient client = new CloudFoundryClient(cloudCredentials,
-                    clientConfiguration.getTargetEndpoint(),
-                    clientConfiguration.isEnableSelfSignedCertificates());
-            client.login();
-            this.client = client;
-        } catch (RuntimeException r) {
-            log.error("CloudFoundryApi - failure while login", r);
-        }
-    }
-
+    private CloudFoundryClient client;
 
     @Override
     public ApplicationInfo getApplicationInfo(UUID appUid) {
@@ -57,22 +38,25 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 }
                 if (events.size() > 0) {
                     lastEventTime = events.get(events.size() - 1).getTimestamp();
+                } else {
+                    log.debug("events.size() = 0");
                 }
 
                 //conversion to LocalDateTime
-                LocalDateTime lastLogLocalTime = lastLogTime == null ? null : LocalDateTime.ofInstant(lastLogTime
-                                .toInstant(),
-                        ZoneId.systemDefault());
-                LocalDateTime lastEventLocalTime = lastEventTime == null ? null : LocalDateTime.ofInstant(lastEventTime
-                        .toInstant(), ZoneId.systemDefault());
-                return new ApplicationInfo(lastEventLocalTime, lastLogLocalTime, app.getState());
+
+                log.debug("Building ApplicationInfo(lastEventTime={}, lastLogTime={}, state)",
+                        lastEventTime, lastLogTime);
+                return new ApplicationInfo(lastEventTime == null ? null : lastEventTime.toInstant(),
+                        lastLogTime == null ? null : lastLogTime.toInstant(),
+                        app.getState());
             } else {
                 log.error("No app found for UID {}", appUid);
+                return null;
             }
-        } catch (Throwable t) {
+        } catch (RuntimeException t) {
             log.error("error", t);
+            return null;
         }
-        return null;
     }
 
 
@@ -81,13 +65,17 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         try {
             CloudApplication app = client.getApplication(appUid);
             if (app != null) {
-                log.info("Stopping app {}", app.getName());
-                client.stopApplication(app.getName());
+                if (app.getState() != AppState.STOPPED) {
+                    log.info("Stopping app {} - {}", appUid, app.getName());
+                    client.stopApplication(app.getName());
+                } else {
+                    log.debug("App {} already stopped", app.getName());
+                }
             } else {
                 log.error("No app found for UID {}", appUid);
             }
-        } catch (Throwable t) {
-            log.error("error", t);
+        } catch (RuntimeException r) {
+            log.error("error", r);
         }
     }
 
@@ -96,13 +84,18 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         try {
             CloudApplication app = client.getApplication(appUid);
             if (app != null) {
-                log.info("Starting app {}", app.getName());
-                client.startApplication(app.getName());
+                if (app.getState() != AppState.STARTED) {
+                    log.info("Starting app {} - {}", appUid, app.getName());
+                    client.startApplication(app.getName());
+                } else {
+                    log.debug("App {} already started", app.getName());
+                }
+
             } else {
                 log.error("No app found for UID {}", appUid);
             }
-        } catch (Throwable t) {
-            log.error("error", t);
+        } catch (RuntimeException r) {
+            log.error("error", r);
         }
     }
 
