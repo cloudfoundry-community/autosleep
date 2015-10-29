@@ -1,8 +1,9 @@
 package org.cloudfoundry.autosleep;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.SpringApplication;
+import org.cloudfoundry.autosleep.config.ContextInitializer;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -15,8 +16,12 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 public class Application {
     
     public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
+       // SpringApplication.run(Application.class, args);
+        new SpringApplicationBuilder(Application.class)
+                .initializers(new ContextInitializer())
+                .run(args);
         log.debug("Application started");
     }
+
 
 }
