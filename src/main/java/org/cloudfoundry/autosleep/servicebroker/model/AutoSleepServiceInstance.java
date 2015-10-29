@@ -18,6 +18,7 @@ import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceReque
 import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import util.EqualUtil;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -112,22 +113,14 @@ public class AutoSleepServiceInstance extends ServiceInstance {
         }
         AutoSleepServiceInstance other = (AutoSleepServiceInstance) object;
 
-        return !(
-                this.getServiceInstanceId() == null ? other.getServiceInstanceId() != null : !this
-                        .getServiceInstanceId().equals(other.getServiceInstanceId())) && !(
-                this.getInterval() == null ? other
-                        .getInterval() != null : !this.getInterval().equals(other.getInterval())) && !(
-                this.getDashboardUrl()
-                        == null ? other.getDashboardUrl() != null : !this.getDashboardUrl().equals(other
-                        .getDashboardUrl()))
-                && !(
-                this.getOrganizationGuid() == null ? other.getOrganizationGuid() != null : !this
-                        .getOrganizationGuid().equals(other.getOrganizationGuid())) && !(
-                this.getPlanId() == null ? other
-                        .getPlanId() != null : !this.getPlanId().equals(other.getPlanId())) && !(
-                this.getServiceDefinitionId()
-                        == null ? other.getServiceDefinitionId() != null : !this.getServiceDefinitionId().equals(other
-                        .getServiceDefinitionId()));
+        return EqualUtil.areEquals(this.getServiceInstanceId(), other.getServiceInstanceId())
+                && EqualUtil.areEquals(this.getServiceDefinitionId(), other.getServiceDefinitionId())
+                && EqualUtil.areEquals(this.getInterval(), other.getInterval())
+                && EqualUtil.areEquals(this.getDashboardUrl(), other.getDashboardUrl())
+                && EqualUtil.areEquals(this.getOrganizationGuid(), other.getOrganizationGuid())
+                && EqualUtil.areEquals(this.getPlanId(), other.getPlanId())
+                && EqualUtil.areEquals(this.getSpaceGuid(), other.getSpaceGuid());
+
     }
 
     @Override
@@ -143,4 +136,5 @@ public class AutoSleepServiceInstance extends ServiceInstance {
         result = result * prime + getServiceDefinitionId().hashCode();
         return result;
     }
+
 }

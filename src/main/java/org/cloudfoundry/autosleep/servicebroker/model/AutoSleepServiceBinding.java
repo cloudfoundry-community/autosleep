@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
+import util.EqualUtil;
 
 import java.util.Map;
 
@@ -42,15 +43,12 @@ public class AutoSleepServiceBinding extends ServiceInstanceBinding {
             return false;
         }
         AutoSleepServiceBinding other = (AutoSleepServiceBinding) object;
-        return !(this.getId() == null ? other.getId() != null : !this.getId().equals(other.getId())) && !(this
-                .getServiceInstanceId() == null ? other.getServiceInstanceId() != null : !this.getServiceInstanceId()
-                .equals(other.getServiceInstanceId())) && !(this.getSyslogDrainUrl() == null ? other
-                .getSyslogDrainUrl() != null : !this.getSyslogDrainUrl().equals(other.getSyslogDrainUrl())) && !(
-                this
-                .getAppGuid() == null ? other.getAppGuid() != null : !this.getAppGuid().equals(other.getAppGuid()))
-                && !(this.getCredentials() == null ? other.getCredentials() != null : !this.getCredentials().equals(
-                other.getCredentials()));
 
+        return EqualUtil.areEquals(this.getServiceInstanceId(), other.getServiceInstanceId())
+                && EqualUtil.areEquals(this.getId(), other.getId())
+                && EqualUtil.areEquals(this.getAppGuid(), other.getAppGuid())
+                && EqualUtil.areEquals(this.getCredentials(), other.getCredentials())
+                && EqualUtil.areEquals(this.getSyslogDrainUrl(), other.getSyslogDrainUrl());
     }
 
     @Override
