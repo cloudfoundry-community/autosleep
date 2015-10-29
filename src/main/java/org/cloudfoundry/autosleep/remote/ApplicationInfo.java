@@ -2,6 +2,7 @@ package org.cloudfoundry.autosleep.remote;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.client.lib.domain.CloudApplication;
 
 import java.time.LocalDateTime;
 
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 public class ApplicationInfo {
     private final LocalDateTime lastEvent;
     private final LocalDateTime lastLog;
+    private final CloudApplication.AppState state;
 
     /** Return which ever date is the most recent (between last deploy event and last log).
      *

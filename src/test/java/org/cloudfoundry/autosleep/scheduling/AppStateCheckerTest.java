@@ -39,6 +39,7 @@ public class AppStateCheckerTest {
     public void testStart() throws Exception {
         spyChecker.start();
         verify(clock,times(1)).scheduleTask(TASK_ID,Duration.ofSeconds(0),spyChecker);
+
     }
 
     @Test
@@ -47,6 +48,7 @@ public class AppStateCheckerTest {
         spyChecker.run();
         verify(mockRemote, never()).stopApplication(APP_UID);
         verify(clock,times(1)).scheduleTask(any(),anyObject(),any());
+        verify(spyChecker,never()).rescheduleWithDefaultPeriod();
     }
 
     @Test
@@ -55,7 +57,7 @@ public class AppStateCheckerTest {
         when(applicationInfo.getLastEvent()).thenReturn(LocalDateTime.now().minus(INTERVAL.multipliedBy(2)));
         spyChecker.run();
         verify(mockRemote, times(1)).stopApplication(APP_UID);
-        verify(clock,never()).scheduleTask(any(), anyObject(), any());
+        verify(spyChecker,times(1)).rescheduleWithDefaultPeriod();
     }
 
     @Test
