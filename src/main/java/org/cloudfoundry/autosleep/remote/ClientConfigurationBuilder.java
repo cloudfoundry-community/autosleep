@@ -1,18 +1,17 @@
 package org.cloudfoundry.autosleep.remote;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.client.model.ClientConfiguration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 
 @Configuration
 @PropertySource(value = "classpath:cloudfoundry_client.properties", ignoreResourceNotFound = true)
 @EnableAutoConfiguration
-@Getter
 @Slf4j
 public class ClientConfigurationBuilder {
     @Value("${target.endpoint:}")
@@ -33,8 +32,24 @@ public class ClientConfigurationBuilder {
     @Value("${client.secret:}")
     private String clientSecret;
 
-    @Bean
     public ClientConfiguration buildConfiguration() {
-        return new ClientConfiguration(targetEndpoint, skipSslValidation, clientId, clientSecret, username, password);
+        if (isEmptyParameter(targetEndpoint) || isEmptyParameter(username) || isEmptyParameter(password)
+                || isEmptyParameter(clientId)) {
+            log.debug("buildConfiguration - one of the string is not provided");
+            return null;
+        } else {
+            try {
+                return new ClientConfiguration(new URL(targetEndpoint), skipSslValidation, clientId, clientSecret,
+                        username, password);
+            } catch (MalformedURLException m) {
+                log.debug("buildConfiguration - target endpoint does not have a good syntax");
+                return null;
+            }
+        }
+
+    }
+
+    private boolean isEmptyParameter(String parameter) {
+        return parameter.trim().equals("");
     }
 }

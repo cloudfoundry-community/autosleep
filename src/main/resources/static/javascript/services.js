@@ -3,7 +3,8 @@
 function ServicesHelper  (pathServiceInstance, serviceDefinitionId, planId) {
     this.pathDebugListServiceInstances = "/admin/debug/services/servicesinstances/";
     this.pathDebugListServiceBindings = "/admin/debug/services/servicebindings/";
-    this.pathDebugPageServiceBindings = "/admin/debug/services_bindings//";
+    this.pathDebugPageServiceBindingsPfx = "/admin/debug/";
+    this.pathDebugPageServiceBindingsSfx = "/bindings/";
     this.pathServiceInstance = pathServiceInstance;
     this.serviceDefinitionId = serviceDefinitionId;
     this.planId = planId;
@@ -26,14 +27,13 @@ ServicesHelper.prototype.addServiceInstance = function(){
         contentType  : 'application/json; charset=UTF-8',
         data : JSON.stringify(data),
         success : function (data) {
-            console.log(JSON.stringify(data));
-            console.log(typeof data);
+            displaySuccess("Service instance created");
             that.listServiceInstances();
         },
-        error : function(error){
-            console.error("error:"+error);
+        error : function(xhr){
+            displayDanger("Error adding service instance: "+xhr.responseText);
         }
-    })
+    });
 };
 
 ServicesHelper.prototype.listServiceInstances = function(){
@@ -50,7 +50,7 @@ ServicesHelper.prototype.listServiceInstances = function(){
                 container.append($("<div>").addClass("col-xs-1"));
             }
             $.each(serviceInstances, function(idx, serviceInstance){
-                var link = $("<a>", {href : that.pathDebugPageServiceBindings+serviceInstance.instanceId}).html(serviceInstance.instanceId);
+                var link = $("<a>", {href : that.pathDebugPageServiceBindingsPfx+serviceInstance.instanceId+that.pathDebugPageServiceBindingsSfx}).html(serviceInstance.instanceId);
                 container.append($("<div>").addClass("col-xs-4").append(link));
                 container.append($("<div>").addClass("col-xs-2").html(serviceInstance.definitionId));
                 container.append($("<div>").addClass("col-xs-3").html(serviceInstance.planId));
@@ -63,36 +63,10 @@ ServicesHelper.prototype.listServiceInstances = function(){
                 });
             });
         },
-        error : function(error){
-            console.error("error:"+error);
+        error : function(xhr){
+            displayDanger("Error listing service instances: "+xhr.responseText);
         }
-    })
-};
-
-ServicesHelper.prototype.addServiceInstance = function(){
-    var that = this;
-    var data = {
-        service_id : this.serviceDefinitionId,
-        plan_id : this.planId,
-        organization_guid : $("#createServiceInstanceOrgGuid").val(),
-        space_guid : $("#createServiceInstanceSpaceGuid").val(),
-        parameters : {inactivity : $("#createServiceInstancInactivity").val()}
-
-    };
-    $.ajax({
-        url : this.pathServiceInstance+"/"+$("#createServiceInstanceId").val(),
-        type : 'PUT',
-        contentType  : 'application/json; charset=UTF-8',
-        data : JSON.stringify(data),
-        success : function (data) {
-            console.log(JSON.stringify(data));
-            console.log(typeof data);
-            that.listServiceInstances();
-        },
-        error : function(error){
-            console.error("error:"+error);
-        }
-    })
+    });
 };
 
 ServicesHelper.prototype.deleteServiceInstance = function(serviceInstanceId){
@@ -101,11 +75,12 @@ ServicesHelper.prototype.deleteServiceInstance = function(serviceInstanceId){
         url : this.pathServiceInstance+"/"+serviceInstanceId
                 + "?service_id="+this.serviceDefinitionId+"&plan_id="+this.planId,
         type : 'DELETE',
-        success : function (data) {
+        success : function () {
+            displaySuccess("Service instance deleted");
             that.listServiceInstances();
         },
-        error : function(error){
-            console.error("error:"+error);
+        error : function(xhr){
+            displayDanger("Error deleting service instance: "+xhr.responseText);
         }
     });
 };
@@ -125,15 +100,14 @@ ServicesHelper.prototype.addServiceBinding = function(serviceInstanceId){
         type : 'PUT',
         contentType  : 'application/json; charset=UTF-8',
         data : JSON.stringify(data),
-        success : function (data) {
-            console.log(JSON.stringify(data));
-            console.log(typeof data);
+        success : function () {
+            displaySuccess("Service binding created");
             that.listServiceBindings(serviceInstanceId);
         },
-        error : function(error){
-            console.error("error:"+error);
+        error : function(xhr){
+            displayDanger("Error adding service binding: "+xhr.responseText);
         }
-    })
+    });
 };
 
 ServicesHelper.prototype.listServiceBindings = function(serviceInstanceId){
@@ -160,10 +134,10 @@ ServicesHelper.prototype.listServiceBindings = function(serviceInstanceId){
                 });
             });
         },
-        error : function(error){
-            console.error("error:"+error);
+        error : function(xhr){
+            displayDanger("Error listing service bindings: "+xhr.responseText);
         }
-    })
+    });
 };
 
 ServicesHelper.prototype.deleteServiceBinding = function(instanceId, bindingId){
@@ -172,11 +146,12 @@ ServicesHelper.prototype.deleteServiceBinding = function(instanceId, bindingId){
         url : this.pathServiceInstance+"/"+instanceId +"/service_bindings/" + bindingId
         + "?service_id="+this.serviceDefinitionId+"&plan_id="+this.planId,
         type : 'DELETE',
-        success : function (data) {
+        success : function () {
+            displaySuccess("Service binding deleted");
             that.listServiceBindings(instanceId);
         },
-        error : function(error){
-            console.error("error:"+error);
+        error : function(xhr){
+            displayDanger("Error deleting service binding: "+xhr.responseText);
         }
     });
 };

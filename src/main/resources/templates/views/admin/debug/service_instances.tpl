@@ -7,6 +7,7 @@ layout 'layouts/main.tpl',
             script(type: "text/javascript") {
                 yieldUnescaped 'var helper = null;'
                 yieldUnescaped 'window.onload = function(){'
+                yieldUnescaped 'initNavbar();'
                 yieldUnescaped 'helper = new ServicesHelper("'
                 yield "$pathServiceInstances"
                 yieldUnescaped '", "'
