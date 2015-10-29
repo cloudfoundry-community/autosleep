@@ -18,12 +18,11 @@ public class InMemoryConfig {
 
     @PostConstruct
     public void logProfile() {
-        log.warn("<<<<<<<<<<<  Warning: loading IN MEMORY persistance profile >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        log.warn("<<<<<<<<<<<  Warning: loading IN MEMORY persistance profile >>>>>>>>>>>>>>>>>>");
     }
 
     @Bean
     public ServiceRepository ramServiceRepository() {
-        log.debug("------------ loading IN MEMORY profile--------");
         return new RamServiceRepository();
     }
 

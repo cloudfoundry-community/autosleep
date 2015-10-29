@@ -13,36 +13,46 @@ import org.springframework.util.StringUtils;
 
 import java.util.*;
 
+/**
+ * Will handle automatique profile assignement.
+ * If no profile is given, in-memory persistence will be used.
+ * If a profile is given, will check if should point to "{PROFILENAME}-local" or "{PROFILENAME}-cloud" profile
+ */
 @Slf4j
-public class SpringApplicationContextInitializer implements
-        ApplicationContextInitializer<GenericApplicationContext> {
+public class ContextInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
-
-    private static final Map<Class<? extends ServiceInfo>, String> serviceTypeToProfileName =
+    /**
+     * Will point to in-memory storage.
+     */
+    private static final String DEFAULT_PROFILE = "default";
+    private static final List<String> validLocalProfiles = Collections.singletonList("redis");
+    private static final Map<Class<? extends ServiceInfo>, String> autorizedPersistenceProfiles =
             new HashMap<>();
 
-
-    public static final String IN_MEMORY_PROFILE = "in-memory";
-
-    private static final List<String> validLocalProfiles = Collections.singletonList("redis");
-
     static {
-        serviceTypeToProfileName.put(RedisServiceInfo.class, "redis");
+        autorizedPersistenceProfiles.put(RedisServiceInfo.class, "redis");
     }
+
 
     @Override
     public void initialize(GenericApplicationContext applicationContext) {
-        log.debug("----------------------- initialize --------------------");
-        Cloud cloud = getCloud();
-
+        log.debug("----------------------- app context initialization , set persistence profile  --------------------");
         ConfigurableEnvironment appEnvironment = applicationContext.getEnvironment();
 
-        String[] persistenceProfiles = getCloudProfile(cloud);
-        if (persistenceProfiles == null) {
+        String[] persistenceProfiles;
+
+        log.debug("Checking if cloud context");
+        if (getCloud() != null) {
+            log.debug("\t -> App in a cloud context, checking available services");
+            persistenceProfiles = getCloudProfile(getCloud());
+        } else {
+            log.debug("\t -> App in a local context, checking if profile given in environment variable");
             persistenceProfiles = getActiveProfile(appEnvironment);
         }
+
         if (persistenceProfiles == null) {
-            persistenceProfiles = new String[]{IN_MEMORY_PROFILE};
+            log.debug("\t -> No profile given or no available service -> setting default profile");
+            persistenceProfiles = new String[]{DEFAULT_PROFILE};
         }
 
         for (String persistenceProfile : persistenceProfiles) {
@@ -50,33 +60,38 @@ public class SpringApplicationContextInitializer implements
         }
     }
 
+    /**
+     * Check if one of the authorized profile is available in the cloud configuration.
+     *
+     * @param cloud Contextual cloud
+     * @return the two profils to activate if available ( "profile" and "profile-cloud")
+     */
     public String[] getCloudProfile(Cloud cloud) {
         if (cloud == null) {
             return null;
         }
 
-        List<String> profiles = new ArrayList<String>();
+        List<String> availableProfiles = new ArrayList<String>();
+        List<ServiceInfo> availableServices = cloud.getServiceInfos();
 
-        List<ServiceInfo> serviceInfos = cloud.getServiceInfos();
+        log.info("Found serviceInfos: " + StringUtils.collectionToCommaDelimitedString(availableServices));
 
-        log.info("Found serviceInfos: " + StringUtils.collectionToCommaDelimitedString(serviceInfos));
-
-        for (ServiceInfo serviceInfo : serviceInfos) {
-            if (serviceTypeToProfileName.containsKey(serviceInfo.getClass())) {
-                profiles.add(serviceTypeToProfileName.get(serviceInfo.getClass()));
+        for (ServiceInfo serviceInfo : availableServices) {
+            if (autorizedPersistenceProfiles.containsKey(serviceInfo.getClass())) {
+                availableProfiles.add(autorizedPersistenceProfiles.get(serviceInfo.getClass()));
             }
         }
 
-        if (profiles.size() > 1) {
+        if (availableProfiles.size() > 1) {
             throw new IllegalStateException(
                     "Only one service of the following types may be bound to this application: "
-                            + serviceTypeToProfileName.values().toString() + ". "
+                            + autorizedPersistenceProfiles.values().toString() + ". "
                             + "These services are bound to the application: ["
-                            + StringUtils.collectionToCommaDelimitedString(profiles) + "]");
+                            + StringUtils.collectionToCommaDelimitedString(availableProfiles) + "]");
         }
 
-        if (profiles.size() > 0) {
-            return createProfileNames(profiles.get(0), "cloud");
+        if (availableProfiles.size() > 0) {
+            return createProfileNames(availableProfiles.get(0), "cloud");
         }
 
         return null;
@@ -91,6 +106,12 @@ public class SpringApplicationContextInitializer implements
         }
     }
 
+    /**
+     * Check parameter given via env var, and that it is listed as authorized local profile
+     *
+     * @param appEnvironment app context env
+     * @return the two profils to activate if available ( "profile" and "profile-local")
+     */
     private String[] getActiveProfile(ConfigurableEnvironment appEnvironment) {
         List<String> serviceProfiles = new ArrayList<String>();
 
