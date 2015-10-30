@@ -15,6 +15,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.UUID;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -35,12 +37,16 @@ public class DebugControllerTest extends AbstractRestTest {
     @Before
     public void init() {
         serviceRepository.deleteAll();
-        CreateServiceInstanceRequest createRequestTemplate = new CreateServiceInstanceRequest("definition", "plan",
+        bindingRepository.deleteAll();
+
+        CreateServiceInstanceRequest createRequestTemplate = new CreateServiceInstanceRequest("definition",
+                "plan",
                 "org",
                 "space");
         serviceRepository.save(
                 new AutoSleepServiceInstance(createRequestTemplate.withServiceInstanceId(serviceInstanceId)));
-        bindingRepository.save(new AutoSleepServiceBinding(serviceBindingId, serviceInstanceId, null, null, "app"));
+        bindingRepository.save(new AutoSleepServiceBinding(serviceBindingId, serviceInstanceId, null, null,
+                UUID.randomUUID().toString()));
     }
 
     @Test

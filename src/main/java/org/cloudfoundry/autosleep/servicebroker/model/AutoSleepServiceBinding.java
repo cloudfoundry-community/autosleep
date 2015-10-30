@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
-import util.EqualUtil;
+import org.cloudfoundry.autosleep.util.EqualUtil;
 
 import java.util.Map;
 import java.util.UUID;
@@ -33,9 +33,12 @@ public class AutoSleepServiceBinding extends ServiceInstanceBinding {
         super(null, null, null, null, null);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public AutoSleepServiceBinding(String id, String serviceInstanceId, Map<String, Object> credentials, String
             syslogDrainUrl, String appGuid) {
         super(id, serviceInstanceId, credentials, syslogDrainUrl, appGuid);
+        //will throw an exception if wrong format TODO check if needed with new java-client-lib
+        UUID.fromString(appGuid);
     }
 
     @Override

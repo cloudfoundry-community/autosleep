@@ -1,9 +1,9 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.repositories.ram.RamBindingRepository;
 import org.cloudfoundry.autosleep.repositories.ram.RamServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.autosleep.servicebroker.configuration.CatalogConfiguration;
@@ -16,7 +16,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -25,8 +24,7 @@ import static org.mockito.Mockito.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @Slf4j
 @ContextConfiguration(classes = {CatalogConfiguration.class,
-        RamBindingRepository.class})
-@ActiveProfiles("default")
+        RepositoryConfig.class})
 public class AutoSleepServiceInstanceBindingServiceTest {
 
     private static final String APPUID = "DB1F7D54-7A6A-4F7C-A06E-43EF9B9E3144";
@@ -42,7 +40,7 @@ public class AutoSleepServiceInstanceBindingServiceTest {
 
 
     private CreateServiceInstanceBindingRequest createRequestTemplate;
-    private  GlobalWatcher mockWatcher;
+    private GlobalWatcher mockWatcher;
     private String planId;
     private String serviceDefinitionId;
 
@@ -86,4 +84,5 @@ public class AutoSleepServiceInstanceBindingServiceTest {
         bindingService.deleteServiceInstanceBinding(deleteRequest);
         verify(mockWatcher,times(1)).cancelWatch(any());
     }
+
 }
