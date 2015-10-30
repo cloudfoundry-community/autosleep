@@ -1,6 +1,8 @@
 package org.cloudfoundry.autosleep.servicebroker.model;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +10,7 @@ import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
 import util.EqualUtil;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -16,11 +19,18 @@ import java.util.Map;
 public class AutoSleepServiceBinding extends ServiceInstanceBinding {
 
     /**
+     * identify the autosleep app which handle the associated watcher.
+     */
+    @JsonSerialize
+    @JsonProperty
+    private UUID associatedWatcher;
+
+    /**
      * Should never be called. Only for JSON auto serialization.
      */
     @SuppressWarnings("unused")
     private AutoSleepServiceBinding() {
-        super(null,null,null,null,null);
+        super(null, null, null, null, null);
     }
 
     public AutoSleepServiceBinding(String id, String serviceInstanceId, Map<String, Object> credentials, String
@@ -31,7 +41,8 @@ public class AutoSleepServiceBinding extends ServiceInstanceBinding {
     @Override
     public String toString() {
         return "AutoSleepSB:[id:" + getId() + " serviceId:+" + getServiceInstanceId()
-                + " syslogUrl:" + getSyslogDrainUrl() + " app:" + getAppGuid() + "]";
+                + " syslogUrl:" + getSyslogDrainUrl() + " app:" + getAppGuid() + " watcher: "
+                + getAssociatedWatcher().toString() + "]";
     }
 
     @Override

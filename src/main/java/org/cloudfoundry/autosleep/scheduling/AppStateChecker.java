@@ -1,5 +1,6 @@
 package org.cloudfoundry.autosleep.scheduling;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.ApplicationInfo;
@@ -10,7 +11,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Slf4j
 public class AppStateChecker implements Runnable {
 

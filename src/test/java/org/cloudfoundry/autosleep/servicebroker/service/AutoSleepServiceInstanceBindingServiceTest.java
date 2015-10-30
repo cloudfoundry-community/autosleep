@@ -1,13 +1,11 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.remote.CloudFoundryApi;
-import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.repositories.ram.RamBindingRepository;
 import org.cloudfoundry.autosleep.repositories.ram.RamServiceRepository;
-import org.cloudfoundry.autosleep.scheduling.Clock;
+import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.autosleep.servicebroker.configuration.CatalogConfiguration;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
@@ -42,8 +40,9 @@ public class AutoSleepServiceInstanceBindingServiceTest {
     @Autowired
     private BindingRepository bindingRepo;
 
-    private CreateServiceInstanceBindingRequest createRequestTemplate;
 
+    private CreateServiceInstanceBindingRequest createRequestTemplate;
+    private  GlobalWatcher mockWatcher;
     private String planId;
     private String serviceDefinitionId;
 
@@ -53,13 +52,13 @@ public class AutoSleepServiceInstanceBindingServiceTest {
     @Before
     public void init() {
 
-        Clock clock = mock(Clock.class);
-        CloudFoundryApiService remote = mock(CloudFoundryApi.class);
         //mocking serviceRepo, we will just test bindingRepo in this class.
         ServiceRepository serviceRepo = mock(RamServiceRepository.class);
         when(serviceRepo.findOne(any(String.class))).thenReturn(mock(AutoSleepServiceInstance.class));
 
-        bindingService = new AutoSleepServiceInstanceBindingService(clock, remote, serviceRepo, bindingRepo);
+        mockWatcher = mock(GlobalWatcher.class);
+
+        bindingService = new AutoSleepServiceInstanceBindingService(bindingRepo,mockWatcher);
 
         ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
         planId = serviceDefinition.getPlans().get(0).getId();
@@ -73,6 +72,7 @@ public class AutoSleepServiceInstanceBindingServiceTest {
     public void testCreateServiceInstanceBinding() throws Exception {
         bindingService.createServiceInstanceBinding(createRequestTemplate.withServiceInstanceId("Sid").withBindingId(
                 "Bid"));
+        verify(mockWatcher,times(1)).watchApp(any());
     }
 
     @Test
@@ -84,5 +84,6 @@ public class AutoSleepServiceInstanceBindingServiceTest {
         DeleteServiceInstanceBindingRequest deleteRequest = new DeleteServiceInstanceBindingRequest(bindingId, null,
                 serviceDefinitionId, planId);
         bindingService.deleteServiceInstanceBinding(deleteRequest);
+        verify(mockWatcher,times(1)).cancelWatch(any());
     }
 }

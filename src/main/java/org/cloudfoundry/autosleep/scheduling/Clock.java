@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Config;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +20,7 @@ public class Clock {
 
     //TODO redis that
     private final Map<String/*taskId*/, ScheduledFuture<?>> tasks = new HashMap<>();
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Config.nbThreadForTask);
 
     /**
      * Timer start.
@@ -57,5 +58,6 @@ public class Clock {
     public void stopTimer(String id) {
         log.debug("stopTimer - service {}", id);
         tasks.get(id).cancel(true);
+
     }
 }

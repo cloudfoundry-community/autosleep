@@ -14,7 +14,7 @@ import org.springframework.util.StringUtils;
 import java.util.*;
 
 /**
- * Will handle automatique profile assignement.
+ * Will handle automatic profile assignment.
  * If no profile is given, in-memory persistence will be used.
  * If a profile is given, will check if should point to "{PROFILENAME}-local" or "{PROFILENAME}-cloud" profile
  */
@@ -107,7 +107,7 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
     }
 
     /**
-     * Check parameter given via env var, and that it is listed as authorized local profile
+     * Check parameter given via env var, and that it is listed as authorized local profile.
      *
      * @param appEnvironment app context env
      * @return the two profils to activate if available ( "profile" and "profile-local")

@@ -1,11 +1,8 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.scheduling.AppStateChecker;
-import org.cloudfoundry.autosleep.scheduling.Clock;
+import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceBinding;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
@@ -16,27 +13,19 @@ import org.cloudfoundry.community.servicebroker.service.ServiceInstanceBindingSe
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
-
 
 @Service
 @Slf4j
 public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBindingService {
 
-    private Clock clock;
-    private CloudFoundryApiService remote;
-    private ServiceRepository serviceRepository;
     private BindingRepository bindingRepository;
 
+    private GlobalWatcher watcher;
 
-    /** Constructor with autowired args.*/
     @Autowired
-    public AutoSleepServiceInstanceBindingService(Clock clock, CloudFoundryApiService remote, ServiceRepository
-            serviceRepository, BindingRepository bindingRepository) {
-        this.clock = clock;
-        this.remote = remote;
-        this.serviceRepository = serviceRepository;
+    public AutoSleepServiceInstanceBindingService(BindingRepository bindingRepository, GlobalWatcher watcher) {
         this.bindingRepository = bindingRepository;
+        this.watcher = watcher;
     }
 
     @Override
@@ -51,16 +40,8 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
                 null/*TODO credentials?*/,
                 null,
                 request.getAppGuid());
-
         bindingRepository.save(binding);
-
-        AppStateChecker checker = new AppStateChecker(UUID.fromString(request.getAppGuid()),
-                request.getBindingId(),
-                serviceRepository.findOne(serviceId).getInterval(),
-                remote,
-                clock);
-        checker.start();
-
+        watcher.watchApp(binding);
         return binding;
     }
 
@@ -70,8 +51,8 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
         String bindingId = request.getBindingId();
         log.debug("deleteServiceInstanceBinding - {}", bindingId);
         AutoSleepServiceBinding binding = bindingRepository.findOne(bindingId);
+        watcher.cancelWatch(binding);
         bindingRepository.delete(bindingId);
-        clock.stopTimer(bindingId);
         return binding;
     }
 }
