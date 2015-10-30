@@ -8,7 +8,6 @@ import java.net.URL;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 public class ClientConfiguration {
     private URL targetEndpoint;
 

@@ -27,6 +27,9 @@ war {
     baseName = "$domainName.$projectName"
     version =  version
 }
+war.rootSpec.exclude "cloudfoundry_client.properties"
+
+
 
 repositories {
     mavenLocal()

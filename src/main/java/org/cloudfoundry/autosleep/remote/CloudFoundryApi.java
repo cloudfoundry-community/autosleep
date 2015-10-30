@@ -1,6 +1,5 @@
 package org.cloudfoundry.autosleep.remote;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.client.lib.CloudCredentials;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
@@ -22,21 +21,25 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
     private CloudFoundryClient client;
 
-    @Getter
-    private ClientConfiguration clientConfiguration;
-
-    /**
-     * Init cloudFoundryClient.
-     */
     @Autowired
-    public CloudFoundryApi(ClientConfigurationBuilder builder) {
-        ClientConfiguration clientConfiguration = builder.buildConfiguration();
-        if (clientConfiguration != null) {
-            setClientConfiguration(clientConfiguration);
-        } else {
-            log.warn("no configuration provided");
+    public CloudFoundryApi(ClientConfiguration clientConfiguration) {
+        try {
+            log.debug("CloudFoundryApi - {}", clientConfiguration.getTargetEndpoint());
+            CloudCredentials cloudCredentials = new CloudCredentials(
+                    clientConfiguration.getUsername(),
+                    clientConfiguration.getPassword(),
+                    clientConfiguration.getClientId(),
+                    clientConfiguration.getClientSecret());
+            CloudFoundryClient client = new CloudFoundryClient(cloudCredentials,
+                    clientConfiguration.getTargetEndpoint(),
+                    clientConfiguration.isEnableSelfSignedCertificates());
+            client.login();
+            this.client = client;
+        } catch (RuntimeException r) {
+            log.error("CloudFoundryApi - failure while login", r);
         }
     }
+
 
     @Override
     public ApplicationInfo getApplicationInfo(UUID appUid) {
@@ -108,28 +111,5 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         return null;
     }
 
-    public void setClientConfiguration(ClientConfiguration clientConfiguration) {
-        if (clientConfiguration == null) {
-            this.clientConfiguration = null;
-            this.client = null;
-        } else {
-            try {
-                log.debug("setClientConfiguration - {}", clientConfiguration.getTargetEndpoint());
-                CloudCredentials cloudCredentials = new CloudCredentials(
-                        clientConfiguration.getUsername(),
-                        clientConfiguration.getPassword(),
-                        clientConfiguration.getClientId(),
-                        clientConfiguration.getClientSecret());
-                CloudFoundryClient client = new CloudFoundryClient(cloudCredentials,
-                        clientConfiguration.getTargetEndpoint(),
-                        clientConfiguration.isEnableSelfSignedCertificates());
-                client.login();
-                this.client = client;
-                this.clientConfiguration = clientConfiguration;
-            } catch (RuntimeException r) {
-                log.error("setClientConfiguration - failure while login", r);
-                throw r;
-            }
-        }
-    }
+
 }

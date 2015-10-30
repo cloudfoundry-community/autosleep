@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.remote.MockCloudFoundryApiConfiguration;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.SpringApplicationConfiguration;
@@ -17,7 +18,7 @@ import java.util.Base64;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Application.class)
+@SpringApplicationConfiguration(classes = {Application.class, MockCloudFoundryApiConfiguration.class})
 @WebIntegrationTest("server.port:0")//random port
 @Slf4j
 public abstract class AbstractRestTest {

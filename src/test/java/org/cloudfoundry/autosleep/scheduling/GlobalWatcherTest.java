@@ -1,7 +1,6 @@
 package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.remote.ApplicationInfo;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
@@ -40,36 +39,32 @@ public class GlobalWatcherTest {
     private ServiceRepository mockServiceRepo;
     @Mock
     private BindingRepository mockBindingRepo;
-    private ApplicationInfo applicationInfo = mock(ApplicationInfo.class);
-    private AppStateChecker spyChecker;
 
 
     private GlobalWatcher spyWatcher;
 
-    private enum unattachedBinding {
+    private enum UnattachedBinding {
         unattached01, unattached02,
     }
 
-    /**
-     * already attached to another app
-     */
-    private enum attachedBinding {
+    // already attached to another app.
+    private enum AttachedBinding {
         attached01, attached02,
     }
 
     @Before
-    public void populateDB() {
+    public void populateDb() {
 
         //init mock binding repository with unattached binding
         List<AutoSleepServiceBinding> storedBindings = new ArrayList<>();
-        Arrays.asList(unattachedBinding.values()).forEach(id -> {
+        Arrays.asList(UnattachedBinding.values()).forEach(id -> {
             AutoSleepServiceBinding binding = new AutoSleepServiceBinding(id.name(),
                     SERVICE_ID, null, null, APP_UID.toString());
             binding.setAssociatedWatcher(WATCHER_UID);
             storedBindings.add(binding);
         });
         //init mock binding repository with attached binding
-        Arrays.asList(attachedBinding.values()).forEach(id -> {
+        Arrays.asList(AttachedBinding.values()).forEach(id -> {
             storedBindings.add(new AutoSleepServiceBinding(id.name(),
                     SERVICE_ID, null, null, APP_UID.toString()));
         });
@@ -81,41 +76,42 @@ public class GlobalWatcherTest {
         when(mockService.getInterval()).thenReturn(INTERVAL);
         when(mockServiceRepo.findOne(any())).thenReturn(mockService);
 
-        spyWatcher = spy(new GlobalWatcher(clock,mockRemote,mockBindingRepo,mockServiceRepo));
+        spyWatcher = spy(new GlobalWatcher(clock, mockRemote, mockBindingRepo, mockServiceRepo));
     }
 
     @Test
-    public void testInit() throws Exception {
+    public void testInit() {
         spyWatcher.init();
-        verify(spyWatcher,times(unattachedBinding.values().length)).watchApp(any());
+        verify(spyWatcher, times(UnattachedBinding.values().length)).watchApp(any());
     }
 
     @Test
-    public void testWatchApp() throws Exception {
+    public void testWatchApp() {
         AutoSleepServiceBinding binding = new AutoSleepServiceBinding("testWatch",
                 SERVICE_ID, null, null, APP_UID.toString());
         assertNull(binding.getAssociatedWatcher());
         spyWatcher.watchApp(binding);
         assertNotNull(binding.getAssociatedWatcher());
-        verify(mockBindingRepo,times(1)).save(any(AutoSleepServiceBinding.class));
+        verify(mockBindingRepo, times(1)).save(any(AutoSleepServiceBinding.class));
     }
 
     @Test
-    public void testCancelWatch() throws Exception {
-        AutoSleepServiceBinding binding = new AutoSleepServiceBinding("testWatch",SERVICE_ID, null, null, APP_UID.toString());
+    public void testCancelWatch()  {
+        AutoSleepServiceBinding binding = new AutoSleepServiceBinding("testWatch", SERVICE_ID, null, null,
+                APP_UID.toString());
         binding.setAssociatedWatcher(WATCHER_UID);
         spyWatcher.cancelWatch(binding);
         assertNull(binding.getAssociatedWatcher());
-        verify(mockBindingRepo,times(1)).save(any(AutoSleepServiceBinding.class));
+        verify(mockBindingRepo, times(1)).save(any(AutoSleepServiceBinding.class));
     }
 
     @Test
-    public void testOnStop() throws Exception {
+    public void testOnStop()  {
         spyWatcher.cleanup();
-        verify(spyWatcher,never()).cancelWatch(any());
+        verify(spyWatcher, never()).cancelWatch(any());
 
         spyWatcher.init();
         spyWatcher.cleanup();
-        verify(spyWatcher,times(unattachedBinding.values().length)).cancelWatch(any());
+        verify(spyWatcher, times(UnattachedBinding.values().length)).cancelWatch(any());
     }
 }

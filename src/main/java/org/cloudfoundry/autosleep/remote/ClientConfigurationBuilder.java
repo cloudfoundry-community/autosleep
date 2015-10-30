@@ -1,10 +1,14 @@
 package org.cloudfoundry.autosleep.remote;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -14,42 +18,25 @@ import java.net.URL;
 @EnableAutoConfiguration
 @Slf4j
 public class ClientConfigurationBuilder {
-    @Value("${target.endpoint:}")
-    private String targetEndpoint;
 
-    @Value("${skip.ssl.validation:false}")
-    private boolean skipSslValidation;
+    @Autowired
+    private Environment environment;
 
-    @Value("${username:}")
-    private String username;
+    @Bean
+    public ClientConfiguration buildConfiguration() throws MalformedURLException {
+        final String targetEndpoint = environment.getProperty("cf.client.target.endpoint");
+        final boolean skipSslValidation = Boolean.parseBoolean(environment.getProperty("cf.client.skip.ssl.validation",
+                "false"));
+        final String username = environment.getProperty("cf.client.username");
+        final String password = environment.getProperty("cf.client.password");
+        final String clientId = environment.getProperty("cf.client.clientId");
+        final String clientSecret = environment.getProperty("cf.client.clientSecret");
 
-    @Value("${password:}")
-    private String password;
+        log.debug("buildConfiguration - targetEndpoint={}", targetEndpoint);
+        log.debug("buildConfiguration - skipSslValidation={}", skipSslValidation);
+        log.debug("buildConfiguration - username={}", username);
 
-    @Value("${client.id:}")
-    private String clientId;
-
-    @Value("${client.secret:}")
-    private String clientSecret;
-
-    public ClientConfiguration buildConfiguration() {
-        if (isEmptyParameter(targetEndpoint) || isEmptyParameter(username) || isEmptyParameter(password)
-                || isEmptyParameter(clientId)) {
-            log.debug("buildConfiguration - one of the string is not provided");
-            return null;
-        } else {
-            try {
-                return new ClientConfiguration(new URL(targetEndpoint), skipSslValidation, clientId, clientSecret,
-                        username, password);
-            } catch (MalformedURLException m) {
-                log.debug("buildConfiguration - target endpoint does not have a good syntax");
-                return null;
-            }
-        }
-
-    }
-
-    private boolean isEmptyParameter(String parameter) {
-        return parameter.trim().equals("");
+        return new ClientConfiguration(new URL(targetEndpoint), skipSslValidation, clientId, clientSecret,
+                username, password);
     }
 }
