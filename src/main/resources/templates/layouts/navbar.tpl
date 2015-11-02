@@ -4,9 +4,6 @@ div(class: 'navbar') {
         div(class: "nav-collapse"){
             ul(class: "nav nav-tabs", id: "navigationTabs"){
                 li(){
-                    a(href: "/admin/configuration/", "Configuration")
-                }
-                li(){
                     a(href: "/admin/debug/", "Services")
                 }
             }

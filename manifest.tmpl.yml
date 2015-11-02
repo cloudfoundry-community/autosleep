@@ -8,3 +8,12 @@ applications:
   services:
     - logs
   buildpack: java_buildpack
+  env:
+    JAVA_OPTS: >
+      -Dcf.client.target.endpoint=<endpoint>
+      -Dcf.client.skip.ssl.validation=false
+      -Dcf.client.username=<username>
+      -Dcf.client.password=<password>
+      -Dcf.client.clientId=<client_id>
+      -Dcf.client.clientSecret=<client_secret>
+    

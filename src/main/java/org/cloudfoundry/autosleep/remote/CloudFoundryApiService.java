@@ -8,10 +8,6 @@ public interface CloudFoundryApiService {
     ApplicationInfo getApplicationInfo(UUID appUid);
 
 
-    ClientConfiguration getClientConfiguration();
-
-    void setClientConfiguration(ClientConfiguration clientConfiguration);
-
     void stopApplication(UUID appUid);
 
     void startApplication(UUID appUid);
