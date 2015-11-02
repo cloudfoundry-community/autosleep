@@ -1,20 +1,20 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.repositories.ram.RamServiceRepository;
 import org.cloudfoundry.autosleep.servicebroker.configuration.CatalogConfiguration;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
 import org.cloudfoundry.community.servicebroker.model.*;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -23,17 +23,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Slf4j
 @ContextConfiguration(classes = {CatalogConfiguration.class,
         AutoSleepServiceInstanceService.class,
-        RamServiceRepository.class})
-@ActiveProfiles("default")
+        RepositoryConfig.class})
 public class AutosleepServiceInstanceServiceTest {
 
     private static final String ORG_TEST = "orgTest";
@@ -58,6 +55,8 @@ public class AutosleepServiceInstanceServiceTest {
      */
     @Before
     public void initService() {
+        serviceRepository.deleteAll();
+
         assertTrue("Catalog must a least contain a catalog definition", catalog.getServiceDefinitions().size() > 0);
         ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
         assertTrue("Service definition " + serviceDefinition.getId() + " must at least contain a plan",
@@ -161,7 +160,13 @@ public class AutosleepServiceInstanceServiceTest {
         ServiceInstance si = service.getServiceInstance(deleteRequest.getServiceInstanceId());
         assertTrue("Succeed in getting service ", si != null );
         si = service.deleteServiceInstance(deleteRequest);
-        assertTrue("Succeed in deleting service ", si != null );
+        assertTrue("Succeed in deleting service ", si != null);
 
     }
+
+    @After
+    public void clearDao() {
+        serviceRepository.deleteAll();
+    }
+
 }

@@ -14,8 +14,6 @@ apply plugin: 'war'
 apply from: 'test.gradle'
 apply from: 'maven.gradle'
 
-
-
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 

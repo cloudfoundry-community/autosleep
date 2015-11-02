@@ -1,4 +1,4 @@
-package util;
+package org.cloudfoundry.autosleep.util;
 
 public class EqualUtil {
 
