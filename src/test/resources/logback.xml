@@ -10,7 +10,9 @@
     <logger name="org.cloudfoundry.autosleep" >
         <level value="DEBUG" />
     </logger>
-
+    <logger name="org.springframework" >
+        <level value="WARN" />
+    </logger>
     <logger name="org.apache.http.wire">
         <level value="INFO" />
     </logger>
