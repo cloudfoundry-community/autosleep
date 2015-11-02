@@ -44,7 +44,7 @@ public class AppStateCheckerTest {
 
     @Test
     public void testRunOnActive() throws Exception {
-        when(applicationInfo.getLastEvent()).thenReturn(LocalDateTime.now());
+        when(applicationInfo.getLastActionDate()).thenReturn(LocalDateTime.now());
         spyChecker.run();
         verify(mockRemote, never()).stopApplication(APP_UID);
         verify(clock,times(1)).scheduleTask(any(),anyObject(),any());
@@ -54,7 +54,7 @@ public class AppStateCheckerTest {
     @Test
     public void testRunOnInactive() throws Exception {
         log.debug("Start testWithActiveApp()");
-        when(applicationInfo.getLastEvent()).thenReturn(LocalDateTime.now().minus(INTERVAL.multipliedBy(2)));
+        when(applicationInfo.getLastActionDate()).thenReturn(LocalDateTime.now().minus(INTERVAL.multipliedBy(2)));
         spyChecker.run();
         verify(mockRemote, times(1)).stopApplication(APP_UID);
         verify(spyChecker,times(1)).rescheduleWithDefaultPeriod();

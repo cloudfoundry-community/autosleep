@@ -36,7 +36,7 @@ public class AppStateChecker implements Runnable {
             rescheduleWithDefaultPeriod();
         } else {
             //retrieve updated info
-            LocalDateTime lastEvent = applicationInfo.getLastEvent();
+            LocalDateTime lastEvent = applicationInfo.getLastActionDate();
             //TODO check if LocalDate issue between remote dates and app time
             LocalDateTime nextStartTime = lastEvent.plus(period);
             log.debug("last event:  {}", lastEvent.toString());
