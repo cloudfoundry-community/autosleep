@@ -26,13 +26,12 @@ public class CatalogConfiguration {
                         "Service that put your application to sleep when inactive",
                         true,
                         false,
-                        Arrays.asList(
+                        Collections.singletonList(
                                 new Plan(OPTIN_GUID,
-                                        "opt-in",
-                                        "This is a default autosleep plan.  Binded apps will be stopped when idle."),
-                                new Plan(OPTOUT_GUID,
-                                        "opt-out",
-                                        "All apps will be stopped when idle, EXCEPTED binded apps.")),
+                                        "default",
+                                        "Autosleep default plan",
+                                        null,
+                                        true)),
                         Arrays.asList("autosleep", "document"),
                         getServiceDefinitionMetadata(),
                         null,
