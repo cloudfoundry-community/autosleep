@@ -10,7 +10,7 @@ You can check the [specification proposal here] (https://docs.google.com/documen
 ### What's already working:
 For now we provide a [service broker] (https://docs.cloudfoundry.org/services/managing-service-brokers.html) which instances will watch any bound application, detect inactivity (based on **https logs** and **redeploy/restart events**) and stop the application if needed.
 
-Download [latest release] (https://github.com/Orange-OpenSource/autosleep/releases/tag/v0.1.0-fix) if you want to have a try.
+Download [latest release] (https://github.com/Orange-OpenSource/autosleep/releases/) if you want to have a try.
 
 ### What we are working on:
 * "opt-out" mode: applications are automatically bound to the service, according to a regexp.
@@ -24,17 +24,19 @@ We suppose that you've already published the service broker in your market place
 cf cs autosleep default my-autosleep
 ```
 If you don't give any additionnal parameter, the default inactivity duration of 24H will be used. If you wish to manually set another amount of time, use the following:
+
 ```
 cf cs autosleep default my-autosleep  -c '{"inactivity": "PT1H15M"}'
 ```  
-In this example the application will be considered as inactive after *1 hour and 15 minutes*. The time format used is [the ISO8601] (https://en.wikipedia.org/wiki/ISO_8601) format
+In this example the application will be considered as inactive after *1 hour and 15 minutes*. The time format used is [the ISO8601] (https://en.wikipedia.org/wiki/ISO_8601) format.
 ##Bind your app
 ```
 cf bind-service MY_APP my-autosleep
 ```
 Once bound, your application will be watch for inactivity. If you wish to stop this watch, simply unbind your application.
 
-# How to build and test
-If you wish to build the app yourself, go to [build and test documentation] (doc/build.md)
+# How to build
+If you wish to build the app yourself, go to [build documentation] (doc/build.md).
 
-
+# How to test
+Acceptance tests are available in the source code, as robotframework tests. More information [here] (doc/test.md).
