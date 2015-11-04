@@ -1,12 +1,12 @@
 applications:
-- name: autosleep
+- name: autosleep-app
   memory: 1G
   instances: 1
-  host: autosleep-${random-word}
+  host: autosleep
   domain: cf.ns.nd-paas.itn.ftgroup
-  path: build/libs/org.cloudfoundry.autosleep-0.1.0-SNAPSHOT.war
+  path: build/libs/org.cloudfoundry.autosleep-0.2.0.war
   services:
-    - logs
+    - redis
   buildpack: java_buildpack
   env:
     JAVA_OPTS: >
