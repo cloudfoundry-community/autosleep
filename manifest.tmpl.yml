@@ -4,12 +4,13 @@ applications:
   instances: 1
   host: autosleep
   domain: cf.ns.nd-paas.itn.ftgroup
-  path: build/libs/org.cloudfoundry.autosleep-0.2.0.war
   services:
     - redis
   buildpack: java_buildpack
   env:
     JAVA_OPTS: >
+      -Dsecurity.user.name=<security username>
+      -Dsecurity.user.password=<security password>
       -Dcf.client.target.endpoint=<endpoint>
       -Dcf.client.skip.ssl.validation=false
       -Dcf.client.username=<username>
