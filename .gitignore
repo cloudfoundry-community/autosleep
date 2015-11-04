@@ -12,3 +12,7 @@ src/main/resources/logback.xml
 src/test/resources/cloudfoundry_client.properties
 src/main/resources/cloudfoundry_client.properties
 src/test/java/org/cloudfoundry/autosleep/Sandbox.java
+## acceptance test results
+log.html
+output.xml
+report.html
