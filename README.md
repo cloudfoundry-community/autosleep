@@ -38,5 +38,8 @@ Once bound, your application will be watch for inactivity. If you wish to stop t
 # How to build
 If you wish to build the app yourself, go to [build documentation] (doc/build.md).
 
+# How to publish
+Once you built the application or if you got it from [latest release] (https://github.com/Orange-OpenSource/autosleep/releases/), go to [build documentation] (doc/publish.md).
+
 # How to test
 Acceptance tests are available in the source code, as robotframework tests. More information [here] (doc/test.md).
