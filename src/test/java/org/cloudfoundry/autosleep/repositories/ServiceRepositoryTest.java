@@ -26,7 +26,7 @@ import static org.junit.Assert.*;
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {RepositoryConfig.class})
-public class ServiceRepositoryTest {
+public abstract class  ServiceRepositoryTest {
 
     private static final String ORG_TEST = "orgTest";
     private static final String SPACE_TEST = "spaceTest";
@@ -54,6 +54,7 @@ public class ServiceRepositoryTest {
      */
     @Before
     public void populateDao() {
+
         createRequestTemplate = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, SERVICE_PLAN_ID, ORG_TEST,
                 SPACE_TEST);
 

@@ -26,7 +26,7 @@ import static org.junit.Assert.*;
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {RepositoryConfig.class})
-public class BindingRepositoryTest extends EqualUtil { //EqualUtil extension is just to silence coverage
+public abstract class BindingRepositoryTest extends EqualUtil { //EqualUtil extension is just to silence coverage
 
     private static final String APP_GUID = "2F5A0947-6468-401B-B12A-963405121937";
     private static final UUID WATCHER_UID = UUID.fromString("F4BB2108-9C21-43C5-98AC-5059F166B23C");

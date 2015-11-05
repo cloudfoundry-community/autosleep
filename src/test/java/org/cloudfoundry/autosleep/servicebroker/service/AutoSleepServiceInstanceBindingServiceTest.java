@@ -66,7 +66,7 @@ public class AutoSleepServiceInstanceBindingServiceTest {
                 APPUID);
     }
 
-    @Test //TODO complete tests
+    @Test
     public void testCreateServiceInstanceBinding() throws Exception {
         bindingService.createServiceInstanceBinding(createRequestTemplate.withServiceInstanceId("Sid").withBindingId(
                 "Bid"));
