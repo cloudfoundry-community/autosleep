@@ -8,6 +8,10 @@ buildscript {
     }
 }
 
+
+
+
+
 apply plugin: 'java'
 apply plugin: 'spring-boot'
 apply plugin: 'war'
@@ -19,6 +23,20 @@ targetCompatibility = 1.8
 tasks.withType(JavaCompile) {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
+
+processResources {
+    from(sourceSets.main.resources.srcDirs) {
+        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: [version: project.version])
+    }
+}
+
+processTestResources {
+    from(sourceSets.test.resources.srcDirs) {
+        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: [version: project.version])
+    }
+}
+
+
 
 war {
     baseName = "$domainName.$projectName"
@@ -54,6 +72,10 @@ dependencies {
     providedCompile "org.projectlombok:lombok:$lombokVersion"
     //Spring boot
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+    compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
+    // For now /actuator should be available if hateoas in the classpath. Tested it, does not work.
+    // compile "org.springframework.boot:spring-boot-starter-hateoas:$springBootVersion"
+
     //Groovy templates
     compile "org.codehaus.groovy:groovy-templates:${groovyVersion}"
     //API Service broker
