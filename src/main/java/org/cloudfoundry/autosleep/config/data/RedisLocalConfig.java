@@ -11,7 +11,7 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 public class RedisLocalConfig {
 
     @Bean
-    public RedisConnectionFactory redisConnection() {
+    public RedisConnectionFactory redisConnectionFactory() {
         return new JedisConnectionFactory();
     }
 
