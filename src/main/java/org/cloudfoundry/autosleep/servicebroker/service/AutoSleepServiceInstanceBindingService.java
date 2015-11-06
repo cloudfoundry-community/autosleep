@@ -37,7 +37,7 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
         log.debug("createServiceInstanceBinding - {}", request.getBindingId());
         AutoSleepServiceBinding binding = new AutoSleepServiceBinding(bindingId,
                 serviceId,
-                null/*TODO credentials?*/,
+                null,
                 null,
                 request.getAppGuid());
         bindingRepository.save(binding);

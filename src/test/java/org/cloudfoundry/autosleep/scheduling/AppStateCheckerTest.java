@@ -3,6 +3,7 @@ package org.cloudfoundry.autosleep.scheduling;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.ApplicationInfo;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
+import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,10 +54,17 @@ public class AppStateCheckerTest {
 
     @Test
     public void testRunOnInactive() throws Exception {
-        log.debug("Start testWithActiveApp()");
         when(applicationInfo.getLastActionDate()).thenReturn(LocalDateTime.now().minus(INTERVAL.multipliedBy(2)));
         spyChecker.run();
         verify(mockRemote, times(1)).stopApplication(APP_UID);
+        verify(spyChecker,times(1)).rescheduleWithDefaultPeriod();
+    }
+
+    @Test
+    public void testRunOnAlreadyStopped() throws Exception {
+        when(applicationInfo.getState()).thenReturn(CloudApplication.AppState.STOPPED);
+        spyChecker.run();
+        verify(mockRemote, never()).stopApplication(APP_UID);
         verify(spyChecker,times(1)).rescheduleWithDefaultPeriod();
     }
 

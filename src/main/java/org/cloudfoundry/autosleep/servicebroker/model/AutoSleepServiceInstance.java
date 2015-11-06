@@ -117,21 +117,11 @@ public class AutoSleepServiceInstance extends ServiceInstance {
                 && EqualUtil.areEquals(this.getOrganizationGuid(), other.getOrganizationGuid())
                 && EqualUtil.areEquals(this.getPlanId(), other.getPlanId())
                 && EqualUtil.areEquals(this.getSpaceGuid(), other.getSpaceGuid());
-
     }
 
     @Override
     public int hashCode() {
-        final int prime = 59;
-        int result = 1;
-        result = result * prime + getServiceInstanceId().hashCode();
-        result = result * prime + getInterval().hashCode();
-        result = result * prime + getSpaceGuid().hashCode();
-        result = result * prime + getPlanId().hashCode();
-        result = result * prime + getDashboardUrl().hashCode();
-        result = result * prime + getOrganizationGuid().hashCode();
-        result = result * prime + getServiceDefinitionId().hashCode();
-        return result;
+        return this.getServiceInstanceId().hashCode();
     }
 
 }

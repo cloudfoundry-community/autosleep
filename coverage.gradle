@@ -1,21 +1,15 @@
-/** add buildscript {
-    dependencies {
-        classpath "org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.0"
-    }
-} **/
-
-//from https://github.com/springfox/springfox/blob/fb780ee1f14627b239fba95730a69900b9b2313a/gradle/coverage.gradle
+//fork from https://github.com/springfox/springfox/blob/fb780ee1f14627b239fba95730a69900b9b2313a/gradle/coverage.gradle
 apply plugin: 'jacoco'
 apply plugin: "com.github.kt3k.coveralls"
 
 ext {
     limits = [
             'instruction': 30,
-            'branch'     : 30,
-            'line'       : 30,
+            'branch'     : 25,
+            'line'       : 50,
             'complexity' : 30,
             'method'     : 30,
-            'class'      : 30
+            'class'      : 75
     ]
 }
 
@@ -51,25 +45,33 @@ jacocoTestReport {
                 'class'      : percentage(counters.find { it.'@type'.equals('CLASS') })
         ]
 
-
         def failures = []
+        logger.quiet("************************ Code Coverage ************************")
+        logger.quiet("*")
         metrics.each {
             def limit = limits[it.key]
             if (it.value < limit) {
-                failures.add("- ${it.key} coverage rate is: ${it.value}%, minimum is ${limit}%")
+                failures.add("* ${it.key.padLeft(15)} coverage rate: ${it.value}% \tminimum is ${limit}% \t\t> FAIL")
+            } else {
+                logger.quiet("* ${it.key.padLeft(15)} coverage rate: ${it.value}% \tminimum is ${limit}% \t\t> OK")
             }
         }
 
         if (failures) {
-            logger.quiet("------------------ Code Coverage Failed -----------------------")
+            logger.quiet("*")
             failures.each {
                 logger.quiet(it)
             }
-            logger.quiet("---------------------------------------------------------------")
-            throw new GradleException("Code coverage failed")
+            logger.quiet("*")
+            logger.quiet("* Code Coverage Failed !")
+            logger.quiet("***************************************************************")
+            throw new GradleException("Code Coverage Failed !")
         } else{
-            logger.quiet("Passed Code Coverage Checks")
+            logger.quiet("*")
+            logger.quiet("* Passed Code Coverage Checks !")
+            logger.quiet("***************************************************************")
         }
+
     }
 }
 check.dependsOn jacocoTestReport

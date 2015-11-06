@@ -93,6 +93,11 @@ public class GlobalWatcherTest {
         spyWatcher.watchApp(binding);
         assertNotNull(binding.getAssociatedWatcher());
         verify(mockBindingRepo, times(1)).save(any(AutoSleepServiceBinding.class));
+
+        //test that no error is triggered when watching an app already bound
+        reset(mockBindingRepo);
+        spyWatcher.watchApp(binding);
+        verify(mockBindingRepo, never()).save(any(AutoSleepServiceBinding.class));
     }
 
     @Test
@@ -103,6 +108,10 @@ public class GlobalWatcherTest {
         spyWatcher.cancelWatch(binding);
         assertNull(binding.getAssociatedWatcher());
         verify(mockBindingRepo, times(1)).save(any(AutoSleepServiceBinding.class));
+
+        reset(mockBindingRepo);
+        spyWatcher.cancelWatch(null);
+        verify(mockBindingRepo, never()).save(any(AutoSleepServiceBinding.class));
     }
 
     @Test
