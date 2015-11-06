@@ -45,7 +45,7 @@ public class AutoSleepServiceBinding extends ServiceInstanceBinding {
     public String toString() {
         return "AutoSleepSB:[id:" + getId() + " serviceId:+" + getServiceInstanceId()
                 + " syslogUrl:" + getSyslogDrainUrl() + " app:" + getAppGuid() + " watcher: "
-                + getAssociatedWatcher().toString() + "]";
+                + getAssociatedWatcher() + "]";
     }
 
     @Override
@@ -58,8 +58,8 @@ public class AutoSleepServiceBinding extends ServiceInstanceBinding {
         }
         AutoSleepServiceBinding other = (AutoSleepServiceBinding) object;
 
-        return EqualUtil.areEquals(this.getServiceInstanceId(), other.getServiceInstanceId())
-                && EqualUtil.areEquals(this.getId(), other.getId())
+        return EqualUtil.areEquals(this.getId(), other.getId())
+                && EqualUtil.areEquals(this.getServiceInstanceId(), other.getServiceInstanceId())
                 && EqualUtil.areEquals(this.getAppGuid(), other.getAppGuid())
                 && EqualUtil.areEquals(this.getCredentials(), other.getCredentials())
                 && EqualUtil.areEquals(this.getSyslogDrainUrl(), other.getSyslogDrainUrl());
@@ -67,13 +67,6 @@ public class AutoSleepServiceBinding extends ServiceInstanceBinding {
 
     @Override
     public int hashCode() {
-        final int prime = 59;
-        int result = 1;
-        result = result * prime + getServiceInstanceId().hashCode();
-        result = result * prime + getId().hashCode();
-        result = result * prime + getCredentials().hashCode();
-        result = result * prime + getSyslogDrainUrl().hashCode();
-        result = result * prime + getAppGuid().hashCode();
-        return result;
+        return getId().hashCode();
     }
 }

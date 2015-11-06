@@ -1,21 +1,29 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 buildscript {
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
+        classpath("org.kt3k.gradle.plugin:coveralls-gradle-plugin:$gradleCoverallsVersion")
     }
     repositories {
         mavenLocal()
         jcenter()
     }
 }
-
-
-
-
+repositories {
+    mavenLocal()
+    jcenter()
+    //Forced to use it for org.cloudfoundry:spring-boot-cf-service-broker,
+    // maven { url "http://repo.spring.io/libs-snapshot" }
+    //URL repo to get the desired compiled version
+    maven { url "https://jitpack.io" }
+}
 
 apply plugin: 'java'
 apply plugin: 'spring-boot'
 apply plugin: 'war'
 apply from: 'test.gradle'
+apply from: 'coverage.gradle'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -26,17 +34,15 @@ tasks.withType(JavaCompile) {
 
 processResources {
     from(sourceSets.main.resources.srcDirs) {
-        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: [version: project.version])
+        filter(ReplaceTokens, tokens: [version: project.version])
     }
 }
 
 processTestResources {
     from(sourceSets.test.resources.srcDirs) {
-        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: [version: project.version])
+        filter(ReplaceTokens, tokens: [version: project.version])
     }
 }
-
-
 
 war {
     baseName = "$domainName.$projectName"
@@ -44,23 +50,9 @@ war {
 }
 war.rootSpec.exclude "cloudfoundry_client.properties"
 
-
-
-repositories {
-    mavenLocal()
-    jcenter()
-    //Forced to use it for org.cloudfoundry:spring-boot-cf-service-broker,
-    // maven { url "http://repo.spring.io/libs-snapshot" }
-    //URL repo to get the desired compiled version
-    maven { url "https://jitpack.io" }
-}
-
-
-
 task wrapper(type: Wrapper) {
     gradleVersion = "2.7"
 }
-
 
 bootRun {
     // to retrieve profile using -Dspring.profiles.active={PROFILE}

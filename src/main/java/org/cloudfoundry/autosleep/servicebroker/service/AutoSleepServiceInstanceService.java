@@ -65,7 +65,7 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
     @Override
     public ServiceInstance deleteServiceInstance(DeleteServiceInstanceRequest request) throws ServiceBrokerException {
         log.debug("deleteServiceInstance - {}", request.getServiceInstanceId());
-        AutoSleepServiceInstance serviceInstance = repository.findOne(request.getServiceInstanceId());
+        AutoSleepServiceInstance serviceInstance = new AutoSleepServiceInstance(request);
         repository.delete(request.getServiceInstanceId());
         return serviceInstance;
     }

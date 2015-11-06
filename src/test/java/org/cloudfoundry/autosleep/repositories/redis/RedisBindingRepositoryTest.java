@@ -1,13 +1,13 @@
 package org.cloudfoundry.autosleep.repositories.redis;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.repositories.ServiceRepositoryTest;
+import org.cloudfoundry.autosleep.repositories.BindingRepositoryTest;
 import org.junit.BeforeClass;
 import org.springframework.test.context.ActiveProfiles;
 
 @Slf4j
 @ActiveProfiles({"redis","redis-local"})
-public class RedisBindingRepositoryTest extends ServiceRepositoryTest {
+public class RedisBindingRepositoryTest extends BindingRepositoryTest {
 
     @BeforeClass
     public static void skipIfNoRedis() {
