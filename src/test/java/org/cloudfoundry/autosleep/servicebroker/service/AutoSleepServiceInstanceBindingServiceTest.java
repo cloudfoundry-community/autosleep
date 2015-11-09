@@ -6,12 +6,11 @@ import org.cloudfoundry.autosleep.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.repositories.ram.RamServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
-import org.cloudfoundry.autosleep.servicebroker.configuration.CatalogConfiguration;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
-import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
+import org.cloudfoundry.community.servicebroker.service.CatalogService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,7 +22,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Slf4j
-@ContextConfiguration(classes = {CatalogConfiguration.class,
+@ContextConfiguration(classes = {AutosleepCatalogService.class,
         RepositoryConfig.class})
 public class AutoSleepServiceInstanceBindingServiceTest {
 
@@ -33,7 +32,7 @@ public class AutoSleepServiceInstanceBindingServiceTest {
     private AutoSleepServiceInstanceBindingService bindingService;
 
     @Autowired
-    private Catalog catalog;
+    private CatalogService catalogService;
 
     @Autowired
     private BindingRepository bindingRepo;
@@ -58,7 +57,7 @@ public class AutoSleepServiceInstanceBindingServiceTest {
 
         bindingService = new AutoSleepServiceInstanceBindingService(bindingRepo,mockWatcher);
 
-        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
+        ServiceDefinition serviceDefinition = catalogService.getCatalog().getServiceDefinitions().get(0);
         planId = serviceDefinition.getPlans().get(0).getId();
         serviceDefinitionId = serviceDefinition.getId();
         createRequestTemplate = new CreateServiceInstanceBindingRequest(serviceDefinitionId,

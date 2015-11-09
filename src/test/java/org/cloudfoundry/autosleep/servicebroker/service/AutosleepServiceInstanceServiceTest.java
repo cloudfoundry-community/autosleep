@@ -3,12 +3,12 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.servicebroker.configuration.CatalogConfiguration;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
 import org.cloudfoundry.community.servicebroker.model.*;
+import org.cloudfoundry.community.servicebroker.service.CatalogService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +28,7 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Slf4j
-@ContextConfiguration(classes = {CatalogConfiguration.class,
+@ContextConfiguration(classes = {AutosleepCatalogService.class,
         AutoSleepServiceInstanceService.class,
         RepositoryConfig.class})
 public class AutosleepServiceInstanceServiceTest {
@@ -41,7 +41,7 @@ public class AutosleepServiceInstanceServiceTest {
     private AutoSleepServiceInstanceService service;
 
     @Autowired
-    private Catalog catalog;
+    private CatalogService catalogService;
 
     @Autowired
     private ServiceRepository serviceRepository;
@@ -57,8 +57,9 @@ public class AutosleepServiceInstanceServiceTest {
     public void initService() {
         serviceRepository.deleteAll();
 
-        assertTrue("Catalog must a least contain a catalog definition", catalog.getServiceDefinitions().size() > 0);
-        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
+        assertTrue("Catalog must a least contain a catalog definition", catalogService.getCatalog()
+                .getServiceDefinitions().size() > 0);
+        ServiceDefinition serviceDefinition = catalogService.getCatalog().getServiceDefinitions().get(0);
         assertTrue("Service definition " + serviceDefinition.getId() + " must at least contain a plan",
                 serviceDefinition.getPlans().size() > 0);
         createRequest = new CreateServiceInstanceRequest(serviceDefinition.getId(), serviceDefinition

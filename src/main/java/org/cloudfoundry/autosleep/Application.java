@@ -10,7 +10,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
 @EnableAutoConfiguration
-@ComponentScan
+@ComponentScan(basePackages = {"org.cloudfoundry.community.servicebroker", "org.cloudfoundry.autosleep"})
 @EnableWebMvc
 @Slf4j
 public class Application {
