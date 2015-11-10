@@ -3,12 +3,17 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.servicebroker.configuration.AutosleepCatalogBuilder;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
-import org.cloudfoundry.community.servicebroker.model.*;
-import org.cloudfoundry.community.servicebroker.service.CatalogService;
+import org.cloudfoundry.community.servicebroker.model.Catalog;
+import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
+import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceRequest;
+import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
+import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
+import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,12 +28,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Slf4j
-@ContextConfiguration(classes = {AutosleepCatalogService.class,
+@ContextConfiguration(classes = {AutosleepCatalogBuilder.class,
         AutoSleepServiceInstanceService.class,
         RepositoryConfig.class})
 public class AutosleepServiceInstanceServiceTest {
@@ -41,7 +50,7 @@ public class AutosleepServiceInstanceServiceTest {
     private AutoSleepServiceInstanceService service;
 
     @Autowired
-    private CatalogService catalogService;
+    private Catalog catalog;
 
     @Autowired
     private ServiceRepository serviceRepository;
@@ -50,16 +59,15 @@ public class AutosleepServiceInstanceServiceTest {
     private UpdateServiceInstanceRequest updateRequest;
     private DeleteServiceInstanceRequest deleteRequest;
 
-    /**Init a create request, to be used in tests.
-     *
+    /**
+     * Init a create request, to be used in tests.
      */
     @Before
     public void initService() {
         serviceRepository.deleteAll();
 
-        assertTrue("Catalog must a least contain a catalog definition", catalogService.getCatalog()
-                .getServiceDefinitions().size() > 0);
-        ServiceDefinition serviceDefinition = catalogService.getCatalog().getServiceDefinitions().get(0);
+        assertTrue("Catalog must a least contain a catalog definition", catalog.getServiceDefinitions().size() > 0);
+        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
         assertTrue("Service definition " + serviceDefinition.getId() + " must at least contain a plan",
                 serviceDefinition.getPlans().size() > 0);
         createRequest = new CreateServiceInstanceRequest(serviceDefinition.getId(), serviceDefinition
@@ -85,7 +93,7 @@ public class AutosleepServiceInstanceServiceTest {
         }
 
         Map<String, Object> params = new HashMap<>();
-        params.put(AutoSleepServiceInstance.INACTIVITY_PARAMETER,"10H");
+        params.put(AutoSleepServiceInstance.INACTIVITY_PARAMETER, "10H");
         try {
             createRequest.setParameters(params);
             service.createServiceInstance(createRequest);
@@ -97,12 +105,12 @@ public class AutosleepServiceInstanceServiceTest {
 
         ServiceInstance si;
 
-        params.put(AutoSleepServiceInstance.INACTIVITY_PARAMETER,"PT10H");
+        params.put(AutoSleepServiceInstance.INACTIVITY_PARAMETER, "PT10H");
         try {
             createRequest.setParameters(params);
             si = service.createServiceInstance(createRequest);
 
-            assertTrue("Succeed in creating service with inactivity parameter", si != null );
+            assertTrue("Succeed in creating service with inactivity parameter", si != null);
         } catch (ServiceBrokerException s) {
             fail("Fail to create service with inactivity parameter");
         }
@@ -116,8 +124,8 @@ public class AutosleepServiceInstanceServiceTest {
 
         try {
             createRequest.setParameters(null);
-            si = service.createServiceInstance( createRequest.withServiceInstanceId("other") );
-            assertTrue("We should be able to create a service without parameters", si != null );
+            si = service.createServiceInstance(createRequest.withServiceInstanceId("other"));
+            assertTrue("We should be able to create a service without parameters", si != null);
         } catch (RuntimeException e) {
             fail("Fail to create service with no parameters");
         }
@@ -128,7 +136,7 @@ public class AutosleepServiceInstanceServiceTest {
         String testId = "testget";
         ServiceInstance createdInstance = service.createServiceInstance(createRequest.withServiceInstanceId(testId));
         ServiceInstance retrievedInstance = service.getServiceInstance(testId);
-        assertThat("Created instance and retrieved instance should be the same",createdInstance,
+        assertThat("Created instance and retrieved instance should be the same", createdInstance,
                 is(equalTo(retrievedInstance)));
     }
 
@@ -147,10 +155,10 @@ public class AutosleepServiceInstanceServiceTest {
         assertThat(serviceInstance, is(notNullValue()));
         assertThat(serviceInstance.getInterval(), is(equalTo(Duration.ofMinutes(15))));
 
-        try  {
+        try {
             service.updateServiceInstance(updateRequest.withInstanceId("unknownId"));
             fail("update not supposed to work on an unknown service id");
-        } catch (ServiceInstanceDoesNotExistException e)  {
+        } catch (ServiceInstanceDoesNotExistException e) {
             log.debug("{} occurred as expected", e.getClass().getSimpleName());
         }
     }
@@ -159,7 +167,7 @@ public class AutosleepServiceInstanceServiceTest {
     public void testDeleteServiceInstance() throws Exception {
         service.createServiceInstance(createRequest.withServiceInstanceId(deleteRequest.getServiceInstanceId()));
         ServiceInstance si = service.getServiceInstance(deleteRequest.getServiceInstanceId());
-        assertTrue("Succeed in getting service ", si != null );
+        assertTrue("Succeed in getting service ", si != null);
         si = service.deleteServiceInstance(deleteRequest);
         assertTrue("Succeed in deleting service ", si != null);
 

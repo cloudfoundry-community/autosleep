@@ -7,8 +7,8 @@ import org.cloudfoundry.autosleep.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
 import org.cloudfoundry.community.servicebroker.controller.ServiceInstanceController;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
+import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
-import org.cloudfoundry.community.servicebroker.service.CatalogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,7 +27,7 @@ import java.util.Map;
 public class DebugController {
 
     @Autowired
-    private CatalogService catalogService;
+    private Catalog catalog;
 
     @Autowired
     private ServiceRepository serviceRepository;
@@ -39,7 +39,7 @@ public class DebugController {
     public ModelAndView serviceInstances() {
         log.debug("serviceInstances - rendering view");
         Map<String, Object> parameters = new HashMap<>();
-        ServiceDefinition serviceDefinition = catalogService.getCatalog().getServiceDefinitions().get(0);
+        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
         parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
         parameters.put("serviceDefinitionId", serviceDefinition.getId());
         parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
@@ -50,7 +50,7 @@ public class DebugController {
     public ModelAndView serviceBindings(@PathVariable("instanceId") String serviceInstanceId) {
         log.debug("serviceInstances - rendering view - ", serviceInstanceId);
         Map<String, Object> parameters = new HashMap<>();
-        ServiceDefinition serviceDefinition = catalogService.getCatalog().getServiceDefinitions().get(0);
+        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
         parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
         parameters.put("serviceDefinitionId", serviceDefinition.getId());
         parameters.put("planId", serviceDefinition.getPlans().get(0).getId());

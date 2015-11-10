@@ -6,11 +6,12 @@ import org.cloudfoundry.autosleep.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.repositories.ram.RamServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
+import org.cloudfoundry.autosleep.servicebroker.configuration.AutosleepCatalogBuilder;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
+import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
-import org.cloudfoundry.community.servicebroker.service.CatalogService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,11 +19,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Slf4j
-@ContextConfiguration(classes = {AutosleepCatalogService.class,
+@ContextConfiguration(classes = {AutosleepCatalogBuilder.class,
         RepositoryConfig.class})
 public class AutoSleepServiceInstanceBindingServiceTest {
 
@@ -32,7 +37,7 @@ public class AutoSleepServiceInstanceBindingServiceTest {
     private AutoSleepServiceInstanceBindingService bindingService;
 
     @Autowired
-    private CatalogService catalogService;
+    private Catalog catalog;
 
     @Autowired
     private BindingRepository bindingRepo;
@@ -57,7 +62,7 @@ public class AutoSleepServiceInstanceBindingServiceTest {
 
         bindingService = new AutoSleepServiceInstanceBindingService(bindingRepo,mockWatcher);
 
-        ServiceDefinition serviceDefinition = catalogService.getCatalog().getServiceDefinitions().get(0);
+        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
         planId = serviceDefinition.getPlans().get(0).getId();
         serviceDefinitionId = serviceDefinition.getId();
         createRequestTemplate = new CreateServiceInstanceBindingRequest(serviceDefinitionId,
