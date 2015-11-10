@@ -11,7 +11,6 @@ import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.Plan;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
-import org.cloudfoundry.community.servicebroker.service.CatalogService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,7 +48,7 @@ public class DebugControllerTest {
     private BindingRepository bindingRepository;
 
     @Mock
-    private CatalogService catalogService;
+    private Catalog catalog ;
 
     @InjectMocks
     private DebugController debugController;
@@ -77,12 +76,11 @@ public class DebugControllerTest {
                 createRequestTemplate.withServiceInstanceId(serviceInstanceId));
         serviceBinding = new AutoSleepServiceBinding(serviceBindingId, serviceInstanceId,
                 null, null, UUID.randomUUID().toString());
-
+        Mockito.when(catalog.getServiceDefinitions()).thenReturn(Collections.singletonList(
+                new ServiceDefinition("serviceDefinitionId", "serviceDefinition", "", true,
+                        Collections.singletonList(new Plan("planId", "plan", "")))));
         Mockito.when(serviceRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
         Mockito.when(bindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
-        Mockito.when(catalogService.getCatalog()).thenReturn(new Catalog(Collections.singletonList(
-                new ServiceDefinition("serviceDefinitionId", "serviceDefinition", "", true,
-                        Collections.singletonList(new Plan("planId", "plan", ""))))));
 
     }
 
