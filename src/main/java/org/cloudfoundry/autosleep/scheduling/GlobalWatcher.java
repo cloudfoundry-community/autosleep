@@ -17,11 +17,6 @@ import java.util.UUID;
 @Component
 public class GlobalWatcher {
 
-    /**
-     * An ID used to define wich instance of Autosleep application started the watch.
-     */
-    private final UUID watcherId;
-
     private Clock clock;
 
     private CloudFoundryApiService remote;
@@ -37,7 +32,6 @@ public class GlobalWatcher {
         this.remote = remote;
         this.bindingRepository = bindingRepository;
         this.serviceRepository = serviceRepository;
-        this.watcherId = UUID.randomUUID();
     }
 
     @PostConstruct
@@ -45,34 +39,19 @@ public class GlobalWatcher {
         log.debug("Initializer watchers for every app already bound (except if handle by another instance of "
                 + "autosleep)");
         Iterable<AutoSleepServiceBinding> bindings = bindingRepository.findAll();
-        bindings.forEach(binding -> {
-            //check if the binding is not already handled by another instance of autosleep
-            if (binding.getAssociatedWatcher() == null) {
-                watchApp(binding);
-            }
-        });
+        bindings.forEach(this::watchApp);
     }
 
     @PreDestroy
     public void cleanup() {
         log.debug("Canceling every watcher before shutdown");
         Iterable<AutoSleepServiceBinding> bindings = bindingRepository.findAll();
-        bindings.forEach(binding -> {
-            //check if the binding is handle by this instance of autosleep
-            if (watcherId.equals(binding.getAssociatedWatcher())) {
-                cancelWatch(binding);
-            }
-        });
+        bindings.forEach(this::cancelWatch);
     }
 
     public void watchApp(AutoSleepServiceBinding binding) {
-        if (binding.getAssociatedWatcher() != null) {
-            log.error("PROBABLE BUG. Binding already associated to another instance. This should be investigated.");
-            return;
-        }
         watchApp(binding.getId(), UUID.fromString(binding.getAppGuid()), serviceRepository.findOne(binding
                 .getServiceInstanceId()).getInterval());
-        binding.setAssociatedWatcher(watcherId);
         bindingRepository.save(binding);
     }
 
@@ -89,12 +68,10 @@ public class GlobalWatcher {
     public void cancelWatch(AutoSleepServiceBinding binding) {
         if (binding != null && binding.getId() != null) {
             clock.stopTimer(binding.getId());
-            binding.setAssociatedWatcher(null);
             bindingRepository.save(binding);
         } else {
             log.error("PROBABLE BUG. Trying to cancel an unknown task... This has to be investigated. {}", binding);
         }
-
     }
 
 }
