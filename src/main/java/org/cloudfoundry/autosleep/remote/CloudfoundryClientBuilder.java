@@ -29,17 +29,21 @@ public class CloudfoundryClientBuilder {
                 "false"));
         final String username = environment.getProperty("cf.client.username");
         final String password = environment.getProperty("cf.client.password");
-        final String clientId = environment.getProperty("cf.client.clientId");
-        final String clientSecret = environment.getProperty("cf.client.clientSecret");
+        final String clientId = environment.getProperty("cf.client.clientId", "");
+        final String clientSecret = environment.getProperty("cf.client.clientSecret", "");
         try {
 
             log.debug("buildClient - targetEndpoint={}", targetEndpoint);
             log.debug("buildClient - skipSslValidation={}", skipSslValidation);
             log.debug("buildClient - username={}", username);
-            CloudCredentials cloudCredentials = new CloudCredentials(username,
-                    password,
-                    clientId,
-                    clientSecret);
+            CloudCredentials cloudCredentials;
+            if (clientId.equals("") && clientSecret.equals("")) {
+                log.debug("buildClient - no clientId/clientSecret provided. Using default");
+                cloudCredentials = new CloudCredentials(username, password);
+            } else {
+                log.debug("buildClient - clientId/clientSecret provided.");
+                cloudCredentials = new CloudCredentials(username, password, clientId, clientSecret);
+            }
             CloudFoundryClient client = new CloudFoundryClient(cloudCredentials,
                     new URL(targetEndpoint), skipSslValidation);
             client.login();
