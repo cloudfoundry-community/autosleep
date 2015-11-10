@@ -18,8 +18,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -50,10 +48,7 @@ public class GlobalWatcherTest {
         unattached01, unattached02,
     }
 
-    // already attached to another app.
-    private enum AttachedBinding {
-        attached01, attached02,
-    }
+
 
     @Before
     public void populateDb() {
@@ -63,14 +58,9 @@ public class GlobalWatcherTest {
         Arrays.asList(UnattachedBinding.values()).forEach(id -> {
             AutoSleepServiceBinding binding = new AutoSleepServiceBinding(id.name(),
                     SERVICE_ID, null, null, APP_UID.toString());
-            binding.setAssociatedWatcher(WATCHER_UID);
             storedBindings.add(binding);
         });
-        //init mock binding repository with attached binding
-        Arrays.asList(AttachedBinding.values()).forEach(id -> {
-            storedBindings.add(new AutoSleepServiceBinding(id.name(),
-                    SERVICE_ID, null, null, APP_UID.toString()));
-        });
+
         when(mockBindingRepo.findAll()).thenReturn(storedBindings);
 
 
@@ -92,24 +82,15 @@ public class GlobalWatcherTest {
     public void testWatchApp() {
         AutoSleepServiceBinding binding = new AutoSleepServiceBinding("testWatch",
                 SERVICE_ID, null, null, APP_UID.toString());
-        assertNull(binding.getAssociatedWatcher());
         spyWatcher.watchApp(binding);
-        assertNotNull(binding.getAssociatedWatcher());
         verify(mockBindingRepo, times(1)).save(any(AutoSleepServiceBinding.class));
-
-        //test that no error is triggered when watching an app already bound
-        reset(mockBindingRepo);
-        spyWatcher.watchApp(binding);
-        verify(mockBindingRepo, never()).save(any(AutoSleepServiceBinding.class));
     }
 
     @Test
     public void testCancelWatch()  {
         AutoSleepServiceBinding binding = new AutoSleepServiceBinding("testWatch", SERVICE_ID, null, null,
                 APP_UID.toString());
-        binding.setAssociatedWatcher(WATCHER_UID);
         spyWatcher.cancelWatch(binding);
-        assertNull(binding.getAssociatedWatcher());
         verify(mockBindingRepo, times(1)).save(any(AutoSleepServiceBinding.class));
 
         reset(mockBindingRepo);
@@ -119,9 +100,6 @@ public class GlobalWatcherTest {
 
     @Test
     public void testOnStop()  {
-        spyWatcher.cleanup();
-        verify(spyWatcher, never()).cancelWatch(any());
-
         spyWatcher.init();
         spyWatcher.cleanup();
         verify(spyWatcher, times(UnattachedBinding.values().length)).cancelWatch(any());

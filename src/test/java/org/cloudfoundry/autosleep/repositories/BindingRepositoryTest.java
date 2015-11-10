@@ -3,7 +3,6 @@ package org.cloudfoundry.autosleep.repositories;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceBinding;
-import org.cloudfoundry.autosleep.util.EqualUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,7 +14,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 import static java.lang.Math.toIntExact;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -29,7 +27,6 @@ import static org.junit.Assert.*;
 public abstract class BindingRepositoryTest {
 
     private static final String APP_GUID = "2F5A0947-6468-401B-B12A-963405121937";
-    private static final UUID WATCHER_UID = UUID.fromString("F4BB2108-9C21-43C5-98AC-5059F166B23C");
 
     @Autowired
     private BindingRepository dao;
@@ -86,7 +83,7 @@ public abstract class BindingRepositoryTest {
         String bindingId = "bidingIdEquality";
         String serviceId = "serviceIdEquality";
         AutoSleepServiceBinding original = new AutoSleepServiceBinding(bindingId, serviceId, null, null, APP_GUID);
-        original.setAssociatedWatcher(WATCHER_UID);
+
         dao.save(original);
         AutoSleepServiceBinding binding = dao.findOne(bindingId);
         assertFalse("Service binding should have been found", binding == null);
@@ -95,8 +92,6 @@ public abstract class BindingRepositoryTest {
         assertThat(binding, is(equalTo(original)));
         assertTrue("Succeed in getting a binding that does not exist", dao.findOne("testGetServiceFail") == null);
 
-        // test associatedWatcher field, not taken into account in .equals method
-        assertThat(binding.getAssociatedWatcher(), is(equalTo(original.getAssociatedWatcher())));
     }
 
 
