@@ -9,8 +9,6 @@ import org.cloudfoundry.client.lib.domain.CloudEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -66,7 +64,9 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             CloudApplication app = client.getApplication(appUid);
             if (app != null) {
                 if (app.getState() != AppState.STOPPED) {
-                    log.info("Stopping app {} - {}", appUid, app.getName());
+                    ApplicationInfo appInfo = getApplicationInfo(appUid);
+                    log.info("Stopping app [{} / {}], last event: {}, last log: {}", app.getName(), appUid,
+                            appInfo.getLastEvent(), appInfo.getLastLog());
                     client.stopApplication(app.getName());
                 } else {
                     log.debug("App {} already stopped", app.getName());
