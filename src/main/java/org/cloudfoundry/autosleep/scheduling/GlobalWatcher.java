@@ -38,40 +38,20 @@ public class GlobalWatcher {
     public void init() {
         log.debug("Initializer watchers for every app already bound (except if handle by another instance of "
                 + "autosleep)");
-        Iterable<AutoSleepServiceBinding> bindings = bindingRepository.findAll();
-        bindings.forEach(this::watchApp);
+        bindingRepository.findAll().forEach(this::watchApp);
     }
 
-    @PreDestroy
-    public void cleanup() {
-        log.debug("Canceling every watcher before shutdown");
-        Iterable<AutoSleepServiceBinding> bindings = bindingRepository.findAll();
-        bindings.forEach(this::cancelWatch);
-    }
 
     public void watchApp(AutoSleepServiceBinding binding) {
-        watchApp(binding.getId(), UUID.fromString(binding.getAppGuid()), serviceRepository.findOne(binding
-                .getServiceInstanceId()).getInterval());
-        bindingRepository.save(binding);
-    }
-
-    private void watchApp(String taskId, UUID app, Duration interval) {
-        log.debug("Initializing a watch on app {}, for an interval of {} ", app.toString(), interval.toString());
-        AppStateChecker checker = new AppStateChecker(app,
-                taskId,
+        Duration interval = serviceRepository.findOne(binding.getServiceInstanceId()).getInterval();
+        log.debug("Initializing a watch on app {}, for an interval of {} ", binding.getAppGuid(), interval.toString());
+        AppStateChecker checker = new AppStateChecker(UUID.fromString(binding.getAppGuid()),
+                binding.getId(),
                 interval,
                 remote,
-                clock);
+                clock,
+                bindingRepository);
         checker.start();
-    }
-
-    public void cancelWatch(AutoSleepServiceBinding binding) {
-        if (binding != null && binding.getId() != null) {
-            clock.stopTimer(binding.getId());
-            bindingRepository.save(binding);
-        } else {
-            log.error("PROBABLE BUG. Trying to cancel an unknown task... This has to be investigated. {}", binding);
-        }
     }
 
 }

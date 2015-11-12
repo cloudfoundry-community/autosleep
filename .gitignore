@@ -16,3 +16,4 @@ src/test/java/org/cloudfoundry/autosleep/Sandbox.java
 log.html
 output.xml
 report.html
+coverage-error.log

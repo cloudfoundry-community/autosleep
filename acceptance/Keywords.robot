@@ -14,7 +14,7 @@ ${INACTIVITY_BUFFER_IN_S}  20
 Create service instance
     [Documentation]             Create a service instance, checking that it doesn't fail
 	[Arguments]                 ${inactivity}=${DEFAULT_INACTIVITY}
-	${result} =                 Run Process  cf  cs  autosleep  opt-in  ${SERVICE_INSTANCE_NAME}  -c  {"inactivity": "${inactivity}"}
+	${result} =                 Run Process  cf  cs  autosleep  default  ${SERVICE_INSTANCE_NAME}  -c  {"inactivity": "${inactivity}"}
 	Should Not Contain          ${result.stdout}    FAIL
 	Should Be Equal As Integers    ${result.rc}    0
 	[Return]                    ${result.rc}
@@ -56,6 +56,13 @@ Check App Stopped
     [Arguments]         ${name}
 	${result} =         Run Process         cf  app  ${name}
 	Should Contain  ${result.stdout}    stopped
+
+Start App
+    [Documentation]     Start App
+    [Arguments]         ${name}
+    ${result} =         Run Process         cf  start  ${name}
+    Log  ${result.stdout}
+    Should Be Equal As Integers  ${result.rc}    0
 
 Restart App
     [Documentation]     Restart App

@@ -80,25 +80,7 @@ public class GlobalWatcherTest {
         AutoSleepServiceBinding binding = new AutoSleepServiceBinding("testWatch",
                 SERVICE_ID, null, null, APP_UID.toString());
         spyWatcher.watchApp(binding);
-        verify(mockBindingRepo, times(1)).save(any(AutoSleepServiceBinding.class));
+        verify(clock).scheduleTask(eq("testWatch"), eq(Duration.ofSeconds(0)), any(AppStateChecker.class));
     }
 
-    @Test
-    public void testCancelWatch()  {
-        AutoSleepServiceBinding binding = new AutoSleepServiceBinding("testWatch", SERVICE_ID, null, null,
-                APP_UID.toString());
-        spyWatcher.cancelWatch(binding);
-        verify(mockBindingRepo, times(1)).save(any(AutoSleepServiceBinding.class));
-
-        reset(mockBindingRepo);
-        spyWatcher.cancelWatch(null);
-        verify(mockBindingRepo, never()).save(any(AutoSleepServiceBinding.class));
-    }
-
-    @Test
-    public void testOnStop()  {
-        spyWatcher.init();
-        spyWatcher.cleanup();
-        verify(spyWatcher, times(UnattachedBinding.values().length)).cancelWatch(any());
-    }
 }

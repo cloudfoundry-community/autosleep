@@ -51,8 +51,8 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
         String bindingId = request.getBindingId();
         log.debug("deleteServiceInstanceBinding - {}", bindingId);
         AutoSleepServiceBinding binding = bindingRepository.findOne(bindingId);
-        watcher.cancelWatch(binding);
         bindingRepository.delete(bindingId);
+        //task launched will unbind by itself
         return binding;
     }
 }
