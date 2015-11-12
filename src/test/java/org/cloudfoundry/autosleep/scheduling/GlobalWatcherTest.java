@@ -1,11 +1,12 @@
 package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.dao.model.ASServiceBinding;
+import org.cloudfoundry.autosleep.dao.model.ASServiceInstance;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceBinding;
-import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,6 +41,8 @@ public class GlobalWatcherTest {
     @Mock
     private BindingRepository mockBindingRepo;
 
+    @Mock
+    private ApplicationRepository mockAppRepo;
 
     private GlobalWatcher spyWatcher;
 
@@ -51,22 +54,21 @@ public class GlobalWatcherTest {
     public void populateDb() {
 
         //init mock binding repository with unattached binding
-        List<AutoSleepServiceBinding> storedBindings = new ArrayList<>();
+        List<ASServiceBinding> storedBindings = new ArrayList<>();
         Arrays.asList(UnattachedBinding.values()).forEach(id -> {
-            AutoSleepServiceBinding binding = new AutoSleepServiceBinding(id.name(),
+            ASServiceBinding binding = new ASServiceBinding(id.name(),
                     SERVICE_ID, null, null, APP_UID.toString());
             storedBindings.add(binding);
         });
 
         when(mockBindingRepo.findAll()).thenReturn(storedBindings);
 
-
         //init mock serviceRepo
-        AutoSleepServiceInstance mockService = mock(AutoSleepServiceInstance.class);
+        ASServiceInstance mockService = mock(ASServiceInstance.class);
         when(mockService.getInterval()).thenReturn(INTERVAL);
         when(mockServiceRepo.findOne(any())).thenReturn(mockService);
 
-        spyWatcher = spy(new GlobalWatcher(clock, mockRemote, mockBindingRepo, mockServiceRepo));
+        spyWatcher = spy(new GlobalWatcher(clock, mockRemote, mockBindingRepo, mockServiceRepo, mockAppRepo));
     }
 
     @Test
@@ -77,8 +79,7 @@ public class GlobalWatcherTest {
 
     @Test
     public void testWatchApp() {
-        AutoSleepServiceBinding binding = new AutoSleepServiceBinding("testWatch",
-                SERVICE_ID, null, null, APP_UID.toString());
+        ASServiceBinding binding = new ASServiceBinding("testWatch", SERVICE_ID, null, null, APP_UID.toString());
         spyWatcher.watchApp(binding);
         verify(clock).scheduleTask(eq("testWatch"), eq(Duration.ofSeconds(0)), any(AppStateChecker.class));
     }

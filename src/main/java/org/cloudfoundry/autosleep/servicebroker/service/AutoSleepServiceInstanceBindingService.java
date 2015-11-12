@@ -1,9 +1,9 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.model.ASServiceBinding;
+import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
-import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceBinding;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
@@ -35,7 +35,7 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
         String bindingId = request.getBindingId();
         String serviceId = request.getServiceInstanceId();
         log.debug("createServiceInstanceBinding - {}", request.getBindingId());
-        AutoSleepServiceBinding binding = new AutoSleepServiceBinding(bindingId,
+        ASServiceBinding binding = new ASServiceBinding(bindingId,
                 serviceId,
                 null,
                 null,
@@ -50,7 +50,7 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
             ServiceBrokerException {
         String bindingId = request.getBindingId();
         log.debug("deleteServiceInstanceBinding - {}", bindingId);
-        AutoSleepServiceBinding binding = bindingRepository.findOne(bindingId);
+        ASServiceBinding binding = bindingRepository.findOne(bindingId);
         bindingRepository.delete(bindingId);
         //task launched will unbind by itself
         return binding;

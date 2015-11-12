@@ -1,10 +1,11 @@
 package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.remote.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.ASServiceBinding;
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceBinding;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,14 +18,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyObject;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 
 @Slf4j
@@ -49,6 +43,9 @@ public class AppStateCheckerTest {
     @Mock
     private BindingRepository bindingRepository;
 
+    @Mock
+    private ApplicationRepository applicationRepository;
+
     private AppStateChecker spyChecker;
 
 
@@ -58,7 +55,8 @@ public class AppStateCheckerTest {
     @Before
     public void buildMocks() {
         when(mockRemote.getApplicationInfo(APP_UID)).thenReturn(applicationInfo);
-        spyChecker = spy(new AppStateChecker(APP_UID, BINDING_ID, INTERVAL, mockRemote, clock, bindingRepository));
+        spyChecker = spy(new AppStateChecker(APP_UID, BINDING_ID, INTERVAL, mockRemote, clock, bindingRepository,
+                applicationRepository));
 
     }
 
@@ -70,9 +68,9 @@ public class AppStateCheckerTest {
             return null;
         }).when(clock).scheduleTask(BINDING_ID, Duration.ofSeconds(0), spyChecker);
 
-        when(applicationInfo.getLastActionDate()).thenReturn(Instant.now());
+        when(applicationInfo.computeLastDate()).thenReturn(Instant.now());
 
-        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new AutoSleepServiceBinding(BINDING_ID,
+        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new ASServiceBinding(BINDING_ID,
                 "serviceInstance", null, null, APP_UID.toString()));
 
         spyChecker.start();
@@ -84,8 +82,8 @@ public class AppStateCheckerTest {
 
     @Test
     public void testRunOnActive() throws Exception {
-        when(applicationInfo.getLastActionDate()).thenReturn(Instant.now());
-        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new AutoSleepServiceBinding(BINDING_ID,
+        when(applicationInfo.computeLastDate()).thenReturn(Instant.now());
+        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new ASServiceBinding(BINDING_ID,
                 "serviceInstance",
                 null, null, APP_UID.toString()));
         spyChecker.run();
@@ -96,8 +94,8 @@ public class AppStateCheckerTest {
 
     @Test
     public void testRunOnInactive() throws Exception {
-        when(applicationInfo.getLastActionDate()).thenReturn(Instant.now().minus(INTERVAL.multipliedBy(2)));
-        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new AutoSleepServiceBinding(BINDING_ID,
+        when(applicationInfo.computeLastDate()).thenReturn(Instant.now().minus(INTERVAL.multipliedBy(2)));
+        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new ASServiceBinding(BINDING_ID,
                 "serviceInstance",
                 null, null, APP_UID.toString()));
         spyChecker.run();
@@ -108,7 +106,7 @@ public class AppStateCheckerTest {
     @Test
     public void testRunOnAlreadyStopped() throws Exception {
         when(applicationInfo.getState()).thenReturn(CloudApplication.AppState.STOPPED);
-        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new AutoSleepServiceBinding(BINDING_ID,
+        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new ASServiceBinding(BINDING_ID,
                 "serviceInstance",
                 null, null, APP_UID.toString()));
         spyChecker.run();
@@ -120,7 +118,7 @@ public class AppStateCheckerTest {
     public void testStopByItself() throws Exception {
 
         when(bindingRepository.findOne(BINDING_ID))
-                .thenReturn(new AutoSleepServiceBinding(BINDING_ID, "serviceInstance", null, null, APP_UID.toString()))
+                .thenReturn(new ASServiceBinding(BINDING_ID, "serviceInstance", null, null, APP_UID.toString()))
                 .thenReturn(null);
 
         doAnswer(invocationOnMock -> {
@@ -136,7 +134,7 @@ public class AppStateCheckerTest {
         }).when(clock).scheduleTask(eq(BINDING_ID), anyObject(), anyObject());
 
 
-        when(applicationInfo.getLastActionDate()).thenReturn(Instant.now());
+        when(applicationInfo.computeLastDate()).thenReturn(Instant.now());
 
         spyChecker.start();
         Thread.sleep(INTERVAL.multipliedBy(3).toMillis());

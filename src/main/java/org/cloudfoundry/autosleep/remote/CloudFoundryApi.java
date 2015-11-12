@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.remote;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
 import org.cloudfoundry.client.lib.domain.ApplicationLog;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
@@ -39,14 +40,10 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 } else {
                     log.debug("events.size() = 0");
                 }
-
-                //conversion to LocalDateTime
-
                 log.debug("Building ApplicationInfo(lastEventTime={}, lastLogTime={}, state)",
                         lastEventTime, lastLogTime);
-                return new ApplicationInfo(lastEventTime == null ? null : lastEventTime.toInstant(),
-                        lastLogTime == null ? null : lastLogTime.toInstant(),
-                        app.getState());
+                return new ApplicationInfo(app,appUid,lastEventTime == null ? null : lastEventTime.toInstant(),
+                        lastLogTime == null ? null : lastLogTime.toInstant());
             } else {
                 log.error("No app found for UID {}", appUid);
                 return null;

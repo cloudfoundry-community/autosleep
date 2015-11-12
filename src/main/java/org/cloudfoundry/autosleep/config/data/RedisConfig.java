@@ -1,12 +1,14 @@
 package org.cloudfoundry.autosleep.config.data;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.repositories.redis.RedisBindingRepository;
-import org.cloudfoundry.autosleep.repositories.redis.RedisServiceRepository;
-import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceBinding;
-import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.ASServiceBinding;
+import org.cloudfoundry.autosleep.dao.model.ASServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.redis.RedisApplicationRepository;
+import org.cloudfoundry.autosleep.dao.repositories.redis.RedisBindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.redis.RedisServiceRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -29,50 +31,64 @@ public class RedisConfig {
     }
 
     @Bean
-    public ServiceRepository redisServiceRepository(RedisTemplate<String, AutoSleepServiceInstance> redisTemplate) {
-        return new RedisServiceRepository(redisTemplate);
+    public ServiceRepository redisServiceRepository(RedisTemplate<String, ASServiceInstance> redisTemplate) {
+        return new RedisServiceRepository(redisTemplate, "service_store");
     }
 
     @Bean
-    public BindingRepository redisBindingRepository(RedisTemplate<String, AutoSleepServiceBinding> redisTemplate) {
-        return new RedisBindingRepository(redisTemplate);
+    public BindingRepository redisBindingRepository(RedisTemplate<String, ASServiceBinding> redisTemplate) {
+        return new RedisBindingRepository(redisTemplate, "binding_store");
     }
 
-
-    /** Init serializers for ServiceInstances in Redis. */
     @Bean
-    public RedisTemplate<String, AutoSleepServiceInstance> serviceRedisTemplate(RedisConnectionFactory
-                                                                                        redisConnectionFactory) {
+    public RedisApplicationRepository redisAppRepository(RedisTemplate<String, ApplicationInfo> redisTemplate) {
+        return new RedisApplicationRepository(redisTemplate, "app_store");
+    }
 
-        RedisTemplate<String, AutoSleepServiceInstance> template = new RedisTemplate<>();
-        template.setConnectionFactory(redisConnectionFactory);
+    private final RedisSerializer<String> stringSerializer = new StringRedisSerializer();
 
-        RedisSerializer<String> stringSerializer = new StringRedisSerializer();
-        RedisSerializer<AutoSleepServiceInstance> serviceSerializer = new Jackson2JsonRedisSerializer<>(
-                AutoSleepServiceInstance.class);
-
-        template.setKeySerializer(stringSerializer);
+    /**
+     * Init serializers for ServiceInstances in Redis.
+     */
+    @Bean
+    public RedisTemplate<String, ASServiceInstance> serviceRedisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<String, ASServiceInstance> template = getStringKeyTemplate(factory);
+        RedisSerializer<ASServiceInstance> serviceSerializer = new Jackson2JsonRedisSerializer<>(
+                ASServiceInstance.class);
         template.setValueSerializer(serviceSerializer);
-        template.setHashKeySerializer(stringSerializer);
         template.setHashValueSerializer(serviceSerializer);
         return template;
     }
 
-    /** Init serializers for ServiceBindings in Redis. */
+    /**
+     * Init serializers for ServiceBindings in Redis.
+     */
     @Bean
-    public RedisTemplate<String, AutoSleepServiceBinding> bindingRedisTemplate(RedisConnectionFactory
-                                                                                       redisConnectionFactory) {
-        RedisTemplate<String, AutoSleepServiceBinding> template = new RedisTemplate<>();
-        template.setConnectionFactory(redisConnectionFactory);
-        RedisSerializer<String> stringSerializer = new StringRedisSerializer();
-        RedisSerializer<AutoSleepServiceBinding> serviceSerializer = new Jackson2JsonRedisSerializer<>(
-                AutoSleepServiceBinding.class);
-        template.setKeySerializer(stringSerializer);
-        template.setValueSerializer(serviceSerializer);
-        template.setHashKeySerializer(stringSerializer);
-        template.setHashValueSerializer(serviceSerializer);
-
+    public RedisTemplate<String, ASServiceBinding> bindingRedisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<String, ASServiceBinding> template = getStringKeyTemplate(factory);
+        RedisSerializer<ASServiceBinding> bindingSerializer = new Jackson2JsonRedisSerializer<>(ASServiceBinding.class);
+        template.setValueSerializer(bindingSerializer);
+        template.setHashValueSerializer(bindingSerializer);
         return template;
     }
 
+    /**
+     * Init serializers for ApplicationInfos in Redis.
+     */
+    @Bean
+    public RedisTemplate<String, ApplicationInfo> appInfoRedisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<String, ApplicationInfo> template = getStringKeyTemplate(factory);
+        RedisSerializer<ApplicationInfo> appSerializer = new Jackson2JsonRedisSerializer<>(ApplicationInfo.class);
+        template.setValueSerializer(appSerializer);
+        template.setHashValueSerializer(appSerializer);
+        return template;
+    }
+
+    protected <T> RedisTemplate<String, T> getStringKeyTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<String, T> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+        template.setKeySerializer(stringSerializer);
+        template.setHashKeySerializer(stringSerializer);
+        return template;
+    }
 }

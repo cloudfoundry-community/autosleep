@@ -1,12 +1,10 @@
 package org.cloudfoundry.autosleep.admin.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.cloudfoundry.autosleep.admin.model.ServiceBinding;
-import org.cloudfoundry.autosleep.admin.model.ServiceInstance;
-import org.cloudfoundry.autosleep.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceBinding;
-import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.ASServiceBinding;
+import org.cloudfoundry.autosleep.dao.model.ASServiceInstance;
+import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.Plan;
@@ -48,7 +46,7 @@ public class DebugControllerTest {
     private BindingRepository bindingRepository;
 
     @Mock
-    private Catalog catalog ;
+    private Catalog catalog;
 
     @InjectMocks
     private DebugController debugController;
@@ -58,9 +56,9 @@ public class DebugControllerTest {
 
     private ObjectMapper objectMapper;
 
-    private AutoSleepServiceInstance serviceInstance;
+    private ASServiceInstance serviceInstance;
 
-    private AutoSleepServiceBinding serviceBinding;
+    private ASServiceBinding serviceBinding;
 
     @Before
     public void init() {
@@ -72,9 +70,9 @@ public class DebugControllerTest {
                 "plan",
                 "org",
                 "space");
-        serviceInstance = new AutoSleepServiceInstance(
+        serviceInstance = new ASServiceInstance(
                 createRequestTemplate.withServiceInstanceId(serviceInstanceId));
-        serviceBinding = new AutoSleepServiceBinding(serviceBindingId, serviceInstanceId,
+        serviceBinding = new ASServiceBinding(serviceBindingId, serviceInstanceId,
                 null, null, UUID.randomUUID().toString());
         Mockito.when(catalog.getServiceDefinitions()).thenReturn(Collections.singletonList(
                 new ServiceDefinition("serviceDefinitionId", "serviceDefinition", "", true,
@@ -104,8 +102,9 @@ public class DebugControllerTest {
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
-                    ServiceInstance[] serviceInstances = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(), ServiceInstance[].class);
+                    org.cloudfoundry.autosleep.admin.model.ServiceInstance[] serviceInstances = objectMapper
+                            .readValue(mvcResult.getResponse().getContentAsString(), org.cloudfoundry.autosleep.admin
+                                    .model.ServiceInstance[].class);
                     assertThat(serviceInstances.length, is(equalTo(1)));
                     assertThat(serviceInstances[0].getInstanceId(), is(equalTo(serviceInstanceId)));
                 });
@@ -119,8 +118,9 @@ public class DebugControllerTest {
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
-                    ServiceBinding[] serviceBindings = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(), ServiceBinding[].class);
+                    org.cloudfoundry.autosleep.admin.model.ServiceBinding[] serviceBindings = objectMapper
+                            .readValue(mvcResult.getResponse().getContentAsString(), org.cloudfoundry.autosleep.admin
+                                    .model.ServiceBinding[].class);
                     assertThat(serviceBindings.length, is(equalTo(1)));
                     assertThat(serviceBindings[0].getId(), is(equalTo(serviceBindingId)));
                 });

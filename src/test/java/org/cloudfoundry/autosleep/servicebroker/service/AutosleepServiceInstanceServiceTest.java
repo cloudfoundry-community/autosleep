@@ -2,9 +2,9 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
-import org.cloudfoundry.autosleep.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.model.ASServiceInstance;
+import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.servicebroker.configuration.AutosleepCatalogBuilder;
-import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceInstance;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
@@ -12,7 +12,6 @@ import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
 import org.junit.After;
 import org.junit.Before;
@@ -93,7 +92,7 @@ public class AutosleepServiceInstanceServiceTest {
         }
 
         Map<String, Object> params = new HashMap<>();
-        params.put(AutoSleepServiceInstance.INACTIVITY_PARAMETER, "10H");
+        params.put(ASServiceInstance.INACTIVITY_PARAMETER, "10H");
         try {
             createRequest.setParameters(params);
             service.createServiceInstance(createRequest);
@@ -103,9 +102,9 @@ public class AutosleepServiceInstanceServiceTest {
             log.debug("{} occurred as expected", s.getClass().getSimpleName());
         }
 
-        ServiceInstance si;
+        org.cloudfoundry.community.servicebroker.model.ServiceInstance si;
 
-        params.put(AutoSleepServiceInstance.INACTIVITY_PARAMETER, "PT10H");
+        params.put(ASServiceInstance.INACTIVITY_PARAMETER, "PT10H");
         try {
             createRequest.setParameters(params);
             si = service.createServiceInstance(createRequest);
@@ -134,8 +133,10 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void testGetServiceInstance() throws Exception {
         String testId = "testget";
-        ServiceInstance createdInstance = service.createServiceInstance(createRequest.withServiceInstanceId(testId));
-        ServiceInstance retrievedInstance = service.getServiceInstance(testId);
+        org.cloudfoundry.community.servicebroker.model.ServiceInstance createdInstance = service
+                .createServiceInstance(createRequest.withServiceInstanceId(testId));
+        org.cloudfoundry.community.servicebroker.model.ServiceInstance retrievedInstance = service.getServiceInstance(
+                testId);
         assertThat("Created instance and retrieved instance should be the same", createdInstance,
                 is(equalTo(retrievedInstance)));
     }
@@ -143,13 +144,13 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void testUpdateServiceInstance() throws Exception {
         String testId = "testupdate";
-        createRequest.setParameters(Collections.singletonMap(AutoSleepServiceInstance.INACTIVITY_PARAMETER, "PT10H"));
+        createRequest.setParameters(Collections.singletonMap(ASServiceInstance.INACTIVITY_PARAMETER, "PT10H"));
         service.createServiceInstance(createRequest.withServiceInstanceId(testId));
-        AutoSleepServiceInstance serviceInstance = serviceRepository.findOne(testId);
+        ASServiceInstance serviceInstance = serviceRepository.findOne(testId);
         assertThat(serviceInstance, is(notNullValue()));
         assertThat(serviceInstance.getInterval(), is(equalTo(Duration.ofHours(10))));
 
-        updateRequest.setParameters(Collections.singletonMap(AutoSleepServiceInstance.INACTIVITY_PARAMETER, "PT15M"));
+        updateRequest.setParameters(Collections.singletonMap(ASServiceInstance.INACTIVITY_PARAMETER, "PT15M"));
         service.updateServiceInstance(updateRequest.withInstanceId(testId));
         serviceInstance = serviceRepository.findOne(testId);
         assertThat(serviceInstance, is(notNullValue()));
@@ -166,7 +167,8 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void testDeleteServiceInstance() throws Exception {
         service.createServiceInstance(createRequest.withServiceInstanceId(deleteRequest.getServiceInstanceId()));
-        ServiceInstance si = service.getServiceInstance(deleteRequest.getServiceInstanceId());
+        org.cloudfoundry.community.servicebroker.model.ServiceInstance si = service.getServiceInstance(deleteRequest
+                .getServiceInstanceId());
         assertTrue("Succeed in getting service ", si != null);
         si = service.deleteServiceInstance(deleteRequest);
         assertTrue("Succeed in deleting service ", si != null);
