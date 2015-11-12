@@ -2,8 +2,6 @@
 Resource        Keywords.robot
 Documentation   Test if inactivity is detected
 Force Tags      Service broker
-
-*** Settings ***
 Test Setup      Run Keywords  Clean  Create service instance  Bind service instance
 Test Teardown   Run Keywords  Unbind service instance  Delete service instance
 

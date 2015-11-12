@@ -26,7 +26,7 @@ public class AutoSleepServiceBinding extends ServiceInstanceBinding {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public AutoSleepServiceBinding(String id, String serviceInstanceId, Map<String, Object> credentials, String
+    public AutoSleepServiceBinding(String id, String serviceInstanceId, Map<String, Object> credentials,String
             syslogDrainUrl, String appGuid) {
         super(id, serviceInstanceId, credentials, syslogDrainUrl, appGuid);
         //will throw an exception if wrong format TODO check if needed with new java-client-lib

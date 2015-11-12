@@ -86,7 +86,6 @@ public class AutoSleepServiceInstanceBindingServiceTest {
         DeleteServiceInstanceBindingRequest deleteRequest = new DeleteServiceInstanceBindingRequest(bindingId, null,
                 serviceDefinitionId, planId);
         bindingService.deleteServiceInstanceBinding(deleteRequest);
-        verify(mockWatcher,times(1)).cancelWatch(any());
     }
 
 }

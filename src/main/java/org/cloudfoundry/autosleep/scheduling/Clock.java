@@ -6,8 +6,11 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -27,10 +30,10 @@ public class Clock {
      *
      * @param id           task id, will be used to stop timer
      * @param initialDelay the time to delay first execution
-     * @param period      the time to wait between executions
+     * @param period       the time to wait between executions
      * @param action       Runnable to call
      */
-    public void startTimer(String id, Duration initialDelay, Duration period,  Runnable action) {
+    public void startTimer(String id, Duration initialDelay, Duration period, Runnable action) {
         log.debug("startTimer - task {}", id);
         ScheduledFuture<?> handle = scheduler.scheduleAtFixedRate(action, initialDelay.toMillis(),
                 period.toMillis(), TimeUnit.MILLISECONDS);
@@ -40,24 +43,34 @@ public class Clock {
     /**
      * Schedule a Runnable to be run after a certain delay.
      *
-     * @param id     task id, will be used to cancel it
-     * @param duration  the time to wait before execution
-     * @param action Runnable to call
+     * @param id       task id, will be used to remove it
+     * @param duration the time to wait before execution
+     * @param action   Runnable to call
      */
     public void scheduleTask(String id, Duration duration, Runnable action) {
-        log.debug("schedule - task {}", id);
+        log.debug("scheduleTask - task {}", id);
         ScheduledFuture<?> handle = scheduler.schedule(action, duration.toMillis(), TimeUnit.MILLISECONDS);
         tasks.put(id, handle);
     }
 
-    /**
-     * Timer stop.
-     *
-     * @param id id given when started the task
-     */
-    public void stopTimer(String id) {
-        log.debug("stopTimer - service {}", id);
-        tasks.get(id).cancel(true);
 
+    /**
+     * Remove a task by its id.
+     *
+     * @param id task id, will be used to cancel it
+     */
+    public void removeTask(String id) {
+        log.debug("removeTask - task {}", id);
+        tasks.remove(id);
     }
+
+    /**
+     * Access to the task ids.
+     *
+     * @return a read-only set containing the ids of the current tasks
+     */
+    public Set<String> listTaskIds() {
+        return Collections.unmodifiableSet(tasks.keySet());
+    }
+
 }
