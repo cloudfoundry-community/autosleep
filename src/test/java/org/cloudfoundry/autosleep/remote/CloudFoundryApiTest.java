@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.remote;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
 import org.cloudfoundry.client.lib.domain.ApplicationLog;
 import org.cloudfoundry.client.lib.domain.ApplicationLog.MessageType;
@@ -123,7 +124,7 @@ public class CloudFoundryApiTest {
 
         assertThat(applicationInfo.getLastEvent(), is(equalTo(lastEventTime.toInstant())));
 
-        assertThat(applicationInfo.getLastActionDate(), is(equalTo(lastActionTime.toInstant())));
+        assertThat(applicationInfo.computeLastDate(), is(equalTo(lastActionTime.toInstant())));
     }
 
     @Test
@@ -151,5 +152,13 @@ public class CloudFoundryApiTest {
     public void testGetApplicationsNames() throws Exception {
         List<String> applicationNames = cloudFoundryApi.getApplicationsNames();
         assertThat(applicationNames, is(nullValue()));
+    }
+
+    @Test
+    public void testRuntimeExceptions() throws Exception {
+        when(cloudFoundryClient.getApplication(appStartedUuid)).thenThrow(new RuntimeException("TestRuntimeException"));
+        cloudFoundryApi.startApplication(appStartedUuid);
+        cloudFoundryApi.stopApplication(appStartedUuid);
+        cloudFoundryApi.getApplicationInfo(appStartedUuid);
     }
 }

@@ -1,15 +1,15 @@
 package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.dao.model.ASServiceBinding;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.servicebroker.model.AutoSleepServiceBinding;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -25,13 +25,16 @@ public class GlobalWatcher {
 
     private ServiceRepository serviceRepository;
 
+    private ApplicationRepository applicationRepository;
+
     @Autowired
     public GlobalWatcher(Clock clock, CloudFoundryApiService remote, BindingRepository bindingRepository,
-                         ServiceRepository serviceRepository) {
+                         ServiceRepository serviceRepository, ApplicationRepository applicationRepository) {
         this.clock = clock;
         this.remote = remote;
         this.bindingRepository = bindingRepository;
         this.serviceRepository = serviceRepository;
+        this.applicationRepository = applicationRepository;
     }
 
     @PostConstruct
@@ -41,8 +44,7 @@ public class GlobalWatcher {
         bindingRepository.findAll().forEach(this::watchApp);
     }
 
-
-    public void watchApp(AutoSleepServiceBinding binding) {
+    public void watchApp(ASServiceBinding binding) {
         Duration interval = serviceRepository.findOne(binding.getServiceInstanceId()).getInterval();
         log.debug("Initializing a watch on app {}, for an interval of {} ", binding.getAppGuid(), interval.toString());
         AppStateChecker checker = new AppStateChecker(UUID.fromString(binding.getAppGuid()),
@@ -50,8 +52,10 @@ public class GlobalWatcher {
                 interval,
                 remote,
                 clock,
-                bindingRepository);
+                bindingRepository,
+                applicationRepository);
         checker.start();
     }
+
 
 }

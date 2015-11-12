@@ -1,5 +1,7 @@
 package org.cloudfoundry.autosleep.remote;
 
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+
 import java.util.List;
 import java.util.UUID;
 
