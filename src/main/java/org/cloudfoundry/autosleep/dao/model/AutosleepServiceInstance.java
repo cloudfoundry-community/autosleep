@@ -7,7 +7,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.util.EqualUtil;
-import org.cloudfoundry.autosleep.util.Serializers;
+import org.cloudfoundry.autosleep.util.serializer.IntervalDeserializer;
+import org.cloudfoundry.autosleep.util.serializer.IntervalSerializer;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceRequest;
@@ -25,8 +26,8 @@ import java.util.Map;
 public class AutosleepServiceInstance extends org.cloudfoundry.community.servicebroker.model.ServiceInstance {
     public static final String INACTIVITY_PARAMETER = "inactivity";
 
-    @JsonSerialize(using = Serializers.IntervalSerializer.class)
-    @JsonDeserialize(using = Serializers.IntervalDeserializer.class)
+    @JsonSerialize(using = IntervalSerializer.class)
+    @JsonDeserialize(using = IntervalDeserializer.class)
     private Duration interval;
 
     /**

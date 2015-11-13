@@ -59,7 +59,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     @Override
     public void stopApplication(UUID appUid) {
         try {
-            ApplicationInfo app = getApplicationInfo(appUid);
+            CloudApplication app = client.getApplication(appUid);
             if (app != null) {
                 if (app.getState() != AppState.STOPPED) {
                     client.stopApplication(app.getName());

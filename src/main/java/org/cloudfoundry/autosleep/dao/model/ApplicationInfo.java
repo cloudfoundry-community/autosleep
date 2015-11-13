@@ -7,7 +7,8 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.util.EqualUtil;
-import org.cloudfoundry.autosleep.util.Serializers;
+import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
+import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 
 import java.time.Instant;
@@ -26,16 +27,16 @@ public class ApplicationInfo {
     private CloudApplication.AppState state;
 
 
-    @JsonSerialize(using = Serializers.InstantSerializer.class)
-    @JsonDeserialize(using = Serializers.InstantDeserializer.class)
+    @JsonSerialize(using = InstantSerializer.class)
+    @JsonDeserialize(using = InstantDeserializer.class)
     private Instant lastEvent;
 
-    @JsonSerialize(using = Serializers.InstantSerializer.class)
-    @JsonDeserialize(using = Serializers.InstantDeserializer.class)
+    @JsonSerialize(using = InstantSerializer.class)
+    @JsonDeserialize(using = InstantDeserializer.class)
     private Instant lastLog;
 
-    @JsonSerialize(using = Serializers.InstantSerializer.class)
-    @JsonDeserialize(using = Serializers.InstantDeserializer.class)
+    @JsonSerialize(using = InstantSerializer.class)
+    @JsonDeserialize(using = InstantDeserializer.class)
     private Instant nextCheck;
 
     /**
