@@ -21,10 +21,31 @@ public class ApplicationInfo {
 
     @JsonSerialize
     private UUID uuid;
+
     @JsonSerialize
     private String name;
+
+    @JsonSerialize
+<<<<<<< HEAD
+    private CloudApplication.AppState state;
+=======
+    private String space;
+
+    @JsonSerialize
+    private String organization;
+
     @JsonSerialize
     private CloudApplication.AppState state;
+
+    @JsonSerialize
+    private int runningInstances;
+
+    @JsonSerialize
+    private int instances;
+
+    @JsonSerialize
+    private List<String> uris;
+>>>>>>> start state machine
 
 
     @JsonSerialize(using = InstantSerializer.class)
@@ -38,6 +59,9 @@ public class ApplicationInfo {
     @JsonSerialize(using = InstantSerializer.class)
     @JsonDeserialize(using = InstantDeserializer.class)
     private Instant nextCheck;
+
+    @JsonSerialize
+    private ApplicationStateMachine stateMachine = new ApplicationStateMachine();
 
     /**
      * Should never be called. Only for JSON auto serialization.

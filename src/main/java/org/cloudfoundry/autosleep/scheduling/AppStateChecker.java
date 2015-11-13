@@ -39,23 +39,8 @@ public class AppStateChecker implements Runnable {
 
     @Override
     public void run() {
-        ApplicationInfo applicationInfo = appRepository.findOne(appUid.toString());
-        if (applicationInfo != null) {
-            ApplicationActivity applicationActivity = remote.getApplicationActivity(appUid);
-            Instant nextCheckTime = null;
-            if (applicationActivity != null) {
-                if (bindingRepository.findOne(bindingId) != null) {
-                    log.debug("Checking on app {} state, for bindingId {}", appUid, bindingId);
-                    if (applicationActivity.getState() == CloudApplication.AppState.STOPPED) {
-                        log.debug("App already stopped.");
-                        nextCheckTime = rescheduleWithDefaultPeriod();
-                    } else {
-                        //retrieve updated info
-                        Instant lastEvent = LastDateComputer.INSTANCE.computeLastDate(applicationActivity.getLastLog(),
-                                applicationActivity.getLastEvent());
-                        if (lastEvent != null) {
-                            Instant nextIdleTime = lastEvent.plus(period);
-                            log.debug("last event:  {}", lastEvent.toString());
+        ApplicationInfo applicationInfo = remote.getApplicationInfo(appUid);
+        Instant nextCheckTime = null;
 
                             if (nextIdleTime.isBefore(Instant.now())) {
                                 log.info("Stopping app [{} / {}], last event: {}, last log: {}",
