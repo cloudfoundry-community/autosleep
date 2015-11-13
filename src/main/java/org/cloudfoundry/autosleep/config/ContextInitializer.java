@@ -12,6 +12,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Will handle automatic profile assignment.
@@ -66,21 +68,18 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
      * @param cloud Contextual cloud
      * @return the two profils to activate if available ( "profile" and "profile-cloud")
      */
-    public String[] getCloudProfile(Cloud cloud) {
+    private String[] getCloudProfile(Cloud cloud) {
         if (cloud == null) {
             return null;
         }
-
-        List<String> availableProfiles = new ArrayList<String>();
         List<ServiceInfo> availableServices = cloud.getServiceInfos();
-
         log.info("Found serviceInfos: " + StringUtils.collectionToCommaDelimitedString(availableServices));
+        List<String>  availableProfiles = availableServices.stream()
+                .map(Object::getClass)
+                .filter(autorizedPersistenceProfiles::containsKey)
+                .map(autorizedPersistenceProfiles::get)
+                .collect(Collectors.toList());
 
-        for (ServiceInfo serviceInfo : availableServices) {
-            if (autorizedPersistenceProfiles.containsKey(serviceInfo.getClass())) {
-                availableProfiles.add(autorizedPersistenceProfiles.get(serviceInfo.getClass()));
-            }
-        }
 
         if (availableProfiles.size() > 1) {
             throw new IllegalStateException(
@@ -113,13 +112,10 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
      * @return the two profils to activate if available ( "profile" and "profile-local")
      */
     private String[] getActiveProfile(ConfigurableEnvironment appEnvironment) {
-        List<String> serviceProfiles = new ArrayList<String>();
 
-        for (String profile : appEnvironment.getActiveProfiles()) {
-            if (validLocalProfiles.contains(profile)) {
-                serviceProfiles.add(profile);
-            }
-        }
+        List<String> serviceProfiles = Stream.of(appEnvironment.getActiveProfiles())
+                .filter(validLocalProfiles::contains)
+                .collect(Collectors.toList());
 
         if (serviceProfiles.size() > 1) {
             throw new IllegalStateException("Only one active Spring profile may be set among the following: "

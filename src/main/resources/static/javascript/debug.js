@@ -1,17 +1,44 @@
 
 
-function ServicesHelper  (pathServiceInstance, serviceDefinitionId, planId) {
-    this.pathDebugListServiceInstances = "/admin/debug/services/servicesinstances/";
-    this.pathDebugListServiceBindings = "/admin/debug/services/servicebindings/";
+function DebugHelper  (pathServiceInstance, serviceDefinitionId, planId) {
+    this.pathDebugListInstances = "/admin/debug/services/instances/";
+    this.pathDebugListBindings = "/admin/debug/services/bindings/";
+    this.pathDebugListApplications = "/admin/debug/services/applications/";
     this.pathDebugPageServiceBindingsPfx = "/admin/debug/";
     this.pathDebugPageServiceBindingsSfx = "/bindings/";
     this.pathServiceInstance = pathServiceInstance;
     this.serviceDefinitionId = serviceDefinitionId;
     this.planId = planId;
-    console.log("ServicesHelper - "+ pathServiceInstance + " - "+serviceDefinitionId+" - "+planId);
+    console.log("DebugHelper - "+serviceDefinitionId+" - "+planId);
 }
 
-ServicesHelper.prototype.addServiceInstance = function(){
+DebugHelper.prototype.listApplications = function (){
+    $.ajax({
+        url : this.pathDebugListApplications,
+        success : function (applications) {
+            var container = $("#allApplications");
+            container.empty();
+            if(applications.length > 0){
+                container.append($("<div>").addClass("col-xs-3").html("Guid"));
+                container.append($("<div>").addClass("col-xs-3").html("Name"));
+                container.append($("<div>").addClass("col-xs-3").html("State"));
+                container.append($("<div>").addClass("col-xs-3").html("Next check"));
+            }
+            $.each(applications, function(idx, application){
+                container.append($("<div>").addClass("col-xs-3").append(application.uuid));
+                container.append($("<div>").addClass("col-xs-3").append(application.name));
+                container.append($("<div>").addClass("col-xs-3").append(application.state));
+                container.append($("<div>").addClass("col-xs-3").append(application.nextCheck));
+            });
+        },
+        error : function(xhr){
+            displayDanger("Error listing applications: "+xhr.responseText);
+        }
+    });
+};
+
+
+DebugHelper.prototype.addServiceInstance = function(){
     var that = this;
     var data = {
         service_id : this.serviceDefinitionId,
@@ -36,10 +63,10 @@ ServicesHelper.prototype.addServiceInstance = function(){
     });
 };
 
-ServicesHelper.prototype.listServiceInstances = function(){
+DebugHelper.prototype.listServiceInstances = function(){
     var that = this;
     $.ajax({
-        url : this.pathDebugListServiceInstances,
+        url : this.pathDebugListInstances,
         success : function (serviceInstances) {
             var container = $("#allServiceInstances");
             container.empty();
@@ -50,16 +77,17 @@ ServicesHelper.prototype.listServiceInstances = function(){
                 container.append($("<div>").addClass("col-xs-1"));
             }
             $.each(serviceInstances, function(idx, serviceInstance){
-                var link = $("<a>", {href : that.pathDebugPageServiceBindingsPfx+serviceInstance.instanceId+that.pathDebugPageServiceBindingsSfx}).html(serviceInstance.instanceId);
+                var link = $("<a>", {href : that.pathDebugPageServiceBindingsPfx+serviceInstance.service_instance_id
+                +that.pathDebugPageServiceBindingsSfx}).html(serviceInstance.service_instance_id);
                 container.append($("<div>").addClass("col-xs-4").append(link));
-                container.append($("<div>").addClass("col-xs-2").html(serviceInstance.definitionId));
-                container.append($("<div>").addClass("col-xs-3").html(serviceInstance.planId));
+                container.append($("<div>").addClass("col-xs-2").html(serviceInstance.service_id));
+                container.append($("<div>").addClass("col-xs-3").html(serviceInstance.plan_id));
                 var button = $("<button>", {type : "button"}).addClass("btn btn-circle")
                     .append($("<i>").addClass("glyphicon glyphicon-remove"));
                 container.append($("<div>").addClass("col-xs-1").append(button));
                 button.on("click", function(e){
                     e.preventDefault();
-                    that.deleteServiceInstance(serviceInstance.instanceId);
+                    that.deleteServiceInstance(serviceInstance.service_instance_id);
                 });
             });
         },
@@ -69,7 +97,7 @@ ServicesHelper.prototype.listServiceInstances = function(){
     });
 };
 
-ServicesHelper.prototype.deleteServiceInstance = function(serviceInstanceId){
+DebugHelper.prototype.deleteServiceInstance = function(serviceInstanceId){
     var that = this;
     $.ajax({
         url : this.pathServiceInstance+"/"+serviceInstanceId
@@ -85,7 +113,7 @@ ServicesHelper.prototype.deleteServiceInstance = function(serviceInstanceId){
     });
 };
 
-ServicesHelper.prototype.addServiceBinding = function(serviceInstanceId){
+DebugHelper.prototype.addServiceBinding = function(serviceInstanceId){
     var that = this;
     var data = {
         service_id : this.serviceDefinitionId,
@@ -110,10 +138,10 @@ ServicesHelper.prototype.addServiceBinding = function(serviceInstanceId){
     });
 };
 
-ServicesHelper.prototype.listServiceBindings = function(serviceInstanceId){
+DebugHelper.prototype.listServiceBindings = function(serviceInstanceId){
     var that = this;
     $.ajax({
-        url : this.pathDebugListServiceBindings + serviceInstanceId ,
+        url : this.pathDebugListBindings + serviceInstanceId ,
         success : function (serviceBindings) {
             var container = $("#allServiceBindings");
             container.empty();
@@ -140,7 +168,7 @@ ServicesHelper.prototype.listServiceBindings = function(serviceInstanceId){
     });
 };
 
-ServicesHelper.prototype.deleteServiceBinding = function(instanceId, bindingId){
+DebugHelper.prototype.deleteServiceBinding = function(instanceId, bindingId){
     var that = this;
     $.ajax({
         url : this.pathServiceInstance+"/"+instanceId +"/service_bindings/" + bindingId
@@ -155,3 +183,5 @@ ServicesHelper.prototype.deleteServiceBinding = function(instanceId, bindingId){
         }
     });
 };
+
+

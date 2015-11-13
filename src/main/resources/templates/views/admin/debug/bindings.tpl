@@ -3,7 +3,7 @@ package templates.views.admin.debug
 layout 'layouts/main.tpl',
         pageTitle: "Service bindings of service $serviceInstance",
         additionalScripts: contents {
-            script(src: '/javascript/services.js', "")
+            script(src: '/javascript/debug.js', "")
             script(type: "text/javascript") {
                 yieldUnescaped 'var helper = null;'
                 yieldUnescaped 'var serviceInstance = "'
@@ -11,7 +11,7 @@ layout 'layouts/main.tpl',
                 yieldUnescaped '";'
                 yieldUnescaped 'window.onload = function(){'
                 yieldUnescaped 'initNavbar();'
-                yieldUnescaped 'helper = new ServicesHelper("'
+                yieldUnescaped 'helper = new DebugHelper("'
                 yield "$pathServiceInstances"
                 yieldUnescaped '", "'
                 yield "$serviceDefinitionId"
