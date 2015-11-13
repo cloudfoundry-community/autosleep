@@ -1,8 +1,8 @@
 package org.cloudfoundry.autosleep.config.data;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.dao.model.ASServiceBinding;
-import org.cloudfoundry.autosleep.dao.model.ASServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -31,12 +31,12 @@ public class RedisConfig {
     }
 
     @Bean
-    public ServiceRepository redisServiceRepository(RedisTemplate<String, ASServiceInstance> redisTemplate) {
+    public ServiceRepository redisServiceRepository(RedisTemplate<String, AutosleepServiceInstance> redisTemplate) {
         return new RedisServiceRepository(redisTemplate, "service_store");
     }
 
     @Bean
-    public BindingRepository redisBindingRepository(RedisTemplate<String, ASServiceBinding> redisTemplate) {
+    public BindingRepository redisBindingRepository(RedisTemplate<String, ApplicationBinding> redisTemplate) {
         return new RedisBindingRepository(redisTemplate, "binding_store");
     }
 
@@ -51,10 +51,10 @@ public class RedisConfig {
      * Init serializers for ServiceInstances in Redis.
      */
     @Bean
-    public RedisTemplate<String, ASServiceInstance> serviceRedisTemplate(RedisConnectionFactory factory) {
-        RedisTemplate<String, ASServiceInstance> template = getStringKeyTemplate(factory);
-        RedisSerializer<ASServiceInstance> serviceSerializer = new Jackson2JsonRedisSerializer<>(
-                ASServiceInstance.class);
+    public RedisTemplate<String, AutosleepServiceInstance> serviceRedisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<String, AutosleepServiceInstance> template = getStringKeyTemplate(factory);
+        RedisSerializer<AutosleepServiceInstance> serviceSerializer = new Jackson2JsonRedisSerializer<>(
+                AutosleepServiceInstance.class);
         template.setValueSerializer(serviceSerializer);
         template.setHashValueSerializer(serviceSerializer);
         return template;
@@ -64,9 +64,10 @@ public class RedisConfig {
      * Init serializers for ServiceBindings in Redis.
      */
     @Bean
-    public RedisTemplate<String, ASServiceBinding> bindingRedisTemplate(RedisConnectionFactory factory) {
-        RedisTemplate<String, ASServiceBinding> template = getStringKeyTemplate(factory);
-        RedisSerializer<ASServiceBinding> bindingSerializer = new Jackson2JsonRedisSerializer<>(ASServiceBinding.class);
+    public RedisTemplate<String, ApplicationBinding> bindingRedisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<String, ApplicationBinding> template = getStringKeyTemplate(factory);
+        RedisSerializer<ApplicationBinding> bindingSerializer = new Jackson2JsonRedisSerializer<>(
+                ApplicationBinding.class);
         template.setValueSerializer(bindingSerializer);
         template.setHashValueSerializer(bindingSerializer);
         return template;

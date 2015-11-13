@@ -22,7 +22,7 @@ import java.util.Map;
 @Getter
 @Setter
 @Slf4j
-public class ASServiceInstance extends org.cloudfoundry.community.servicebroker.model.ServiceInstance {
+public class AutosleepServiceInstance extends org.cloudfoundry.community.servicebroker.model.ServiceInstance {
     public static final String INACTIVITY_PARAMETER = "inactivity";
 
     @JsonSerialize(using = Serializers.IntervalSerializer.class)
@@ -33,22 +33,22 @@ public class ASServiceInstance extends org.cloudfoundry.community.servicebroker.
      * Should never be called. Only for JSON auto serialization.
      */
     @SuppressWarnings("unused")
-    private ASServiceInstance() {
+    private AutosleepServiceInstance() {
         super(new CreateServiceInstanceRequest());
     }
 
-    public ASServiceInstance(CreateServiceInstanceRequest request) throws HttpMessageNotReadableException {
+    public AutosleepServiceInstance(CreateServiceInstanceRequest request) throws HttpMessageNotReadableException {
         super(request);
         setDurationFromParams(request.getParameters());
     }
 
-    public ASServiceInstance(UpdateServiceInstanceRequest request) throws HttpMessageNotReadableException,
+    public AutosleepServiceInstance(UpdateServiceInstanceRequest request) throws HttpMessageNotReadableException,
             ServiceInstanceUpdateNotSupportedException {
         super(request);
         setDurationFromParams(request.getParameters());
     }
 
-    public ASServiceInstance(DeleteServiceInstanceRequest request) {
+    public AutosleepServiceInstance(DeleteServiceInstanceRequest request) {
         super(request);
     }
 
@@ -84,10 +84,10 @@ public class ASServiceInstance extends org.cloudfoundry.community.servicebroker.
         if (object == this) {
             return true;
         }
-        if (!(object instanceof ASServiceInstance)) {
+        if (!(object instanceof AutosleepServiceInstance)) {
             return false;
         }
-        ASServiceInstance other = (ASServiceInstance) object;
+        AutosleepServiceInstance other = (AutosleepServiceInstance) object;
 
         return EqualUtil.areEquals(this.getServiceInstanceId(), other.getServiceInstanceId())
                 && EqualUtil.areEquals(this.getServiceDefinitionId(), other.getServiceDefinitionId())

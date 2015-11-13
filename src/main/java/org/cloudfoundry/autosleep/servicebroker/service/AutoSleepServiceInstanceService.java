@@ -1,7 +1,7 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.dao.model.ASServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
@@ -31,11 +31,11 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
             ServiceInstanceExistsException, ServiceBrokerException {
         log.debug("createServiceInstance - {}", request.getServiceInstanceId());
 
-        ASServiceInstance serviceInstance = repository.findOne(request.getServiceInstanceId());
+        AutosleepServiceInstance serviceInstance = repository.findOne(request.getServiceInstanceId());
         if (serviceInstance != null) {
             throw new ServiceInstanceExistsException(serviceInstance);
         } else {
-            serviceInstance = new ASServiceInstance(request);
+            serviceInstance = new AutosleepServiceInstance(request);
             repository.save(serviceInstance);
         }
         return serviceInstance;
@@ -53,11 +53,11 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
             ServiceInstanceUpdateNotSupportedException, ServiceBrokerException, ServiceInstanceDoesNotExistException {
         String serviceId = request.getServiceInstanceId();
         log.debug("updateServiceInstance - {}", serviceId);
-        ASServiceInstance serviceInstance = repository.findOne(serviceId);
+        AutosleepServiceInstance serviceInstance = repository.findOne(serviceId);
         if (serviceInstance == null) {
             throw new ServiceInstanceDoesNotExistException(serviceId);
         } else {
-            serviceInstance = new ASServiceInstance(request);
+            serviceInstance = new AutosleepServiceInstance(request);
             repository.save(serviceInstance);
         }
         return serviceInstance;
@@ -67,7 +67,7 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
     public org.cloudfoundry.community.servicebroker.model.ServiceInstance deleteServiceInstance(
             DeleteServiceInstanceRequest request) throws ServiceBrokerException {
         log.debug("deleteServiceInstance - {}", request.getServiceInstanceId());
-        ASServiceInstance serviceInstance = new ASServiceInstance(request);
+        AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(request);
         repository.delete(request.getServiceInstanceId());
         return serviceInstance;
     }

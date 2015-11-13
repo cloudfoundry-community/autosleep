@@ -2,7 +2,7 @@ package org.cloudfoundry.autosleep.dao.repositories;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
-import org.cloudfoundry.autosleep.dao.model.ASServiceBinding;
+import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +42,7 @@ public abstract class BindingRepositoryTest {
 
     @Test
     public void testInsert() {
-        dao.save(new ASServiceBinding("testInsert", "testInsert", null, null, APP_GUID));
+        dao.save(new ApplicationBinding("testInsert", "testInsert", null, null, APP_GUID));
         assertThat(countServices(), is(equalTo(1)));
     }
 
@@ -50,8 +50,8 @@ public abstract class BindingRepositoryTest {
     public void testMultipleInsertsAndRetrieves() {
         List<String> ids = Arrays.asList("testInsert1", "testInsert2");
         String serviceId = "testServiceId";
-        List<ASServiceBinding> initialList = new ArrayList<>();
-        ids.forEach(id -> initialList.add(new ASServiceBinding(id, serviceId, null, null, APP_GUID)));
+        List<ApplicationBinding> initialList = new ArrayList<>();
+        ids.forEach(id -> initialList.add(new ApplicationBinding(id, serviceId, null, null, APP_GUID)));
 
         //test save all
         dao.save(initialList);
@@ -62,9 +62,9 @@ public abstract class BindingRepositoryTest {
         ids.forEach(id -> assertThat("Each element should exist in DAO", dao.exists(id), is(true)));
 
         //test that retrieving all elements give the same amount
-        Iterable<ASServiceBinding> storedElement = dao.findAll();
+        Iterable<ApplicationBinding> storedElement = dao.findAll();
         int count = 0;
-        for (ASServiceBinding object : storedElement) {
+        for (ApplicationBinding object : storedElement) {
             count++;
         }
         assertTrue("Retrieving all elements should return the same quantity", count == initialList
@@ -72,7 +72,7 @@ public abstract class BindingRepositoryTest {
 
         //test find with all inserted ids
         storedElement = dao.findAll(ids);
-        for (ASServiceBinding object : storedElement) {
+        for (ApplicationBinding object : storedElement) {
             assertTrue("Retrieved element should be the same as initial element", initialList.contains(object));
         }
 
@@ -82,10 +82,10 @@ public abstract class BindingRepositoryTest {
     public void testEquality() {
         String bindingId = "bidingIdEquality";
         String serviceId = "serviceIdEquality";
-        ASServiceBinding original = new ASServiceBinding(bindingId, serviceId, null, null, APP_GUID);
+        ApplicationBinding original = new ApplicationBinding(bindingId, serviceId, null, null, APP_GUID);
 
         dao.save(original);
-        ASServiceBinding binding = dao.findOne(bindingId);
+        ApplicationBinding binding = dao.findOne(bindingId);
         assertFalse("Service binding should have been found", binding == null);
         assertThat(binding.getServiceInstanceId(), is(equalTo(serviceId)));
         assertThat(binding.getAppGuid(), is(equalTo(APP_GUID)));
@@ -108,10 +108,10 @@ public abstract class BindingRepositoryTest {
         String deleteByInstanceSuccess = "deleteByInstanceSuccess";
         String deleteByMass1 = "deleteByMass1";
         String deleteByMass2 = "deleteByMass2";
-        dao.save(new ASServiceBinding(deleteByIdSuccess, "service", null, null, APP_GUID));
-        dao.save(new ASServiceBinding(deleteByInstanceSuccess, "service", null, null, APP_GUID));
-        dao.save(new ASServiceBinding(deleteByMass1, "service", null, null, APP_GUID));
-        dao.save(new ASServiceBinding(deleteByMass2, "service", null, null, APP_GUID));
+        dao.save(new ApplicationBinding(deleteByIdSuccess, "service", null, null, APP_GUID));
+        dao.save(new ApplicationBinding(deleteByInstanceSuccess, "service", null, null, APP_GUID));
+        dao.save(new ApplicationBinding(deleteByMass1, "service", null, null, APP_GUID));
+        dao.save(new ApplicationBinding(deleteByMass2, "service", null, null, APP_GUID));
 
         int nbServicesInit = 4;
         assertThat(countServices(), is(equalTo(nbServicesInit)));
@@ -128,7 +128,7 @@ public abstract class BindingRepositoryTest {
         assertThat(countServices(), is(equalTo(nbServicesInit - 2)));
 
         //delete multiple services
-        Iterable<ASServiceBinding> services = dao.findAll(Arrays.asList(deleteByMass1, deleteByMass2));
+        Iterable<ApplicationBinding> services = dao.findAll(Arrays.asList(deleteByMass1, deleteByMass2));
         dao.delete(services);
         assertThat(countServices(), is(equalTo(nbServicesInit - 4)));
 

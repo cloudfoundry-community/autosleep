@@ -1,8 +1,8 @@
 package org.cloudfoundry.autosleep.admin.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.cloudfoundry.autosleep.dao.model.ASServiceBinding;
-import org.cloudfoundry.autosleep.dao.model.ASServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
@@ -56,9 +56,9 @@ public class DebugControllerTest {
 
     private ObjectMapper objectMapper;
 
-    private ASServiceInstance serviceInstance;
+    private AutosleepServiceInstance serviceInstance;
 
-    private ASServiceBinding serviceBinding;
+    private ApplicationBinding serviceBinding;
 
     @Before
     public void init() {
@@ -70,9 +70,9 @@ public class DebugControllerTest {
                 "plan",
                 "org",
                 "space");
-        serviceInstance = new ASServiceInstance(
+        serviceInstance = new AutosleepServiceInstance(
                 createRequestTemplate.withServiceInstanceId(serviceInstanceId));
-        serviceBinding = new ASServiceBinding(serviceBindingId, serviceInstanceId,
+        serviceBinding = new ApplicationBinding(serviceBindingId, serviceInstanceId,
                 null, null, UUID.randomUUID().toString());
         Mockito.when(catalog.getServiceDefinitions()).thenReturn(Collections.singletonList(
                 new ServiceDefinition("serviceDefinitionId", "serviceDefinition", "", true,

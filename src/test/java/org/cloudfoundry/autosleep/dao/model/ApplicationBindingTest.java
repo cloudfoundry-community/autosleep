@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.*;
 
-public class ServiceBindingTest {
+public class ApplicationBindingTest {
 
     private static final String SERVICE_DEFINITION_ID = UUID.randomUUID().toString();
     private static final String SERVICE_ID = UUID.randomUUID().toString();
@@ -15,8 +15,8 @@ public class ServiceBindingTest {
     private static final String LOG_URL = UUID.randomUUID().toString();
     private static final String PLAN = UUID.randomUUID().toString();
 
-    private ASServiceBinding getNewBinding() {
-        return new ASServiceBinding(SERVICE_DEFINITION_ID,SERVICE_ID,new HashMap<>(),APP,LOG_URL);
+    private ApplicationBinding getNewBinding() {
+        return new ApplicationBinding(SERVICE_DEFINITION_ID,SERVICE_ID,new HashMap<>(),APP,LOG_URL);
     }
 
     @SuppressWarnings({"ObjectEqualsNull", "EqualsBetweenInconvertibleTypes"})
