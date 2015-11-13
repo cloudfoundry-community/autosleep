@@ -3,7 +3,9 @@ package org.cloudfoundry.autosleep.dao.repositories;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
+import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.cloudfoundry.client.lib.domain.CloudOrganization;
 import org.cloudfoundry.client.lib.domain.CloudSpace;
 import org.junit.After;
@@ -48,10 +50,8 @@ public abstract class AppRepositoryTest {
     }
 
     private ApplicationInfo buildAppInfo(UUID uuid) {
-        CloudApplication app = new CloudApplication("appname", null, null, 1024, 3,
-                Arrays.asList("uri1", "uri2"), null, CloudApplication.AppState.STARTED);
-        app.setSpace(new CloudSpace(null, "mySpace", new CloudOrganization(null, "myOrg")));
-        return  new ApplicationInfo(app, uuid, yesterday, now);
+        return  new ApplicationInfo(new ApplicationActivity(uuid, "appname", AppState.STARTED,
+                Instant.now(), Instant.now()));
     }
 
     @Test

@@ -17,12 +17,12 @@ try{
 }catch(IOException e) {
     System.err.println("Redis not present: setting lower limits")
     limits = [
-            'instruction': 63,
+            'instruction': 77,
             'branch'     : 25,
-            'line'       : 66,
-            'complexity' : 58,
-            'method'     : 66,
-            'class'      : 74
+            'line'       : 77,
+            'complexity' : 70,
+            'method'     : 78,
+            'class'      : 84
     ]
 }
 

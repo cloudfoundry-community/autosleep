@@ -1,7 +1,7 @@
 package org.cloudfoundry.autosleep.remote;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.util.LastDateComputer;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
 import org.cloudfoundry.client.lib.domain.ApplicationLog;
 import org.cloudfoundry.client.lib.domain.ApplicationLog.MessageType;
@@ -95,9 +95,9 @@ public class CloudFoundryApiTest {
     }
 
     @Test
-    public void testGetApplicationInfo() throws Exception {
-        assertThat(cloudFoundryApi.getApplicationInfo(errorUuid), is(nullValue()));
-        assertThat(cloudFoundryApi.getApplicationInfo(notFoundUuid), is(nullValue()));
+    public void testGetApplicationActivity() throws Exception {
+        assertThat(cloudFoundryApi.getApplicationActivity(errorUuid), is(nullValue()));
+        assertThat(cloudFoundryApi.getApplicationActivity(notFoundUuid), is(nullValue()));
 
 
         Date lastLogTime = new Date(Instant
@@ -125,15 +125,16 @@ public class CloudFoundryApiTest {
                     return Collections.singletonList(event);
                 });
 
-        ApplicationInfo applicationInfo = cloudFoundryApi.getApplicationInfo(appStartedUuid);
-        assertThat(applicationInfo, notNullValue());
-        assertThat(applicationInfo.getState(), is(equalTo(AppState.STARTED)));
+        ApplicationActivity applicationActivity = cloudFoundryApi.getApplicationActivity(appStartedUuid);
+        assertThat(applicationActivity, notNullValue());
+        assertThat(applicationActivity.getState(), is(equalTo(AppState.STARTED)));
 
-        assertThat(applicationInfo.getLastLog(), is(equalTo(lastLogTime.toInstant())));
+        assertThat(applicationActivity.getLastLog(), is(equalTo(lastLogTime.toInstant())));
 
-        assertThat(applicationInfo.getLastEvent(), is(equalTo(lastEventTime.toInstant())));
+        assertThat(applicationActivity.getLastEvent(), is(equalTo(lastEventTime.toInstant())));
 
-        assertThat(applicationInfo.computeLastDate(), is(equalTo(lastActionTime.toInstant())));
+        assertThat(LastDateComputer.INSTANCE.computeLastDate(applicationActivity.getLastLog(),
+                applicationActivity.getLastEvent()), is(equalTo(lastActionTime.toInstant())));
     }
 
     @Test
@@ -204,13 +205,8 @@ public class CloudFoundryApiTest {
         assertThat(remoteApplications, is(notNullValue()));
         assertThat(remoteApplications.size(), is(equalTo(1)));
 
+
     }
 
-    @Test
-    public void testRuntimeExceptions() throws Exception {
-        when(cloudFoundryClient.getApplication(appStartedUuid)).thenThrow(new RuntimeException("TestRuntimeException"));
-        cloudFoundryApi.startApplication(appStartedUuid);
-        cloudFoundryApi.stopApplication(appStartedUuid);
-        cloudFoundryApi.getApplicationInfo(appStartedUuid);
-    }
+
 }
