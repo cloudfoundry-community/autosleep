@@ -14,5 +14,5 @@ public interface CloudFoundryApiService {
 
     void startApplication(UUID appUid);
 
-    List<String> getApplicationsNames();
+    List<UUID> listApplications(UUID spaceUuid, String excludeNamesExpression);
 }
