@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.dao.model;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudOrganization;
 import org.cloudfoundry.client.lib.domain.CloudSpace;
@@ -26,32 +27,11 @@ public class ApplicationInfoTest {
     private final Instant now = Instant.now();
     private final UUID appUuid = UUID.randomUUID();
 
-    @Test
-    public void testGetLastEventTime() throws Exception {
-        ApplicationInfo info = new ApplicationInfo(newCloudApp(), appUuid, yesterday, now);
-        assertThat("Most recent date should be last log", info.computeLastDate(), is(equalTo(info.getLastLog())));
-        assertThat("Last event should return most recent date", info.computeLastDate(), is(equalTo(now)));
-
-        info = new ApplicationInfo(newCloudApp(), appUuid, now, yesterday);
-        assertThat("Last event should return most recent date", info.computeLastDate(), is(equalTo(now)));
-        assertThat("Most recent date should be last deployed", info.getLastEvent(),
-                is(equalTo(info.computeLastDate())));
-
-        info = new ApplicationInfo(newCloudApp(), appUuid, now, null);
-        assertThat("Last event should not be null", info.computeLastDate(), is(equalTo(now)));
-
-        info = new ApplicationInfo(newCloudApp(), appUuid, null, now);
-        assertThat("Last event should not be null", info.computeLastDate(), is(equalTo(now)));
-
-        info = new ApplicationInfo(newCloudApp(), appUuid, null, null);
-        assertThat("Last event should rbe null", info.computeLastDate(), is(nullValue()));
-
-    }
 
     @Test
     public void testSerialization() {
         RedisSerializer<ApplicationInfo> serializer = new Jackson2JsonRedisSerializer<>(ApplicationInfo.class);
-        ApplicationInfo origin = new ApplicationInfo(newCloudApp(), appUuid, now, yesterday);
+        ApplicationInfo origin = new ApplicationInfo(newApplicationActivity(yesterday, now));
         byte[] serialized = serializer.serialize(origin);
         ApplicationInfo retrieved = serializer.deserialize(serialized);
         log.debug("Object origin = {}", origin);
@@ -70,29 +50,28 @@ public class ApplicationInfoTest {
     @SuppressWarnings({"ObjectEqualsNull", "EqualsBetweenInconvertibleTypes", "EqualsWithItself"})
     @Test
     public void testEquals() throws Exception {
-        ApplicationInfo sampleApp = new ApplicationInfo(newCloudApp(), appUuid, now, yesterday);
+        ApplicationInfo sampleApp = new ApplicationInfo(newApplicationActivity(yesterday, now));
         assertFalse(sampleApp.equals(null));
         assertFalse(sampleApp.equals("toto"));
         assertTrue(sampleApp.equals(sampleApp));
-        assertTrue(sampleApp.equals(new ApplicationInfo(newCloudApp(), appUuid, now, yesterday)));
-        assertFalse(sampleApp.equals(new ApplicationInfo(newCloudApp(), appUuid, yesterday, now)));
+        assertTrue(sampleApp.equals(new ApplicationInfo(newApplicationActivity(yesterday, now))));
+
+        assertFalse(sampleApp.equals(new ApplicationInfo(newApplicationActivity(now, yesterday))));
     }
 
     @Test
     public void testHashCode() throws Exception {
-        assertTrue(new ApplicationInfo(newCloudApp(), appUuid, now, yesterday).hashCode()
-                == new ApplicationInfo(newCloudApp(), appUuid, now, yesterday).hashCode());
+        assertTrue(new ApplicationInfo(newApplicationActivity(yesterday, now)).hashCode()
+                == new ApplicationInfo(newApplicationActivity(yesterday, now)).hashCode());
     }
 
     @Test
     public void testToString() throws Exception {
-        assertNotNull(new ApplicationInfo(newCloudApp(), appUuid, now, yesterday).toString());
+        assertNotNull(new ApplicationInfo(newApplicationActivity(yesterday, now)).toString());
     }
 
-    private CloudApplication newCloudApp() {
-        CloudApplication app = new CloudApplication("appname", null, null, 1024, 3,
-                Arrays.asList("uri1", "uri2"), null, CloudApplication.AppState.STARTED);
-        app.setSpace(new CloudSpace(null, "mySpace", new CloudOrganization(null, "myOrg")));
-        return app;
+    private ApplicationActivity newApplicationActivity(Instant lastEvent, Instant lastLog) {
+        return new ApplicationActivity(appUuid, "appname",
+                CloudApplication.AppState.STARTED, lastEvent, lastLog);
     }
 }

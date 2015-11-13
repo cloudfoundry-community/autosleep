@@ -1,13 +1,11 @@
 package org.cloudfoundry.autosleep.remote;
 
-import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-
 import java.util.List;
 import java.util.UUID;
 
 public interface CloudFoundryApiService {
 
-    ApplicationInfo getApplicationInfo(UUID appUid);
+    ApplicationActivity getApplicationActivity(UUID appUid);
 
 
     void stopApplication(UUID appUid);
