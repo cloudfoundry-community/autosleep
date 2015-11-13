@@ -8,7 +8,7 @@ import java.net.Socket;
 @Slf4j
 public class RedisUtil {
 
-    private static final int REDIS_DEFAULT_PORT = 6379;
+    public static final int REDIS_DEFAULT_PORT = 6379;
 
     public static boolean isRedisPresent() {
         try {
