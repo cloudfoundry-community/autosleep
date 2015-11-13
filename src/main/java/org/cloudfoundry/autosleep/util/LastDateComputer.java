@@ -5,10 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Instant;
 
 @Slf4j
-public enum LastDateComputer {
-    INSTANCE;
+public class LastDateComputer {
 
-    public Instant computeLastDate(Instant lastLog, Instant lastEvent) {
+    public static Instant computeLastDate(Instant lastLog, Instant lastEvent) {
         if (lastLog == null) {
             if (lastEvent == null) {
                 // from what we understood, events will always be returned, whereas recent logs may be empty.

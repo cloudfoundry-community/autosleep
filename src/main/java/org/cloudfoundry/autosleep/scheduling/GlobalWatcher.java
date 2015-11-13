@@ -52,7 +52,6 @@ public class GlobalWatcher {
                 interval,
                 remote,
                 clock,
-                bindingRepository,
                 applicationRepository);
         checker.start();
     }

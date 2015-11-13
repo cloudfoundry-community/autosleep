@@ -81,8 +81,8 @@ public class DebugControllerTest {
                 createRequestTemplate.withServiceInstanceId(serviceInstanceId));
         ApplicationBinding serviceBinding = new ApplicationBinding(serviceBindingId, serviceInstanceId,
                 null, null, UUID.randomUUID().toString());
-        ApplicationInfo applicationInfo = new ApplicationInfo(new ApplicationActivity(applicationId,
-                "applicationName", AppState.STARTED, Instant.now(), Instant.now()));
+        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId).withRemoteInfo(new ApplicationActivity(
+                applicationId, "applicationName", AppState.STARTED, Instant.now(), Instant.now()));
         when(catalog.getServiceDefinitions()).thenReturn(Collections.singletonList(
                 new ServiceDefinition("serviceDefinitionId", "serviceDefinition", "", true,
                         Collections.singletonList(new Plan("planId", "plan", "")))));
@@ -141,7 +141,7 @@ public class DebugControllerTest {
     }
 
     @Test
-    public void testListApplications() throws  Exception {
+    public void testListApplications() throws Exception {
         mockMvc.perform(get("/admin/debug/services/applications/")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()

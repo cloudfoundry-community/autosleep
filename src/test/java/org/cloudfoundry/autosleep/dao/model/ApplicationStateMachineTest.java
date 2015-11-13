@@ -38,13 +38,13 @@ public class ApplicationStateMachineTest {
 
         //authorized transition
         stateMachine.onOptOut();
-        assertThat(stateMachine.getState(), is(equalTo(ApplicationStateMachine.State.OPTED_OUT)));
+        assertThat(stateMachine.getState(), is(equalTo(ApplicationStateMachine.State.IGNORED)));
         verify(mockAppender, never()).doAppend(any());
 
         //unauthorized transition
         stateMachine.onOptOut();
         verify(mockAppender, times(1)).doAppend(any());
-        assertThat(stateMachine.getState(), is(equalTo(ApplicationStateMachine.State.OPTED_OUT)));
+        assertThat(stateMachine.getState(), is(equalTo(ApplicationStateMachine.State.IGNORED)));
 
     }
 

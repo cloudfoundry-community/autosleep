@@ -133,7 +133,7 @@ public class CloudFoundryApiTest {
 
         assertThat(applicationActivity.getLastEvent(), is(equalTo(lastEventTime.toInstant())));
 
-        assertThat(LastDateComputer.INSTANCE.computeLastDate(applicationActivity.getLastLog(),
+        assertThat(LastDateComputer.computeLastDate(applicationActivity.getLastLog(),
                 applicationActivity.getLastEvent()), is(equalTo(lastActionTime.toInstant())));
     }
 

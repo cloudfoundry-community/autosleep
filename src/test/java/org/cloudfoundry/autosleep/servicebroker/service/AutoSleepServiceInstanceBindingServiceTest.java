@@ -2,12 +2,13 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
+import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ram.RamServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.autosleep.servicebroker.configuration.AutosleepCatalogBuilder;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
@@ -19,11 +20,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import java.util.UUID;
+
+import static org.mockito.Mockito.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Slf4j
@@ -31,7 +30,7 @@ import static org.mockito.Mockito.when;
         RepositoryConfig.class})
 public class AutoSleepServiceInstanceBindingServiceTest {
 
-    private static final String APPUID = "DB1F7D54-7A6A-4F7C-A06E-43EF9B9E3144";
+    private static final UUID APP_UID = UUID.randomUUID();
 
 
     private AutoSleepServiceInstanceBindingService bindingService;
@@ -41,6 +40,9 @@ public class AutoSleepServiceInstanceBindingServiceTest {
 
     @Autowired
     private BindingRepository bindingRepo;
+
+    @Autowired
+    private ApplicationRepository appRepo;
 
 
     private CreateServiceInstanceBindingRequest createRequestTemplate;
@@ -60,14 +62,14 @@ public class AutoSleepServiceInstanceBindingServiceTest {
 
         mockWatcher = mock(GlobalWatcher.class);
 
-        bindingService = new AutoSleepServiceInstanceBindingService(bindingRepo,mockWatcher);
+        bindingService = new AutoSleepServiceInstanceBindingService(appRepo,bindingRepo,mockWatcher);
 
         ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
         planId = serviceDefinition.getPlans().get(0).getId();
         serviceDefinitionId = serviceDefinition.getId();
         createRequestTemplate = new CreateServiceInstanceBindingRequest(serviceDefinitionId,
                 planId,
-                APPUID);
+                APP_UID.toString());
     }
 
     @Test
@@ -81,6 +83,7 @@ public class AutoSleepServiceInstanceBindingServiceTest {
     public void testDeleteServiceInstanceBinding() throws Exception {
         String bindingId = "delBindingId";
         String serviceId = "delServiceId";
+
         bindingService.createServiceInstanceBinding(createRequestTemplate.withServiceInstanceId(serviceId)
                 .withBindingId(bindingId));
         DeleteServiceInstanceBindingRequest deleteRequest = new DeleteServiceInstanceBindingRequest(bindingId, null,
