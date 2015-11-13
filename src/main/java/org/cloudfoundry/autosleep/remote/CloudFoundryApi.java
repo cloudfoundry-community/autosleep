@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -42,7 +43,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 }
                 log.debug("Building ApplicationInfo(lastEventTime={}, lastLogTime={}, state)",
                         lastEventTime, lastLogTime);
-                return new ApplicationInfo(app,appUid,lastEventTime == null ? null : lastEventTime.toInstant(),
+                return new ApplicationInfo(app, appUid, lastEventTime == null ? null : lastEventTime.toInstant(),
                         lastLogTime == null ? null : lastLogTime.toInstant());
             } else {
                 log.error("No app found for UID {}", appUid);
@@ -58,18 +59,15 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     @Override
     public void stopApplication(UUID appUid) {
         try {
-            CloudApplication app = client.getApplication(appUid);
+            ApplicationInfo app = getApplicationInfo(appUid);
             if (app != null) {
                 if (app.getState() != AppState.STOPPED) {
-                    ApplicationInfo appInfo = getApplicationInfo(appUid);
                     log.info("Stopping app [{} / {}], last event: {}, last log: {}", app.getName(), appUid,
-                            appInfo.getLastEvent(), appInfo.getLastLog());
+                            app.getLastEvent(), app.getLastLog());
                     client.stopApplication(app.getName());
                 } else {
                     log.debug("App {} already stopped", app.getName());
                 }
-            } else {
-                log.error("No app found for UID {}", appUid);
             }
         } catch (RuntimeException r) {
             log.error("error", r);
@@ -97,9 +95,25 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     }
 
     @Override
-    public List<String> getApplicationsNames() {
-        return null;
+    public List<UUID> listApplications(UUID spaceUuid, String excludeNamesExpression) {
+        try {
+            return client.getApplications().stream()
+                    .filter(
+                            cloudApplication -> (spaceUuid == null
+                                    ||
+                                    spaceUuid.equals(cloudApplication.getSpace().getMeta().getGuid()))
+                                    &&
+                                    (excludeNamesExpression == null
+                                            ||
+                                            cloudApplication.getName().matches(excludeNamesExpression))
+                    )
+                    .map(cloudApplication ->
+                            cloudApplication.getMeta().getGuid())
+                    .collect(Collectors.toList());
+        } catch (RuntimeException r) {
+            log.error("error", r);
+            return null;
+        }
     }
-
 
 }
