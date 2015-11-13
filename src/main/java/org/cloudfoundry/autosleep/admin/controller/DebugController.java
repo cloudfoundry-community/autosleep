@@ -1,8 +1,10 @@
 package org.cloudfoundry.autosleep.admin.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.admin.model.ServiceBinding;
-import org.cloudfoundry.autosleep.admin.model.ServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.community.servicebroker.controller.ServiceInstanceController;
@@ -35,6 +37,9 @@ public class DebugController {
     @Autowired
     private BindingRepository bindingRepository;
 
+    @Autowired
+    private ApplicationRepository applicationRepository;
+
     @RequestMapping("/")
     public ModelAndView serviceInstances() {
         log.debug("serviceInstances - rendering view");
@@ -43,11 +48,11 @@ public class DebugController {
         parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
         parameters.put("serviceDefinitionId", serviceDefinition.getId());
         parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
-        return new ModelAndView("views/admin/debug/service_instances", parameters);
+        return new ModelAndView("views/admin/debug/instances", parameters);
     }
 
     @RequestMapping("/{instanceId}/bindings/")
-    public ModelAndView serviceBindings(@PathVariable("instanceId") String serviceInstanceId) {
+     public ModelAndView serviceBindings(@PathVariable("instanceId") String serviceInstanceId) {
         log.debug("serviceInstances - rendering view - ", serviceInstanceId);
         Map<String, Object> parameters = new HashMap<>();
         ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
@@ -55,35 +60,53 @@ public class DebugController {
         parameters.put("serviceDefinitionId", serviceDefinition.getId());
         parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
         parameters.put("serviceInstance", serviceInstanceId);
-        return new ModelAndView("views/admin/debug/service_bindings", parameters);
+        return new ModelAndView("views/admin/debug/bindings", parameters);
     }
 
 
-    @RequestMapping("/services/servicesinstances/")
+    @RequestMapping("/applications/")
+    public ModelAndView applications() {
+        log.debug("applications - rendering view");
+        Map<String, Object> parameters = new HashMap<>();
+        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
+        parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
+        parameters.put("serviceDefinitionId", serviceDefinition.getId());
+        parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
+        return new ModelAndView("views/admin/debug/applications", parameters);
+    }
+
+
+    @RequestMapping("/services/instances/")
     @ResponseBody
-    public List<ServiceInstance> listServiceInstances() {
+    public List<AutosleepServiceInstance> listInstances() {
         log.debug("listServiceInstances");
-        List<ServiceInstance> result = new ArrayList<>();
-        serviceRepository.findAll().forEach(service ->
-                result.add(new ServiceInstance(service.getServiceInstanceId(),
-                        service.getServiceDefinitionId(), service.getPlanId())));
+        List<AutosleepServiceInstance> result = new ArrayList<>();
+        serviceRepository.findAll().forEach(result::add);
         return result;
     }
 
-    @RequestMapping("/services/servicebindings/{instanceId}")
+    @RequestMapping("/services/bindings/{instanceId}")
     @ResponseBody
-    public List<ServiceBinding> listServiceBindings(@PathVariable("instanceId") String serviceInstanceId)
+    public List<ApplicationBinding> listBindings(@PathVariable("instanceId") String serviceInstanceId)
             throws ServiceInstanceDoesNotExistException {
         log.debug("listServiceBindings - {}", serviceInstanceId);
-        List<ServiceBinding> result = new ArrayList<>();
+        List<ApplicationBinding> result = new ArrayList<>();
         bindingRepository.findAll().forEach(serviceBinding -> {
                     if (serviceInstanceId.equals(serviceBinding.getServiceInstanceId())) {
-                        result.add(new ServiceBinding(serviceBinding.getAppGuid(), serviceBinding.getId()));
+                        result.add(serviceBinding);
                     }
                 }
         );
         return result;
     }
 
+    @RequestMapping("/services/applications/")
+    @ResponseBody
+    public List<ApplicationInfo> listApplications() {
+        log.debug("listApplications");
+        List<ApplicationInfo> result = new ArrayList<>();
+        applicationRepository.findAll().forEach(result::add);
+        return result;
+    }
 
 }

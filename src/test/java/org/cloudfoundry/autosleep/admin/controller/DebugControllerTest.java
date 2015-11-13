@@ -2,9 +2,13 @@ package org.cloudfoundry.autosleep.admin.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.remote.ApplicationActivity;
+import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.Plan;
@@ -14,7 +18,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.MediaType;
@@ -22,9 +25,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.charset.Charset;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.UUID;
 
+import static org.mockito.Mockito.when;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -34,6 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(MockitoJUnitRunner.class)
 public class DebugControllerTest {
+
+    private static final UUID applicationId = UUID.randomUUID();
 
     private static final String serviceInstanceId = "serviceInstanceId";
 
@@ -46,6 +53,9 @@ public class DebugControllerTest {
     private BindingRepository bindingRepository;
 
     @Mock
+    private ApplicationRepository applicationRepository;
+
+    @Mock
     private Catalog catalog;
 
     @InjectMocks
@@ -56,9 +66,6 @@ public class DebugControllerTest {
 
     private ObjectMapper objectMapper;
 
-    private AutosleepServiceInstance serviceInstance;
-
-    private ApplicationBinding serviceBinding;
 
     @Before
     public void init() {
@@ -70,59 +77,83 @@ public class DebugControllerTest {
                 "plan",
                 "org",
                 "space");
-        serviceInstance = new AutosleepServiceInstance(
+        AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(
                 createRequestTemplate.withServiceInstanceId(serviceInstanceId));
-        serviceBinding = new ApplicationBinding(serviceBindingId, serviceInstanceId,
+        ApplicationBinding serviceBinding = new ApplicationBinding(serviceBindingId, serviceInstanceId,
                 null, null, UUID.randomUUID().toString());
-        Mockito.when(catalog.getServiceDefinitions()).thenReturn(Collections.singletonList(
+        ApplicationInfo applicationInfo = new ApplicationInfo(new ApplicationActivity(applicationId,
+                "applicationName", AppState.STARTED, Instant.now(), Instant.now()));
+        when(catalog.getServiceDefinitions()).thenReturn(Collections.singletonList(
                 new ServiceDefinition("serviceDefinitionId", "serviceDefinition", "", true,
                         Collections.singletonList(new Plan("planId", "plan", "")))));
-        Mockito.when(serviceRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
-        Mockito.when(bindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
+        when(serviceRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
+        when(bindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
+        when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
     }
 
     @Test
-    public void testServiceInstances() throws Exception {
+    public void testInstances() throws Exception {
         mockMvc.perform(get("/admin/debug/")
                 .accept(MediaType.TEXT_HTML)).andExpect(status().isOk());
     }
 
     @Test
-    public void testServiceBindings() throws Exception {
+    public void testBindings() throws Exception {
         mockMvc.perform(get("/admin/debug/" + serviceInstanceId + "/bindings/")
+                .accept(MediaType.TEXT_HTML)).andExpect(status().isOk());
+    }
+
+    @Test
+    public void testApplications() throws Exception {
+        mockMvc.perform(get("/admin/debug/applications/")
                 .accept(MediaType.TEXT_HTML)).andExpect(status().isOk());
     }
 
 
     @Test
-    public void testListServiceInstances() throws Exception {
-        mockMvc.perform(get("/admin/debug/services/servicesinstances/").accept(MediaType.APPLICATION_JSON))
+    public void testListInstances() throws Exception {
+        mockMvc.perform(get("/admin/debug/services/instances/").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
-                    org.cloudfoundry.autosleep.admin.model.ServiceInstance[] serviceInstances = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(), org.cloudfoundry.autosleep.admin
-                                    .model.ServiceInstance[].class);
+                    AutosleepServiceInstance[] serviceInstances = objectMapper
+                            .readValue(mvcResult.getResponse().getContentAsString(), AutosleepServiceInstance[].class);
                     assertThat(serviceInstances.length, is(equalTo(1)));
-                    assertThat(serviceInstances[0].getInstanceId(), is(equalTo(serviceInstanceId)));
+                    assertThat(serviceInstances[0].getServiceInstanceId(), is(equalTo(serviceInstanceId)));
                 });
     }
 
     @Test
-    public void testListServiceBindings() throws Exception {
-        mockMvc.perform(get("/admin/debug/services/servicebindings/" + serviceInstanceId)
+    public void testListBindings() throws Exception {
+        mockMvc.perform(get("/admin/debug/services/bindings/" + serviceInstanceId)
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
-                    org.cloudfoundry.autosleep.admin.model.ServiceBinding[] serviceBindings = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(), org.cloudfoundry.autosleep.admin
-                                    .model.ServiceBinding[].class);
+                    ApplicationBinding[] serviceBindings = objectMapper
+                            .readValue(mvcResult.getResponse().getContentAsString(), ApplicationBinding[].class);
                     assertThat(serviceBindings.length, is(equalTo(1)));
                     assertThat(serviceBindings[0].getId(), is(equalTo(serviceBindingId)));
                 });
     }
+
+    @Test
+    public void testListApplications() throws  Exception {
+        mockMvc.perform(get("/admin/debug/services/applications/")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk()).andExpect(content()
+                .contentType(new MediaType(MediaType.APPLICATION_JSON,
+                        Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
+                .andDo(mvcResult -> {
+                    ApplicationInfo[] applicationInfos = objectMapper
+                            .readValue(mvcResult.getResponse().getContentAsString(), ApplicationInfo[].class);
+                    assertThat(applicationInfos.length, is(equalTo(1)));
+                    assertThat(applicationInfos[0].getUuid(), is(equalTo(applicationId)));
+                });
+    }
+
+
 }

@@ -6,6 +6,9 @@ div(class: 'navbar') {
                 li(){
                     a(href: "/admin/debug/", "Services")
                 }
+                li(){
+                    a(href: "/admin/debug/applications/", "Applications")
+                }
             }
         }
 
