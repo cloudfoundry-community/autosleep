@@ -1,10 +1,8 @@
 package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
@@ -45,9 +43,6 @@ public class AppStateCheckerTest {
     private ApplicationInfo applicationInfo;
 
     @Mock
-    private BindingRepository bindingRepository;
-
-    @Mock
     private ApplicationRepository applicationRepository;
 
     private AppStateChecker spyChecker;
@@ -65,14 +60,14 @@ public class AppStateCheckerTest {
         when(applicationActivity.getLastLog()).thenReturn(Instant.now());
         when(applicationActivity.getState()).thenReturn(AppState.STARTED);
 
-        applicationInfo = new ApplicationInfo(applicationActivity);
+        applicationInfo = new ApplicationInfo(APP_UID).withRemoteInfo(applicationActivity);
 
         when(mockRemote.getApplicationActivity(APP_UID)).thenReturn(applicationActivity);
 
         when(applicationRepository.findOne(APP_UID.toString())).thenReturn(
                 applicationInfo
         );
-        spyChecker = spy(new AppStateChecker(APP_UID, BINDING_ID, INTERVAL, mockRemote, clock, bindingRepository,
+        spyChecker = spy(new AppStateChecker(APP_UID, BINDING_ID, INTERVAL, mockRemote, clock,
                 applicationRepository));
 
     }
@@ -85,22 +80,16 @@ public class AppStateCheckerTest {
             return null;
         }).when(clock).scheduleTask(BINDING_ID, Duration.ofSeconds(0), spyChecker);
 
-
-        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new ApplicationBinding(BINDING_ID,
-                "serviceInstance", null, null, APP_UID.toString()));
+        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
 
         spyChecker.start();
         verify(clock, times(1)).scheduleTask(BINDING_ID, Duration.ofSeconds(0), spyChecker);
         verify(spyChecker, times(1)).run();
-
-
     }
 
     @Test
     public void testRunOnActive() throws Exception {
-        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new ApplicationBinding(BINDING_ID,
-                "serviceInstance",
-                null, null, APP_UID.toString()));
+        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(mockRemote, never()).stopApplication(APP_UID);
         verify(clock, times(1)).scheduleTask(any(), anyObject(), any());
@@ -111,9 +100,7 @@ public class AppStateCheckerTest {
     public void testRunOnInactive() throws Exception {
         when(applicationActivity.getLastEvent()).thenReturn(Instant.now().minus(INTERVAL.multipliedBy(2)));
         when(applicationActivity.getLastLog()).thenReturn(Instant.now().minus(INTERVAL.multipliedBy(2)));
-        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new ApplicationBinding(BINDING_ID,
-                "serviceInstance",
-                null, null, APP_UID.toString()));
+        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(mockRemote, times(1)).stopApplication(APP_UID);
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
@@ -122,9 +109,7 @@ public class AppStateCheckerTest {
     @Test
     public void testRunOnAlreadyStopped() throws Exception {
         when(applicationActivity.getState()).thenReturn(CloudApplication.AppState.STOPPED);
-        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new ApplicationBinding(BINDING_ID,
-                "serviceInstance",
-                null, null, APP_UID.toString()));
+        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(mockRemote, never()).stopApplication(APP_UID);
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
@@ -133,9 +118,7 @@ public class AppStateCheckerTest {
     @Test
     public void testRunOnRemoteNotFound() throws Exception {
         when(mockRemote.getApplicationActivity(APP_UID)).thenReturn(null);
-        when(bindingRepository.findOne(BINDING_ID)).thenReturn(new ApplicationBinding(BINDING_ID,
-                "serviceInstance",
-                null, null, APP_UID.toString()));
+        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(mockRemote, never()).stopApplication(APP_UID);
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
@@ -144,9 +127,8 @@ public class AppStateCheckerTest {
 
     @Test
     public void tesStopIfBindingRemoved() throws Exception {
-
-        when(bindingRepository.findOne(BINDING_ID))
-                .thenReturn(new ApplicationBinding(BINDING_ID, "serviceInstance", null, null, APP_UID.toString()))
+        when(applicationRepository.findOne(APP_UID.toString()))
+                .thenReturn(applicationInfo)
                 .thenReturn(null);
 
         doAnswer(invocationOnMock -> {

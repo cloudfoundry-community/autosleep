@@ -3,7 +3,7 @@ package org.cloudfoundry.autosleep.dao.model;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import lombok.Data;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.util.EqualUtil;
@@ -14,18 +14,19 @@ import org.cloudfoundry.client.lib.domain.CloudApplication;
 import java.time.Instant;
 import java.util.UUID;
 
-@Data
+@Getter
 @Slf4j
 @JsonAutoDetect()
 public class ApplicationInfo {
 
     @JsonSerialize
     private UUID uuid;
+
     @JsonSerialize
     private String name;
-    @JsonSerialize
-    private CloudApplication.AppState state;
 
+    @JsonSerialize
+    private CloudApplication.AppState appState;
 
     @JsonSerialize(using = InstantSerializer.class)
     @JsonDeserialize(using = InstantDeserializer.class)
@@ -39,6 +40,13 @@ public class ApplicationInfo {
     @JsonDeserialize(using = InstantDeserializer.class)
     private Instant nextCheck;
 
+    @JsonSerialize(using = InstantSerializer.class)
+    @JsonDeserialize(using = InstantDeserializer.class)
+    private Instant lastCheck;
+
+    @JsonSerialize
+    private ApplicationStateMachine stateMachine = new ApplicationStateMachine();
+
     /**
      * Should never be called. Only for JSON auto serialization.
      */
@@ -46,12 +54,25 @@ public class ApplicationInfo {
     private ApplicationInfo() {
     }
 
-    public ApplicationInfo(ApplicationActivity application) {
-        this.uuid = application.getGuid();
-        this.name = application.getName();
-        this.state = application.getState();
-        this.lastEvent = application.getLastEvent();
-        this.lastLog = application.getLastLog();
+    public ApplicationInfo(UUID uuid) {
+        this.uuid = uuid;
+    }
+
+    public ApplicationInfo withRemoteInfo(ApplicationActivity activity) {
+        updateRemoteInfo(activity);
+        return this;
+    }
+
+    public void updateRemoteInfo(ApplicationActivity activity) {
+        this.appState = activity.getState();
+        this.lastEvent = activity.getLastEvent();
+        this.lastLog = activity.getLastLog();
+        this.name = activity.getName();
+    }
+
+    public void setCheckTimes(Instant last, Instant next) {
+        this.lastCheck = last;
+        this.nextCheck = next;
     }
 
 
@@ -75,7 +96,10 @@ public class ApplicationInfo {
                 && EqualUtil.areEquals(this.getName(), other.getName())
                 && EqualUtil.areEquals(this.getLastLog(), other.getLastLog())
                 && EqualUtil.areEquals(this.getLastEvent(), other.getLastEvent())
-                && EqualUtil.areEquals(this.getState(), other.getState());
+                && EqualUtil.areEquals(this.getLastCheck(), other.getLastCheck())
+                && EqualUtil.areEquals(this.getNextCheck(), other.getNextCheck())
+                && EqualUtil.areEquals(this.getStateMachine(), other.getStateMachine())
+                && EqualUtil.areEquals(this.getAppState(), other.getAppState());
     }
 
     @Override

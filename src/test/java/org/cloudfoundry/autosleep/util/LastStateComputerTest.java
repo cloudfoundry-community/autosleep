@@ -14,12 +14,14 @@ public class LastStateComputerTest {
     private final Instant yesterday = Instant.now().minus(Duration.ofDays(1));
     private final Instant now = Instant.now();
 
+    @SuppressWarnings("AccessStaticViaInstance")
     @Test
     public void testComputeLastDate() throws Exception {
-        assertThat(LastDateComputer.INSTANCE.computeLastDate(now, yesterday), is(equalTo(now)));
-        assertThat(LastDateComputer.INSTANCE.computeLastDate(yesterday, now), is(equalTo(now)));
-        assertThat(LastDateComputer.INSTANCE.computeLastDate(null, now), is(equalTo(now)));
-        assertThat(LastDateComputer.INSTANCE.computeLastDate(now, null), is(equalTo(now)));
-        assertThat(LastDateComputer.INSTANCE.computeLastDate(null, null), is(nullValue()));
+        LastDateComputer computer = new LastDateComputer();
+        assertThat(computer.computeLastDate(now, yesterday), is(equalTo(now)));
+        assertThat(LastDateComputer.computeLastDate(yesterday, now), is(equalTo(now)));
+        assertThat(LastDateComputer.computeLastDate(null, now), is(equalTo(now)));
+        assertThat(LastDateComputer.computeLastDate(now, null), is(equalTo(now)));
+        assertThat(LastDateComputer.computeLastDate(null, null), is(nullValue()));
     }
 }

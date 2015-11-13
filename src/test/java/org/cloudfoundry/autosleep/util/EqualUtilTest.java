@@ -6,6 +6,7 @@ import static org.junit.Assert.*;
 
 public class EqualUtilTest {
 
+    @SuppressWarnings("AccessStaticViaInstance")
     @Test
     public void testAreEquals() throws Exception {
         EqualUtil instance = new EqualUtil();
