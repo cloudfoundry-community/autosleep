@@ -10,7 +10,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.*;
 
-public class ServiceInstanceTest {
+public class AustosleepServiceInstanceTest {
 
     private static final String SERVICE_DEFINITION_ID = UUID.randomUUID().toString();
     private static final String SERVICE_ID = UUID.randomUUID().toString();
@@ -29,26 +29,26 @@ public class ServiceInstanceTest {
     @SuppressWarnings({"ObjectEqualsNull", "EqualsBetweenInconvertibleTypes"})
     @Test
     public void testEquals() throws Exception {
-        assertFalse(new ASServiceInstance(createRequest).equals(null));
-        assertFalse(new ASServiceInstance(createRequest).equals("toto"));
-        assertTrue(new ASServiceInstance(createRequest).equals(new ASServiceInstance(createRequest)));
-        assertTrue(new ASServiceInstance(updateRequest).equals(new ASServiceInstance(updateRequest)));
-        assertTrue(new ASServiceInstance(deleteRequest).equals(new ASServiceInstance(deleteRequest)));
+        assertFalse(new AutosleepServiceInstance(createRequest).equals(null));
+        assertFalse(new AutosleepServiceInstance(createRequest).equals("toto"));
+        assertTrue(new AutosleepServiceInstance(createRequest).equals(new AutosleepServiceInstance(createRequest)));
+        assertTrue(new AutosleepServiceInstance(updateRequest).equals(new AutosleepServiceInstance(updateRequest)));
+        assertTrue(new AutosleepServiceInstance(deleteRequest).equals(new AutosleepServiceInstance(deleteRequest)));
     }
 
     @Test
     public void testHashCode() throws Exception {
-        assertTrue(new ASServiceInstance(createRequest).hashCode()
-                == new ASServiceInstance(createRequest).hashCode());
-        assertTrue(new ASServiceInstance(updateRequest).hashCode()
-                == new ASServiceInstance(updateRequest).hashCode());
-        assertTrue(new ASServiceInstance(deleteRequest).hashCode()
-                == new ASServiceInstance(deleteRequest).hashCode());
+        assertTrue(new AutosleepServiceInstance(createRequest).hashCode()
+                == new AutosleepServiceInstance(createRequest).hashCode());
+        assertTrue(new AutosleepServiceInstance(updateRequest).hashCode()
+                == new AutosleepServiceInstance(updateRequest).hashCode());
+        assertTrue(new AutosleepServiceInstance(deleteRequest).hashCode()
+                == new AutosleepServiceInstance(deleteRequest).hashCode());
     }
 
     @Test
     public void testToString() throws Exception {
-        assertNotNull(new ASServiceInstance(createRequest).toString());
+        assertNotNull(new AutosleepServiceInstance(createRequest).toString());
     }
 
 }

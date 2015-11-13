@@ -2,7 +2,7 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
-import org.cloudfoundry.autosleep.dao.model.ASServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.servicebroker.configuration.AutosleepCatalogBuilder;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
@@ -92,7 +92,7 @@ public class AutosleepServiceInstanceServiceTest {
         }
 
         Map<String, Object> params = new HashMap<>();
-        params.put(ASServiceInstance.INACTIVITY_PARAMETER, "10H");
+        params.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, "10H");
         try {
             createRequest.setParameters(params);
             service.createServiceInstance(createRequest);
@@ -104,7 +104,7 @@ public class AutosleepServiceInstanceServiceTest {
 
         org.cloudfoundry.community.servicebroker.model.ServiceInstance si;
 
-        params.put(ASServiceInstance.INACTIVITY_PARAMETER, "PT10H");
+        params.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT10H");
         try {
             createRequest.setParameters(params);
             si = service.createServiceInstance(createRequest);
@@ -144,13 +144,13 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void testUpdateServiceInstance() throws Exception {
         String testId = "testupdate";
-        createRequest.setParameters(Collections.singletonMap(ASServiceInstance.INACTIVITY_PARAMETER, "PT10H"));
+        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT10H"));
         service.createServiceInstance(createRequest.withServiceInstanceId(testId));
-        ASServiceInstance serviceInstance = serviceRepository.findOne(testId);
+        AutosleepServiceInstance serviceInstance = serviceRepository.findOne(testId);
         assertThat(serviceInstance, is(notNullValue()));
         assertThat(serviceInstance.getInterval(), is(equalTo(Duration.ofHours(10))));
 
-        updateRequest.setParameters(Collections.singletonMap(ASServiceInstance.INACTIVITY_PARAMETER, "PT15M"));
+        updateRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT15M"));
         service.updateServiceInstance(updateRequest.withInstanceId(testId));
         serviceInstance = serviceRepository.findOne(testId);
         assertThat(serviceInstance, is(notNullValue()));

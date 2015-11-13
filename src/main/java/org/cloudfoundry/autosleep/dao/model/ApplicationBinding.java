@@ -14,19 +14,19 @@ import java.util.UUID;
 @Setter
 @Slf4j
 @JsonAutoDetect()
-public class ASServiceBinding extends ServiceInstanceBinding {
+public class ApplicationBinding extends ServiceInstanceBinding {
 
 
     /**
      * Should never be called. Only for JSON auto serialization.
      */
     @SuppressWarnings("unused")
-    private ASServiceBinding() {
+    private ApplicationBinding() {
         super(null, null, null, null, null);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public ASServiceBinding(String id, String serviceInstanceId, Map<String, Object> credentials, String
+    public ApplicationBinding(String id, String serviceInstanceId, Map<String, Object> credentials, String
             syslogDrainUrl, String appGuid) {
         super(id, serviceInstanceId, credentials, syslogDrainUrl, appGuid);
         //will throw an exception if wrong format TODO check if needed with new java-client-lib
@@ -44,10 +44,10 @@ public class ASServiceBinding extends ServiceInstanceBinding {
         if (object == this) {
             return true;
         }
-        if (!(object instanceof ASServiceBinding)) {
+        if (!(object instanceof ApplicationBinding)) {
             return false;
         }
-        ASServiceBinding other = (ASServiceBinding) object;
+        ApplicationBinding other = (ApplicationBinding) object;
 
         return EqualUtil.areEquals(this.getId(), other.getId())
                 && EqualUtil.areEquals(this.getServiceInstanceId(), other.getServiceInstanceId())

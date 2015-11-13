@@ -1,8 +1,8 @@
 package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.dao.model.ASServiceBinding;
-import org.cloudfoundry.autosleep.dao.model.ASServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
@@ -54,9 +54,9 @@ public class GlobalWatcherTest {
     public void populateDb() {
 
         //init mock binding repository with unattached binding
-        List<ASServiceBinding> storedBindings = new ArrayList<>();
+        List<ApplicationBinding> storedBindings = new ArrayList<>();
         Arrays.asList(UnattachedBinding.values()).forEach(id -> {
-            ASServiceBinding binding = new ASServiceBinding(id.name(),
+            ApplicationBinding binding = new ApplicationBinding(id.name(),
                     SERVICE_ID, null, null, APP_UID.toString());
             storedBindings.add(binding);
         });
@@ -64,7 +64,7 @@ public class GlobalWatcherTest {
         when(mockBindingRepo.findAll()).thenReturn(storedBindings);
 
         //init mock serviceRepo
-        ASServiceInstance mockService = mock(ASServiceInstance.class);
+        AutosleepServiceInstance mockService = mock(AutosleepServiceInstance.class);
         when(mockService.getInterval()).thenReturn(INTERVAL);
         when(mockServiceRepo.findOne(any())).thenReturn(mockService);
 
@@ -79,7 +79,7 @@ public class GlobalWatcherTest {
 
     @Test
     public void testWatchApp() {
-        ASServiceBinding binding = new ASServiceBinding("testWatch", SERVICE_ID, null, null, APP_UID.toString());
+        ApplicationBinding binding = new ApplicationBinding("testWatch", SERVICE_ID, null, null, APP_UID.toString());
         spyWatcher.watchApp(binding);
         verify(clock).scheduleTask(eq("testWatch"), eq(Duration.ofSeconds(0)), any(AppStateChecker.class));
     }

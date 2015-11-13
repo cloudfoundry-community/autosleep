@@ -7,7 +7,7 @@ import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ram.RamServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.autosleep.servicebroker.configuration.AutosleepCatalogBuilder;
-import org.cloudfoundry.autosleep.dao.model.ASServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
@@ -56,7 +56,7 @@ public class AutoSleepServiceInstanceBindingServiceTest {
 
         //mocking serviceRepo, we will just test bindingRepo in this class.
         ServiceRepository serviceRepo = mock(RamServiceRepository.class);
-        when(serviceRepo.findOne(any(String.class))).thenReturn(mock(ASServiceInstance.class));
+        when(serviceRepo.findOne(any(String.class))).thenReturn(mock(AutosleepServiceInstance.class));
 
         mockWatcher = mock(GlobalWatcher.class);
 
