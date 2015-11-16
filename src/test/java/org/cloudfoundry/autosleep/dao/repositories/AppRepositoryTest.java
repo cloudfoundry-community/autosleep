@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
+import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.junit.After;
 import org.junit.Before;
@@ -47,7 +48,9 @@ public abstract class AppRepositoryTest {
     }
 
     private ApplicationInfo buildAppInfo(UUID uuid) {
-        return new ApplicationInfo(uuid).withRemoteInfo(new ApplicationActivity(uuid, "appname", AppState.STARTED,
+        return new ApplicationInfo(uuid).withRemoteInfo(new ApplicationActivity(
+                new ApplicationIdentity(uuid, "appname"),
+                AppState.STARTED,
                 Instant.now(), Instant.now()));
     }
 

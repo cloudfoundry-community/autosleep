@@ -3,8 +3,10 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
@@ -24,14 +26,18 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
 
     private ApplicationRepository appRepository;
 
+    private ServiceRepository serviceRepository;
+
     private BindingRepository bindingRepository;
 
     private GlobalWatcher watcher;
 
     @Autowired
-    public AutoSleepServiceInstanceBindingService(ApplicationRepository appRepository, BindingRepository
-            bindingRepository, GlobalWatcher watcher) {
+    public AutoSleepServiceInstanceBindingService(ApplicationRepository appRepository,
+                                                  ServiceRepository serviceRepository,
+                                                  BindingRepository bindingRepository, GlobalWatcher watcher) {
         this.appRepository = appRepository;
+        this.serviceRepository = serviceRepository;
         this.bindingRepository = bindingRepository;
         this.watcher = watcher;
     }
@@ -64,17 +70,23 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
     }
 
     @Override
-    public ServiceInstanceBinding deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest request) throws
-            ServiceBrokerException {
+    public ServiceInstanceBinding deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest request)
+            throws ServiceBrokerException {
         String bindingId = request.getBindingId();
-        log.debug("deleteServiceInstanceBinding - {}", bindingId);
-        ApplicationBinding binding = bindingRepository.findOne(bindingId);
-        log.debug("deleteServiceInstanceBinding on app ", binding.getAppGuid());
-        ApplicationInfo appInfo = appRepository.findOne(binding.getAppGuid());
-        appInfo.getStateMachine().onOptOut();
-        bindingRepository.delete(bindingId);
-        appRepository.save(appInfo);
-        //task launched will cancel by itself
-        return binding;
+        AutosleepServiceInstance serviceInstance = serviceRepository
+                .findOne(request.getInstance().getServiceInstanceId());
+        if (serviceInstance.isNoOptOut()) {
+            throw new ServiceBrokerException("unbinding this service is forbidden");
+        } else {
+            log.debug("deleteServiceInstanceBinding - {}", bindingId);
+            ApplicationBinding binding = bindingRepository.findOne(bindingId);
+            log.debug("deleteServiceInstanceBinding on app ", binding.getAppGuid());
+            ApplicationInfo appInfo = appRepository.findOne(binding.getAppGuid());
+            appInfo.getStateMachine().onOptOut();
+            bindingRepository.delete(bindingId);
+            appRepository.save(appInfo);
+            //task launched will cancel by itself
+            return binding;
+        }
     }
 }

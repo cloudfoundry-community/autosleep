@@ -1,9 +1,10 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
@@ -21,12 +22,13 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
 
     private ServiceRepository repository;
 
-    private CloudFoundryApiService cloudFoundryApi;
+    private GlobalWatcher watcher;
+
 
     @Autowired
-    public AutoSleepServiceInstanceService(ServiceRepository repository, CloudFoundryApiService cloudFoundryApi) {
+    public AutoSleepServiceInstanceService(ServiceRepository repository, GlobalWatcher watcher) {
         this.repository = repository;
-        this.cloudFoundryApi = cloudFoundryApi;
+        this.watcher = watcher;
     }
 
     @Override
@@ -36,11 +38,14 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
         log.debug("createServiceInstance - {}", request.getServiceInstanceId());
 
         AutosleepServiceInstance serviceInstance = repository.findOne(request.getServiceInstanceId());
-        if (serviceInstance != null) {
+        if (repository.findOne(request.getServiceInstanceId()) != null) {
             throw new ServiceInstanceExistsException(serviceInstance);
         } else {
             serviceInstance = new AutosleepServiceInstance(request);
+            // save in repository before calling remote because otherwise local service binding controler will fail
+            // retrieving the service
             repository.save(serviceInstance);
+            watcher.watchServiceBindings(request.getServiceInstanceId(), Config.delayBeforeFirstServiceCheck);
         }
         return serviceInstance;
     }

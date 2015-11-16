@@ -1,9 +1,11 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
@@ -19,7 +21,9 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -55,10 +59,10 @@ public class AutosleepServiceInstanceServiceTest {
     private ServiceRepository serviceRepository;
 
     @Mock
-    private CloudFoundryApiService cloudFoundryApi;
+    private GlobalWatcher globalWatcher;
 
     @InjectMocks
-    private AutoSleepServiceInstanceService service;
+    private AutoSleepServiceInstanceService instanceService;
 
     private CreateServiceInstanceRequest createRequest;
 
@@ -66,11 +70,13 @@ public class AutosleepServiceInstanceServiceTest {
 
     private DeleteServiceInstanceRequest deleteRequest;
 
+    private List<ApplicationIdentity> applications = Arrays.asList(APP_TEST).stream()
+            .map(applicationUuid -> new ApplicationIdentity(applicationUuid, applicationUuid.toString()))
+            .collect(Collectors.toList());
 
     @Before
     public void initService() {
-        service = new AutoSleepServiceInstanceService(serviceRepository, cloudFoundryApi);
-        when(cloudFoundryApi.listApplications(eq(SPACE_TEST), any(String.class))).thenReturn(Arrays.asList(APP_TEST));
+        instanceService = new AutoSleepServiceInstanceService(serviceRepository, globalWatcher);
 
 
         createRequest = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
@@ -80,28 +86,25 @@ public class AutosleepServiceInstanceServiceTest {
         updateRequest = new UpdateServiceInstanceRequest(SERVICE_DEFINITION_ID);
         updateRequest.withInstanceId(SERVICE_INSTANCE_ID);
 
-        deleteRequest = new DeleteServiceInstanceRequest(SERVICE_INSTANCE_ID,
-                SERVICE_DEFINITION_ID,
-                PLAN_ID);
+        deleteRequest = new DeleteServiceInstanceRequest(SERVICE_INSTANCE_ID, SERVICE_DEFINITION_ID, PLAN_ID);
 
     }
-
 
     @Test
     public void testCreateServiceInstance() throws Exception {
         //test null request
         try {
-            service.createServiceInstance(null);
+            instanceService.createServiceInstance(null);
             log.debug("Service instance created");
-            fail("Succeed in creating service with no request");
+            fail("Succeed in creating instanceService with no request");
         } catch (NullPointerException s) {
             log.debug("{} occurred as expected", s.getClass().getSimpleName());
         }
-        //test existing service request
+        //test existing instanceService request
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(new AutosleepServiceInstance(createRequest));
         try {
-            service.createServiceInstance(createRequest);
-            fail("Succeed in creating an already existing service");
+            instanceService.createServiceInstance(createRequest);
+            fail("Succeed in creating an already existing instanceService");
         } catch (ServiceInstanceExistsException e) {
             log.debug("{} occurred as expected", e.getClass().getSimpleName());
         }
@@ -109,22 +112,21 @@ public class AutosleepServiceInstanceServiceTest {
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(null);
         //Should succeed
         createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT10H"));
-        ServiceInstance si = service.createServiceInstance(createRequest);
+        ServiceInstance si = instanceService.createServiceInstance(createRequest);
 
-        assertThat("Succeed in creating service with inactivity parameter", si, is(notNullValue()));
+        assertThat("Succeed in creating instanceService with inactivity parameter", si, is(notNullValue()));
 
-        //verify(cloudFoundryApi, times(1)).listApplications(SPACE_TEST, any(String.class));
+        verify(globalWatcher, times(1)).watchServiceBindings(SERVICE_INSTANCE_ID, Config.delayBeforeFirstServiceCheck);
         verify(serviceRepository, times(1)).save(any(AutosleepServiceInstance.class));
-
-
     }
 
     @Test
     public void testGetServiceInstance() throws Exception {
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(new AutosleepServiceInstance(createRequest));
 
-        org.cloudfoundry.community.servicebroker.model.ServiceInstance retrievedInstance = service.getServiceInstance(
-                SERVICE_INSTANCE_ID);
+        org.cloudfoundry.community.servicebroker.model.ServiceInstance retrievedInstance = instanceService
+                .getServiceInstance(
+                        SERVICE_INSTANCE_ID);
         assertThat(retrievedInstance, is(notNullValue()));
         assertThat(retrievedInstance.getServiceInstanceId(), is(equalTo(SERVICE_INSTANCE_ID)));
     }
@@ -134,20 +136,20 @@ public class AutosleepServiceInstanceServiceTest {
 
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(null);
         try {
-            service.updateServiceInstance(updateRequest);
-            fail("update not supposed to work on an unknown service id");
+            instanceService.updateServiceInstance(updateRequest);
+            fail("update not supposed to work on an unknown instanceService id");
         } catch (ServiceInstanceDoesNotExistException e) {
             log.debug("{} occurred as expected", e.getClass().getSimpleName());
         }
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(new AutosleepServiceInstance(createRequest));
-        service.updateServiceInstance(updateRequest);
+        instanceService.updateServiceInstance(updateRequest);
         verify(serviceRepository, times(1)).save(any(AutosleepServiceInstance.class));
 
     }
 
     @Test
     public void testDeleteServiceInstance() throws Exception {
-        ServiceInstance si = service.deleteServiceInstance(deleteRequest);
+        ServiceInstance si = instanceService.deleteServiceInstance(deleteRequest);
         verify(serviceRepository, times(1)).delete(SERVICE_INSTANCE_ID);
         assertThat(si, is(notNullValue()));
         assertThat(si.getServiceInstanceId(), is(equalTo(SERVICE_INSTANCE_ID)));

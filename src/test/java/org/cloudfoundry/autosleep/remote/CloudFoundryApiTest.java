@@ -10,6 +10,7 @@ import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.cloudfoundry.client.lib.domain.CloudEntity.Meta;
 import org.cloudfoundry.client.lib.domain.CloudEvent;
 import org.cloudfoundry.client.lib.domain.CloudOrganization;
+import org.cloudfoundry.client.lib.domain.CloudService;
 import org.cloudfoundry.client.lib.domain.CloudSpace;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -38,6 +40,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -46,6 +49,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
 public class CloudFoundryApiTest {
+
 
     private static class LastCallVerification implements VerificationMode {
         @Override
@@ -67,6 +71,12 @@ public class CloudFoundryApiTest {
     private static final UUID notFoundUuid = UUID.randomUUID();
 
     private static final UUID errorUuid = UUID.randomUUID();
+
+    private static final UUID serviceInstanceUuid = UUID.randomUUID();
+
+    private static final UUID serviceInstanceNotFoundUuid = UUID.randomUUID();
+
+    private static final UUID serviceInstanceErrorUuid = UUID.randomUUID();
 
     @Mock
     private CloudFoundryClient cloudFoundryClient;
@@ -92,6 +102,8 @@ public class CloudFoundryApiTest {
         when(cloudFoundryClient.getApplication(appStoppedUuid)).thenReturn(sampleApplicationStopped);
         when(cloudFoundryClient.getApplication(notFoundUuid)).thenReturn(null);
         when(cloudFoundryClient.getApplication(errorUuid)).thenThrow(new RuntimeException("runtime error"));
+
+
     }
 
     @Test
@@ -184,27 +196,61 @@ public class CloudFoundryApiTest {
                                         }).collect(Collectors.toList()).stream()
                         ).collect(Collectors.toList()));
         //test that remote call throws an exception
-        List<UUID> remoteApplications = cloudFoundryApi.listApplications(null, null);
-        assertThat(remoteApplications, is(nullValue()));
+        List<ApplicationIdentity> applicationIdentities = cloudFoundryApi.listApplications(null, null);
+        assertThat(applicationIdentities, is(nullValue()));
 
-        remoteApplications = cloudFoundryApi.listApplications(null, null);
-        assertThat(remoteApplications, is(notNullValue()));
-        assertThat(remoteApplications.size(), is(equalTo(spaces.size() * applicationsIdsPerSpaces.size())));
+        applicationIdentities = cloudFoundryApi.listApplications(null, null);
+        assertThat(applicationIdentities, is(notNullValue()));
+        assertThat(applicationIdentities.size(), is(equalTo(spaces.size() * applicationsIdsPerSpaces.size())));
 
-        remoteApplications = cloudFoundryApi.listApplications(spaces.get(0).getMeta().getGuid(), null);
-        assertThat(remoteApplications, is(notNullValue()));
-        assertThat(remoteApplications.size(), is(equalTo(applicationsIdsPerSpaces.size())));
+        applicationIdentities = cloudFoundryApi.listApplications(spaces.get(0).getMeta().getGuid(), null);
+        assertThat(applicationIdentities, is(notNullValue()));
+        assertThat(applicationIdentities.size(), is(equalTo(applicationsIdsPerSpaces.size())));
 
-        remoteApplications = cloudFoundryApi.listApplications(null,
-                ".*-application-" + applicationsIdsPerSpaces.get(0));
-        assertThat(remoteApplications, is(notNullValue()));
-        assertThat(remoteApplications.size(), is(equalTo(spaces.size())));
+        applicationIdentities = cloudFoundryApi.listApplications(null,
+                Pattern.compile( ".*-application-" + applicationsIdsPerSpaces.get(0)));
+        assertThat(applicationIdentities, is(notNullValue()));
+        assertThat(applicationIdentities.size(), is(equalTo(spaces.size())));
 
-        remoteApplications = cloudFoundryApi.listApplications(spaces.get(0).getMeta().getGuid(),
-                ".*-application-" + applicationsIdsPerSpaces.get(0));
-        assertThat(remoteApplications, is(notNullValue()));
-        assertThat(remoteApplications.size(), is(equalTo(1)));
+        applicationIdentities = cloudFoundryApi.listApplications(spaces.get(0).getMeta().getGuid(),
+                Pattern.compile( ".*" + applicationsIdsPerSpaces.get(0)));
+        assertThat(applicationIdentities, is(notNullValue()));
+        assertThat(applicationIdentities.size(), is(equalTo(1)));
 
+        applicationIdentities = cloudFoundryApi.listApplications(spaces.get(0).getMeta().getGuid(),
+                Pattern.compile( ".*"));
+        assertThat(applicationIdentities, is(notNullValue()));
+        assertThat(applicationIdentities.size(), is(equalTo(0)));
+
+
+    }
+
+    @Test
+    public void testBindServiceInstance() throws Exception {
+        ApplicationIdentity applicationStarted = new ApplicationIdentity(appStartedUuid, "applicationStarted");
+        List<ApplicationIdentity> applications = Arrays.asList(applicationStarted,
+                new ApplicationIdentity(appStoppedUuid, "applicationStopped"));
+        CloudService service = new CloudService(new Meta(serviceInstanceUuid, new Date(), new Date()),
+                "serviceInstance");
+        when(cloudFoundryClient.getServices())
+                .thenThrow(new RuntimeException("some error"))
+                .thenThrow(new RuntimeException("some error"))
+                .thenReturn(Collections.singletonList(service));
+        //The two first errors
+        cloudFoundryApi.bindServiceInstance(applicationStarted, serviceInstanceUuid.toString());
+        cloudFoundryApi.bindServiceInstance(applications, serviceInstanceUuid.toString());
+        verify(cloudFoundryClient, never()).bindService(any(String.class), any(String.class));
+
+        //not called if service not found
+        cloudFoundryApi.bindServiceInstance(applicationStarted, serviceInstanceNotFoundUuid.toString());
+        cloudFoundryApi.bindServiceInstance(applications, serviceInstanceNotFoundUuid.toString());
+        verify(cloudFoundryClient, never()).bindService(any(String.class), any(String.class));
+
+        cloudFoundryApi.bindServiceInstance(applicationStarted, serviceInstanceUuid.toString());
+        verify(cloudFoundryClient, times(1)).bindService(eq(applicationStarted.getName()), eq(service.getName()));
+        cloudFoundryApi.bindServiceInstance(applications, serviceInstanceUuid.toString());
+        verify(cloudFoundryClient, times(1 + applications.size()))
+                .bindService(any(String.class), eq(service.getName()));
 
     }
 

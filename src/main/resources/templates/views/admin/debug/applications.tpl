@@ -21,7 +21,7 @@ layout 'layouts/main.tpl',
         },
         mainBody: contents {
 
-            div(class: "row", id:"allApplications"){
+            div(id:"allApplications"){
 
             }
         }

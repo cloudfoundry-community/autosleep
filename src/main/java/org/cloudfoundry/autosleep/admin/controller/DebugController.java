@@ -12,9 +12,12 @@ import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNot
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -100,13 +103,22 @@ public class DebugController {
         return result;
     }
 
-    @RequestMapping("/services/applications/")
+    @RequestMapping(value = "/services/applications/")
     @ResponseBody
     public List<ApplicationInfo> listApplications() {
         log.debug("listApplications");
         List<ApplicationInfo> result = new ArrayList<>();
         applicationRepository.findAll().forEach(result::add);
         return result;
+    }
+
+
+    @RequestMapping(value = "/services/applications/{applicationId}", method = RequestMethod.DELETE)
+    public ResponseEntity<String> deleteApplication(@PathVariable("applicationId") String applicationId) {
+        log.debug("deleteApplication - {}", applicationId);
+        applicationRepository.delete(applicationId);
+        log.debug("deleteApplication - deleted");
+        return new ResponseEntity<>("{}", HttpStatus.NO_CONTENT);
     }
 
 }

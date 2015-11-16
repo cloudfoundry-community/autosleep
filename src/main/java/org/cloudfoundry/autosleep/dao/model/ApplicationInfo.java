@@ -67,7 +67,7 @@ public class ApplicationInfo {
         this.appState = activity.getState();
         this.lastEvent = activity.getLastEvent();
         this.lastLog = activity.getLastLog();
-        this.name = activity.getName();
+        this.name = activity.getApplication().getName();
     }
 
     public void setCheckTimes(Instant last, Instant next) {

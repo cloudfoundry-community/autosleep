@@ -5,15 +5,12 @@ import lombok.Getter;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
 public class ApplicationActivity {
 
-    private UUID guid;
-
-    private String name;
+    private ApplicationIdentity application;
 
     private AppState state;
 
