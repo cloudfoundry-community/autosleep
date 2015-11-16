@@ -44,9 +44,10 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
         String[] persistenceProfiles;
 
         log.debug("Checking if cloud context");
-        if (getCloud() != null) {
+        Cloud cloud = getCloud();
+        if (cloud != null) {
             log.debug("\t -> App in a cloud context, checking available services");
-            persistenceProfiles = getCloudProfile(getCloud());
+            persistenceProfiles = getCloudProfile(cloud);
         } else {
             log.debug("\t -> App in a local context, checking if profile given in environment variable");
             persistenceProfiles = getActiveProfile(appEnvironment);
@@ -62,6 +63,16 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
         }
     }
 
+
+    Cloud getCloud() {
+        try {
+            CloudFactory cloudFactory = new CloudFactory();
+            return cloudFactory.getCloud();
+        } catch (CloudException ce) {
+            return null;
+        }
+    }
+
     /**
      * Check if one of the authorized profile is available in the cloud configuration.
      *
@@ -69,12 +80,9 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
      * @return the two profils to activate if available ( "profile" and "profile-cloud")
      */
     private String[] getCloudProfile(Cloud cloud) {
-        if (cloud == null) {
-            return null;
-        }
         List<ServiceInfo> availableServices = cloud.getServiceInfos();
         log.info("Found serviceInfos: " + StringUtils.collectionToCommaDelimitedString(availableServices));
-        List<String>  availableProfiles = availableServices.stream()
+        List<String> availableProfiles = availableServices.stream()
                 .map(Object::getClass)
                 .filter(autorizedPersistenceProfiles::containsKey)
                 .map(autorizedPersistenceProfiles::get)
@@ -87,20 +95,9 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
                             + autorizedPersistenceProfiles.values().toString() + ". "
                             + "These services are bound to the application: ["
                             + StringUtils.collectionToCommaDelimitedString(availableProfiles) + "]");
-        }
-
-        if (availableProfiles.size() > 0) {
+        } else if (availableProfiles.size() > 0) {
             return createProfileNames(availableProfiles.get(0), "cloud");
-        }
-
-        return null;
-    }
-
-    private Cloud getCloud() {
-        try {
-            CloudFactory cloudFactory = new CloudFactory();
-            return cloudFactory.getCloud();
-        } catch (CloudException ce) {
+        } else {
             return null;
         }
     }
@@ -122,13 +119,11 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
                     + validLocalProfiles.toString() + ". "
                     + "These profiles are active: ["
                     + StringUtils.collectionToCommaDelimitedString(serviceProfiles) + "]");
-        }
-
-        if (serviceProfiles.size() > 0) {
+        } else if (serviceProfiles.size() > 0) {
             return createProfileNames(serviceProfiles.get(0), "local");
+        } else {
+            return null;
         }
-
-        return null;
     }
 
     private String[] createProfileNames(String baseName, String suffix) {
