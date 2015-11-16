@@ -73,6 +73,7 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
         ApplicationInfo appInfo = appRepository.findOne(binding.getAppGuid());
         appInfo.getStateMachine().onOptOut();
         bindingRepository.delete(bindingId);
+        appRepository.save(appInfo);
         //task launched will cancel by itself
         return binding;
     }

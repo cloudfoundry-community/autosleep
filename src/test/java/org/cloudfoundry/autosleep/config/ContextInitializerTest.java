@@ -13,23 +13,17 @@ import org.springframework.cloud.service.common.RedisServiceInfo;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.when;
-
-
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ContextInitializerTest {
@@ -43,7 +37,7 @@ public class ContextInitializerTest {
     private ContextInitializer contextInitializer;
 
 
-    private static abstract class MockConfigurableEnvironment implements ConfigurableEnvironment {
+    private abstract static class MockConfigurableEnvironment implements ConfigurableEnvironment {
         @Getter
         @Setter
         private Set<String> activeProfilesContainer;
@@ -81,7 +75,7 @@ public class ContextInitializerTest {
     }
 
     @Test
-    public void testRedisCloud(){
+    public void testRedisCloud() {
         when(contextInitializer.getCloud()).thenReturn(cloud);
 
         contextInitializer.initialize(applicationContext);
@@ -92,7 +86,7 @@ public class ContextInitializerTest {
     }
 
     @Test
-    public void testRedisLocal(){
+    public void testRedisLocal() {
         when(contextInitializer.getCloud()).thenReturn(null);
         configurableEnvironment.getActiveProfilesContainer().add("redis");
         contextInitializer.initialize(applicationContext);
@@ -103,14 +97,13 @@ public class ContextInitializerTest {
     }
 
     @Test
-    public void tesDefault(){
+    public void tesDefault() {
         when(contextInitializer.getCloud()).thenReturn(null);
         contextInitializer.initialize(applicationContext);
 
         assertThat(configurableEnvironment.getActiveProfilesContainer().size(), is(equalTo(1)));
         assertTrue(configurableEnvironment.getActiveProfilesContainer().contains("default"));
     }
-
 
 
 }
