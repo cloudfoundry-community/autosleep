@@ -3,6 +3,7 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
@@ -20,9 +21,12 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
 
     private ServiceRepository repository;
 
+    private CloudFoundryApiService cloudFoundryApi;
+
     @Autowired
-    public AutoSleepServiceInstanceService(ServiceRepository repository) {
+    public AutoSleepServiceInstanceService(ServiceRepository repository, CloudFoundryApiService cloudFoundryApi) {
         this.repository = repository;
+        this.cloudFoundryApi = cloudFoundryApi;
     }
 
     @Override

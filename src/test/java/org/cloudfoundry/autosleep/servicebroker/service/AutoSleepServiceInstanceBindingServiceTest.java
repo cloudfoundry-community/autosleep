@@ -1,82 +1,87 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.RepositoryConfig;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.ApplicationStateMachine;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ram.RamServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
-import org.cloudfoundry.autosleep.servicebroker.configuration.AutosleepCatalogBuilder;
-import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
-import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.UUID;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @Slf4j
-@ContextConfiguration(classes = {AutosleepCatalogBuilder.class,
-        RepositoryConfig.class})
 public class AutoSleepServiceInstanceBindingServiceTest {
 
     private static final UUID APP_UID = UUID.randomUUID();
 
+    private static final String SERVICE_DEFINITION_ID = "serviceDefinitionId";
 
-    private AutoSleepServiceInstanceBindingService bindingService;
+    private static final String PLAN_ID = "planId";
 
-    @Autowired
-    private Catalog catalog;
 
-    @Autowired
+    @Mock
     private BindingRepository bindingRepo;
 
-    @Autowired
+    @Mock
     private ApplicationRepository appRepo;
+
+    @Mock
+    private GlobalWatcher watcher;
+
+    @Mock
+    private ApplicationInfo applicationInfo;
+
+    @Mock
+    private ApplicationStateMachine applicationStateMachine;
+
+    @InjectMocks
+    private AutoSleepServiceInstanceBindingService bindingService;
 
 
     private CreateServiceInstanceBindingRequest createRequestTemplate;
-    private GlobalWatcher mockWatcher;
-    private String planId;
-    private String serviceDefinitionId;
+
 
     /**
      * Init request templates with calaog definition, prepare mocks.
      */
     @Before
     public void init() {
-
-        //mocking serviceRepo, we will just test bindingRepo in this class.
-        ServiceRepository serviceRepo = mock(RamServiceRepository.class);
-        when(serviceRepo.findOne(any(String.class))).thenReturn(mock(AutosleepServiceInstance.class));
-
-        mockWatcher = mock(GlobalWatcher.class);
-
-        bindingService = new AutoSleepServiceInstanceBindingService(appRepo,bindingRepo,mockWatcher);
-
-        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
-        planId = serviceDefinition.getPlans().get(0).getId();
-        serviceDefinitionId = serviceDefinition.getId();
-        createRequestTemplate = new CreateServiceInstanceBindingRequest(serviceDefinitionId,
-                planId,
+        createRequestTemplate = new CreateServiceInstanceBindingRequest(SERVICE_DEFINITION_ID,
+                PLAN_ID,
                 APP_UID.toString());
+        when(applicationInfo.getUuid()).thenReturn(APP_UID);
+        when(applicationInfo.getStateMachine()).thenReturn(applicationStateMachine);
+
     }
 
     @Test
     public void testCreateServiceInstanceBinding() throws Exception {
+        when(appRepo.findOne(APP_UID.toString())).thenReturn(null);
         bindingService.createServiceInstanceBinding(createRequestTemplate.withServiceInstanceId("Sid").withBindingId(
                 "Bid"));
-        verify(mockWatcher,times(1)).watchApp(any());
+        verify(appRepo, times(1)).save(any(ApplicationInfo.class));
+        verify(bindingRepo, times(1)).save(any(ApplicationBinding.class));
+        verify(watcher, times(1)).watchApp(any());
+
+        when(appRepo.findOne(APP_UID.toString())).thenReturn(applicationInfo);
+        bindingService.createServiceInstanceBinding(createRequestTemplate.withServiceInstanceId("Sid").withBindingId(
+                "Bid"));
+        verify(applicationStateMachine, times(1)).onOptIn();
     }
 
     @Test
@@ -84,11 +89,19 @@ public class AutoSleepServiceInstanceBindingServiceTest {
         String bindingId = "delBindingId";
         String serviceId = "delServiceId";
 
-        bindingService.createServiceInstanceBinding(createRequestTemplate.withServiceInstanceId(serviceId)
-                .withBindingId(bindingId));
+
+        when(appRepo.findOne(APP_UID.toString())).thenReturn(applicationInfo);
+        when(bindingRepo.findOne(bindingId))
+                .thenReturn(new ApplicationBinding(bindingId, serviceId, null, null, APP_UID.toString()));
+
         DeleteServiceInstanceBindingRequest deleteRequest = new DeleteServiceInstanceBindingRequest(bindingId, null,
-                serviceDefinitionId, planId);
+                SERVICE_DEFINITION_ID, PLAN_ID);
         bindingService.deleteServiceInstanceBinding(deleteRequest);
+
+        verify(bindingRepo, times(1)).delete(bindingId);
+        verify(applicationStateMachine, times(1)).onOptOut();
+        verify(appRepo, times(1)).save(applicationInfo);
+
     }
 
 }
