@@ -4,11 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.ApplicationStateMachine;
+import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
+import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,6 +23,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.UUID;
 
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +38,8 @@ public class AutoSleepServiceInstanceBindingServiceTest {
 
     private static final String PLAN_ID = "planId";
 
+    @Mock
+    private ServiceRepository serviceRepository;
 
     @Mock
     private BindingRepository bindingRepo;
@@ -48,6 +55,9 @@ public class AutoSleepServiceInstanceBindingServiceTest {
 
     @Mock
     private ApplicationStateMachine applicationStateMachine;
+
+    @Mock
+    private AutosleepServiceInstance serviceInstance;
 
     @InjectMocks
     private AutoSleepServiceInstanceBindingService bindingService;
@@ -66,7 +76,7 @@ public class AutoSleepServiceInstanceBindingServiceTest {
                 APP_UID.toString());
         when(applicationInfo.getUuid()).thenReturn(APP_UID);
         when(applicationInfo.getStateMachine()).thenReturn(applicationStateMachine);
-
+        when(serviceRepository.findOne(any(String.class))).thenReturn(serviceInstance);
     }
 
     @Test
@@ -94,10 +104,20 @@ public class AutoSleepServiceInstanceBindingServiceTest {
         when(bindingRepo.findOne(bindingId))
                 .thenReturn(new ApplicationBinding(bindingId, serviceId, null, null, APP_UID.toString()));
 
-        DeleteServiceInstanceBindingRequest deleteRequest = new DeleteServiceInstanceBindingRequest(bindingId, null,
+        DeleteServiceInstanceBindingRequest deleteRequest = new DeleteServiceInstanceBindingRequest(bindingId,
+                serviceInstance,
                 SERVICE_DEFINITION_ID, PLAN_ID);
-        bindingService.deleteServiceInstanceBinding(deleteRequest);
+        when(serviceInstance.isNoOptOut()).thenReturn(true);
+        try {
+            bindingService.deleteServiceInstanceBinding(deleteRequest);
+            Assert.fail("binding should have been forbidden");
+        } catch (ServiceBrokerException s) {
+            verify(bindingRepo, never()).delete(bindingId);
+        }
 
+
+        when(serviceInstance.isNoOptOut()).thenReturn(false);
+        bindingService.deleteServiceInstanceBinding(deleteRequest);
         verify(bindingRepo, times(1)).delete(bindingId);
         verify(applicationStateMachine, times(1)).onOptOut();
         verify(appRepo, times(1)).save(applicationInfo);

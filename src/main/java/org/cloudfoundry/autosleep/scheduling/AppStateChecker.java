@@ -1,7 +1,6 @@
 package org.cloudfoundry.autosleep.scheduling;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
@@ -14,45 +13,48 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Slf4j
-public class AppStateChecker implements Runnable {
+public class AppStateChecker extends AbstractPeriodicTask {
 
     private final UUID appUid;
 
     private final String bindingId;
 
-    private final Duration period;
+    private final CloudFoundryApiService cloudFoundryApi;
 
-    private final CloudFoundryApiService remote;
+    private final ApplicationRepository applicationRepository;
 
-    private final Clock clock;
-
-    private ApplicationRepository appRepository;
-
-    public void start() {
-        clock.scheduleTask(bindingId, Duration.ofSeconds(0), this);
+    @Builder
+    AppStateChecker(Clock clock, Duration period, UUID appUid, String bindingId,
+                    CloudFoundryApiService cloudFoundryApi, ApplicationRepository applicationRepository) {
+        super(clock, period);
+        this.appUid = appUid;
+        this.bindingId = bindingId;
+        this.cloudFoundryApi = cloudFoundryApi;
+        this.applicationRepository = applicationRepository;
     }
+
 
     @Override
     public void run() {
-        ApplicationInfo applicationInfo = appRepository.findOne(appUid.toString());
+        ApplicationInfo applicationInfo = applicationRepository.findOne(appUid.toString());
         if (applicationInfo == null) {
             log.error("ApplicationInfo is null, this should never happen!");
-            clock.removeTask(bindingId);
+            stopTask();
         } else {
             switch (applicationInfo.getStateMachine().getState()) {
                 case IGNORED:
                     log.debug("App has been unbound. Cancelling task.");
-                    clock.removeTask(bindingId);
-                    applicationInfo.setCheckTimes(Instant.now(),null);
-                    appRepository.save(applicationInfo);
+                    stopTask();
+                    applicationInfo.setCheckTimes(Instant.now(), null);
+                    applicationRepository.save(applicationInfo);
                     break;
                 case MONITORED:
-                    ApplicationActivity applicationActivity = remote.getApplicationActivity(appUid);
-                    Instant nextCheckTime = null;
+                    ApplicationActivity applicationActivity = cloudFoundryApi.getApplicationActivity(appUid);
+                    Instant nextCheckTime;
                     if (applicationActivity != null) {
                         log.debug("Checking on app {} state, for bindingId {}", appUid, bindingId);
+                        applicationInfo.withRemoteInfo(applicationActivity);
                         if (applicationActivity.getState() == CloudApplication.AppState.STOPPED) {
                             log.debug("App already stopped.");
                             nextCheckTime = rescheduleWithDefaultPeriod();
@@ -62,14 +64,14 @@ public class AppStateChecker implements Runnable {
                                             .getLastLog(),
                                     applicationActivity.getLastEvent());
                             if (lastEvent != null) {
-                                Instant nextIdleTime = lastEvent.plus(period);
+                                Instant nextIdleTime = lastEvent.plus(getPeriod());
                                 log.debug("last event:  {}", lastEvent.toString());
 
                                 if (nextIdleTime.isBefore(Instant.now())) {
                                     log.info("Stopping app [{} / {}], last event: {}, last log: {}",
-                                            applicationActivity.getName(), appUid,
+                                            applicationActivity.getApplication().getName(), appUid,
                                             applicationActivity.getLastEvent(), applicationActivity.getLastLog());
-                                    remote.stopApplication(appUid);
+                                    cloudFoundryApi.stopApplication(appUid);
                                     nextCheckTime = rescheduleWithDefaultPeriod();
                                 } else {
                                     //rescheduled itself
@@ -78,15 +80,15 @@ public class AppStateChecker implements Runnable {
                                 }
                             } else {
                                 log.error("cannot find last event");
-                                nextCheckTime = reschedule(period);
+                                nextCheckTime = rescheduleWithDefaultPeriod();
                             }
                         }
                     } else {
                         log.debug("failed to retrieve application activity informations");
                         nextCheckTime = rescheduleWithDefaultPeriod();
                     }
-                    applicationInfo.setCheckTimes(Instant.now(),nextCheckTime);
-                    appRepository.save(applicationInfo);
+                    applicationInfo.setCheckTimes(Instant.now(), nextCheckTime);
+                    applicationRepository.save(applicationInfo);
                     break;
 
                 default:
@@ -96,14 +98,8 @@ public class AppStateChecker implements Runnable {
 
     }
 
-    protected Instant reschedule(Duration delta) {
-        log.debug("Rescheduling in {}", delta.toString());
-        clock.scheduleTask(bindingId, delta, this);
-        return Instant.now().plus(delta);
+    @Override
+    protected String getTaskId() {
+        return bindingId;
     }
-
-    protected Instant rescheduleWithDefaultPeriod() {
-        return reschedule(period);
-    }
-
 }

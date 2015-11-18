@@ -49,7 +49,7 @@ layout 'layouts/main.tpl',
                 }
             }
 
-            div(class: "row", id:"allServiceBindings"){
+            div(id:"allServiceBindings"){
 
             }
         }

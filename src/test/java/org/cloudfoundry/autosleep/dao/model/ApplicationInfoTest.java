@@ -2,6 +2,7 @@ package org.cloudfoundry.autosleep.dao.model;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
+import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,7 +73,7 @@ public class ApplicationInfoTest {
     }
 
     private ApplicationActivity newApplicationActivity(Instant lastEvent, Instant lastLog) {
-        return new ApplicationActivity(appUuid, "appname",
+        return new ApplicationActivity(new ApplicationIdentity(appUuid, "appname"),
                 CloudApplication.AppState.STARTED, lastEvent, lastLog);
     }
 }

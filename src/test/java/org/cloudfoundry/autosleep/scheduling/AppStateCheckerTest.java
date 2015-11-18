@@ -5,6 +5,7 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.junit.Before;
@@ -38,6 +39,9 @@ public class AppStateCheckerTest {
     private CloudFoundryApiService mockRemote;
 
     @Mock
+    private ApplicationIdentity application;
+
+    @Mock
     private ApplicationActivity applicationActivity;
 
     private ApplicationInfo applicationInfo;
@@ -54,8 +58,9 @@ public class AppStateCheckerTest {
     @Before
     public void buildMocks() {
         //default
-        when(applicationActivity.getGuid()).thenReturn(APP_UID);
-        when(applicationActivity.getName()).thenReturn("appName");
+        when(application.getGuid()).thenReturn(APP_UID);
+        when(application.getName()).thenReturn("appName");
+        when(applicationActivity.getApplication()).thenReturn(application);
         when(applicationActivity.getLastEvent()).thenReturn(Instant.now());
         when(applicationActivity.getLastLog()).thenReturn(Instant.now());
         when(applicationActivity.getState()).thenReturn(AppState.STARTED);
@@ -67,24 +72,32 @@ public class AppStateCheckerTest {
         when(applicationRepository.findOne(APP_UID.toString())).thenReturn(
                 applicationInfo
         );
-        spyChecker = spy(new AppStateChecker(APP_UID, BINDING_ID, INTERVAL, mockRemote, clock,
-                applicationRepository));
+
+
+        spyChecker = spy(AppStateChecker.builder()
+                .appUid(APP_UID)
+                .bindingId(BINDING_ID)
+                .period(INTERVAL)
+                .cloudFoundryApi(mockRemote)
+                .clock(clock)
+                .applicationRepository(applicationRepository).build());
 
     }
 
 
     @Test
     public void testStart() throws Exception {
+        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         doAnswer(invocationOnMock -> {
+            log.debug("Fake scheduling");
             spyChecker.run();
             return null;
-        }).when(clock).scheduleTask(BINDING_ID, Duration.ofSeconds(0), spyChecker);
+        }).when(clock).scheduleTask(eq(BINDING_ID), eq(Duration.ofSeconds(0)), eq(spyChecker));
+        spyChecker.startNow();
 
-        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
-
-        spyChecker.start();
         verify(clock, times(1)).scheduleTask(BINDING_ID, Duration.ofSeconds(0), spyChecker);
         verify(spyChecker, times(1)).run();
+        verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
     }
 
     @Test
@@ -94,6 +107,7 @@ public class AppStateCheckerTest {
         verify(mockRemote, never()).stopApplication(APP_UID);
         verify(clock, times(1)).scheduleTask(any(), anyObject(), any());
         verify(spyChecker, never()).rescheduleWithDefaultPeriod();
+        verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
     }
 
     @Test
@@ -104,6 +118,7 @@ public class AppStateCheckerTest {
         spyChecker.run();
         verify(mockRemote, times(1)).stopApplication(APP_UID);
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
+        verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
     }
 
     @Test
@@ -113,66 +128,49 @@ public class AppStateCheckerTest {
         spyChecker.run();
         verify(mockRemote, never()).stopApplication(APP_UID);
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
+        verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
     }
 
     @Test
-    public void testRunOnRemoteNotFound() throws Exception {
+    public void testRunOnActivityNotFound() throws Exception {
         when(mockRemote.getApplicationActivity(APP_UID)).thenReturn(null);
         when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(mockRemote, never()).stopApplication(APP_UID);
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
+        verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
+    }
+
+    @Test
+    public void testRunOnOptedOut() throws Exception {
+        when(mockRemote.getApplicationActivity(APP_UID)).thenReturn(null);
+        applicationInfo.getStateMachine().onOptOut();
+        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
+        spyChecker.run();
+        verify(mockRemote, never()).stopApplication(APP_UID);
+        verify(spyChecker, never()).rescheduleWithDefaultPeriod();
+        verify(clock, times(1)).removeTask(BINDING_ID);
+        verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
     }
 
 
     @Test
     public void tesStopIfBindingRemoved() throws Exception {
         when(applicationRepository.findOne(APP_UID.toString()))
-                .thenReturn(applicationInfo)
                 .thenReturn(null);
-
-        doAnswer(invocationOnMock -> {
-            log.debug("Fake scheduling");
-            spyChecker.run();
-            return null;
-        }).doAnswer(invocationOnMock -> {
-            log.debug("Fake rescheduling");
-            Thread.sleep(INTERVAL.toMillis());
-            log.debug("Fake rerunning");
-            spyChecker.run();
-            return null;
-        }).when(clock).scheduleTask(eq(BINDING_ID), anyObject(), anyObject());
-
-
-
-        spyChecker.start();
-        Thread.sleep(INTERVAL.multipliedBy(3).toMillis());
-        //start schedule one time, that called run and then an other schedule, an other run and remove
-        verify(clock, times(2)).scheduleTask(anyObject(), anyObject(), anyObject());
-        verify(spyChecker, times(2)).run();
+        spyChecker.run();
+        verify(clock, never()).scheduleTask(anyObject(), anyObject(), anyObject());
+        verify(mockRemote, never()).stopApplication(APP_UID);
         verify(clock, times(1)).removeTask(BINDING_ID);
-
-
-
     }
 
     @Test
     public void tesStopIfApplicationRemoved() throws Exception {
-
         when(applicationRepository.findOne(APP_UID.toString())).thenReturn(null);
-
-
-        doAnswer(invocationOnMock -> {
-            log.debug("Fake scheduling");
-            spyChecker.run();
-            return null;
-        }).when(clock).scheduleTask(eq(BINDING_ID), anyObject(), anyObject());
-
-        spyChecker.start();
-        Thread.sleep(INTERVAL.multipliedBy(2).toMillis());
-        //start schedule one time, that called run and then an other schedule, an other run and remove
-        verify(clock, times(1)).scheduleTask(anyObject(), anyObject(), anyObject());
+        spyChecker.run();
+        verify(clock, never()).scheduleTask(anyObject(), anyObject(), anyObject());
         verify(spyChecker, times(1)).run();
+        verify(mockRemote, never()).stopApplication(APP_UID);
         verify(clock, times(1)).removeTask(BINDING_ID);
 
     }

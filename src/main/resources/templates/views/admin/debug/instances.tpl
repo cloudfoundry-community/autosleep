@@ -21,12 +21,12 @@ layout 'layouts/main.tpl',
         },
         mainBody: contents {
             div(class: "row"){
-                div(class: "col-xs-3"){
+                div(class: "col-xs-2"){
                     label("Organization Id : ")
                     br()
                     input(type:"text", id:"createServiceInstanceOrgGuid")
                 }
-                div(class: "col-xs-3"){
+                div(class: "col-xs-2"){
                     label("Space Id : ")
                     br()
                     input(type:"text", id:"createServiceInstanceSpaceGuid")
@@ -39,14 +39,20 @@ layout 'layouts/main.tpl',
                 div(class: "col-xs-2"){
                     label("Inactivity : ")
                     br()
-                    input(type:"text", id:"createServiceInstancInactivity")
+                    input(type:"text", id:"createServiceInstanceInactivity")
                 }
                 div(class: "col-xs-2"){
+                    label("Exclude names : ")
+                    br()
+                    input(type:"text", id:"createServiceInstanceExclusion")
+                }
+                div(class: "col-xs-2"){
+                    label("")
                     input(type:"submit", onclick:"helper.addServiceInstance(); return false;", value: "Add")
                 }
             }
 
-            div(class: "row", id:"allServiceInstances"){
+            div(id:"allServiceInstances"){
 
             }
         }

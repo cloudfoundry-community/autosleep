@@ -14,9 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -54,9 +57,11 @@ public abstract class  ServiceRepositoryTest {
      */
     @Before
     public void populateDao() {
-
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT15M");
+        parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, ".*");
         createRequestTemplate = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, SERVICE_PLAN_ID, ORG_TEST,
-                SPACE_TEST);
+                SPACE_TEST, parameters);
 
         dao.deleteAll();
 
@@ -132,7 +137,7 @@ public abstract class  ServiceRepositoryTest {
                 is(equalTo(createRequestTemplate.getServiceDefinitionId())));
         assertThat(serviceInstance.getOrganizationGuid(), is(equalTo(ORG_TEST)));
         assertThat(serviceInstance.getSpaceGuid(), is(equalTo(SPACE_TEST)));
-        assertThat(serviceInstance.getInterval(), is(equalTo(Config.defaultInactivityPeriod)));
+        assertThat(serviceInstance.getInterval(), is(equalTo(Duration.ofMinutes(15))));
         assertTrue("Succeed in getting a service that does not exist", dao.findOne("testGetServiceFail") == null);
 
     }

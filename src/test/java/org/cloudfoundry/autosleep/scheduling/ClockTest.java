@@ -28,7 +28,6 @@ public class ClockTest {
     private static final Duration PERIOD = Duration.ofMillis(200);
     private static final String TEST_ID = "93847";
 
-    @Autowired
     protected Clock clock = new Clock();
 
     @Mock
@@ -49,7 +48,7 @@ public class ClockTest {
     @Test
     public void testStartTask() throws Exception {
         clock.scheduleTask(TEST_ID, PERIOD, runnable);
-        Thread.sleep(PERIOD.toMillis() / 2);
+        Thread.sleep(PERIOD.dividedBy(3).toMillis());
         verify(runnable, never()).run();
         Thread.sleep(PERIOD.toMillis());
         verify(runnable, times(1)).run();

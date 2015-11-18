@@ -1,5 +1,6 @@
 package org.cloudfoundry.autosleep.dao.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
@@ -9,6 +10,8 @@ import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.util.EqualUtil;
 import org.cloudfoundry.autosleep.util.serializer.IntervalDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.IntervalSerializer;
+import org.cloudfoundry.autosleep.util.serializer.PatternDeserializer;
+import org.cloudfoundry.autosleep.util.serializer.PatternSerializer;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceRequest;
@@ -18,6 +21,8 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 
 @Getter
@@ -26,9 +31,21 @@ import java.util.Map;
 public class AutosleepServiceInstance extends org.cloudfoundry.community.servicebroker.model.ServiceInstance {
     public static final String INACTIVITY_PARAMETER = "inactivity";
 
+    public static final String EXCLUDE_PARAMETER = "excludeAppNameRegExp";
+
+    public static final String NO_OPTOUT_PARAMETER = "no_optout";
+
     @JsonSerialize(using = IntervalSerializer.class)
     @JsonDeserialize(using = IntervalDeserializer.class)
     private Duration interval;
+
+    @JsonSerialize(using = PatternSerializer.class)
+    @JsonDeserialize(using = PatternDeserializer.class)
+    @JsonProperty("exclude_names")
+    private Pattern excludeNames;
+
+    @JsonProperty("no_optout")
+    private boolean noOptOut;
 
     /**
      * Should never be called. Only for JSON auto serialization.
@@ -41,12 +58,16 @@ public class AutosleepServiceInstance extends org.cloudfoundry.community.service
     public AutosleepServiceInstance(CreateServiceInstanceRequest request) throws HttpMessageNotReadableException {
         super(request);
         setDurationFromParams(request.getParameters());
+        setIgnoreNamesFromParams(request.getParameters());
+        setNoOptOutFromParams(request.getParameters());
     }
 
     public AutosleepServiceInstance(UpdateServiceInstanceRequest request) throws HttpMessageNotReadableException,
             ServiceInstanceUpdateNotSupportedException {
         super(request);
         setDurationFromParams(request.getParameters());
+        setIgnoreNamesFromParams(request.getParameters());
+        setNoOptOutFromParams(request.getParameters());
     }
 
     public AutosleepServiceInstance(DeleteServiceInstanceRequest request) {
@@ -71,13 +92,38 @@ public class AutosleepServiceInstance extends org.cloudfoundry.community.service
         }
     }
 
+    private void setIgnoreNamesFromParams(Map<String, Object> params) throws HttpMessageNotReadableException {
+        if (params != null && params.get(EXCLUDE_PARAMETER) != null) {
+            String excludeNames = (String) params.get(EXCLUDE_PARAMETER);
+            if (!excludeNames.trim().equals("")) {
+                log.debug("excludeNames " + excludeNames);
+                try {
+                    this.excludeNames = Pattern.compile(excludeNames);
+                } catch (PatternSyntaxException p) {
+                    log.error("Wrong format for exclusion  - format cannot be compiled to a valid regexp");
+                    throw new HttpMessageNotReadableException("'" + EXCLUDE_PARAMETER + "' should be a valid regexp");
+                }
+            }
+
+        }
+    }
+
+    private void setNoOptOutFromParams(Map<String, Object> params) throws HttpMessageNotReadableException {
+        if (params != null) {
+            this.noOptOut = Boolean.parseBoolean((String) params.get(NO_OPTOUT_PARAMETER));
+        }
+    }
 
     @Override
     public String toString() {
-        return "AutoSleepSI:[id:" + getServiceInstanceId() + " interval:+" + getInterval().toString() + " sdid:"
-                + getServiceDefinitionId() + "dashURL:" + getDashboardUrl() + " org:" + getOrganizationGuid()
-                + " plan:" + getPlanId() + " space:"
-                + getSpaceGuid() + "]";
+        return "AutoSleepSI:[id:" + getServiceInstanceId() + " interval:+" + getInterval().toString()
+                + " excludesNames:" + (getExcludeNames() != null ? getExcludeNames().toString() : "")
+                + " noOptOut:" + isNoOptOut()
+                + " sdid:" + getServiceDefinitionId()
+                + " dashURL:" + getDashboardUrl()
+                + " org:" + getOrganizationGuid()
+                + " plan:" + getPlanId()
+                + " space:" + getSpaceGuid() + "]";
     }
 
     @Override
@@ -93,10 +139,14 @@ public class AutosleepServiceInstance extends org.cloudfoundry.community.service
         return EqualUtil.areEquals(this.getServiceInstanceId(), other.getServiceInstanceId())
                 && EqualUtil.areEquals(this.getServiceDefinitionId(), other.getServiceDefinitionId())
                 && EqualUtil.areEquals(this.getInterval(), other.getInterval())
+                && EqualUtil.areEquals(this.isNoOptOut(), other.isNoOptOut())
                 && EqualUtil.areEquals(this.getDashboardUrl(), other.getDashboardUrl())
                 && EqualUtil.areEquals(this.getOrganizationGuid(), other.getOrganizationGuid())
                 && EqualUtil.areEquals(this.getPlanId(), other.getPlanId())
-                && EqualUtil.areEquals(this.getSpaceGuid(), other.getSpaceGuid());
+                && EqualUtil.areEquals(this.getSpaceGuid(), other.getSpaceGuid())
+                //Pattern does not implement equals
+                && EqualUtil.areEquals(this.getExcludeNames() == null ? null : this.getExcludeNames().pattern(),
+                other.getExcludeNames() == null ? null : this.getExcludeNames().pattern());
     }
 
     @Override

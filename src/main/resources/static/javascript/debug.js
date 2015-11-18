@@ -13,26 +13,70 @@ function DebugHelper  (pathServiceInstance, serviceDefinitionId, planId) {
 }
 
 DebugHelper.prototype.listApplications = function (){
+    var that = this;
     $.ajax({
         url : this.pathDebugListApplications,
         success : function (applications) {
             var container = $("#allApplications");
+            var row ;
             container.empty();
+
             if(applications.length > 0){
-                container.append($("<div>").addClass("col-xs-3").html("Guid"));
-                container.append($("<div>").addClass("col-xs-3").html("Name"));
-                container.append($("<div>").addClass("col-xs-3").html("State"));
-                container.append($("<div>").addClass("col-xs-3").html("Next check"));
+                row = $("<row>").addClass("row");
+                row.append($("<div>").addClass("col-xs-4 h5").html("Guid"));
+                row.append($("<div>").addClass("col-xs-2 h5").html("Name"));
+                row.append($("<div>").addClass("col-xs-1 h5").html("Status"));
+                row.append($("<div>").addClass("col-xs-3 h5").html("Next check"));
+                row.append($("<div>").addClass("col-xs-1 h5").html("State"));
+                row.append($("<div>").addClass("col-xs-1"));
+                container.append(row);
             }
             $.each(applications, function(idx, application){
-                container.append($("<div>").addClass("col-xs-3").append(application.uuid));
-                container.append($("<div>").addClass("col-xs-3").append(application.name));
-                container.append($("<div>").addClass("col-xs-3").append(application.state));
-                container.append($("<div>").addClass("col-xs-3").append(application.nextCheck));
+                row = $("<row>").addClass("row");
+                row.append($("<div>").addClass("col-xs-4").html(application.uuid));
+                row.append($("<div>").addClass("col-xs-2").html(application.name));
+                row.append($("<div>").addClass("col-xs-1").html(application.appState));
+
+                if(application.nextCheck != null){
+                    var nextCheck = new Date(application.nextCheck);
+                    var day = nextCheck.getDate ();
+                    var month = nextCheck.getMonth() + 1;
+                    row.append($("<div>").addClass("col-xs-3").html(month+"/"+day+"/"+nextCheck.getFullYear()+" "+nextCheck.getHours()+":"+nextCheck.getMinutes()+":"+nextCheck.getSeconds()));
+                }else
+                    row.append($("<div>").addClass("col-xs-3").html("unknown"));
+                if (application.stateMachine != null){
+                    row.append($("<div>").addClass("col-xs-1").html(application.stateMachine.state));
+                }else
+                    row.append($("<div>").addClass("col-xs-1").html("unknown"));
+                var button = $("<button>", {type : "button"}).addClass("btn btn-circle")
+                    .append($("<i>").addClass("glyphicon glyphicon-remove"));
+                row.append($("<div>").addClass("col-xs-1").append(button));
+                button.on("click", function(e){
+                    e.preventDefault();
+                    that.deleteApplication(application.uuid);
+                });
+
+                container.append(row);
             });
         },
         error : function(xhr){
             displayDanger("Error listing applications: "+xhr.responseText);
+        }
+    });
+};
+
+
+DebugHelper.prototype.deleteApplication = function (applicationId) {
+    var that = this;
+    $.ajax({
+        url : this.pathDebugListApplications+applicationId,
+        type : 'DELETE',
+        success : function () {
+            displaySuccess("application deleted");
+            that.listApplications();
+        },
+        error : function(xhr){
+            displayDanger("Error deleting application: "+xhr.responseText);
         }
     });
 };
@@ -45,8 +89,10 @@ DebugHelper.prototype.addServiceInstance = function(){
         plan_id : this.planId,
         organization_guid : $("#createServiceInstanceOrgGuid").val(),
         space_guid : $("#createServiceInstanceSpaceGuid").val(),
-        parameters : {inactivity : $("#createServiceInstancInactivity").val()}
-
+        parameters : {
+            inactivity : $("#createServiceInstanceInactivity").val(),
+            excludeAppNameRegExp : $("#createServiceInstanceExclusion").val()
+        }
     };
     $.ajax({
         url : this.pathServiceInstance+"/"+$("#createServiceInstanceId").val(),
@@ -69,26 +115,36 @@ DebugHelper.prototype.listServiceInstances = function(){
         url : this.pathDebugListInstances,
         success : function (serviceInstances) {
             var container = $("#allServiceInstances");
+            var row;
             container.empty();
+
             if(serviceInstances.length > 0){
-                container.append($("<div>").addClass("col-xs-4").html("Instance Id"));
-                container.append($("<div>").addClass("col-xs-2").html("Definition Id"));
-                container.append($("<div>").addClass("col-xs-3").html("Plan Id"));
-                container.append($("<div>").addClass("col-xs-1"));
+                row = $("<row>").addClass("row");
+                row.append($("<div>").addClass("col-xs-4 h5").html("Instance Id"));
+                row.append($("<div>").addClass("col-xs-1 h5").html("Definition Id"));
+                row.append($("<div>").addClass("col-xs-4 h5").html("Plan Id"));
+                row.append($("<div>").addClass("col-xs-1 h5").html("Interval"));
+                row.append($("<div>").addClass("col-xs-1 h5").html("Exclude"));
+                row.append($("<div>").addClass("col-xs-1"));
+                container.append(row);
             }
             $.each(serviceInstances, function(idx, serviceInstance){
                 var link = $("<a>", {href : that.pathDebugPageServiceBindingsPfx+serviceInstance.service_instance_id
                 +that.pathDebugPageServiceBindingsSfx}).html(serviceInstance.service_instance_id);
-                container.append($("<div>").addClass("col-xs-4").append(link));
-                container.append($("<div>").addClass("col-xs-2").html(serviceInstance.service_id));
-                container.append($("<div>").addClass("col-xs-3").html(serviceInstance.plan_id));
+                row = $("<row>").addClass("row");
+                row.append($("<div>").addClass("col-xs-4").append(link));
+                row.append($("<div>").addClass("col-xs-1").html(serviceInstance.service_id));
+                row.append($("<div>").addClass("col-xs-4").html(serviceInstance.plan_id));
+                row.append($("<div>").addClass("col-xs-1").html(serviceInstance.interval));
+                row.append($("<div>").addClass("col-xs-1").html(serviceInstance.exclude_names));
                 var button = $("<button>", {type : "button"}).addClass("btn btn-circle")
                     .append($("<i>").addClass("glyphicon glyphicon-remove"));
-                container.append($("<div>").addClass("col-xs-1").append(button));
+                row.append($("<div>").addClass("col-xs-1").append(button));
                 button.on("click", function(e){
                     e.preventDefault();
                     that.deleteServiceInstance(serviceInstance.service_instance_id);
                 });
+                container.append(row);
             });
         },
         error : function(xhr){
@@ -144,22 +200,27 @@ DebugHelper.prototype.listServiceBindings = function(serviceInstanceId){
         url : this.pathDebugListBindings + serviceInstanceId ,
         success : function (serviceBindings) {
             var container = $("#allServiceBindings");
+            var row;
             container.empty();
             if(serviceBindings.length > 0){
-                container.append($("<div>").addClass("col-xs-5").html("Instance Id"));
-                container.append($("<div>").addClass("col-xs-5").html("App Guid"));
-                container.append($("<div>").addClass("col-xs-2"));
+                row = $("<row>").addClass("row");
+                row.append($("<div>").addClass("col-xs-5 h5").html("Instance Id"));
+                row.append($("<div>").addClass("col-xs-5 h5").html("App Guid"));
+                row.append($("<div>").addClass("col-xs-2"));
+                container.append(row);
             }
             $.each(serviceBindings, function(idx, serviceBinding){
-                container.append($("<div>").addClass("col-xs-5").html(serviceBinding.id));
-                container.append($("<div>").addClass("col-xs-5").html(serviceBinding.appGuid));
+                row = $("<row>").addClass("row");
+                row.append($("<div>").addClass("col-xs-5").html(serviceBinding.id));
+                row.append($("<div>").addClass("col-xs-5").html(serviceBinding.appGuid));
                 var button = $("<button>", {type : "button"}).addClass("btn btn-circle")
                     .append($("<i>").addClass("glyphicon glyphicon-remove"));
-                container.append($("<div>").addClass("col-xs-1").append(button));
+                row.append($("<div>").addClass("col-xs-2").append(button));
                 button.on("click", function(e){
                     e.preventDefault();
                     that.deleteServiceBinding(serviceInstanceId, serviceBinding.id);
                 });
+                container.append(row);
             });
         },
         error : function(xhr){

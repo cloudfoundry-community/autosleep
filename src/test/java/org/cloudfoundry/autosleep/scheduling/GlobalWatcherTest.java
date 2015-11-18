@@ -4,29 +4,41 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
+import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
 public class GlobalWatcherTest {
 
-    private static final UUID APP_UID = UUID.fromString("9AF63B10-9D25-4162-9AD2-5AA8173FFC3B");
+    private static final UUID APP_UID = UUID.randomUUID();
+
     private static final String SERVICE_ID = "38YF";
+
     private static final Duration INTERVAL = Duration.ofMillis(300);
 
     @Mock
@@ -44,22 +56,28 @@ public class GlobalWatcherTest {
     @Mock
     private ApplicationRepository mockAppRepo;
 
+    @Mock
+    private CloudFoundryApiService cloudFoundryApi;
+
+    @InjectMocks
+    @Spy
     private GlobalWatcher spyWatcher;
 
-    private enum UnattachedBinding {
-        unattached01, unattached02,
-    }
+
+    private List<String> unattachedBinding = Arrays.asList("unattached01", "unattached02");
+
+    private List<String> serviceIds = Arrays.asList("serviceId1", "serviceId2");
+
+    private List<UUID> remoteApplications = Arrays.asList(UUID.randomUUID(), UUID.randomUUID());
+
 
     @Before
     public void populateDb() {
 
         //init mock binding repository with unattached binding
-        List<ApplicationBinding> storedBindings = new ArrayList<>();
-        Arrays.asList(UnattachedBinding.values()).forEach(id -> {
-            ApplicationBinding binding = new ApplicationBinding(id.name(),
-                    SERVICE_ID, null, null, APP_UID.toString());
-            storedBindings.add(binding);
-        });
+        List<ApplicationBinding> storedBindings = unattachedBinding.stream()
+                .map(id -> new ApplicationBinding(id,SERVICE_ID, null, null, APP_UID.toString()))
+                .collect(Collectors.toList());
 
         when(mockBindingRepo.findAll()).thenReturn(storedBindings);
 
@@ -68,13 +86,24 @@ public class GlobalWatcherTest {
         when(mockService.getInterval()).thenReturn(INTERVAL);
         when(mockServiceRepo.findOne(any())).thenReturn(mockService);
 
-        spyWatcher = spy(new GlobalWatcher(clock, mockRemote, mockBindingRepo, mockServiceRepo, mockAppRepo));
+        List<AutosleepServiceInstance> fakeServices = serviceIds.stream()
+                .map(serviceId -> new AutosleepServiceInstance(
+                        new CreateServiceInstanceRequest("definitionId", "planId", "orgGuid", "spaceGuid")))
+                .collect(Collectors.toList());
+        when(mockServiceRepo.findAll()).thenReturn(fakeServices);
+
+        when(cloudFoundryApi.listApplications(any(UUID.class), any(Pattern.class)))
+                .thenReturn(remoteApplications.stream()
+                        .map(id -> new ApplicationIdentity(id, id.toString())).collect(Collectors.toList()));
+
+
     }
 
     @Test
     public void testInit() {
         spyWatcher.init();
-        verify(spyWatcher, times(UnattachedBinding.values().length)).watchApp(any());
+        verify(spyWatcher, times(unattachedBinding.size())).watchApp(any());
+        verify(spyWatcher, times(serviceIds.size())).watchServiceBindings(any(), eq(null));
     }
 
     @Test
@@ -83,5 +112,15 @@ public class GlobalWatcherTest {
         spyWatcher.watchApp(binding);
         verify(clock).scheduleTask(eq("testWatch"), eq(Duration.ofSeconds(0)), any(AppStateChecker.class));
     }
+
+
+    @Test
+    public void testWatchServiceBindings() throws Exception {
+        spyWatcher.watchServiceBindings("serviceId", Duration.ofSeconds(5));
+        verify(clock).scheduleTask(eq("serviceId"), eq(Duration.ofSeconds(5)), any(ApplicationBinder.class));
+        spyWatcher.watchServiceBindings("serviceId", null);
+        verify(clock).scheduleTask(eq("serviceId"), eq(Duration.ofSeconds(0)), any(ApplicationBinder.class));
+    }
+
 
 }
