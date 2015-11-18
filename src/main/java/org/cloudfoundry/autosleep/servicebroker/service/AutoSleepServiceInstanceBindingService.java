@@ -17,6 +17,8 @@ import org.cloudfoundry.community.servicebroker.service.ServiceInstanceBindingSe
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -58,9 +60,16 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
             appInfo.getStateMachine().onOptIn();
         }
 
+        //retrieve service to return its params as credentials
+        AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceId);
+        Map<String,Object> credentials = new HashMap<>();
+        credentials.put(AutosleepServiceInstance.INACTIVITY_PARAMETER,serviceInstance.getInterval().toString());
+        credentials.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,serviceInstance.isNoOptOut());
+        credentials.put(AutosleepServiceInstance.EXCLUDE_PARAMETER,serviceInstance.getExcludeNames());
+
         ApplicationBinding binding = new ApplicationBinding(bindingId,
                 serviceId,
-                null,
+                credentials,
                 null,
                 appId);
         bindingRepository.save(binding);

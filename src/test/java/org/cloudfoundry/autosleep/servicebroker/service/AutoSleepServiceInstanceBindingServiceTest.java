@@ -20,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.time.Duration;
 import java.util.UUID;
 
 import static org.mockito.Mockito.any;
@@ -78,6 +79,8 @@ public class AutoSleepServiceInstanceBindingServiceTest {
         when(applicationInfo.getUuid()).thenReturn(APP_UID);
         when(applicationInfo.getStateMachine()).thenReturn(applicationStateMachine);
         when(serviceRepository.findOne(any(String.class))).thenReturn(serviceInstance);
+        //avoir nullpointer when getting credentials
+        when(serviceInstance.getInterval()).thenReturn(Duration.ofSeconds(10));
     }
 
     @Test
