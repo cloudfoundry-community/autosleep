@@ -5,8 +5,9 @@ Force Tags      Service broker
 Test Teardown   Run Keywords  Delete service instance
 
 *** Variables ***
-${INACTIVITY}  PT30S
 ${INACTIVITY_IN_S}  30
+${INACTIVITY}  PT${INACTIVITY_IN_S}S
+
 
 *** Test Cases ***
 
