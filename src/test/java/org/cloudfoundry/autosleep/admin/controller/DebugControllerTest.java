@@ -170,8 +170,8 @@ public class DebugControllerTest {
 
     @Test
     public void testListApplications() throws Exception {
-        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId).withRemoteInfo(new ApplicationActivity(
-                new ApplicationIdentity(applicationId, "applicationName"),
+        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId, "serviceId").withRemoteInfo(new
+                ApplicationActivity(new ApplicationIdentity(applicationId, "applicationName"),
                 AppState.STARTED, Instant.now(), Instant.now()));
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 

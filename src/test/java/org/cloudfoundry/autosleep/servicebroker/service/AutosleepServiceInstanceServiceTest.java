@@ -2,7 +2,9 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
@@ -25,16 +27,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
@@ -54,6 +51,8 @@ public class AutosleepServiceInstanceServiceTest {
 
     private static final String SERVICE_INSTANCE_ID = "serviceInstanceId";
 
+    @Mock
+    private ApplicationRepository applicationRepository;
 
     @Mock
     private ServiceRepository serviceRepository;
@@ -76,7 +75,7 @@ public class AutosleepServiceInstanceServiceTest {
 
     @Before
     public void initService() {
-        instanceService = new AutoSleepServiceInstanceService(serviceRepository, globalWatcher);
+        instanceService = new AutoSleepServiceInstanceService(applicationRepository, serviceRepository, globalWatcher);
 
 
         createRequest = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
@@ -149,11 +148,28 @@ public class AutosleepServiceInstanceServiceTest {
 
     @Test
     public void testDeleteServiceInstance() throws Exception {
+        when(applicationRepository.findAll()).thenReturn(Arrays.asList());
         ServiceInstance si = instanceService.deleteServiceInstance(deleteRequest);
         verify(serviceRepository, times(1)).delete(SERVICE_INSTANCE_ID);
         assertThat(si, is(notNullValue()));
         assertThat(si.getServiceInstanceId(), is(equalTo(SERVICE_INSTANCE_ID)));
 
+    }
+
+    @Test
+    public void testCleanAppOnDeleteServiceInstance() throws Exception {
+        //mocking app repository so that it return 3 apps linked to the service and 2 linked to others
+        when(applicationRepository.findAll()).thenReturn(Arrays.asList(
+                new ApplicationInfo(UUID.randomUUID(),SERVICE_INSTANCE_ID),
+                new ApplicationInfo(UUID.randomUUID(),SERVICE_INSTANCE_ID),
+                new ApplicationInfo(UUID.randomUUID(),SERVICE_INSTANCE_ID),
+                new ApplicationInfo(UUID.randomUUID(),"àç!àpoiu"),
+                new ApplicationInfo(UUID.randomUUID(),"lkv nàç "))
+        );
+
+        instanceService.deleteServiceInstance(deleteRequest);
+        verify(serviceRepository, times(1)).delete(SERVICE_INSTANCE_ID);
+        verify(applicationRepository, times(3)).delete(any(ApplicationInfo.class));
     }
 
 }

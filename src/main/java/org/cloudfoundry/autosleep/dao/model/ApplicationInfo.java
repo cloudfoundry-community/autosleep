@@ -47,6 +47,9 @@ public class ApplicationInfo {
     @JsonSerialize
     private ApplicationStateMachine stateMachine = new ApplicationStateMachine();
 
+    @JsonSerialize
+    private String serviceInstanceId;
+
     /**
      * Should never be called. Only for JSON auto serialization.
      */
@@ -54,8 +57,9 @@ public class ApplicationInfo {
     private ApplicationInfo() {
     }
 
-    public ApplicationInfo(UUID uuid) {
+    public ApplicationInfo(UUID uuid, String serviceId) {
         this.uuid = uuid;
+        this.serviceInstanceId = serviceId;
     }
 
     public ApplicationInfo withRemoteInfo(ApplicationActivity activity) {
@@ -79,7 +83,7 @@ public class ApplicationInfo {
     @Override
     public String toString() {
         return "[ApplicationInfo:" + getName() + "/" + getUuid() + " lastEvent:"
-                + getLastEvent() + " lastLog:" + getLastLog() + "]";
+                + getLastEvent() + " lastLog:" + getLastLog() + " serviceId:" + getServiceInstanceId() + "]";
     }
 
     @Override
@@ -99,7 +103,8 @@ public class ApplicationInfo {
                 && EqualUtil.areEquals(this.getLastCheck(), other.getLastCheck())
                 && EqualUtil.areEquals(this.getNextCheck(), other.getNextCheck())
                 && EqualUtil.areEquals(this.getStateMachine(), other.getStateMachine())
-                && EqualUtil.areEquals(this.getAppState(), other.getAppState());
+                && EqualUtil.areEquals(this.getAppState(), other.getAppState())
+                && EqualUtil.areEquals(this.getServiceInstanceId(), other.getServiceInstanceId());
     }
 
     @Override

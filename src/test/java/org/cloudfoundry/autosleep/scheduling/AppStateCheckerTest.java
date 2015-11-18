@@ -65,7 +65,7 @@ public class AppStateCheckerTest {
         when(applicationActivity.getLastLog()).thenReturn(Instant.now());
         when(applicationActivity.getState()).thenReturn(AppState.STARTED);
 
-        applicationInfo = new ApplicationInfo(APP_UID).withRemoteInfo(applicationActivity);
+        applicationInfo = new ApplicationInfo(APP_UID,"ACTestSId").withRemoteInfo(applicationActivity);
 
         when(mockRemote.getApplicationActivity(APP_UID)).thenReturn(applicationActivity);
 
