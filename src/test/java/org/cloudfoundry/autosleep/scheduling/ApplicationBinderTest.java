@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.AllArgsConstructor;
+import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
@@ -14,8 +15,10 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -40,14 +43,7 @@ public class ApplicationBinderTest {
 
     private static final UUID SPACE_ID = UUID.randomUUID();
 
-    @AllArgsConstructor
-    private static class ListOfSizeMatcher<T> extends ArgumentMatcher<List<T>> {
-        private int expectedSize;
-
-        public boolean matches(Object list) {
-            return List.class.isInstance(list) && List.class.cast(list).size() == expectedSize;
-        }
-    }
+    private static final UUID APP_ID = UUID.randomUUID();
 
 
     @Mock
@@ -65,15 +61,20 @@ public class ApplicationBinderTest {
     @Mock
     private AutosleepServiceInstance autosleepServiceInstance;
 
+    @Mock
+    private Deployment deployment;
+
 
     private ApplicationBinder applicationBinder;
 
-    private List<UUID> remoteApplicationIds = Arrays.asList(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+    private List<UUID> remoteApplicationIds = Arrays.asList(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+            APP_ID);
 
 
     @Before
     public void buildMocks() {
         //default
+
         when(autosleepServiceInstance.getSpaceGuid()).thenReturn(SPACE_ID.toString());
         when(autosleepServiceInstance.getServiceInstanceId()).thenReturn(SERVICE_ID);
         when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
@@ -82,6 +83,7 @@ public class ApplicationBinderTest {
                         .map(applicationId -> new ApplicationIdentity(applicationId, applicationId.toString()))
                         .collect(Collectors.toList()));
 
+        when(deployment.getApplicationId()).thenReturn(APP_ID);
 
         applicationBinder = spy(ApplicationBinder.builder()
                 .clock(clock)
@@ -90,6 +92,7 @@ public class ApplicationBinderTest {
                 .cloudFoundryApi(cloudFoundryApi)
                 .serviceRepository(serviceRepository)
                 .applicationRepository(applicationRepository)
+                .deployment(deployment)
                 .build());
 
     }
@@ -99,18 +102,16 @@ public class ApplicationBinderTest {
     public void testNewAppeared() throws Exception {
         when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
         when(autosleepServiceInstance.getExcludeNames()).thenReturn(null);
-        //it will return every ids except final one
-        when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
-                .filter(applicationId ->
-                        !applicationId.equals(remoteApplicationIds.get(remoteApplicationIds.size() - 1)))
-                .map(remoteApplicationId -> new ApplicationInfo(remoteApplicationId, "testNewSid"))
-                .collect(Collectors.toList()));
+        //it will return every ids
+        when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
         applicationBinder.run();
 
         verify(applicationBinder, times(1)).rescheduleWithDefaultPeriod();
         verify(cloudFoundryApi, times(1)).listApplications(eq(SPACE_ID), eq(null));
+        //Normaly remote app has not be binded
         verify(cloudFoundryApi, times(1))
-                .bindServiceInstance(argThat(anyListOfSize(1, ApplicationIdentity.class)), anyString());
+                .bindServiceInstance(argThat(anyListOfSize(remoteApplicationIds.size() - 1, ApplicationIdentity.class)),
+                        anyString());
 
         Pattern pattern = Pattern.compile(".*");
         when(autosleepServiceInstance.getExcludeNames()).thenReturn(pattern);
@@ -124,7 +125,9 @@ public class ApplicationBinderTest {
         when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
         //it will return every ids except final one
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
-                .map(remoteApplicationId -> new ApplicationInfo(remoteApplicationId,"testNoNewSid"))
+                //do not return app id
+                .filter(remoteApplicationId -> !remoteApplicationIds.equals(APP_ID))
+                .map(remoteApplicationId -> new ApplicationInfo(remoteApplicationId, "testNoNewSid"))
                 .collect(Collectors.toList()));
         applicationBinder.run();
 
@@ -133,6 +136,7 @@ public class ApplicationBinderTest {
                 .bindServiceInstance(anyListOf(ApplicationIdentity.class), anyString());
 
     }
+
 
     @Test
     public void testRunServiceDeleted() {

@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
@@ -58,6 +59,9 @@ public class GlobalWatcherTest {
 
     @Mock
     private CloudFoundryApiService cloudFoundryApi;
+
+    @Mock
+    private Deployment deployment;
 
     @InjectMocks
     @Spy

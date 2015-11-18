@@ -5,16 +5,19 @@ Library         Process
 *** Variables ***
 ${TESTED_APP_NAME}  static_test
 ${SERVICE_INSTANCE_NAME}  my-autosleep-acc
-${DEFAULT_INACTIVITY}  PT20S
 ${DEFAULT_INACTIVITY_IN_S}  20
+${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
+${EXCLUDE_APP_NAMES}  .*
 # Sometimes app instance aren't well synchronize. ${INACTIVITY_BUFFER_IN_S} will be added after inactivity, before checking anything
 ${INACTIVITY_BUFFER_IN_S}  20
+
+
 
 *** Keywords ***
 Create service instance
     [Documentation]             Create a service instance, checking that it doesn't fail
-	[Arguments]                 ${inactivity}=${DEFAULT_INACTIVITY}
-	${result} =                 Run Process  cf  cs  autosleep  default  ${SERVICE_INSTANCE_NAME}  -c  {"inactivity": "${inactivity}"}
+	[Arguments]                 ${inactivity}=${DEFAULT_INACTIVITY}  ${exclude_app_names}=${EXCLUDE_APP_NAMES}
+	${result} =                 Run Process  cf  cs  autosleep  default  ${SERVICE_INSTANCE_NAME}  -c  {"inactivity": "${inactivity}", "excludeAppNameRegExp" : "${exclude_app_names}"}
 	Should Not Contain          ${result.stdout}    FAIL
 	Should Be Equal As Integers    ${result.rc}    0
 	[Return]                    ${result.rc}
@@ -32,6 +35,20 @@ Unbind service instance
 	Should Not Contain          ${result.stdout}    FAIL
     Should Be Equal As Integers  ${result.rc}    0
     [Return]                    ${result.rc}
+
+Check App Bound
+	[Documentation]				Return true if app is bound to the service
+	${regex} 					Set Variable 	${SERVICE_INSTANCE_NAME} *autosleep *default.* (${TESTED_APP_NAME}[ ,]).*
+	Log 						${regex}
+	${result} =                 Run Process  cf  services
+	Should Match Regexp			${result.stdout}  ${regex}
+
+Check No App Bound
+	[Documentation]				Return true if app is bound to the service
+	${regex} 					Set Variable 	${SERVICE_INSTANCE_NAME} *autosleep *default * create
+	Log 						${regex}
+	${result} =                 Run Process  cf  services
+	Should Match Regexp			${result.stdout}  ${regex}
 
 Delete service instance
     [Documentation]             Delete base service instance, checking it doesn't fail
