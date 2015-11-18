@@ -48,7 +48,7 @@ public abstract class AppRepositoryTest {
     }
 
     private ApplicationInfo buildAppInfo(UUID uuid) {
-        return new ApplicationInfo(uuid).withRemoteInfo(new ApplicationActivity(
+        return new ApplicationInfo(uuid,"APTestServiceId").withRemoteInfo(new ApplicationActivity(
                 new ApplicationIdentity(uuid, "appname"),
                 AppState.STARTED,
                 Instant.now(), Instant.now()));

@@ -53,7 +53,7 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
 
         ApplicationInfo appInfo = appRepository.findOne(appId);
         if (appInfo == null) {
-            appInfo = new ApplicationInfo(UUID.fromString(appId));
+            appInfo = new ApplicationInfo(UUID.fromString(appId),serviceId);
         } else {
             appInfo.getStateMachine().onOptIn();
         }

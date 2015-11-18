@@ -103,7 +103,7 @@ public class ApplicationBinderTest {
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 .filter(applicationId ->
                         !applicationId.equals(remoteApplicationIds.get(remoteApplicationIds.size() - 1)))
-                .map(ApplicationInfo::new)
+                .map(remoteApplicationId -> new ApplicationInfo(remoteApplicationId, "testNewSid"))
                 .collect(Collectors.toList()));
         applicationBinder.run();
 
@@ -124,7 +124,7 @@ public class ApplicationBinderTest {
         when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
         //it will return every ids except final one
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
-                .map(ApplicationInfo::new)
+                .map(remoteApplicationId -> new ApplicationInfo(remoteApplicationId,"testNoNewSid"))
                 .collect(Collectors.toList()));
         applicationBinder.run();
 

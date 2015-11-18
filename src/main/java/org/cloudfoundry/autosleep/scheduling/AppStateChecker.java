@@ -54,7 +54,7 @@ public class AppStateChecker extends AbstractPeriodicTask {
                     Instant nextCheckTime;
                     if (applicationActivity != null) {
                         log.debug("Checking on app {} state, for bindingId {}", appUid, bindingId);
-                        applicationInfo.withRemoteInfo(applicationActivity);
+                        applicationInfo.updateRemoteInfo(applicationActivity);
                         if (applicationActivity.getState() == CloudApplication.AppState.STOPPED) {
                             log.debug("App already stopped.");
                             nextCheckTime = rescheduleWithDefaultPeriod();
