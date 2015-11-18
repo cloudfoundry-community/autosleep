@@ -43,7 +43,7 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
         log.debug("createServiceInstance - {}", request.getServiceInstanceId());
 
         AutosleepServiceInstance serviceInstance = serviceRepository.findOne(request.getServiceInstanceId());
-        if (serviceRepository.findOne(request.getServiceInstanceId()) != null) {
+        if (serviceInstance != null) {
             throw new ServiceInstanceExistsException(serviceInstance);
         } else {
             serviceInstance = new AutosleepServiceInstance(request);
@@ -66,12 +66,12 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
             UpdateServiceInstanceRequest request) throws
             ServiceInstanceUpdateNotSupportedException, ServiceBrokerException, ServiceInstanceDoesNotExistException {
         String serviceId = request.getServiceInstanceId();
-        log.debug("updateServiceInstance - {}", serviceId);
+        log.debug("updateParams - {}", serviceId);
         AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceId);
         if (serviceInstance == null) {
             throw new ServiceInstanceDoesNotExistException(serviceId);
         } else {
-            serviceInstance = new AutosleepServiceInstance(request);
+            serviceInstance.updateFromRequest(request);
             serviceRepository.save(serviceInstance);
         }
         return serviceInstance;
