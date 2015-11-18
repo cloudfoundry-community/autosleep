@@ -28,7 +28,7 @@ If you don't give any additionnal parameter, the default inactivity duration of 
 ```
 cf cs autosleep default my-autosleep  -c '{"inactivity": "PT1H15M"}'
 ```  
-In this example the application will be considered as inactive after *1 hour and 15 minutes*. The time format used is [the ISO8601] (https://en.wikipedia.org/wiki/ISO_8601) format.
+In this example the application will be considered as inactive after *1 hour and 15 minutes*. The time format used is [the ISO8601] (https://en.wikipedia.org/wiki/ISO_8601#Durations) duration format.
 ##Bind your app
 ```
 cf bind-service MY_APP my-autosleep
