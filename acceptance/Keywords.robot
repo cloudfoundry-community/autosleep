@@ -36,15 +36,15 @@ Unbind service instance
     Should Be Equal As Integers  ${result.rc}    0
     [Return]                    ${result.rc}
 
-Check App Binded
-	[Documentation]				Return true if app is binded to the service
+Check App Bound
+	[Documentation]				Return true if app is bound to the service
 	${regex} 					Set Variable 	${SERVICE_INSTANCE_NAME} *autosleep *default.* (${TESTED_APP_NAME}[ ,]).*
 	Log 						${regex}
 	${result} =                 Run Process  cf  services
 	Should Match Regexp			${result.stdout}  ${regex}
 
-Check No App Binded
-	[Documentation]				Return true if app is binded to the service
+Check No App Bound
+	[Documentation]				Return true if app is bound to the service
 	${regex} 					Set Variable 	${SERVICE_INSTANCE_NAME} *autosleep *default * create
 	Log 						${regex}
 	${result} =                 Run Process  cf  services

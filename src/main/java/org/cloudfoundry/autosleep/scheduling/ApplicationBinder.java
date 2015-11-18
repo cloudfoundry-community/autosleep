@@ -2,6 +2,7 @@ package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -27,15 +28,19 @@ public class ApplicationBinder extends AbstractPeriodicTask {
 
     private final ApplicationRepository applicationRepository;
 
+    private Deployment deployment;
+
     @Builder
     ApplicationBinder(Clock clock, Duration period, String serviceInstanceId,
                       CloudFoundryApiService cloudFoundryApi, ServiceRepository serviceRepository,
-                      ApplicationRepository applicationRepository) {
+                      ApplicationRepository applicationRepository,
+                      Deployment deployment) {
         super(clock, period);
         this.serviceInstanceId = serviceInstanceId;
         this.cloudFoundryApi = cloudFoundryApi;
         this.serviceRepository = serviceRepository;
         this.applicationRepository = applicationRepository;
+        this.deployment = deployment;
     }
 
     @Override
@@ -51,7 +56,9 @@ public class ApplicationBinder extends AbstractPeriodicTask {
                             serviceInstance.getExcludeNames());
             if (applicationIdentities != null) {
                 List<ApplicationIdentity> newApplications = applicationIdentities.stream()
-                        .filter(application -> !watchedApplications.contains(application.getGuid()))
+                        .filter(application ->
+                                deployment == null || !deployment.getApplicationId().equals(application.getGuid()))
+                        .filter(application -> !(watchedApplications.contains(application.getGuid())))
                         .collect(Collectors.toList());
                 if (!newApplications.isEmpty()) {
                     log.debug("{} - new applications", newApplications.size());

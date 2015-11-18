@@ -2,6 +2,7 @@ package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
@@ -28,17 +29,21 @@ public class GlobalWatcher {
 
     private CloudFoundryApiService cloudFoundryApi;
 
+    private Deployment deployment;
+
 
     @Autowired
     public GlobalWatcher(Clock clock, BindingRepository bindingRepository,
                          ServiceRepository serviceRepository, ApplicationRepository applicationRepository,
-                         CloudFoundryApiService cloudFoundryApi) {
+                         CloudFoundryApiService cloudFoundryApi,
+                         Deployment deployment) {
         this.clock = clock;
         this.cloudFoundryApi = cloudFoundryApi;
         this.bindingRepository = bindingRepository;
         this.serviceRepository = serviceRepository;
         this.applicationRepository = applicationRepository;
         this.cloudFoundryApi = cloudFoundryApi;
+        this.deployment = deployment;
     }
 
     @PostConstruct
@@ -73,6 +78,7 @@ public class GlobalWatcher {
                 .cloudFoundryApi(cloudFoundryApi)
                 .serviceRepository(serviceRepository)
                 .applicationRepository(applicationRepository)
+                .deployment(deployment)
                 .build();
         applicationBinder.start(delayBeforeTreatment);
     }

@@ -13,18 +13,15 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
 1) Automatically bind application by service instance
     [Documentation]     Check that app is automatically bound by service instance
     Clean
-    ${regex} 					Catenate   SEPARATOR=  	^(?:(?!    ${TESTED_APP_NAME}   ).)*$
-	Create service instance		${INACTIVITY}    ${regex}
-	Sleep               		15
-	Check App Binded
+    ${regex}                  Catenate   SEPARATOR=      ^(?:(?!    ${TESTED_APP_NAME}   ).)*$
+    Create service instance   ${INACTIVITY}    ${regex}
+    Sleep                     15
+    Check App Bound
 
 
 2) Service does not bind ignored applications
-	[Documentation]		Check that no application is bound by the service instance
-	Clean
-	Create service instance		${INACTIVITY}
-	Sleep						15
-	Check No App Binded
-
-
-
+    [Documentation]        Check that no application is bound by the service instance
+    Clean
+    Create service instance  ${INACTIVITY}
+    Sleep                    15
+    Check No App Bound
