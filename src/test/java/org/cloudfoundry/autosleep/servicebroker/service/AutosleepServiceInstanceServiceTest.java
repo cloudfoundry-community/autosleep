@@ -10,6 +10,7 @@ import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
+import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
@@ -82,8 +83,7 @@ public class AutosleepServiceInstanceServiceTest {
                 ORG_TEST.toString(), SPACE_TEST.toString());
         createRequest.withServiceInstanceId(SERVICE_INSTANCE_ID);
 
-        updateRequest = new UpdateServiceInstanceRequest(SERVICE_DEFINITION_ID);
-        updateRequest.withInstanceId(SERVICE_INSTANCE_ID);
+        updateRequest = new UpdateServiceInstanceRequest(PLAN_ID).withInstanceId(SERVICE_INSTANCE_ID);
 
         deleteRequest = new DeleteServiceInstanceRequest(SERVICE_INSTANCE_ID, SERVICE_DEFINITION_ID, PLAN_ID);
 
@@ -141,6 +141,17 @@ public class AutosleepServiceInstanceServiceTest {
             log.debug("{} occurred as expected", e.getClass().getSimpleName());
         }
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(new AutosleepServiceInstance(createRequest));
+
+
+        UpdateServiceInstanceRequest changePlanRequest = new UpdateServiceInstanceRequest(PLAN_ID+"_other")
+                .withInstanceId(SERVICE_INSTANCE_ID);
+        try {
+            instanceService.updateServiceInstance(changePlanRequest);
+            fail("not supposed to be able to change plan");
+        } catch (ServiceInstanceUpdateNotSupportedException e) {
+            log.debug("{} occurred as expected", e.getClass().getSimpleName());
+        }
+
         instanceService.updateServiceInstance(updateRequest);
         verify(serviceRepository, times(1)).save(any(AutosleepServiceInstance.class));
 

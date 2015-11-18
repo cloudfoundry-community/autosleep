@@ -10,10 +10,7 @@ import org.junit.Test;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -144,23 +141,49 @@ public class AutosleepServiceInstanceTest {
 
     @Test
     public void testSetNoOptOutFromParams() {
+        HashMap<String, Object> params = new HashMap<>();
+        params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"");
+
+        //test default values
         AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                Collections.singletonMap(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, "false"))
-                .withServiceInstanceId(SERVICE_ID));
+                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE, null).withServiceInstanceId(SERVICE_ID));
         assertFalse(serviceInstance.isNoOptOut());
 
-        serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                Collections.singletonMap(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, ""))
-                .withServiceInstanceId(SERVICE_ID));
-        assertFalse(serviceInstance.isNoOptOut());
 
+        //** test to true/false with no secret
+        try {
+            params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"");
+            new AutosleepServiceInstance(new CreateServiceInstanceRequest(
+                    SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,params).withServiceInstanceId(SERVICE_ID));
+            fail("One should not be able to set " + AutosleepServiceInstance.NO_OPTOUT_PARAMETER + " param without "
+                    + "providing " + AutosleepServiceInstance.SECRET_PARAMETER);
+        } catch (HttpMessageNotReadableException s) {
+            log.debug("{} occurred as expected", s.getClass().getSimpleName());
+        }
+        try {
+            params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"true");
+            new AutosleepServiceInstance(new CreateServiceInstanceRequest(
+                    SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,params).withServiceInstanceId(SERVICE_ID));
+            fail("One should not be able to set " + AutosleepServiceInstance.NO_OPTOUT_PARAMETER + " param without "
+                    + "providing " + AutosleepServiceInstance.SECRET_PARAMETER);
+        } catch (HttpMessageNotReadableException s) {
+            log.debug("{} occurred as expected", s.getClass().getSimpleName());
+        }
+
+
+
+        //** test to true/false with a new secret
+        params.put(AutosleepServiceInstance.SECRET_PARAMETER,"p@$$w0rd");
+        params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"true");
         serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                Collections.singletonMap(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, "true"))
-                .withServiceInstanceId(SERVICE_ID));
+                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,params).withServiceInstanceId(SERVICE_ID));
         assertTrue(serviceInstance.isNoOptOut());
+
+        params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"false");
+        serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
+                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,params).withServiceInstanceId(SERVICE_ID));
+        assertFalse(serviceInstance.isNoOptOut());
+
 
         serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
                 SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
@@ -170,5 +193,33 @@ public class AutosleepServiceInstanceTest {
 
     }
 
+
+    @Test
+    public void testUpdateNoOptout() throws Exception {
+        String rightPassword = "p@$$w0rd";
+        HashMap<String, Object> params = new HashMap<>();
+        params.put(AutosleepServiceInstance.SECRET_PARAMETER,rightPassword);
+        params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"true");
+
+
+        AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
+                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,params).withServiceInstanceId(SERVICE_ID));
+        assertTrue(serviceInstance.isNoOptOut());
+
+        params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"false");
+        params.put(AutosleepServiceInstance.SECRET_PARAMETER,"toto38");
+        try {
+            serviceInstance.updateFromRequest(new UpdateServiceInstanceRequest( PLAN, params));
+            fail("One should not be able to update " + AutosleepServiceInstance.NO_OPTOUT_PARAMETER + " param without "
+                    + "providing " + AutosleepServiceInstance.SECRET_PARAMETER);
+        } catch (HttpMessageNotReadableException s) {
+            log.debug("{} occurred as expected", s.getClass().getSimpleName());
+        }
+
+        params.put(AutosleepServiceInstance.SECRET_PARAMETER,rightPassword);
+        serviceInstance.updateFromRequest(new UpdateServiceInstanceRequest( PLAN, params));
+        assertFalse(serviceInstance.isNoOptOut());
+
+    }
 
 }

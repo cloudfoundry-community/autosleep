@@ -15,25 +15,29 @@ import org.cloudfoundry.autosleep.util.serializer.PatternSerializer;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceRequest;
+import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
+import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
+import java.util.Base64;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-
 @Getter
 @Setter
 @Slf4j
-public class AutosleepServiceInstance extends org.cloudfoundry.community.servicebroker.model.ServiceInstance {
+public class AutosleepServiceInstance extends ServiceInstance {
     public static final String INACTIVITY_PARAMETER = "inactivity";
 
     public static final String EXCLUDE_PARAMETER = "excludeAppNameRegExp";
 
     public static final String NO_OPTOUT_PARAMETER = "no_optout";
+
+    public static final String SECRET_PARAMETER = "secret";
 
     @JsonSerialize(using = IntervalSerializer.class)
     @JsonDeserialize(using = IntervalDeserializer.class)
@@ -41,11 +45,12 @@ public class AutosleepServiceInstance extends org.cloudfoundry.community.service
 
     @JsonSerialize(using = PatternSerializer.class)
     @JsonDeserialize(using = PatternDeserializer.class)
-    @JsonProperty("exclude_names")
     private Pattern excludeNames;
 
-    @JsonProperty("no_optout")
     private boolean noOptOut;
+
+    @JsonProperty
+    private String secretHash;
 
     /**
      * Should never be called. Only for JSON auto serialization.
@@ -57,21 +62,35 @@ public class AutosleepServiceInstance extends org.cloudfoundry.community.service
 
     public AutosleepServiceInstance(CreateServiceInstanceRequest request) throws HttpMessageNotReadableException {
         super(request);
-        setDurationFromParams(request.getParameters());
-        setIgnoreNamesFromParams(request.getParameters());
-        setNoOptOutFromParams(request.getParameters());
+        updateParams(request.getParameters());
     }
 
     public AutosleepServiceInstance(UpdateServiceInstanceRequest request) throws HttpMessageNotReadableException,
             ServiceInstanceUpdateNotSupportedException {
         super(request);
-        setDurationFromParams(request.getParameters());
-        setIgnoreNamesFromParams(request.getParameters());
-        setNoOptOutFromParams(request.getParameters());
+        updateParams(request.getParameters());
+
     }
 
     public AutosleepServiceInstance(DeleteServiceInstanceRequest request) {
         super(request);
+    }
+
+    public void updateFromRequest(UpdateServiceInstanceRequest request) throws
+            ServiceInstanceUpdateNotSupportedException {
+        if (!getPlanId().equals(request.getPlanId())) {
+            /* org.cloudfoundry.community.servicebroker.model.ServiceInstance doesn't let us modify planId field
+             * (private), and only handle service instance updates by re-creating them from scratch. As we need to
+             * handle real updates (secret params), we are not supporting plan updates for now.*/
+            throw new ServiceInstanceUpdateNotSupportedException("Service plan updates not supported.");
+        }
+        updateParams(request.getParameters());
+    }
+
+    private void updateParams(Map<String, Object> params) {
+        setDurationFromParams(params);
+        setIgnoreNamesFromParams(params);
+        setNoOptOutFromParams(params);
     }
 
     private void setDurationFromParams(Map<String, Object> params) throws HttpMessageNotReadableException {
@@ -104,14 +123,46 @@ public class AutosleepServiceInstance extends org.cloudfoundry.community.service
                     throw new HttpMessageNotReadableException("'" + EXCLUDE_PARAMETER + "' should be a valid regexp");
                 }
             }
-
         }
     }
 
     private void setNoOptOutFromParams(Map<String, Object> params) throws HttpMessageNotReadableException {
         if (params != null) {
-            this.noOptOut = Boolean.parseBoolean((String) params.get(NO_OPTOUT_PARAMETER));
+            String noOptParam = (String) params.get(NO_OPTOUT_PARAMETER);
+            if (noOptParam != null) {
+                if (isAuthorized(params)) {
+                    this.noOptOut = Boolean.parseBoolean(noOptParam);
+                } else {
+                    throwUnauthorizedException(NO_OPTOUT_PARAMETER);
+                }
+            }
         }
+    }
+
+
+    /**
+     * Return true if the request is authorized to modify 'protected' parameters.
+     *
+     * @param params request parameters
+     * @return true if a the secret parameter is present, and if its value is the same as in previous calls (if it
+     * was previously received)
+     */
+    private boolean isAuthorized(Map<String, Object> params) {
+        boolean isAuthorized = false;
+        if (params != null && params.get(SECRET_PARAMETER) != null) {
+            String receivedSecret = Base64.getUrlEncoder().encodeToString(((String) params.get(SECRET_PARAMETER))
+                    .getBytes(Charset.forName("UTF-8")));
+            isAuthorized = getSecretHash() == null || getSecretHash().equals(receivedSecret);
+            if (isAuthorized) {
+                setSecretHash(receivedSecret);
+            }
+        }
+        return isAuthorized;
+    }
+
+    private void throwUnauthorizedException(String parameterName) {
+        throw new HttpMessageNotReadableException("Trying to set or change a protected parameter ('"
+                + parameterName + "') without providing the right '" + SECRET_PARAMETER + "'.");
     }
 
     @Override
@@ -144,9 +195,10 @@ public class AutosleepServiceInstance extends org.cloudfoundry.community.service
                 && EqualUtil.areEquals(this.getOrganizationGuid(), other.getOrganizationGuid())
                 && EqualUtil.areEquals(this.getPlanId(), other.getPlanId())
                 && EqualUtil.areEquals(this.getSpaceGuid(), other.getSpaceGuid())
+                && EqualUtil.areEquals(this.getSecretHash(), other.getSecretHash())
                 //Pattern does not implement equals
                 && EqualUtil.areEquals(this.getExcludeNames() == null ? null : this.getExcludeNames().pattern(),
-                other.getExcludeNames() == null ? null : this.getExcludeNames().pattern());
+                other.getExcludeNames() == null ? null : other.getExcludeNames().pattern());
     }
 
     @Override
