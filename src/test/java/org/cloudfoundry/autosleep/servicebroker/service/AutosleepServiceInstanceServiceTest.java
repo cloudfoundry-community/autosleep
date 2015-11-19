@@ -143,7 +143,7 @@ public class AutosleepServiceInstanceServiceTest {
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(new AutosleepServiceInstance(createRequest));
 
 
-        UpdateServiceInstanceRequest changePlanRequest = new UpdateServiceInstanceRequest(PLAN_ID+"_other")
+        UpdateServiceInstanceRequest changePlanRequest = new UpdateServiceInstanceRequest(PLAN_ID + "_other")
                 .withInstanceId(SERVICE_INSTANCE_ID);
         try {
             instanceService.updateServiceInstance(changePlanRequest);
@@ -171,11 +171,11 @@ public class AutosleepServiceInstanceServiceTest {
     public void testCleanAppOnDeleteServiceInstance() throws Exception {
         //mocking app repository so that it return 3 apps linked to the service and 2 linked to others
         when(applicationRepository.findAll()).thenReturn(Arrays.asList(
-                new ApplicationInfo(UUID.randomUUID(),SERVICE_INSTANCE_ID),
-                new ApplicationInfo(UUID.randomUUID(),SERVICE_INSTANCE_ID),
-                new ApplicationInfo(UUID.randomUUID(),SERVICE_INSTANCE_ID),
-                new ApplicationInfo(UUID.randomUUID(),"àç!àpoiu"),
-                new ApplicationInfo(UUID.randomUUID(),"lkv nàç "))
+                        new ApplicationInfo(UUID.randomUUID(), SERVICE_INSTANCE_ID),
+                        new ApplicationInfo(UUID.randomUUID(), SERVICE_INSTANCE_ID),
+                        new ApplicationInfo(UUID.randomUUID(), SERVICE_INSTANCE_ID),
+                        new ApplicationInfo(UUID.randomUUID(), "àç!àpoiu"),
+                        new ApplicationInfo(UUID.randomUUID(), "lkv nàç "))
         );
 
         instanceService.deleteServiceInstance(deleteRequest);
