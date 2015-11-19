@@ -15,8 +15,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
     Clean
     ${regex}                  Catenate   SEPARATOR=      ^(?:(?!    ${TESTED_APP_NAME}   ).)*$
     Create service instance   ${INACTIVITY}    ${regex}
-    Sleep                     15
-    Check App Bound
+    Wait Until Keyword Succeeds     25s  3s  Check App Bound
 
 
 2) Service does not bind ignored applications
