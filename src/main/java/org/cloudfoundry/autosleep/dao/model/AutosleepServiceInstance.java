@@ -88,6 +88,7 @@ public class AutosleepServiceInstance extends ServiceInstance {
     }
 
     private void updateParams(Map<String, Object> params) {
+        setSecretFromParams(params);
         setDurationFromParams(params);
         setIgnoreNamesFromParams(params);
         setNoOptOutFromParams(params);
@@ -140,24 +141,30 @@ public class AutosleepServiceInstance extends ServiceInstance {
     }
 
 
+    private String encodeSecret(String receivedSecret) {
+        return Base64.getUrlEncoder().encodeToString(receivedSecret.getBytes(Charset.forName("UTF-8")));
+    }
+
+    private void setSecretFromParams(Map<String, Object> params) {
+        //only set it once and for all
+        if (this.secretHash == null && params != null && params.get(SECRET_PARAMETER) != null) {
+            this.secretHash = encodeSecret((String) params.get(SECRET_PARAMETER));
+        }
+    }
+
     /**
      * Return true if the request is authorized to modify 'protected' parameters.
      *
      * @param params request parameters
-     * @return true if a the secret parameter is present, and if its value is the same as in previous calls
-    (if it was previously received)
+     * @return true if a the secret parameter is present and equals to the one provided when service was created
      */
     private boolean isAuthorized(Map<String, Object> params) {
-        boolean isAuthorized = false;
         if (params != null && params.get(SECRET_PARAMETER) != null) {
-            String receivedSecret = Base64.getUrlEncoder().encodeToString(((String) params.get(SECRET_PARAMETER))
-                    .getBytes(Charset.forName("UTF-8")));
-            isAuthorized = getSecretHash() == null || getSecretHash().equals(receivedSecret);
-            if (isAuthorized) {
-                setSecretHash(receivedSecret);
-            }
+            String receivedSecret = encodeSecret((String) params.get(SECRET_PARAMETER));
+            return receivedSecret.equals(this.secretHash);
+        } else {
+            return false;
         }
-        return isAuthorized;
     }
 
     private void throwUnauthorizedException(String parameterName) {

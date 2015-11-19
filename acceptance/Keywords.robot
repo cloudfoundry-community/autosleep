@@ -7,7 +7,7 @@ ${TESTED_APP_NAME}  static_test
 ${SERVICE_INSTANCE_NAME}  my-autosleep-acc
 ${DEFAULT_INACTIVITY_IN_S}  20
 ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
-${EXCLUDE_APP_NAMES}  .*
+${EXCLUDE_ALL_APP_NAMES}  .*
 # Sometimes app instance aren't well synchronize. ${INACTIVITY_BUFFER_IN_S} will be added after inactivity, before checking anything
 ${INACTIVITY_BUFFER_IN_S}  20
 
@@ -16,8 +16,8 @@ ${INACTIVITY_BUFFER_IN_S}  20
 *** Keywords ***
 Create service instance
     [Documentation]             Create a service instance, checking that it doesn't fail
-	[Arguments]                 ${inactivity}=${DEFAULT_INACTIVITY}  ${exclude_app_names}=${EXCLUDE_APP_NAMES}
-	${result} =                 Run Process  cf  cs  autosleep  default  ${SERVICE_INSTANCE_NAME}  -c  {"inactivity": "${inactivity}", "excludeAppNameRegExp" : "${exclude_app_names}"}
+	[Arguments]                 ${creation_parameters}={"inactivity": "${DEFAULT_INACTIVITY}", "excludeAppNameRegExp" : "${EXCLUDE_ALL_APP_NAMES}"}
+	${result} =                 Run Process  cf  cs  autosleep  default  ${SERVICE_INSTANCE_NAME}  -c  ${creation_parameters}
 	Should Not Contain          ${result.stdout}    FAIL
 	Should Be Equal As Integers    ${result.rc}    0
 	[Return]                    ${result.rc}
