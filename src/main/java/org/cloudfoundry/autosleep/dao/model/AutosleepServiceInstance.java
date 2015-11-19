@@ -19,13 +19,9 @@ import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
-import java.nio.charset.Charset;
 import java.time.Duration;
-import java.time.format.DateTimeParseException;
-import java.util.Base64;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 @Getter
 @Setter
@@ -62,13 +58,15 @@ public class AutosleepServiceInstance extends ServiceInstance {
 
     public AutosleepServiceInstance(CreateServiceInstanceRequest request) throws HttpMessageNotReadableException {
         super(request);
-        updateParams(request.getParameters());
+        interval = Config.defaultInactivityPeriod;
+        noOptOut = Boolean.FALSE;
+        updateFromParameters(request.getParameters());
     }
 
     public AutosleepServiceInstance(UpdateServiceInstanceRequest request) throws HttpMessageNotReadableException,
             ServiceInstanceUpdateNotSupportedException {
         super(request);
-        updateParams(request.getParameters());
+        updateFromParameters(request.getParameters());
 
     }
 
@@ -76,100 +74,19 @@ public class AutosleepServiceInstance extends ServiceInstance {
         super(request);
     }
 
-    public void updateFromRequest(UpdateServiceInstanceRequest request) throws
-            ServiceInstanceUpdateNotSupportedException {
-        if (!getPlanId().equals(request.getPlanId())) {
-            /* org.cloudfoundry.community.servicebroker.model.ServiceInstance doesn't let us modify planId field
-             * (private), and only handle service instance updates by re-creating them from scratch. As we need to
-             * handle real updates (secret params), we are not supporting plan updates for now.*/
-            throw new ServiceInstanceUpdateNotSupportedException("Service plan updates not supported.");
+    public void updateFromParameters(Map<String, Object> params) {
+        if (params.containsKey(SECRET_PARAMETER)) {
+            secretHash = (String) params.get(SECRET_PARAMETER);
         }
-        updateParams(request.getParameters());
-    }
-
-    private void updateParams(Map<String, Object> params) {
-        setSecretFromParams(params);
-        setDurationFromParams(params);
-        setIgnoreNamesFromParams(params);
-        setNoOptOutFromParams(params);
-    }
-
-    private void setDurationFromParams(Map<String, Object> params) throws HttpMessageNotReadableException {
-
-        if (params == null || params.get(INACTIVITY_PARAMETER) == null) {
-            interval = Config.defaultInactivityPeriod;
-        } else {
-            String inactivityPattern = (String) params.get(INACTIVITY_PARAMETER);
-            log.debug("pattern " + inactivityPattern);
-            try {
-                interval = Duration.parse(inactivityPattern);
-            } catch (DateTimeParseException e) {
-                log.error("Wrong format for inactivity duration - format should respect ISO-8601 duration format "
-                        + "PnDTnHnMn");
-                throw new HttpMessageNotReadableException("'inactivity' param badly formatted (ISO-8601). "
-                        + "Example: \"PT15M\" for 15mn");
-            }
+        if (params.containsKey(INACTIVITY_PARAMETER)) {
+            interval = (Duration) params.get(INACTIVITY_PARAMETER);
         }
-    }
-
-    private void setIgnoreNamesFromParams(Map<String, Object> params) throws HttpMessageNotReadableException {
-        if (params != null && params.get(EXCLUDE_PARAMETER) != null) {
-            String excludeNames = (String) params.get(EXCLUDE_PARAMETER);
-            if (!excludeNames.trim().equals("")) {
-                log.debug("excludeNames " + excludeNames);
-                try {
-                    this.excludeNames = Pattern.compile(excludeNames);
-                } catch (PatternSyntaxException p) {
-                    log.error("Wrong format for exclusion  - format cannot be compiled to a valid regexp");
-                    throw new HttpMessageNotReadableException("'" + EXCLUDE_PARAMETER + "' should be a valid regexp");
-                }
-            }
+        if (params.containsKey(EXCLUDE_PARAMETER)) {
+            excludeNames = (Pattern) params.get(EXCLUDE_PARAMETER);
         }
-    }
-
-    private void setNoOptOutFromParams(Map<String, Object> params) throws HttpMessageNotReadableException {
-        if (params != null) {
-            String noOptParam = (String) params.get(NO_OPTOUT_PARAMETER);
-            if (noOptParam != null) {
-                if (isAuthorized(params)) {
-                    this.noOptOut = Boolean.parseBoolean(noOptParam);
-                } else {
-                    throwUnauthorizedException(NO_OPTOUT_PARAMETER);
-                }
-            }
+        if (params.containsKey(NO_OPTOUT_PARAMETER)) {
+            noOptOut = (Boolean) params.get(NO_OPTOUT_PARAMETER);
         }
-    }
-
-
-    private String encodeSecret(String receivedSecret) {
-        return Base64.getUrlEncoder().encodeToString(receivedSecret.getBytes(Charset.forName("UTF-8")));
-    }
-
-    private void setSecretFromParams(Map<String, Object> params) {
-        //only set it once and for all
-        if (this.secretHash == null && params != null && params.get(SECRET_PARAMETER) != null) {
-            this.secretHash = encodeSecret((String) params.get(SECRET_PARAMETER));
-        }
-    }
-
-    /**
-     * Return true if the request is authorized to modify 'protected' parameters.
-     *
-     * @param params request parameters
-     * @return true if a the secret parameter is present and equals to the one provided when service was created
-     */
-    private boolean isAuthorized(Map<String, Object> params) {
-        if (params != null && params.get(SECRET_PARAMETER) != null) {
-            String receivedSecret = encodeSecret((String) params.get(SECRET_PARAMETER));
-            return receivedSecret.equals(this.secretHash);
-        } else {
-            return false;
-        }
-    }
-
-    private void throwUnauthorizedException(String parameterName) {
-        throw new HttpMessageNotReadableException("Trying to set or change a protected parameter ('"
-                + parameterName + "') without providing the right '" + SECRET_PARAMETER + "'.");
     }
 
     @Override

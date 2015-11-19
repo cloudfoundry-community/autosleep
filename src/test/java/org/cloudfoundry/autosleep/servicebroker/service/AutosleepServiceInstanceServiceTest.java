@@ -21,18 +21,32 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
@@ -61,6 +75,9 @@ public class AutosleepServiceInstanceServiceTest {
     @Mock
     private GlobalWatcher globalWatcher;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private AutoSleepServiceInstanceService instanceService;
 
@@ -70,20 +87,21 @@ public class AutosleepServiceInstanceServiceTest {
 
     private DeleteServiceInstanceRequest deleteRequest;
 
-    private List<ApplicationIdentity> applications = Arrays.asList(APP_TEST).stream()
-            .map(applicationUuid -> new ApplicationIdentity(applicationUuid, applicationUuid.toString()))
-            .collect(Collectors.toList());
+    private String passwordEncoded = "passwordEncoded" ;
 
     @Before
     public void initService() {
-        instanceService = new AutoSleepServiceInstanceService(applicationRepository, serviceRepository, globalWatcher);
+        instanceService = new AutoSleepServiceInstanceService(applicationRepository, serviceRepository,
+                globalWatcher, passwordEncoder);
+        when(passwordEncoder.encode(any(CharSequence.class))).thenReturn(passwordEncoded);
 
 
         createRequest = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
-                ORG_TEST.toString(), SPACE_TEST.toString());
+                ORG_TEST.toString(), SPACE_TEST.toString(), Collections.emptyMap());
         createRequest.withServiceInstanceId(SERVICE_INSTANCE_ID);
 
-        updateRequest = new UpdateServiceInstanceRequest(PLAN_ID).withInstanceId(SERVICE_INSTANCE_ID);
+        updateRequest = new UpdateServiceInstanceRequest(PLAN_ID, Collections.emptyMap())
+                .withInstanceId(SERVICE_INSTANCE_ID);
 
         deleteRequest = new DeleteServiceInstanceRequest(SERVICE_INSTANCE_ID, SERVICE_DEFINITION_ID, PLAN_ID);
 
@@ -109,14 +127,51 @@ public class AutosleepServiceInstanceServiceTest {
         }
 
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(null);
-        //Should succeed
+        // Duration verification
         createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT10H"));
         ServiceInstance si = instanceService.createServiceInstance(createRequest);
-
-        assertThat("Succeed in creating instanceService with inactivity parameter", si, is(notNullValue()));
+        verify(passwordEncoder, never()).encode(anyString());
+        assertThat(si, is(notNullValue()));
 
         verify(globalWatcher, times(1)).watchServiceBindings(SERVICE_INSTANCE_ID, Config.delayBeforeFirstServiceCheck);
         verify(serviceRepository, times(1)).save(any(AutosleepServiceInstance.class));
+
+        assertThat(si, is(instanceOf(AutosleepServiceInstance.class)));
+        AutosleepServiceInstance serviceInstance = (AutosleepServiceInstance) si;
+        assertFalse(serviceInstance.isNoOptOut());
+        assertThat(serviceInstance.getInterval(), is(equalTo(Duration.ofHours(10))));
+
+        // Exclude names verification
+        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.EXCLUDE_PARAMETER, ".*"));
+        si = instanceService.createServiceInstance(createRequest);
+        verify(passwordEncoder, never()).encode(anyString());
+        assertThat(si, is(notNullValue()));
+        assertThat(si, is(instanceOf(AutosleepServiceInstance.class)));
+        serviceInstance = (AutosleepServiceInstance) si;
+        assertFalse(serviceInstance.isNoOptOut());
+        assertThat(serviceInstance.getExcludeNames(), is(notNullValue()));
+        assertThat(serviceInstance.getExcludeNames().pattern(), is(equalTo(".*")));
+
+        // Secret verification
+        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.SECRET_PARAMETER, "password"));
+        si = instanceService.createServiceInstance(createRequest);
+        verify(passwordEncoder, times(1)).encode(eq("password"));
+        assertThat(si, is(notNullValue()));
+        assertThat(si, is(instanceOf(AutosleepServiceInstance.class)));
+        serviceInstance = (AutosleepServiceInstance) si;
+        assertFalse(serviceInstance.isNoOptOut());
+        assertThat(serviceInstance.getSecretHash(), is(equalTo(passwordEncoded)));
+
+        //No opt out verification
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put(AutosleepServiceInstance.SECRET_PARAMETER, "secret");
+        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, "true");
+        createRequest.setParameters(parameters);
+        si = instanceService.createServiceInstance(createRequest);
+        assertThat(si, is(notNullValue()));
+        assertThat(si, is(instanceOf(AutosleepServiceInstance.class)));
+        serviceInstance = (AutosleepServiceInstance) si;
+        assertTrue(serviceInstance.isNoOptOut());
     }
 
     @Test
@@ -140,11 +195,17 @@ public class AutosleepServiceInstanceServiceTest {
         } catch (ServiceInstanceDoesNotExistException e) {
             log.debug("{} occurred as expected", e.getClass().getSimpleName());
         }
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put(AutosleepServiceInstance.SECRET_PARAMETER, "secret");
+        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, Boolean.TRUE);
+        createRequest.setParameters(parameters);
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(new AutosleepServiceInstance(createRequest));
 
-
-        UpdateServiceInstanceRequest changePlanRequest = new UpdateServiceInstanceRequest(PLAN_ID + "_other")
+        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, "false");
+        UpdateServiceInstanceRequest changePlanRequest = new UpdateServiceInstanceRequest(PLAN_ID + "_other",
+                parameters)
                 .withInstanceId(SERVICE_INSTANCE_ID);
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
         try {
             instanceService.updateServiceInstance(changePlanRequest);
             fail("not supposed to be able to change plan");
@@ -152,8 +213,14 @@ public class AutosleepServiceInstanceServiceTest {
             log.debug("{} occurred as expected", e.getClass().getSimpleName());
         }
 
-        instanceService.updateServiceInstance(updateRequest);
+        parameters.put(AutosleepServiceInstance.SECRET_PARAMETER, "secret");
+        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, "false");
+        updateRequest.setParameters(parameters);
+        ServiceInstance si = instanceService.updateServiceInstance(updateRequest);
         verify(serviceRepository, times(1)).save(any(AutosleepServiceInstance.class));
+        assertThat(si, is(notNullValue()));
+        assertThat(si, is(instanceOf(AutosleepServiceInstance.class)));
+        assertFalse(((AutosleepServiceInstance) si).isNoOptOut());
 
     }
 
@@ -181,6 +248,60 @@ public class AutosleepServiceInstanceServiceTest {
         instanceService.deleteServiceInstance(deleteRequest);
         verify(serviceRepository, times(1)).delete(SERVICE_INSTANCE_ID);
         verify(applicationRepository, times(3)).delete(any(ApplicationInfo.class));
+    }
+
+    @Test
+    public void testProcessSecretFailures() throws Exception {
+        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.SECRET_PARAMETER, "secret"));
+        when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(new AutosleepServiceInstance(createRequest));
+        try {
+            instanceService.updateServiceInstance(updateRequest);
+            fail("Update should have been impossible due to no secret provided");
+        } catch (InvalidParameterException i) {
+            assertThat(i.getParameterName(), is(equalTo(AutosleepServiceInstance.SECRET_PARAMETER)));
+        }
+        updateRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.SECRET_PARAMETER, "secret"));
+        when(passwordEncoder.matches(any(CharSequence.class), anyString())).thenReturn(false);
+        try {
+            instanceService.updateServiceInstance(updateRequest);
+            fail("Update should have been impossible due to non matching password");
+        } catch (InvalidParameterException i) {
+            assertThat(i.getParameterName(), is(equalTo(AutosleepServiceInstance.SECRET_PARAMETER)));
+        }
+    }
+
+    @Test
+    public void testProcessInactivityFailures() throws Exception {
+        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PP"));
+        try {
+            instanceService.createServiceInstance(createRequest);
+            fail("Create should have been impossible due to invalid inactivity");
+        } catch (InvalidParameterException i) {
+            assertThat(i.getParameterName(), is(equalTo(AutosleepServiceInstance.INACTIVITY_PARAMETER)));
+        }
+    }
+
+
+    @Test
+    public void testProcessExcludeNamesFailure() throws Exception {
+        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.EXCLUDE_PARAMETER, "*"));
+        try {
+            instanceService.createServiceInstance(createRequest);
+            fail("Create should have been impossible due to invalid exclude pattern");
+        } catch (InvalidParameterException i) {
+            assertThat(i.getParameterName(), is(equalTo(AutosleepServiceInstance.EXCLUDE_PARAMETER)));
+        }
+    }
+
+    @Test
+    public void testProcessNoOptOutFailure() throws Exception {
+        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, "true"));
+        try {
+            instanceService.createServiceInstance(createRequest);
+            fail("Create should have been impossible due to no secret provided");
+        } catch (InvalidParameterException i) {
+            assertThat(i.getParameterName(), is(equalTo(AutosleepServiceInstance.NO_OPTOUT_PARAMETER)));
+        }
     }
 
 }

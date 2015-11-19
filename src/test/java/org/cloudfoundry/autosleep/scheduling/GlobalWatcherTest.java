@@ -20,6 +20,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -92,7 +93,8 @@ public class GlobalWatcherTest {
 
         List<AutosleepServiceInstance> fakeServices = serviceIds.stream()
                 .map(serviceId -> new AutosleepServiceInstance(
-                        new CreateServiceInstanceRequest("definitionId", "planId", "orgGuid", "spaceGuid")))
+                        new CreateServiceInstanceRequest("definitionId", "planId", "orgGuid", "spaceGuid",
+                                Collections.emptyMap())))
                 .collect(Collectors.toList());
         when(mockServiceRepo.findAll()).thenReturn(fakeServices);
 
