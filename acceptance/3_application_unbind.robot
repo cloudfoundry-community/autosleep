@@ -15,7 +15,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
     [Documentation]     Check that app are still started ${DEFAULT_INACTIVITY} after their last http activity
 
 	Clean
-	Create service instance		${INACTIVITY}
+	Create service instance      {"inactivity": "${INACTIVITY}", "excludeAppNameRegExp" : "${EXCLUDE_ALL_APP_NAMES}"}
 
     Restart App         ${TESTED_APP_NAME}
     Sleep               10
