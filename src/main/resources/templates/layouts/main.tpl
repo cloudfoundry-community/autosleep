@@ -10,6 +10,7 @@ html {
         script(src: "/javascript/jquery.min.js", "")
         script(src: "/javascript/boost.min.js", "")
         script(src: "/javascript/main.js", "")
+        script(src: "/javascript/jquery.countdown.min.js", "")
         additionalScripts()
     }
     body {

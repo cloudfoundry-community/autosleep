@@ -57,6 +57,8 @@ task wrapper(type: Wrapper) {
 bootRun {
     // to retrieve profile using -Dspring.profiles.active={PROFILE}
     systemProperties = System.properties
+    // static classpath resources reloadable in the live application
+    addResources = true
 }
 
 dependencies {

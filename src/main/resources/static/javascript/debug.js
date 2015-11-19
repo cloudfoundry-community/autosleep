@@ -38,10 +38,7 @@ DebugHelper.prototype.listApplications = function (){
                 row.append($("<div>").addClass("col-xs-1").html(application.appState));
 
                 if(application.nextCheck != null){
-                    var nextCheck = new Date(application.nextCheck);
-                    var day = nextCheck.getDate ();
-                    var month = nextCheck.getMonth() + 1;
-                    row.append($("<div>").addClass("col-xs-3").html(month+"/"+day+"/"+nextCheck.getFullYear()+" "+nextCheck.getHours()+":"+nextCheck.getMinutes()+":"+nextCheck.getSeconds()));
+                    row.append($("<div>").attr("data-countdown",application.nextCheck).addClass("col-xs-3"));
                 }else
                     row.append($("<div>").addClass("col-xs-3").html("unknown"));
                 if (application.stateMachine != null){
@@ -58,13 +55,19 @@ DebugHelper.prototype.listApplications = function (){
 
                 container.append(row);
             });
+
+            $('[data-countdown]').each(function() {
+                 var $this = $(this), finalDate = $(this).data('countdown');
+                $this.countdown(finalDate)
+                    .on('update.countdown', function(event) { $this.html(event.strftime('%D days %H:%M:%S')); })
+                    .on('finish.countdown', function() { location.reload() });
+               });
         },
         error : function(xhr){
             displayDanger("Error listing applications: "+xhr.responseText);
         }
     });
 };
-
 
 DebugHelper.prototype.deleteApplication = function (applicationId) {
     var that = this;
