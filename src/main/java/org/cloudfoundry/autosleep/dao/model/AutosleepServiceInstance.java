@@ -145,7 +145,7 @@ public class AutosleepServiceInstance extends ServiceInstance {
      *
      * @param params request parameters
      * @return true if a the secret parameter is present, and if its value is the same as in previous calls
-     * (if it was previously received)
+    (if it was previously received)
      */
     private boolean isAuthorized(Map<String, Object> params) {
         boolean isAuthorized = false;
