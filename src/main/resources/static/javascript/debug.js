@@ -16,12 +16,12 @@ DebugHelper.prototype.listApplications = function (){
     var that = this;
     $.ajax({
         url : this.pathDebugListApplications,
-        success : function (applications) {
+        success : function (serverResponse) {
             var container = $("#allApplications");
             var row ;
             container.empty();
-
-            if(applications.length > 0){
+            var diffWithServer = new Date().getTime() - serverResponse.time;
+            if(serverResponse.body.length > 0){
                 row = $("<row>").addClass("row");
                 row.append($("<div>").addClass("col-xs-4 h5").html("Guid"));
                 row.append($("<div>").addClass("col-xs-2 h5").html("Name"));
@@ -31,14 +31,15 @@ DebugHelper.prototype.listApplications = function (){
                 row.append($("<div>").addClass("col-xs-1"));
                 container.append(row);
             }
-            $.each(applications, function(idx, application){
+            $.each(serverResponse.body, function(idx, application){
                 row = $("<row>").addClass("row");
                 row.append($("<div>").addClass("col-xs-4").html(application.uuid));
                 row.append($("<div>").addClass("col-xs-2").html(application.name));
                 row.append($("<div>").addClass("col-xs-1").html(application.appState));
 
                 if(application.nextCheck != null){
-                    row.append($("<div>").attr("data-countdown",application.nextCheck).addClass("col-xs-3"));
+
+                    row.append($("<div>").attr("data-countdown",application.nextCheck + diffWithServer).addClass("col-xs-3"));
                 }else
                     row.append($("<div>").addClass("col-xs-3").html("unknown"));
                 if (application.stateMachine != null){
@@ -116,12 +117,12 @@ DebugHelper.prototype.listServiceInstances = function(){
     var that = this;
     $.ajax({
         url : this.pathDebugListInstances,
-        success : function (serviceInstances) {
+        success : function (serverResponse) {
             var container = $("#allServiceInstances");
             var row;
             container.empty();
 
-            if(serviceInstances.length > 0){
+            if(serverResponse.body.length > 0){
                 row = $("<row>").addClass("row");
                 row.append($("<div>").addClass("col-xs-4 h5").html("Instance Id"));
                 row.append($("<div>").addClass("col-xs-1 h5").html("Definition Id"));
@@ -131,7 +132,7 @@ DebugHelper.prototype.listServiceInstances = function(){
                 row.append($("<div>").addClass("col-xs-1"));
                 container.append(row);
             }
-            $.each(serviceInstances, function(idx, serviceInstance){
+            $.each(serverResponse.body, function(idx, serviceInstance){
                 var link = $("<a>", {href : that.pathDebugPageServiceBindingsPfx+serviceInstance.service_instance_id
                 +that.pathDebugPageServiceBindingsSfx}).html(serviceInstance.service_instance_id);
                 row = $("<row>").addClass("row");
@@ -201,18 +202,18 @@ DebugHelper.prototype.listServiceBindings = function(serviceInstanceId){
     var that = this;
     $.ajax({
         url : this.pathDebugListBindings + serviceInstanceId ,
-        success : function (serviceBindings) {
+        success : function (serverResponse) {
             var container = $("#allServiceBindings");
             var row;
             container.empty();
-            if(serviceBindings.length > 0){
+            if(serverResponse.body.length > 0){
                 row = $("<row>").addClass("row");
                 row.append($("<div>").addClass("col-xs-5 h5").html("Instance Id"));
                 row.append($("<div>").addClass("col-xs-5 h5").html("App Guid"));
                 row.append($("<div>").addClass("col-xs-2"));
                 container.append(row);
             }
-            $.each(serviceBindings, function(idx, serviceBinding){
+            $.each(serverResponse.body, function(idx, serviceBinding){
                 row = $("<row>").addClass("row");
                 row.append($("<div>").addClass("col-xs-5").html(serviceBinding.id));
                 row.append($("<div>").addClass("col-xs-5").html(serviceBinding.appGuid));

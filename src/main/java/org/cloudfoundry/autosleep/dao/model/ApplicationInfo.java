@@ -80,7 +80,7 @@ public class ApplicationInfo {
         this.nextCheck = next;
     }
 
-    public void clearCheckInformation(){
+    public void clearCheckInformation() {
         this.lastCheck = Instant.now();
         this.nextCheck = null;
         this.appState = null;
