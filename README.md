@@ -20,20 +20,57 @@ Download [latest release] (https://github.com/Orange-OpenSource/autosleep/releas
 We suppose that you've already published the service broker in your market place. If you need help on that check [how to publish service broker](doc/publish.md).
 
 ##Create your autosleep service instance
+
+### Basics
+Create your service instance: 
 ```
 cf cs autosleep default my-autosleep
 ```
-If you don't give any additionnal parameter, the default inactivity duration of 24H will be used. If you wish to manually set another amount of time, use the following:
 
-```
-cf cs autosleep default my-autosleep  -c '{"inactivity": "PT1H15M"}'
-```  
-In this example the application will be considered as inactive after *1 hour and 15 minutes*. The time format used is [the ISO8601] (https://en.wikipedia.org/wiki/ISO_8601#Durations) duration format.
-##Bind your app
-```
-cf bind-service MY_APP my-autosleep
-```
+Autosleep **will automatically bind every application in the space** to this service instance. (if you want to prevent this, please use the [excludeAppNameRegExp](#excludeappnameregexp) parameter).
+
+Later, it will also watch for newly created applications and bind them too. ***(TODO : how often?)***
+
 Once bound, your application will be watch for inactivity. If you wish to stop this watch, simply unbind your application.
+
+### Advanced configuration parameters
+Autosleep service broker handle the following parameters: 
+
+- [```inactivity```] (#inactivity)
+- [```excludeAppNameRegExp ```] (#excludeappnameregexp)
+- [```no_optout ```] (#lockno_optout)
+- [```secret ```] (#secret)
+
+These parameters can be provided on service creations as well as on service updates. 
+
+#### *inactivity* 
+Duration after which bound applications will be considered as inactive. The time format used is [the ISO8601] (https://en.wikipedia.org/wiki/ISO_8601#Durations) duration format.
+
+- *Example:*```'{"inactivity": "PT1H15M"}'``` 
+ would stop the application after *1 hour and 15 minutes* of inactivity.
+- *Default value :*  24H
+
+#### *excludeAppNameRegExp* 
+If you don't want all the application to be automatically bound, you can set this parameter with a regular expression to filter on application names.
+
+- *Example:*```'{"excludeAppNameRegExp": ".*"}'``` 
+ wouldn't automatically bind any application in the space. Application would have to be bound manually.
+- *Default value :*  none (every app in space will be bound).
+
+
+#### :lock:*no_optout* 
+If you don't want the application to be able to manually unbound itselves, set this parameter to ``true``. As this is a protected parameter, you will have also have to provide a ['secret' parameter] (#secret). 
+
+- *Example:*```'{"no_optout": "true"}'``` 
+- *Default value :* false
+
+#### *secret*
+Provide a secret if you wish to set/change a protected parameter. Please save it carefully, has you will be asked to provide the same secret the next time you set/change a protected parameter
+
+- *Example:*```'{"secret": "Th1s1zg00dP@$$w0rd"}'``` 
+- *Default value :* none
+
+
 
 # How to build
 If you wish to build the app yourself, go to [build documentation] (doc/build.md).
