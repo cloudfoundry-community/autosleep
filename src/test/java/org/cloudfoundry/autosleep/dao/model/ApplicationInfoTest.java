@@ -38,7 +38,7 @@ public class ApplicationInfoTest {
         assertThat("Serialization and deserialisation should return the same object ", origin, is(equalTo(retrieved)));
 
         //test serialization when nextCheck not null
-        origin.setCheckTimes(Instant.now(), Instant.now());
+        origin.markAsChecked(Instant.now());
         serialized = serializer.serialize(origin);
         retrieved = serializer.deserialize(serialized);
         log.debug("Object origin = {}", origin);

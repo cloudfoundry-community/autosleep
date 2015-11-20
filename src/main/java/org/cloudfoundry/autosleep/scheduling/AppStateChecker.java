@@ -46,7 +46,7 @@ public class AppStateChecker extends AbstractPeriodicTask {
                 case IGNORED:
                     log.debug("App has been unbound. Cancelling task.");
                     stopTask();
-                    applicationInfo.setCheckTimes(Instant.now(), null);
+                    applicationInfo.clearCheckInformation();
                     applicationRepository.save(applicationInfo);
                     break;
                 case MONITORED:
@@ -72,6 +72,7 @@ public class AppStateChecker extends AbstractPeriodicTask {
                                             applicationActivity.getApplication().getName(), appUid,
                                             applicationActivity.getLastEvent(), applicationActivity.getLastLog());
                                     cloudFoundryApi.stopApplication(appUid);
+                                    applicationInfo.markAsPutToSleep();
                                     nextCheckTime = rescheduleWithDefaultPeriod();
                                 } else {
                                     //rescheduled itself
@@ -87,7 +88,7 @@ public class AppStateChecker extends AbstractPeriodicTask {
                         log.debug("failed to retrieve application activity informations");
                         nextCheckTime = rescheduleWithDefaultPeriod();
                     }
-                    applicationInfo.setCheckTimes(Instant.now(), nextCheckTime);
+                    applicationInfo.markAsChecked(nextCheckTime);
                     applicationRepository.save(applicationInfo);
                     break;
 

@@ -10,6 +10,7 @@ import org.cloudfoundry.autosleep.util.EqualUtil;
 import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
+import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -74,9 +75,20 @@ public class ApplicationInfo {
         this.name = activity.getApplication().getName();
     }
 
-    public void setCheckTimes(Instant last, Instant next) {
-        this.lastCheck = last;
+    public void markAsChecked(Instant next) {
+        this.lastCheck = Instant.now();
         this.nextCheck = next;
+    }
+
+    public void clearCheckInformation(){
+        this.lastCheck = Instant.now();
+        this.nextCheck = null;
+        this.appState = null;
+    }
+
+    public void markAsPutToSleep() {
+        this.appState = AppState.STOPPED;
+        this.lastEvent = Instant.now();
     }
 
 
