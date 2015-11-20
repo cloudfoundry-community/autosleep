@@ -27,11 +27,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
@@ -111,8 +113,8 @@ public class DebugControllerTest {
     @Test
     public void testListInstances() throws Exception {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT15M");
-        parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, ".*");
+        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, Duration.ofMinutes(15));
+        parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, Pattern.compile(".*"));
         CreateServiceInstanceRequest createRequestTemplate = new CreateServiceInstanceRequest("definition",
                 "plan",
                 "org",

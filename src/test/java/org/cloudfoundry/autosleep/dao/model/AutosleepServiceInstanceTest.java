@@ -11,9 +11,11 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
@@ -37,19 +39,67 @@ public class AutosleepServiceInstanceTest {
 
     private DeleteServiceInstanceRequest deleteRequest;
 
+    private Duration duration = Duration.ofMinutes(15);
+
+    private Pattern exclude = Pattern.compile(".*");
+
+    private boolean noOptOut = true;
+
+    private String secretHash = "someSecret";
+
 
     @Before
     public void init() {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT15M");
-        parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, ".*");
+        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, duration);
+        parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, exclude);
+        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, noOptOut);
+        parameters.put(AutosleepServiceInstance.SECRET_PARAMETER, secretHash);
+
         createRequest = new CreateServiceInstanceRequest(
                 SERVICE_DEFINITION_ID, PLAN, ORG, SPACE, parameters).withServiceInstanceId(SERVICE_ID);
-        updateRequest = new UpdateServiceInstanceRequest(PLAN)
+        updateRequest = new UpdateServiceInstanceRequest(PLAN, parameters)
                 .withInstanceId(SERVICE_ID);
         deleteRequest = new DeleteServiceInstanceRequest(SERVICE_ID,
                 SERVICE_DEFINITION_ID,
                 PLAN);
+    }
+
+    @Test
+    public void testInstanciation() {
+        AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(createRequest);
+        assertThat(serviceInstance.getInterval(), is(equalTo(duration)));
+        assertThat(serviceInstance.getExcludeNames(), is(equalTo(exclude)));
+        assertThat(serviceInstance.isNoOptOut(), is(equalTo(noOptOut)));
+        assertThat(serviceInstance.getSecretHash(), is(equalTo(secretHash)));
+    }
+
+    @Test
+    public void testUpdate() {
+        AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(createRequest);
+        serviceInstance.updateFromParameters(Collections
+                .singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, Duration.ofSeconds(2)));
+        assertThat(serviceInstance.getInterval(), is(not(equalTo(duration))));
+        assertThat(serviceInstance.getExcludeNames(), is(equalTo(exclude)));
+        assertThat(serviceInstance.isNoOptOut(), is(equalTo(noOptOut)));
+        assertThat(serviceInstance.getSecretHash(), is(equalTo(secretHash)));
+
+        serviceInstance = new AutosleepServiceInstance(createRequest);
+        serviceInstance.updateFromParameters(Collections
+                .singletonMap(AutosleepServiceInstance.EXCLUDE_PARAMETER, Pattern.compile("..*")));
+        assertThat(serviceInstance.getInterval(), is(equalTo(duration)));
+        assertThat(serviceInstance.getExcludeNames(), is(not(equalTo(exclude))));
+        assertThat(serviceInstance.isNoOptOut(), is(equalTo(noOptOut)));
+        assertThat(serviceInstance.getSecretHash(), is(equalTo(secretHash)));
+
+        serviceInstance = new AutosleepServiceInstance(createRequest);
+        serviceInstance.updateFromParameters(Collections
+                .singletonMap(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, !noOptOut));
+        assertThat(serviceInstance.getInterval(), is(equalTo(duration)));
+        assertThat(serviceInstance.getExcludeNames(), is(equalTo(exclude)));
+        assertThat(serviceInstance.isNoOptOut(), is(not(equalTo(noOptOut))));
+        assertThat(serviceInstance.getSecretHash(), is(equalTo(secretHash)));
+
     }
 
     @SuppressWarnings({"ObjectEqualsNull", "EqualsBetweenInconvertibleTypes"})
@@ -76,150 +126,4 @@ public class AutosleepServiceInstanceTest {
     public void testToString() throws Exception {
         assertNotNull(new AutosleepServiceInstance(createRequest).toString());
     }
-
-    @Test
-    public void testSetDurationParams() {
-
-        AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                null)
-                .withServiceInstanceId(SERVICE_ID));
-        assertThat(serviceInstance.getInterval(), is(equalTo(Config.defaultInactivityPeriod)));
-        try {
-            new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                    SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                    Collections.singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, "10H"))
-                    .withServiceInstanceId(SERVICE_ID));
-            fail("should have failed - " + AutosleepServiceInstance.INACTIVITY_PARAMETER + " was in wrong format");
-        } catch (HttpMessageNotReadableException s) {
-            log.debug("{} occurred as expected", s.getClass().getSimpleName());
-        }
-
-        serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                Collections.singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT10M"))
-                .withServiceInstanceId(SERVICE_ID));
-        assertThat(serviceInstance.getInterval(), is(equalTo(Duration.ofMinutes(10))));
-        serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                Collections.singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT10S"))
-                .withServiceInstanceId(SERVICE_ID));
-        assertThat(serviceInstance.getInterval(), is(equalTo(Duration.ofSeconds(10))));
-    }
-
-
-    @Test
-    public void testSetIgnoreNamesFromParams() {
-        AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                null)
-                .withServiceInstanceId(SERVICE_ID));
-        assertThat(serviceInstance.getExcludeNames(), is(nullValue()));
-        try {
-            new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                    SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                    Collections.singletonMap(AutosleepServiceInstance.EXCLUDE_PARAMETER, "\\d{AA}"))
-                    .withServiceInstanceId(SERVICE_ID));
-            fail("should have failed - " + AutosleepServiceInstance.EXCLUDE_PARAMETER + " was in wrong format");
-        } catch (HttpMessageNotReadableException s) {
-            log.debug("{} occurred as expected", s.getClass().getSimpleName());
-        }
-
-        serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                Collections.singletonMap(AutosleepServiceInstance.EXCLUDE_PARAMETER, ".*"))
-                .withServiceInstanceId(SERVICE_ID));
-        assertThat(serviceInstance.getExcludeNames(), is(notNullValue()));
-        assertThat(serviceInstance.getExcludeNames().pattern(), is(equalTo(".*")));
-
-        serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                Collections.singletonMap(AutosleepServiceInstance.EXCLUDE_PARAMETER, ""))
-                .withServiceInstanceId(SERVICE_ID));
-        assertThat(serviceInstance.getExcludeNames(), is(nullValue()));
-    }
-
-    @Test
-    public void testSetNoOptOutFromParams() {
-        HashMap<String, Object> params = new HashMap<>();
-        params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"");
-
-        //test default values
-        AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE, null).withServiceInstanceId(SERVICE_ID));
-        assertFalse(serviceInstance.isNoOptOut());
-
-
-        //** test to true/false with no secret
-        try {
-            params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"");
-            new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                    SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,params).withServiceInstanceId(SERVICE_ID));
-            fail("One should not be able to set " + AutosleepServiceInstance.NO_OPTOUT_PARAMETER + " param without "
-                    + "providing " + AutosleepServiceInstance.SECRET_PARAMETER);
-        } catch (HttpMessageNotReadableException s) {
-            log.debug("{} occurred as expected", s.getClass().getSimpleName());
-        }
-        try {
-            params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"true");
-            new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                    SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,params).withServiceInstanceId(SERVICE_ID));
-            fail("One should not be able to set " + AutosleepServiceInstance.NO_OPTOUT_PARAMETER + " param without "
-                    + "providing " + AutosleepServiceInstance.SECRET_PARAMETER);
-        } catch (HttpMessageNotReadableException s) {
-            log.debug("{} occurred as expected", s.getClass().getSimpleName());
-        }
-
-
-
-        //** test to true/false with a new secret
-        params.put(AutosleepServiceInstance.SECRET_PARAMETER,"p@$$w0rd");
-        params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"true");
-        serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,params).withServiceInstanceId(SERVICE_ID));
-        assertTrue(serviceInstance.isNoOptOut());
-
-        params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"false");
-        serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,params).withServiceInstanceId(SERVICE_ID));
-        assertFalse(serviceInstance.isNoOptOut());
-
-
-        serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,
-                Collections.emptyMap())
-                .withServiceInstanceId(SERVICE_ID));
-        assertFalse(serviceInstance.isNoOptOut());
-
-    }
-
-
-    @Test
-    public void testUpdateNoOptout() throws Exception {
-        String rightPassword = "p@$$w0rd";
-        HashMap<String, Object> params = new HashMap<>();
-        params.put(AutosleepServiceInstance.SECRET_PARAMETER,rightPassword);
-        params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"true");
-
-
-        AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(new CreateServiceInstanceRequest(
-                SERVICE_DEFINITION_ID, PLAN, ORG, SPACE,params).withServiceInstanceId(SERVICE_ID));
-        assertTrue(serviceInstance.isNoOptOut());
-
-        params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,"false");
-        params.put(AutosleepServiceInstance.SECRET_PARAMETER,"toto38");
-        try {
-            serviceInstance.updateFromRequest(new UpdateServiceInstanceRequest( PLAN, params));
-            fail("One should not be able to update " + AutosleepServiceInstance.NO_OPTOUT_PARAMETER + " param without "
-                    + "providing " + AutosleepServiceInstance.SECRET_PARAMETER);
-        } catch (HttpMessageNotReadableException s) {
-            log.debug("{} occurred as expected", s.getClass().getSimpleName());
-        }
-
-        params.put(AutosleepServiceInstance.SECRET_PARAMETER,rightPassword);
-        serviceInstance.updateFromRequest(new UpdateServiceInstanceRequest( PLAN, params));
-        assertFalse(serviceInstance.isNoOptOut());
-
-    }
-
 }

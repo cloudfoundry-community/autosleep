@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -58,8 +59,8 @@ public abstract class  ServiceRepositoryTest {
     @Before
     public void populateDao() {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT15M");
-        parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, ".*");
+        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, Duration.ofMinutes(15));
+        parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, Pattern.compile(".*"));
         createRequestTemplate = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, SERVICE_PLAN_ID, ORG_TEST,
                 SPACE_TEST, parameters);
 
