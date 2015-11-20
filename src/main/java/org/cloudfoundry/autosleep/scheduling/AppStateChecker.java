@@ -46,7 +46,7 @@ public class AppStateChecker extends AbstractPeriodicTask {
                 case IGNORED:
                     log.debug("App has been unbound. Cancelling task.");
                     stopTask();
-                    applicationInfo.markAsChecked(null);
+                    applicationInfo.clearCheckInformation();
                     applicationRepository.save(applicationInfo);
                     break;
                 case MONITORED:

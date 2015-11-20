@@ -80,6 +80,12 @@ public class ApplicationInfo {
         this.nextCheck = next;
     }
 
+    public void clearCheckInformation(){
+        this.lastCheck = Instant.now();
+        this.nextCheck = null;
+        this.appState = null;
+    }
+
     public void markAsPutToSleep() {
         this.appState = AppState.STOPPED;
         this.lastEvent = Instant.now();
