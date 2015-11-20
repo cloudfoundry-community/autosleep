@@ -65,7 +65,7 @@ public class AppStateCheckerTest {
         when(applicationActivity.getLastLog()).thenReturn(Instant.now());
         when(applicationActivity.getState()).thenReturn(AppState.STARTED);
 
-        applicationInfo = new ApplicationInfo(APP_UID,"ACTestSId").withRemoteInfo(applicationActivity);
+        applicationInfo = spy(new ApplicationInfo(APP_UID, "ACTestSId").withRemoteInfo(applicationActivity));
 
         when(mockRemote.getApplicationActivity(APP_UID)).thenReturn(applicationActivity);
 
@@ -81,7 +81,6 @@ public class AppStateCheckerTest {
                 .cloudFoundryApi(mockRemote)
                 .clock(clock)
                 .applicationRepository(applicationRepository).build());
-
     }
 
 
@@ -105,6 +104,7 @@ public class AppStateCheckerTest {
         when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(mockRemote, never()).stopApplication(APP_UID);
+        verify(applicationInfo, never()).markAsPutToSleep();
         verify(clock, times(1)).scheduleTask(any(), anyObject(), any());
         verify(spyChecker, never()).rescheduleWithDefaultPeriod();
         verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
@@ -117,6 +117,7 @@ public class AppStateCheckerTest {
         when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(mockRemote, times(1)).stopApplication(APP_UID);
+        verify(applicationInfo, times(1)).markAsPutToSleep();
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
         verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
     }
@@ -127,6 +128,7 @@ public class AppStateCheckerTest {
         when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(mockRemote, never()).stopApplication(APP_UID);
+        verify(applicationInfo, never()).markAsPutToSleep();
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
         verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
     }
@@ -137,6 +139,7 @@ public class AppStateCheckerTest {
         when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(mockRemote, never()).stopApplication(APP_UID);
+        verify(applicationInfo, never()).markAsPutToSleep();
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
         verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
     }
@@ -148,6 +151,7 @@ public class AppStateCheckerTest {
         when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(mockRemote, never()).stopApplication(APP_UID);
+        verify(applicationInfo, never()).markAsPutToSleep();
         verify(spyChecker, never()).rescheduleWithDefaultPeriod();
         verify(clock, times(1)).removeTask(BINDING_ID);
         verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
@@ -161,6 +165,7 @@ public class AppStateCheckerTest {
         spyChecker.run();
         verify(clock, never()).scheduleTask(anyObject(), anyObject(), anyObject());
         verify(mockRemote, never()).stopApplication(APP_UID);
+        verify(applicationInfo, never()).markAsPutToSleep();
         verify(clock, times(1)).removeTask(BINDING_ID);
     }
 
@@ -171,6 +176,7 @@ public class AppStateCheckerTest {
         verify(clock, never()).scheduleTask(anyObject(), anyObject(), anyObject());
         verify(spyChecker, times(1)).run();
         verify(mockRemote, never()).stopApplication(APP_UID);
+        verify(applicationInfo, never()).markAsPutToSleep();
         verify(clock, times(1)).removeTask(BINDING_ID);
 
     }
