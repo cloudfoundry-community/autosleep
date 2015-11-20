@@ -1,6 +1,8 @@
 package org.cloudfoundry.autosleep.admin.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import org.cloudfoundry.autosleep.admin.model.ServerResponse;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
@@ -35,6 +37,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -130,10 +133,16 @@ public class DebugControllerTest {
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
                     verify(serviceRepository, times(1)).findAll();
-                    AutosleepServiceInstance[] serviceInstances = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(), AutosleepServiceInstance[].class);
-                    assertThat(serviceInstances.length, is(equalTo(1)));
-                    assertThat(serviceInstances[0].getServiceInstanceId(), is(equalTo(serviceInstanceId)));
+                    ServerResponse<AutosleepServiceInstance[]> serviceInstances = objectMapper
+                            .readValue(mvcResult.getResponse().getContentAsString(),
+                                    TypeFactory.defaultInstance()
+                                            .constructParametricType(ServerResponse.class,
+                                                    AutosleepServiceInstance[].class));
+                    assertThat(serviceInstances.getBody(), is(notNullValue()));
+                    assertThat(serviceInstances.getBody().length, is(equalTo(1)));
+                    assertThat(serviceInstances.getBody()[0].getServiceInstanceId(),
+                            is(equalTo(serviceInstanceId)));
+
                 });
     }
 
@@ -150,10 +159,14 @@ public class DebugControllerTest {
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
                     verify(bindingRepository, times(1)).findAll();
-                    ApplicationBinding[] serviceBindings = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(), ApplicationBinding[].class);
-                    assertThat(serviceBindings.length, is(equalTo(1)));
-                    assertThat(serviceBindings[0].getId(), is(equalTo(serviceBindingId)));
+                    ServerResponse<ApplicationBinding[]> serviceBindings = objectMapper
+                            .readValue(mvcResult.getResponse().getContentAsString(),
+                                    TypeFactory.defaultInstance()
+                                            .constructParametricType(ServerResponse.class,
+                                                    ApplicationBinding[].class));
+                    assertThat(serviceBindings.getBody(), is(notNullValue()));
+                    assertThat(serviceBindings.getBody().length, is(equalTo(1)));
+                    assertThat(serviceBindings.getBody()[0].getId(), is(equalTo(serviceBindingId)));
 
 
                 });
@@ -164,9 +177,13 @@ public class DebugControllerTest {
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
                     verify(bindingRepository, times(2)).findAll();
-                    ApplicationBinding[] serviceBindings = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(), ApplicationBinding[].class);
-                    assertThat(serviceBindings.length, is(equalTo(0)));
+                    ServerResponse<ApplicationBinding[]> serviceBindings = objectMapper
+                            .readValue(mvcResult.getResponse().getContentAsString(),
+                                    TypeFactory.defaultInstance()
+                                            .constructParametricType(ServerResponse.class,
+                                                    ApplicationBinding[].class));
+                    assertThat(serviceBindings.getBody(), is(notNullValue()));
+                    assertThat(serviceBindings.getBody().length, is(equalTo(0)));
                 });
     }
 
@@ -185,10 +202,14 @@ public class DebugControllerTest {
                                 Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
                     verify(applicationRepository, times(1)).findAll();
-                    ApplicationInfo[] applicationInfos = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(), ApplicationInfo[].class);
-                    assertThat(applicationInfos.length, is(equalTo(1)));
-                    assertThat(applicationInfos[0].getUuid(), is(equalTo(applicationId)));
+                    ServerResponse<ApplicationInfo[]> applicationInfos = objectMapper
+                            .readValue(mvcResult.getResponse().getContentAsString(),
+                                    TypeFactory.defaultInstance()
+                                            .constructParametricType(ServerResponse.class,
+                                                    ApplicationInfo[].class));
+                    assertThat(applicationInfos.getBody(), is(notNullValue()));
+                    assertThat(applicationInfos.getBody().length, is(equalTo(1)));
+                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId)));
                 });
     }
 

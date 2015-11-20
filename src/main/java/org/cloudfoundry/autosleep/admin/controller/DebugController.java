@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.admin.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.admin.model.ServerResponse;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +57,7 @@ public class DebugController {
     }
 
     @RequestMapping("/{instanceId}/bindings/")
-     public ModelAndView serviceBindings(@PathVariable("instanceId") String serviceInstanceId) {
+    public ModelAndView serviceBindings(@PathVariable("instanceId") String serviceInstanceId) {
         log.debug("serviceInstances - rendering view - ", serviceInstanceId);
         Map<String, Object> parameters = new HashMap<>();
         ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
@@ -81,16 +83,16 @@ public class DebugController {
 
     @RequestMapping("/services/instances/")
     @ResponseBody
-    public List<AutosleepServiceInstance> listInstances() {
+    public ServerResponse<List<AutosleepServiceInstance>> listInstances() {
         log.debug("listServiceInstances");
         List<AutosleepServiceInstance> result = new ArrayList<>();
         serviceRepository.findAll().forEach(result::add);
-        return result;
+        return new ServerResponse<>(Instant.now(), result);
     }
 
     @RequestMapping("/services/bindings/{instanceId}")
     @ResponseBody
-    public List<ApplicationBinding> listBindings(@PathVariable("instanceId") String serviceInstanceId)
+    public ServerResponse<List<ApplicationBinding>> listBindings(@PathVariable("instanceId") String serviceInstanceId)
             throws ServiceInstanceDoesNotExistException {
         log.debug("listServiceBindings - {}", serviceInstanceId);
         List<ApplicationBinding> result = new ArrayList<>();
@@ -100,16 +102,16 @@ public class DebugController {
                     }
                 }
         );
-        return result;
+        return new ServerResponse<>(Instant.now(), result);
     }
 
     @RequestMapping(value = "/services/applications/")
     @ResponseBody
-    public List<ApplicationInfo> listApplications() {
+    public ServerResponse<List<ApplicationInfo>> listApplications() {
         log.debug("listApplications");
         List<ApplicationInfo> result = new ArrayList<>();
         applicationRepository.findAll().forEach(result::add);
-        return result;
+        return new ServerResponse<>(Instant.now(), result);
     }
 
 
