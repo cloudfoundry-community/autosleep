@@ -9,6 +9,7 @@ applications:
   buildpack: java_buildpack
   env:
     JAVA_OPTS: >
+      -Dlogging.level.org.springframework.web.filter.CommonsRequestLoggingFilter=ERROR
       -Dsecurity.user.name=<security username>
       -Dsecurity.user.password=<security password>
       -Dcf.client.target.endpoint=<endpoint>
