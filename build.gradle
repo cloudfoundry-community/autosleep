@@ -34,13 +34,17 @@ tasks.withType(JavaCompile) {
 
 processResources {
     from(sourceSets.main.resources.srcDirs) {
-        filter(ReplaceTokens, tokens: [version: project.version])
+        filesMatching( '**/*.properties' ) {
+            filter(ReplaceTokens, tokens: [version: project.version])
+        }
     }
 }
 
 processTestResources {
     from(sourceSets.test.resources.srcDirs) {
-        filter(ReplaceTokens, tokens: [version: project.version])
+        filesMatching( '**/*.properties' ) {
+            filter(ReplaceTokens, tokens: [version: project.version])
+        }
     }
 }
 

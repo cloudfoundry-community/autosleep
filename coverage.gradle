@@ -3,9 +3,9 @@ apply plugin: 'jacoco'
 apply plugin: "com.github.kt3k.coveralls"
 
 def limits = [
-        'instruction': 80,
-        'branch'     : 25,
-        'line'       : 85,
+        'instruction': 90,
+        'branch'     : 80,
+        'line'       : 95,
         'complexity' : 80,
         'method'     : 90,
         'class'      : 90
