@@ -48,7 +48,8 @@ layout 'layouts/main.tpl',
                 }
                 div(class: "col-xs-2"){
                     label("")
-                    input(type:"submit", onclick:"helper.addServiceInstance(); return false;", value: "Add")
+                    br()
+                    input(type:"submit", class:"btn btn-default", onclick:"helper.addServiceInstance(); return false;", value: "Add")
                 }
             }
 

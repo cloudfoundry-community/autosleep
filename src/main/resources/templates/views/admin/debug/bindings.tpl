@@ -45,7 +45,9 @@ layout 'layouts/main.tpl',
                     input(type:"text", id:"createServiceBindingAppGuid")
                 }
                 div(class: "col-xs-2"){
-                    input(type:"submit", onclick:"helper.addServiceBinding('$serviceInstance'); return false;", value: "Add")
+                    label("")
+                    br()
+                    input(type:"submit", class:"btn btn-default", onclick:"helper.addServiceBinding('$serviceInstance'); return false;", value: "Add")
                 }
             }
 
