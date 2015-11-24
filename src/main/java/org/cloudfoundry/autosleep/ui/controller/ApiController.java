@@ -1,17 +1,15 @@
-package org.cloudfoundry.autosleep.admin.controller;
+package org.cloudfoundry.autosleep.ui.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.admin.model.ServerResponse;
+import org.cloudfoundry.autosleep.ui.model.ServerResponse;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
-import org.cloudfoundry.community.servicebroker.controller.ServiceInstanceController;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
-import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,18 +18,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Controller
-@RequestMapping("/admin/debug")
+@RequestMapping("/api")
 @Slf4j
-public class DebugController {
+public class ApiController {
 
     @Autowired
     private Catalog catalog;
@@ -45,43 +40,22 @@ public class DebugController {
     @Autowired
     private ApplicationRepository applicationRepository;
 
-    @RequestMapping("/")
-    public ModelAndView serviceInstances() {
-        log.debug("serviceInstances - rendering view");
-        Map<String, Object> parameters = new HashMap<>();
-        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
-        parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
-        parameters.put("serviceDefinitionId", serviceDefinition.getId());
-        parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
-        return new ModelAndView("views/admin/debug/instances", parameters);
+
+    @RequestMapping(value = "/services/{instanceId}/applications/")
+    @ResponseBody
+    public ServerResponse<List<ApplicationInfo>> listApplicationsById(@PathVariable("instanceId") String
+                                                                              serviceInstanceId) {
+        log.debug("listApplications");
+        List<ApplicationInfo> result = new ArrayList<>();
+        applicationRepository.findAll().forEach(app -> {
+            if (app.getServiceInstanceId().equals(serviceInstanceId)) {
+                result.add(app);
+            }
+        });
+        return new ServerResponse<>(Instant.now(), result);
     }
 
-    @RequestMapping("/{instanceId}/bindings/")
-    public ModelAndView serviceBindings(@PathVariable("instanceId") String serviceInstanceId) {
-        log.debug("serviceInstances - rendering view - ", serviceInstanceId);
-        Map<String, Object> parameters = new HashMap<>();
-        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
-        parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
-        parameters.put("serviceDefinitionId", serviceDefinition.getId());
-        parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
-        parameters.put("serviceInstance", serviceInstanceId);
-        return new ModelAndView("views/admin/debug/bindings", parameters);
-    }
-
-
-    @RequestMapping("/applications/")
-    public ModelAndView applications() {
-        log.debug("applications - rendering view");
-        Map<String, Object> parameters = new HashMap<>();
-        ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
-        parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
-        parameters.put("serviceDefinitionId", serviceDefinition.getId());
-        parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
-        return new ModelAndView("views/admin/debug/applications", parameters);
-    }
-
-
-    @RequestMapping("/services/instances/")
+    @RequestMapping("/services/")
     @ResponseBody
     public ServerResponse<List<AutosleepServiceInstance>> listInstances() {
         log.debug("listServiceInstances");
@@ -90,7 +64,7 @@ public class DebugController {
         return new ServerResponse<>(Instant.now(), result);
     }
 
-    @RequestMapping("/services/bindings/{instanceId}")
+    @RequestMapping("/services/{instanceId}/bindings/")
     @ResponseBody
     public ServerResponse<List<ApplicationBinding>> listBindings(@PathVariable("instanceId") String serviceInstanceId)
             throws ServiceInstanceDoesNotExistException {
@@ -105,7 +79,7 @@ public class DebugController {
         return new ServerResponse<>(Instant.now(), result);
     }
 
-    @RequestMapping(value = "/services/applications/")
+    @RequestMapping(value = "/applications/")
     @ResponseBody
     public ServerResponse<List<ApplicationInfo>> listApplications() {
         log.debug("listApplications");
@@ -115,7 +89,8 @@ public class DebugController {
     }
 
 
-    @RequestMapping(value = "/services/applications/{applicationId}", method = RequestMethod.DELETE)
+
+    @RequestMapping(value = "/applications/{applicationId}", method = RequestMethod.DELETE)
     public ResponseEntity<String> deleteApplication(@PathVariable("applicationId") String applicationId) {
         log.debug("deleteApplication - {}", applicationId);
         applicationRepository.delete(applicationId);

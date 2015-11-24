@@ -1,5 +1,6 @@
 package templates.layouts
 yieldUnescaped '<!DOCTYPE html>'
+
 html {
     head {
         title(pageTitle)
@@ -18,7 +19,9 @@ html {
         div(class: 'container') {
             div(class: "alert alert-success", id: "successMessage", hidden: "true","")
             div(class: "alert alert-danger", id: "dangerMessage", hidden: "true", "")
-            include template: 'layouts/navbar.tpl'
+            if (!noNavigation) {
+                include template: 'layouts/navbar.tpl'
+            }
             mainBody()
         }
     }

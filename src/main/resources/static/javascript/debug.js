@@ -1,9 +1,11 @@
 
 
 function DebugHelper  (pathServiceInstance, serviceDefinitionId, planId) {
-    this.pathDebugListInstances = "/admin/debug/services/instances/";
-    this.pathDebugListBindings = "/admin/debug/services/bindings/";
-    this.pathDebugListApplications = "/admin/debug/services/applications/";
+    this.pathDebugListInstances = "/api/services/";
+    this.pathApiByServicePfx = "/api/services/";
+    this.pathApiListBindingSfx = "/bindings/";
+    this.pathApiListApplicationSfx = "/applications/";
+    this.pathApiListApplications = "/api/applications/";
     this.pathDebugPageServiceBindingsPfx = "/admin/debug/";
     this.pathDebugPageServiceBindingsSfx = "/bindings/";
     this.pathServiceInstance = pathServiceInstance;
@@ -12,10 +14,21 @@ function DebugHelper  (pathServiceInstance, serviceDefinitionId, planId) {
     console.log("DebugHelper - "+serviceDefinitionId+" - "+planId);
 }
 
-DebugHelper.prototype.listApplications = function (){
+DebugHelper.prototype.listApplicationsById = function(serviceInstanceId){
+    var targetUrl =  this.pathApiByServicePfx+serviceInstanceId +this.pathApiListApplicationSfx;
+    this.listApplications(targetUrl,false);
+};
+
+DebugHelper.prototype.listAllApplications = function(){
+    var targetUrl =  this.pathApiListApplications;
+    this.listApplications(targetUrl,true);
+};
+
+
+DebugHelper.prototype.listApplications = function (targetUrl, showDeleteButton ){
     var that = this;
     $.ajax({
-        url : this.pathDebugListApplications,
+        url : targetUrl,
         success : function (serverResponse) {
             var container = $("#allApplications");
             var row ;
@@ -23,36 +36,51 @@ DebugHelper.prototype.listApplications = function (){
             var diffWithServer = new Date().getTime() - serverResponse.time;
             if(serverResponse.body.length > 0){
                 row = $("<row>").addClass("row");
-                row.append($("<div>").addClass("col-xs-4 h5").html("Guid"));
-                row.append($("<div>").addClass("col-xs-2 h5").html("Name"));
-                row.append($("<div>").addClass("col-xs-1 h5").html("Status"));
-                row.append($("<div>").addClass("col-xs-3 h5").html("Next check"));
-                row.append($("<div>").addClass("col-xs-1 h5").html("State"));
+                row.append($("<div>").addClass("col-xs-4 h5 text-center").html("Guid"));
+                row.append($("<div>").addClass("col-xs-2 h5 text-center").html("Name"));
+                row.append($("<div>").addClass("col-xs-2 h5 text-center").html("Last known status"));
+                row.append($("<div>").addClass("col-xs-2 h5 text-center").html("Next check"));
+                row.append($("<div>").addClass("col-xs-1 h5 text-center").html("State"));
                 row.append($("<div>").addClass("col-xs-1"));
                 container.append(row);
             }
             $.each(serverResponse.body, function(idx, application){
                 row = $("<row>").addClass("row");
-                row.append($("<div>").addClass("col-xs-4").html(application.uuid));
-                row.append($("<div>").addClass("col-xs-2").html(application.name));
-                row.append($("<div>").addClass("col-xs-1").html(application.appState));
+                row.append($("<div>").addClass("col-xs-4 text-center").html(application.uuid));
+                row.append($("<div>").addClass("col-xs-2 text-center").html(application.name));
+                if (application.stateMachine.state != "IGNORED") {
+                    row.append($("<div>").addClass("col-xs-2 text-center").html(application.appState));
+                } else
+                    row.append($("<div>").addClass("col-xs-2 text-center").html("-"));
 
                 if(application.nextCheck != null){
+                    row.append($("<div>")
+                        .attr("data-countdown",application.nextCheck + diffWithServer, "id","countdown"+idx)
+                        .addClass("col-xs-2 text-center"));
+                }else
+                    row.append($("<div>").addClass("col-xs-2 text-center").html("-"));
 
-                    row.append($("<div>").attr("data-countdown",application.nextCheck + diffWithServer).addClass("col-xs-3"));
-                }else
-                    row.append($("<div>").addClass("col-xs-3").html("unknown"));
-                if (application.stateMachine != null){
-                    row.append($("<div>").addClass("col-xs-1").html(application.stateMachine.state));
-                }else
-                    row.append($("<div>").addClass("col-xs-1").html("unknown"));
-                var button = $("<button>", {type : "button"}).addClass("btn btn-circle")
-                    .append($("<i>").addClass("glyphicon glyphicon-remove"));
-                row.append($("<div>").addClass("col-xs-1").append(button));
-                button.on("click", function(e){
-                    e.preventDefault();
-                    that.deleteApplication(application.uuid);
-                });
+                var stateElement = $("<span>").attr("data-toggle","tooltip")
+                    .attr("title",application.stateMachine.state)
+                    .addClass("col-xs-1 text-center glyphicon");
+
+                    if (application.stateMachine.state === "IGNORED") {
+                        stateElement.addClass("glyphicon-option-horizontal");
+                    } else {
+                        stateElement.addClass("glyphicon-dashboard");
+                    }
+
+                row.append(stateElement);
+
+                if(showDeleteButton){
+                    var button = $("<button>", {type : "button"}).addClass("btn btn-circle")
+                        .append($("<i>").addClass("glyphicon glyphicon-remove text-center"));
+                    row.append($("<div>").addClass("col-xs-1").append(button));
+                    button.on("click", function(e){
+                        e.preventDefault();
+                        that.deleteApplication(application.uuid);
+                    });
+                }
 
                 container.append(row);
             });
@@ -63,9 +91,11 @@ DebugHelper.prototype.listApplications = function (){
                     .on('update.countdown', function(event) {
                         $this.html(event.strftime('%D days %H:%M:%S'));
                     }).on('finish.countdown', function() {
-                        that.listApplications();
+                        that.listApplications(targetUrl, showDeleteButton);
                     });
                });
+
+            $('[data-toggle="tooltip"]').tooltip();
         },
         error : function(xhr){
             displayDanger("Error listing applications: "+xhr.responseText);
@@ -76,7 +106,7 @@ DebugHelper.prototype.listApplications = function (){
 DebugHelper.prototype.deleteApplication = function (applicationId) {
     var that = this;
     $.ajax({
-        url : this.pathDebugListApplications+applicationId,
+        url : this.pathApiListApplications+applicationId,
         type : 'DELETE',
         success : function () {
             displaySuccess("application deleted");
@@ -115,6 +145,8 @@ DebugHelper.prototype.addServiceInstance = function(){
         }
     });
 };
+
+
 
 DebugHelper.prototype.listServiceInstances = function(){
     var that = this;
@@ -204,7 +236,7 @@ DebugHelper.prototype.addServiceBinding = function(serviceInstanceId){
 DebugHelper.prototype.listServiceBindings = function(serviceInstanceId){
     var that = this;
     $.ajax({
-        url : this.pathDebugListBindings + serviceInstanceId ,
+        url : that.pathApiByServicePfx + serviceInstanceId + that.pathApiListBindingSfx ,
         success : function (serverResponse) {
             var container = $("#allServiceBindings");
             var row;

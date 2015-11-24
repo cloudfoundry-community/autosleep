@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep.admin.configuration;
+package org.cloudfoundry.autosleep.ui.configuration;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;

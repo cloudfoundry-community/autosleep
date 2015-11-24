@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep.admin.model;
+package org.cloudfoundry.autosleep.ui.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
