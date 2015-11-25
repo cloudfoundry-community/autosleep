@@ -142,6 +142,17 @@ public class AppStateCheckerTest {
     }
 
     @Test
+    public void testRunOnLastEventNotFound() throws Exception {
+        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
+        when(applicationActivity.getLastLog()).thenReturn(null);
+        when(applicationActivity.getLastEvent()).thenReturn(null);
+        spyChecker.run();
+        verify(mockRemote, never()).stopApplication(APP_UID);
+        verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
+        verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
+    }
+
+    @Test
     public void testRunOnOptedOut() throws Exception {
         when(mockRemote.getApplicationActivity(APP_UID)).thenReturn(null);
         applicationInfo.getStateMachine().onOptOut();

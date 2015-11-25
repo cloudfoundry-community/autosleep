@@ -17,6 +17,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,6 +28,9 @@ import static org.mockito.Mockito.verify;
 public class ClockTest {
 
     private static final Duration PERIOD = Duration.ofMillis(200);
+
+    private static final Duration SLEEP_TIME_BEFORE_TEST = PERIOD.dividedBy(3);
+
     private static final String TEST_ID = "93847";
 
     protected Clock clock = new Clock();
@@ -34,21 +39,10 @@ public class ClockTest {
     private Runnable runnable;
 
 
-
-
-    @Test(timeout = 5000)
-    public void testStartTimer() throws Exception {
-        clock.startTimer(TEST_ID, Duration.ofSeconds(0), PERIOD, runnable);
-        Thread.sleep(PERIOD.dividedBy(10).toMillis());
-        verify(runnable, times(1)).run();
-        Thread.sleep(PERIOD.multipliedBy(3).toMillis() + PERIOD.dividedBy(10).toMillis());
-        verify(runnable, times(4)).run();
-    }
-
     @Test
     public void testStartTask() throws Exception {
         clock.scheduleTask(TEST_ID, PERIOD, runnable);
-        Thread.sleep(PERIOD.dividedBy(3).toMillis());
+        Thread.sleep(SLEEP_TIME_BEFORE_TEST.toMillis());
         verify(runnable, never()).run();
         Thread.sleep(PERIOD.toMillis());
         verify(runnable, times(1)).run();

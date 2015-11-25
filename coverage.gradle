@@ -11,23 +11,6 @@ def limits = [
         'class'      : 90
 ]
 
-try{
-    def s = new Socket("localhost", 6379);
-    s.close()
-}catch(IOException e) {
-    System.err.println("Redis not present: setting lower limits")
-    limits = [
-            'instruction': 72,
-            'branch'     : 25,
-            'line'       : 72,
-            'complexity' : 65,
-            'method'     : 70,
-            'class'      : 75
-    ]
-}
-
-
-
 
 jacocoTestReport {
     reports {
