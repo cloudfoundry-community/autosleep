@@ -2,6 +2,7 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -38,33 +39,41 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
 
     private PasswordEncoder passwordEncoder;
 
+    private Deployment deployment;
+
 
     @Autowired
     public AutoSleepServiceInstanceService(ApplicationRepository appRepository,
                                            ServiceRepository serviceRepository,
                                            GlobalWatcher watcher,
-                                           PasswordEncoder passwordEncoder) {
+                                           PasswordEncoder passwordEncoder,
+                                           Deployment deployment) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.watcher = watcher;
         this.passwordEncoder = passwordEncoder;
+        this.deployment = deployment;
     }
 
     @Override
     public ServiceInstance createServiceInstance(CreateServiceInstanceRequest request) throws
             ServiceInstanceExistsException, ServiceBrokerException {
-        log.debug("createServiceInstance - {}", request.getServiceInstanceId());
+        String serviceId = request.getServiceInstanceId();
+        log.debug("createServiceInstance - {}", serviceId);
 
-        AutosleepServiceInstance serviceInstance = serviceRepository.findOne(request.getServiceInstanceId());
+        AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceId);
         if (serviceInstance != null) {
             throw new ServiceInstanceExistsException(serviceInstance);
         } else {
             request.setParameters(processParameters(null, request.getParameters()));
             serviceInstance = new AutosleepServiceInstance(request);
+            if (deployment != null) {
+                serviceInstance.withDashboardUrl(deployment.getFirstUri()+ Config.Path.dashboardPrefix + serviceId);
+            }
             // save in repository before calling remote because otherwise local service binding controller will
             // fail retrieving the service
             serviceRepository.save(serviceInstance);
-            watcher.watchServiceBindings(request.getServiceInstanceId(), Config.delayBeforeFirstServiceCheck);
+            watcher.watchServiceBindings(serviceId, Config.delayBeforeFirstServiceCheck);
         }
         return serviceInstance;
     }

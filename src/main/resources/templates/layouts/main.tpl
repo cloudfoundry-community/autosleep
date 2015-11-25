@@ -1,12 +1,13 @@
 package templates.layouts
 yieldUnescaped '<!DOCTYPE html>'
+
 html {
     head {
         title(pageTitle)
         link(rel: 'stylesheet', href:'/css/bootstrap-orange.min.css')
         link(rel:'stylesheet', href:'/css/bootstrap-orange-theme.min.css')
         link(rel:'stylesheet', href:'/css/boost.min.css')
-        link(rel:'stylesheet', href:'/css/button-circle.css')
+        link(rel:'stylesheet', href:'/css/autosleep.css')
 
         script(src: "/javascript/jquery.min.js", "")
         script(src: "/javascript/boost.min.js", "")
@@ -18,7 +19,9 @@ html {
         div(class: 'container') {
             div(class: "alert alert-success", id: "successMessage", hidden: "true","")
             div(class: "alert alert-danger", id: "dangerMessage", hidden: "true", "")
-            include template: 'layouts/navbar.tpl'
+            if (!noNavigation) {
+                include template: 'layouts/navbar.tpl'
+            }
             mainBody()
         }
     }

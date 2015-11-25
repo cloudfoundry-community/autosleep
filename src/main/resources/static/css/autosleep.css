@@ -26,3 +26,9 @@
   line-height: 1.33;
   border-radius: 35px;
 }
+
+.text-overflow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

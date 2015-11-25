@@ -1,8 +1,7 @@
-package org.cloudfoundry.autosleep.admin.controller;
+package org.cloudfoundry.autosleep.ui.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import org.cloudfoundry.autosleep.admin.model.ServerResponse;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
@@ -11,6 +10,7 @@ import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.ui.model.ServerResponse;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
@@ -37,21 +37,17 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DebugControllerTest {
+public class ApiControllerTest {
 
     private static final UUID applicationId = UUID.randomUUID();
 
@@ -71,8 +67,9 @@ public class DebugControllerTest {
     @Mock
     private Catalog catalog;
 
+
     @InjectMocks
-    private DebugController debugController;
+    private ApiController apiController;
 
 
     private MockMvc mockMvc;
@@ -84,32 +81,10 @@ public class DebugControllerTest {
     public void init() {
         objectMapper = new ObjectMapper();
         MockitoAnnotations.initMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(debugController).build();
-
-
+        mockMvc = MockMvcBuilders.standaloneSetup(apiController).build();
         when(catalog.getServiceDefinitions()).thenReturn(Collections.singletonList(
                 new ServiceDefinition("serviceDefinitionId", "serviceDefinition", "", true,
                         Collections.singletonList(new Plan("planId", "plan", "")))));
-
-
-    }
-
-    @Test
-    public void testInstances() throws Exception {
-        mockMvc.perform(get("/admin/debug/")
-                .accept(MediaType.TEXT_HTML)).andExpect(status().isOk());
-    }
-
-    @Test
-    public void testBindings() throws Exception {
-        mockMvc.perform(get("/admin/debug/" + serviceInstanceId + "/bindings/")
-                .accept(MediaType.TEXT_HTML)).andExpect(status().isOk());
-    }
-
-    @Test
-    public void testApplications() throws Exception {
-        mockMvc.perform(get("/admin/debug/applications/")
-                .accept(MediaType.TEXT_HTML)).andExpect(status().isOk());
     }
 
 
@@ -127,7 +102,7 @@ public class DebugControllerTest {
         when(serviceRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
 
 
-        mockMvc.perform(get("/admin/debug/services/instances/").accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/services/").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
@@ -152,7 +127,7 @@ public class DebugControllerTest {
                 null, null, UUID.randomUUID().toString());
         when(bindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
 
-        mockMvc.perform(get("/admin/debug/services/bindings/" + serviceInstanceId)
+        mockMvc.perform(get("/api/services/" + serviceInstanceId + "/bindings/")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
@@ -170,7 +145,7 @@ public class DebugControllerTest {
 
 
                 });
-        mockMvc.perform(get("/admin/debug/services/bindings/" + serviceInstanceId + "-tmp")
+        mockMvc.perform(get("/api/services/" + serviceInstanceId + "-tmp" + "/bindings/")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
@@ -194,7 +169,7 @@ public class DebugControllerTest {
                 AppState.STARTED, Instant.now(), Instant.now()));
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
-        mockMvc.perform(get("/admin/debug/services/applications/")
+        mockMvc.perform(get("/api/applications/")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content()
@@ -216,11 +191,38 @@ public class DebugControllerTest {
     @Test
     public void testDeleteApplication() throws Exception {
         String applicationId = "applicationToDelete";
-        mockMvc.perform(delete("/admin/debug/services/applications/" + applicationId))
+        mockMvc.perform(delete("/api/applications/" + applicationId))
                 .andExpect(status().is(HttpStatus.NO_CONTENT.value()))
                 .andDo(mvcResult -> verify(applicationRepository, times(1)).delete(eq(applicationId)));
 
 
+    }
+
+    @Test
+    public void testListApplicationById() throws Exception {
+        String serviceId = "serviceIdListById";
+        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId, serviceId).withRemoteInfo(new
+                ApplicationActivity(new ApplicationIdentity(applicationId, "applicationName"),
+                AppState.STARTED, Instant.now(), Instant.now()));
+        when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
+
+        mockMvc.perform(get("/api/services/" + serviceId + "/applications/")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content()
+                        .contentType(new MediaType(MediaType.APPLICATION_JSON,
+                                Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
+                .andDo(mvcResult -> {
+                    verify(applicationRepository, times(1)).findAll();
+                    ServerResponse<ApplicationInfo[]> applicationInfos = objectMapper
+                            .readValue(mvcResult.getResponse().getContentAsString(),
+                                    TypeFactory.defaultInstance()
+                                            .constructParametricType(ServerResponse.class,
+                                                    ApplicationInfo[].class));
+                    assertThat(applicationInfos.getBody(), is(notNullValue()));
+                    assertThat(applicationInfos.getBody().length, is(equalTo(1)));
+                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId)));
+                });
     }
 
 

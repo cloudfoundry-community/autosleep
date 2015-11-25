@@ -10,4 +10,8 @@ public interface Config {
     int nbThreadForTask = 5;
 
     Duration delayBeforeFirstServiceCheck = Duration.ofSeconds(10);
+
+    interface Path {
+        String dashboardPrefix = "/dashboard/";
+    }
 }
