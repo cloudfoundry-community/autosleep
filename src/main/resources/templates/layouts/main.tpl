@@ -7,7 +7,7 @@ html {
         link(rel: 'stylesheet', href:'/css/bootstrap-orange.min.css')
         link(rel:'stylesheet', href:'/css/bootstrap-orange-theme.min.css')
         link(rel:'stylesheet', href:'/css/boost.min.css')
-        link(rel:'stylesheet', href:'/css/button-circle.css')
+        link(rel:'stylesheet', href:'/css/autosleep.css')
 
         script(src: "/javascript/jquery.min.js", "")
         script(src: "/javascript/boost.min.js", "")

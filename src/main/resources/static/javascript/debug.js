@@ -179,7 +179,7 @@ DebugHelper.prototype.listServiceInstances = function(){
 
                 row = $("<row>").addClass("row");
                 row.append($("<div>").addClass("col-xs-4").html(serviceInstance.service_instance_id));
-                row.append($("<div>").addClass("col-xs-2 text-center").html(serviceInstance.plan_id));
+                row.append($("<div>").addClass("col-xs-2 text-center text-overflow").html(serviceInstance.plan_id));
                 row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.interval));
                 row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.excludeNames));
                 row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.noOptOut.toString()));
