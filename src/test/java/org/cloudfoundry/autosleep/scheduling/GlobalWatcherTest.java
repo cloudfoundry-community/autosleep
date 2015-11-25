@@ -9,6 +9,7 @@ import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.remote.CloudFoundryException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,7 +78,7 @@ public class GlobalWatcherTest {
 
 
     @Before
-    public void populateDb() {
+    public void populateDb() throws CloudFoundryException {
 
         //init mock binding repository with unattached binding
         List<ApplicationBinding> storedBindings = unattachedBinding.stream()

@@ -8,6 +8,8 @@ import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.remote.CloudFoundryException;
+import org.cloudfoundry.autosleep.remote.EntityNotFoundException;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -47,14 +49,14 @@ public class ApplicationBinder extends AbstractPeriodicTask {
     public void run() {
         AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceInstanceId);
         if (serviceInstance != null) {
-            Set<UUID> watchedApplications = new HashSet<>();
-            applicationRepository.findAll()
-                    .forEach(applicationInfo -> watchedApplications.add(applicationInfo.getUuid()));
-            log.debug("{} local applications", watchedApplications.size());
-            List<ApplicationIdentity> applicationIdentities = cloudFoundryApi
-                    .listApplications(UUID.fromString(serviceInstance.getSpaceGuid()),
-                            serviceInstance.getExcludeNames());
-            if (applicationIdentities != null) {
+            try {
+                Set<UUID> watchedApplications = new HashSet<>();
+                applicationRepository.findAll()
+                        .forEach(applicationInfo -> watchedApplications.add(applicationInfo.getUuid()));
+                log.debug("{} local applications", watchedApplications.size());
+                List<ApplicationIdentity> applicationIdentities = cloudFoundryApi
+                        .listApplications(UUID.fromString(serviceInstance.getSpaceGuid()),
+                                serviceInstance.getExcludeNames());
                 List<ApplicationIdentity> newApplications = applicationIdentities.stream()
                         .filter(application ->
                                 deployment == null || !deployment.getApplicationId().equals(application.getGuid()))
@@ -66,8 +68,10 @@ public class ApplicationBinder extends AbstractPeriodicTask {
                 } else {
                     log.debug("all applications are binded");
                 }
-            } else {
-                log.debug("no remote application returned");
+            } catch (EntityNotFoundException n) {
+                log.error("service not found. should not appear cause should not be in repository anymore", n);
+            } catch (CloudFoundryException c) {
+                log.error("remote error", c);
             }
             rescheduleWithDefaultPeriod();
         } else {

@@ -1,13 +1,15 @@
 package org.cloudfoundry.autosleep.scheduling;
 
-import lombok.AllArgsConstructor;
 import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.remote.CloudFoundryException;
+import org.cloudfoundry.autosleep.remote.EntityNotFoundException;
+import org.cloudfoundry.autosleep.remote.EntityNotFoundException.EntityType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,7 +17,6 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,11 +30,13 @@ import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationBinderTest {
@@ -72,9 +75,8 @@ public class ApplicationBinderTest {
 
 
     @Before
-    public void buildMocks() {
+    public void buildMocks() throws CloudFoundryException {
         //default
-
         when(autosleepServiceInstance.getSpaceGuid()).thenReturn(SPACE_ID.toString());
         when(autosleepServiceInstance.getServiceInstanceId()).thenReturn(SERVICE_ID);
         when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
@@ -94,7 +96,6 @@ public class ApplicationBinderTest {
                 .applicationRepository(applicationRepository)
                 .deployment(deployment)
                 .build());
-
     }
 
 
@@ -144,6 +145,27 @@ public class ApplicationBinderTest {
         applicationBinder.run();
         verify(clock, times(1)).removeTask(eq(SERVICE_ID));
         verify(applicationBinder, never()).rescheduleWithDefaultPeriod();
+    }
+
+    @Test
+    public void testRunRemoteError() throws CloudFoundryException,  EntityNotFoundException {
+        when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
+        when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
+        when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
+                .thenThrow(new CloudFoundryException(null))
+                .thenReturn(remoteApplicationIds.stream()
+                        .map(applicationId -> new ApplicationIdentity(applicationId, applicationId.toString()))
+                        .collect(Collectors.toList()));
+        doThrow(new EntityNotFoundException(EntityType.service, SERVICE_ID)).when(cloudFoundryApi)
+                .bindServiceInstance(anyListOf(ApplicationIdentity.class), eq(SERVICE_ID));
+        //First list call fails
+        applicationBinder.run();
+        verify(applicationBinder, times(1)).rescheduleWithDefaultPeriod();
+        //Second bind call fails
+        applicationBinder.run();
+        verify(applicationBinder, times(2)).rescheduleWithDefaultPeriod();
+
+
     }
 
 

@@ -27,6 +27,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
@@ -108,12 +109,9 @@ public class AutoSleepServiceInstanceBindingServiceTest {
                 serviceInstance,
                 SERVICE_DEFINITION_ID, PLAN_ID);
         when(serviceInstance.isNoOptOut()).thenReturn(true);
-        try {
-            bindingService.deleteServiceInstanceBinding(deleteRequest);
-            Assert.fail("binding should have been forbidden");
-        } catch (ServiceBrokerException s) {
-            verify(bindingRepo, never()).delete(bindingId);
-        }
+        verifyThrown(() -> bindingService.deleteServiceInstanceBinding(deleteRequest), ServiceBrokerException.class,
+                exceptionThrown -> verify(bindingRepo, never()).delete(bindingId));
+
 
 
         when(serviceInstance.isNoOptOut()).thenReturn(false);
