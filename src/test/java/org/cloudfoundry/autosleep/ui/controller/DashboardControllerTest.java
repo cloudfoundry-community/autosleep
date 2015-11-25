@@ -53,31 +53,39 @@ public class DashboardControllerTest {
 
     private MockMvc mockMvc;
 
+    private static final String planId = "0309U";
+    private static final String serviceDefinitionId = "serviceDefinitionId";
+
     @Before
     public void init() {
-
-        String planId = "0309U";
-        String serviceDefinitionId = "serviceDefinitionId";
-
         MockitoAnnotations.initMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(dashboardController).build();
         when(catalog.getServiceDefinitions()).thenReturn(Collections.singletonList(
                 new ServiceDefinition(serviceDefinitionId, "serviceDefinition", "", true,
                         Collections.singletonList(new Plan(planId, "plan", "")))));
+    }
 
+    private AutosleepServiceInstance getServiceInstance(boolean withExcludeParam) {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, Duration.parse("PT1M"));
-        parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, Pattern.compile(".*"));
         parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, true);
         parameters.put(AutosleepServiceInstance.SECRET_PARAMETER, "Pa$$w0rd");
-
+        if (withExcludeParam) {
+            parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, Pattern.compile(".*"));
+        }
         CreateServiceInstanceRequest createRequest = new CreateServiceInstanceRequest(
                 serviceDefinitionId, planId, "morg", "mySpace", parameters).withServiceInstanceId(serviceInstanceId);
-        when(serviceRepository.findOne(any())).thenReturn(new AutosleepServiceInstance(createRequest));
+        return new AutosleepServiceInstance(createRequest);
     }
 
     @Test
     public void testApps() throws Exception {
+        when(serviceRepository.findOne(any())).thenReturn(getServiceInstance(false));
+
+        mockMvc.perform(get(Config.Path.dashboardPrefix + serviceInstanceId).accept(MediaType.TEXT_HTML)).andExpect(
+                status().isOk());
+
+        when(serviceRepository.findOne(any())).thenReturn(getServiceInstance(true));
         mockMvc.perform(get(Config.Path.dashboardPrefix + serviceInstanceId).accept(MediaType.TEXT_HTML)).andExpect(
                 status().isOk());
     }

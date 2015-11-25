@@ -1,15 +1,14 @@
 package org.cloudfoundry.autosleep.ui.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.ui.model.ServerResponse;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.ui.model.ServerResponse;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
-import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,9 +26,6 @@ import java.util.List;
 @RequestMapping("/api")
 @Slf4j
 public class ApiController {
-
-    @Autowired
-    private Catalog catalog;
 
     @Autowired
     private ServiceRepository serviceRepository;

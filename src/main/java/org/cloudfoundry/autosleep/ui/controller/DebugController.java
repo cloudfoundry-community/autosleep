@@ -1,9 +1,6 @@
 package org.cloudfoundry.autosleep.ui.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.community.servicebroker.controller.ServiceInstanceController;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
@@ -23,15 +20,6 @@ public class DebugController {
 
     @Autowired
     private Catalog catalog;
-
-    @Autowired
-    private ServiceRepository serviceRepository;
-
-    @Autowired
-    private BindingRepository bindingRepository;
-
-    @Autowired
-    private ApplicationRepository applicationRepository;
 
     @RequestMapping("/")
     public ModelAndView serviceInstances() {
@@ -68,7 +56,5 @@ public class DebugController {
         parameters.put("skipNavigation", false);
         return new ModelAndView("views/applications", parameters);
     }
-
-
 
 }

@@ -2,6 +2,7 @@
 
 function DebugHelper  (pathServiceInstance, serviceDefinitionId, planId) {
     this.pathDebugListInstances = "/api/services/";
+    this.pathDashboardPfx = "/dashboard/";
     this.pathApiByServicePfx = "/api/services/";
     this.pathApiListBindingSfx = "/bindings/";
     this.pathApiListApplicationSfx = "/applications/";
@@ -65,9 +66,9 @@ DebugHelper.prototype.listApplications = function (targetUrl, showDeleteButton )
                     .addClass("col-xs-1 text-center glyphicon");
 
                     if (application.stateMachine.state === "IGNORED") {
-                        stateElement.addClass("glyphicon-option-horizontal");
+                        stateElement.addClass("glyphicon-eye-close");
                     } else {
-                        stateElement.addClass("glyphicon-dashboard");
+                        stateElement.addClass("glyphicon-eye-open");
                     }
 
                 row.append(stateElement);
@@ -159,32 +160,46 @@ DebugHelper.prototype.listServiceInstances = function(){
 
             if(serverResponse.body.length > 0){
                 row = $("<row>").addClass("row");
-                row.append($("<div>").addClass("col-xs-4 h5").html("Instance Id"));
-                row.append($("<div>").addClass("col-xs-1 h5").html("Definition Id"));
-                row.append($("<div>").addClass("col-xs-4 h5").html("Plan Id"));
-                row.append($("<div>").addClass("col-xs-1 h5").html("Interval"));
-                row.append($("<div>").addClass("col-xs-1 h5").html("Exclude"));
-                row.append($("<div>").addClass("col-xs-1"));
+                row.append($("<div>").addClass("col-xs-4 h5 text-center").html("Instance Id"));
+                row.append($("<div>").addClass("col-xs-2 h5 text-center").html("Plan Id"));
+                row.append($("<div>").addClass("col-xs-1 h5 text-center").html("Interval"));
+                row.append($("<div>").addClass("col-xs-1 h5 text-center").html("Exclude"));
+                row.append($("<div>").addClass("col-xs-1 h5 text-center").html("No-Optout"));
+                row.append($("<div>").addClass("col-xs-1"));//binding links
+                row.append($("<div>").addClass("col-xs-1"));//dashboard links
+                row.append($("<div>").addClass("col-xs-1"));//delete buttons
                 container.append(row);
             }
             $.each(serverResponse.body, function(idx, serviceInstance){
-                var link = $("<a>", {href : that.pathDebugPageServiceBindingsPfx+serviceInstance.service_instance_id
-                +that.pathDebugPageServiceBindingsSfx}).html(serviceInstance.service_instance_id);
+                var linkToDashboard = $("<a>", {href : that.pathDashboardPfx+serviceInstance.service_instance_id
+                }).addClass("glyphicon glyphicon-dashboard");
+
+                var linkToBindings = $("<a>", {href : that.pathDebugPageServiceBindingsPfx+serviceInstance.service_instance_id
+                +that.pathDebugPageServiceBindingsSfx}).addClass("glyphicon glyphicon-paperclip");
+
                 row = $("<row>").addClass("row");
-                row.append($("<div>").addClass("col-xs-4").append(link));
-                row.append($("<div>").addClass("col-xs-1").html(serviceInstance.service_id));
-                row.append($("<div>").addClass("col-xs-4").html(serviceInstance.plan_id));
-                row.append($("<div>").addClass("col-xs-1").html(serviceInstance.interval));
-                row.append($("<div>").addClass("col-xs-1").html(serviceInstance.exclude_names));
-                var button = $("<button>", {type : "button"}).addClass("btn btn-circle")
+                row.append($("<div>").addClass("col-xs-4").html(serviceInstance.service_instance_id));
+                row.append($("<div>").addClass("col-xs-2 text-center").html(serviceInstance.plan_id));
+                row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.interval));
+                row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.excludeNames));
+                row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.noOptOut.toString()));
+
+                row.append($("<div>").addClass("col-xs-1 text-center").attr("data-toggle","tooltip")
+                    .attr("title","bindings").append(linkToBindings));
+                row.append($("<div>").addClass("col-xs-1 text-center").attr("data-toggle","tooltip")
+                    .attr("title","dashboard").append(linkToDashboard));
+
+                var button = $("<button>", {type : "button"}).addClass("btn btn-circle").attr("data-toggle","tooltip")
+                    .attr("title","delete")
                     .append($("<i>").addClass("glyphicon glyphicon-remove"));
-                row.append($("<div>").addClass("col-xs-1").append(button));
+                row.append($("<div>").addClass("col-xs-1 text-center").append(button));
                 button.on("click", function(e){
                     e.preventDefault();
                     that.deleteServiceInstance(serviceInstance.service_instance_id);
                 });
                 container.append(row);
             });
+            $('[data-toggle="tooltip"]').tooltip();
         },
         error : function(xhr){
             displayDanger("Error listing service instances: "+xhr.responseText);
