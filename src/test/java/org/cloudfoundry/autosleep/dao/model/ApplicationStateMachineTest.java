@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
@@ -63,5 +64,19 @@ public class ApplicationStateMachineTest {
         stateMachine.onOptIn();
         verify(mockAppender, times(1)).doAppend(any());
         assertThat(stateMachine.getState(), is(equalTo(ApplicationStateMachine.State.MONITORED)));
+    }
+
+
+    @Test
+    public void testEqualsAndHashcode() {
+        ApplicationStateMachine deusExMachina = new ApplicationStateMachine();
+        assertThat(deusExMachina, not(equalTo("toto")));
+        assertThat(deusExMachina, equalTo(deusExMachina));
+        ApplicationStateMachine eightMillimeters = new ApplicationStateMachine();
+        assertThat(deusExMachina, equalTo(eightMillimeters));
+        assertThat(deusExMachina.hashCode(), is(equalTo(eightMillimeters.hashCode())));
+        deusExMachina.onOptOut();
+        assertThat(deusExMachina, not(equalTo(eightMillimeters)));
+        assertThat(deusExMachina.hashCode(), not(equalTo(eightMillimeters.hashCode())));
     }
 }

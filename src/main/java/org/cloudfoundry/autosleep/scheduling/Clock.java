@@ -26,21 +26,6 @@ public class Clock {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Config.nbThreadForTask);
 
     /**
-     * Timer start.
-     *
-     * @param id           task id, will be used to stop timer
-     * @param initialDelay the time to delay first execution
-     * @param period       the time to wait between executions
-     * @param action       Runnable to call
-     */
-    public void startTimer(String id, Duration initialDelay, Duration period, Runnable action) {
-        log.debug("startTimer - task {}", id);
-        ScheduledFuture<?> handle = scheduler.scheduleAtFixedRate(action, initialDelay.toMillis(),
-                period.toMillis(), TimeUnit.MILLISECONDS);
-        tasks.put(id, handle);
-    }
-
-    /**
      * Schedule a Runnable to be run after a certain delay.
      *
      * @param id       task id, will be used to remove it
