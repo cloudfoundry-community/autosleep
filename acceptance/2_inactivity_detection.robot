@@ -10,14 +10,15 @@ Test Teardown   Run Keywords  Unbind service instance  Delete service instance
 1) Detect inactivity after http activity
     [Documentation]     Check that app are stopped ${DEFAULT_INACTIVITY} after their last http activity
 
-    Restart App         ${TESTED_APP_NAME}
-    Sleep               10
-    Check App Started   ${TESTED_APP_NAME}
+    ${smallPeriod}=     Evaluate  ${DEFAULT_INACTIVITY_IN_S}/4
+    ${maxToWait}=      Evaluate  ${DEFAULT_INACTIVITY_IN_S}+${INACTIVITY_BUFFER_IN_S}
 
+    Restart App         ${TESTED_APP_NAME}
+    Check App Started   ${TESTED_APP_NAME}
+    Simulate HTTP Activity  ${TESTED_APP_NAME}
+    Sleep               ${smallPeriod}
     Simulate HTTP Activity  ${TESTED_APP_NAME}
     Check App Started       ${TESTED_APP_NAME}
-
-    ${maxToWait}=      Evaluate  ${DEFAULT_INACTIVITY_IN_S}+${INACTIVITY_BUFFER_IN_S}
 
     Wait Until Keyword Succeeds     ${maxToWait}  10s  Check App Stopped   ${TESTED_APP_NAME}
 

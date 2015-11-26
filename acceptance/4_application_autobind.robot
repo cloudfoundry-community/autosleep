@@ -24,3 +24,4 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
     Create service instance  {"inactivity": "${INACTIVITY}", "excludeAppNameRegExp" : "${EXCLUDE_ALL_APP_NAMES}"}
     Sleep                    15
     Check No App Bound
+
