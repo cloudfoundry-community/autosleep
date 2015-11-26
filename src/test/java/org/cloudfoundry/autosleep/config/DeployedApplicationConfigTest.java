@@ -7,20 +7,29 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.core.env.Environment;
 
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DeployedApplicationConfigTest {
 
     private static final UUID APP_ID = UUID.randomUUID();
+
+    private static final String APPLICATION_NAME = "test";
+
+    private static final String[] URIS = {"somewhere.org", "somewhere-else.org", "nowhere.org"};
 
     @Mock
     private Environment environment;
@@ -36,21 +45,34 @@ public class DeployedApplicationConfigTest {
         assertThat(deployment, is(nullValue()));
 
         when(environment.getProperty(eq(DeployedApplicationConfig.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY)))
-                .thenReturn(getSampleVcapApplication());
+                .thenReturn(getSampleVcapApplication())
+                .thenReturn(getSampleVcapApplication(URIS));
+        deployment = config.loadCurrentDeployment();
+        assertThat(deployment.getApplicationUris(), is(notNullValue()));
+        assertThat(deployment.getApplicationUris().size(), is(equalTo(0)));
+        assertThat(deployment.getFirstUri(), is(nullValue()));
+
         deployment = config.loadCurrentDeployment();
         assertThat(deployment, is(notNullValue()));
         assertThat(deployment.getApplicationId(), is(equalTo(APP_ID)));
+        assertThat(deployment.getApplicationName(), is(equalTo(APPLICATION_NAME)));
+        assertThat(deployment.getApplicationUris(), is(notNullValue()));
+        assertThat(deployment.getApplicationUris().size(), is(equalTo(URIS.length)));
+        assertThat(deployment.getFirstUri(), is(equalTo(URIS[0])));
 
     }
 
-    private String getSampleVcapApplication() {
+    private String getSampleVcapApplication(String ... uris) {
         return "{\"limits\":{\"mem\":1024,\"disk\":1024,\"fds\":16384},"
                 + "\"application_id\":\"" + APP_ID.toString() + "\","
                 + "\"application_version\":\"b546c9d4-8885-4d50-a855-490ddb5b5a1c\","
-                + "\"application_name\":\"autosleep-app\","
-                + "\"application_uris\":[\"autosleep-app-ben.cf.ns.nd-paas.itn.ftgroup\","
-                + "\"autosleep-nonnational-artotype.cf.ns.nd-paas.itn.ftgroup\","
-                + "\"autosleep.cf.ns.nd-paas.itn.ftgroup\"],"
+                + "\"application_name\":\"" + APPLICATION_NAME + "\","
+                + "\"application_uris\":["
+                + String.join(", ",
+                Arrays.asList(uris).stream()
+                        .map(uri -> "\"" + uri + "\"")
+                        .collect(Collectors.toList()))
+                + "],"
                 + " \"version\":\"b546c9d4-8885-4d50-a855-490ddb5b5a1c\","
                 + "\"name\":\"autosleep-app\","
                 + "\"space_name\":\"autosleep\""

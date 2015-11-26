@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.util.EqualUtil;
 import org.cloudfoundry.autosleep.util.serializer.IntervalDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.IntervalSerializer;
 import org.cloudfoundry.autosleep.util.serializer.PatternDeserializer;
@@ -21,6 +20,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 @Getter
@@ -111,17 +111,17 @@ public class AutosleepServiceInstance extends ServiceInstance {
         }
         AutosleepServiceInstance other = (AutosleepServiceInstance) object;
 
-        return EqualUtil.areEquals(this.getServiceInstanceId(), other.getServiceInstanceId())
-                && EqualUtil.areEquals(this.getServiceDefinitionId(), other.getServiceDefinitionId())
-                && EqualUtil.areEquals(this.getInterval(), other.getInterval())
-                && EqualUtil.areEquals(this.isNoOptOut(), other.isNoOptOut())
-                && EqualUtil.areEquals(this.getDashboardUrl(), other.getDashboardUrl())
-                && EqualUtil.areEquals(this.getOrganizationGuid(), other.getOrganizationGuid())
-                && EqualUtil.areEquals(this.getPlanId(), other.getPlanId())
-                && EqualUtil.areEquals(this.getSpaceGuid(), other.getSpaceGuid())
-                && EqualUtil.areEquals(this.getSecretHash(), other.getSecretHash())
+        return Objects.equals(this.getServiceInstanceId(), other.getServiceInstanceId())
+                && Objects.equals(this.getServiceDefinitionId(), other.getServiceDefinitionId())
+                && Objects.equals(this.getInterval(), other.getInterval())
+                && Objects.equals(this.isNoOptOut(), other.isNoOptOut())
+                && Objects.equals(this.getDashboardUrl(), other.getDashboardUrl())
+                && Objects.equals(this.getOrganizationGuid(), other.getOrganizationGuid())
+                && Objects.equals(this.getPlanId(), other.getPlanId())
+                && Objects.equals(this.getSpaceGuid(), other.getSpaceGuid())
+                && Objects.equals(this.getSecretHash(), other.getSecretHash())
                 //Pattern does not implement equals
-                && EqualUtil.areEquals(this.getExcludeNames() == null ? null : this.getExcludeNames().pattern(),
+                && Objects.equals(this.getExcludeNames() == null ? null : this.getExcludeNames().pattern(),
                 other.getExcludeNames() == null ? null : other.getExcludeNames().pattern());
     }
 

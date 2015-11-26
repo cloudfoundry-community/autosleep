@@ -4,7 +4,7 @@ apply plugin: "com.github.kt3k.coveralls"
 
 def limits = [
         'instruction': 90,
-        'branch'     : 80,
+        'branch'     : 77.5,
         'line'       : 95,
         'complexity' : 80,
         'method'     : 90,

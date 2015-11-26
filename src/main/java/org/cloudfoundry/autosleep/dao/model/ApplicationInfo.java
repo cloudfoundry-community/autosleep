@@ -6,13 +6,13 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
-import org.cloudfoundry.autosleep.util.EqualUtil;
 import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 @Getter
@@ -108,15 +108,15 @@ public class ApplicationInfo {
         }
         ApplicationInfo other = (ApplicationInfo) object;
 
-        return EqualUtil.areEquals(this.getUuid(), other.getUuid())
-                && EqualUtil.areEquals(this.getName(), other.getName())
-                && EqualUtil.areEquals(this.getLastLog(), other.getLastLog())
-                && EqualUtil.areEquals(this.getLastEvent(), other.getLastEvent())
-                && EqualUtil.areEquals(this.getLastCheck(), other.getLastCheck())
-                && EqualUtil.areEquals(this.getNextCheck(), other.getNextCheck())
-                && EqualUtil.areEquals(this.getStateMachine(), other.getStateMachine())
-                && EqualUtil.areEquals(this.getAppState(), other.getAppState())
-                && EqualUtil.areEquals(this.getServiceInstanceId(), other.getServiceInstanceId());
+        return Objects.equals(this.getUuid(), other.getUuid())
+                && Objects.equals(this.getName(), other.getName())
+                && Objects.equals(this.getLastLog(), other.getLastLog())
+                && Objects.equals(this.getLastEvent(), other.getLastEvent())
+                && Objects.equals(this.getLastCheck(), other.getLastCheck())
+                && Objects.equals(this.getNextCheck(), other.getNextCheck())
+                && Objects.equals(this.getStateMachine(), other.getStateMachine())
+                && Objects.equals(this.getAppState(), other.getAppState())
+                && Objects.equals(this.getServiceInstanceId(), other.getServiceInstanceId());
     }
 
     @Override

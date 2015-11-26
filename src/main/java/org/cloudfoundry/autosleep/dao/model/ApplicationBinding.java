@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.util.EqualUtil;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Getter
@@ -49,11 +49,11 @@ public class ApplicationBinding extends ServiceInstanceBinding {
         }
         ApplicationBinding other = (ApplicationBinding) object;
 
-        return EqualUtil.areEquals(this.getId(), other.getId())
-                && EqualUtil.areEquals(this.getServiceInstanceId(), other.getServiceInstanceId())
-                && EqualUtil.areEquals(this.getAppGuid(), other.getAppGuid())
-                && EqualUtil.areEquals(this.getCredentials(), other.getCredentials())
-                && EqualUtil.areEquals(this.getSyslogDrainUrl(), other.getSyslogDrainUrl());
+        return Objects.equals(this.getId(), other.getId())
+                && Objects.equals(this.getServiceInstanceId(), other.getServiceInstanceId())
+                && Objects.equals(this.getAppGuid(), other.getAppGuid())
+                && Objects.equals(this.getCredentials(), other.getCredentials())
+                && Objects.equals(this.getSyslogDrainUrl(), other.getSyslogDrainUrl());
     }
 
     @Override
