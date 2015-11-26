@@ -8,13 +8,14 @@ This is a work in progress.
 You can check the [specification proposal here] (https://docs.google.com/document/d/1tMhIBX3tw7kPEOMCzKhUgmtmr26GVxyXwUTwMO71THI/).
 
 ### What's already working:
-For now we provide a [service broker] (https://docs.cloudfoundry.org/services/managing-service-brokers.html) which instances will watch any bound application, detect inactivity (based on **https logs** and **redeploy/restart events**) and stop the application if needed.
+For now we provide a [service broker] (https://docs.cloudfoundry.org/services/managing-service-brokers.html) which instances will:
+* automatically bind applications in space (according to a regexp).
+* watch every bound application, detect inactivity (based on **https logs** and **redeploy/restart events**) and stop the application if needed.
 
 Download [latest release] (https://github.com/Orange-OpenSource/autosleep/releases/) if you want to have a try.
 
 ### What we are working on:
-* "opt-out" mode: applications are automatically bound to the service, according to a regexp.
-* Automatic restart on incoming HTTP trafic
+* automatic restart on incoming HTTP trafic
 
 # How to use
 We suppose that you've already published the service broker in your market place. If you need help on that check [how to publish service broker](doc/publish.md).
@@ -29,7 +30,7 @@ cf cs autosleep default my-autosleep
 
 Autosleep **will automatically bind every application in the space** to this service instance. (if you want to prevent this, please use the [excludeAppNameRegExp](#excludeappnameregexp) parameter).
 
-Later, it will also watch for newly created applications and bind them too. ***(TODO : how often?)***
+Later, it will also watch for newly created applications and bind them too (every 24H). 
 
 Once bound, your application will be watch for inactivity. If you wish to stop this watch, simply unbind your application.
 
