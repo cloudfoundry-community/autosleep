@@ -1,6 +1,8 @@
 package org.cloudfoundry.autosleep.util;
 
 
+import java.util.function.Function;
+
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.instanceOf;
@@ -8,24 +10,48 @@ import static org.junit.Assert.fail;
 
 public class TestUtils {
 
-    public interface MethodExecutor {
-        void execute() throws Exception;
+    @FunctionalInterface
+    public interface ThrowingFunction extends Function<Void, Void> {
+
+        @Override
+        default Void apply(Void notUsed) {
+            try {
+                applyThrows();
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        void applyThrows() throws Exception;
     }
 
-    public interface ExceptionChecker<T extends Throwable> {
-        void check(T exceptionThrown);
+    @FunctionalInterface
+    public interface CheckerFunction<T> extends Function<T, Void> {
+
+        @Override
+        default Void apply(T parameterChecked) {
+            try {
+                check(parameterChecked);
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        void check(T parameterChecked);
     }
 
     @SafeVarargs
-    public static <T extends Throwable> void verifyThrown(MethodExecutor executor, Class<T> wantedClass,
-                                                          ExceptionChecker<T>... checkers) {
+    public static <T extends Throwable> void verifyThrown(ThrowingFunction executor, Class<T> wantedClass,
+                                                          CheckerFunction<T>... checkers) {
         try {
-            executor.execute();
+            executor.applyThrows();
             fail();
         } catch (Exception exc) {
             assertThat(exc, is(instanceOf(wantedClass)));
             T expectedClass = wantedClass.cast(exc);
-            for (ExceptionChecker<T> checker : checkers) {
+            for (CheckerFunction<T> checker : checkers) {
                 checker.check(expectedClass);
             }
         }
