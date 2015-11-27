@@ -64,8 +64,6 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
         AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceId);
         Map<String,Object> credentials = new HashMap<>();
         credentials.put(AutosleepServiceInstance.INACTIVITY_PARAMETER,serviceInstance.getInterval().toString());
-        credentials.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,serviceInstance.isNoOptOut());
-        credentials.put(AutosleepServiceInstance.EXCLUDE_PARAMETER,serviceInstance.getExcludeNames());
 
         ApplicationBinding binding = new ApplicationBinding(bindingId,
                 serviceId,
