@@ -73,7 +73,7 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
             // save in repository before calling remote because otherwise local service binding controller will
             // fail retrieving the service
             serviceRepository.save(serviceInstance);
-            watcher.watchServiceBindings(serviceId, Config.delayBeforeFirstServiceCheck);
+            watcher.watchServiceBindings(serviceInstance, Config.delayBeforeFirstServiceCheck);
         }
         return serviceInstance;
     }
