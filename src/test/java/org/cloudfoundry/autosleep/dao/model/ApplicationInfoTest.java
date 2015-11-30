@@ -62,7 +62,9 @@ public class ApplicationInfoTest {
     }
 
     private ApplicationInfo getAnApplicationInfo() {
-        return new ApplicationInfo(appUuid,"AInfoTestServiceId");
+        ApplicationInfo applicationInfo =  new ApplicationInfo(appUuid);
+        applicationInfo.addBoundService("AInfoTestServiceId");
+        return applicationInfo;
     }
 
     @Test

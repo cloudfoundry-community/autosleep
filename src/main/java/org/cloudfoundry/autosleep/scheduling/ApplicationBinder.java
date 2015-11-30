@@ -50,17 +50,22 @@ public class ApplicationBinder extends AbstractPeriodicTask {
         AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceInstanceId);
         if (serviceInstance != null) {
             try {
-                Set<UUID> watchedApplications = new HashSet<>();
+                Set<UUID> watchedOrIgnoredApplications = new HashSet<>();
                 applicationRepository.findAll()
-                        .forEach(applicationInfo -> watchedApplications.add(applicationInfo.getUuid()));
-                log.debug("{} local applications", watchedApplications.size());
+                        .forEach(applicationInfo -> {
+                            if (applicationInfo.getServiceInstances().keySet().contains(serviceInstanceId)) {
+                                watchedOrIgnoredApplications.add(applicationInfo.getUuid());
+                            }
+                        });
+                log.debug("{} local applications (already watched, or to be ignored)",
+                        watchedOrIgnoredApplications.size());
                 List<ApplicationIdentity> applicationIdentities = cloudFoundryApi
                         .listApplications(UUID.fromString(serviceInstance.getSpaceGuid()),
                                 serviceInstance.getExcludeNames());
                 List<ApplicationIdentity> newApplications = applicationIdentities.stream()
                         .filter(application ->
                                 deployment == null || !deployment.getApplicationId().equals(application.getGuid()))
-                        .filter(application -> !(watchedApplications.contains(application.getGuid())))
+                        .filter(application -> !(watchedOrIgnoredApplications.contains(application.getGuid())))
                         .collect(Collectors.toList());
                 if (!newApplications.isEmpty()) {
                     log.debug("{} - new applications", newApplications.size());

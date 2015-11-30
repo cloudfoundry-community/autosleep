@@ -47,23 +47,22 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
     @Override
     public ServiceInstanceBinding createServiceInstanceBinding(CreateServiceInstanceBindingRequest request) throws
             ServiceInstanceBindingExistsException, ServiceBrokerException {
-
         String bindingId = request.getBindingId();
-        String serviceId = request.getServiceInstanceId();
+        log.debug("createServiceInstanceBinding - {}", bindingId);
         String appId = request.getAppGuid();
-        log.debug("createServiceInstanceBinding - {}", request.getBindingId());
-
         ApplicationInfo appInfo = appRepository.findOne(appId);
         if (appInfo == null) {
-            appInfo = new ApplicationInfo(UUID.fromString(appId),serviceId);
+            appInfo = new ApplicationInfo(UUID.fromString(appId));
         } else {
             appInfo.getStateMachine().onOptIn();
         }
+        String serviceId = request.getServiceInstanceId();
+        appInfo.addBoundService(serviceId);
 
         //retrieve service to return its params as credentials
         AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceId);
-        Map<String,Object> credentials = new HashMap<>();
-        credentials.put(AutosleepServiceInstance.INACTIVITY_PARAMETER,serviceInstance.getInterval().toString());
+        Map<String, Object> credentials = new HashMap<>();
+        credentials.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, serviceInstance.getInterval().toString());
 
         ApplicationBinding binding = new ApplicationBinding(bindingId,
                 serviceId,
@@ -82,21 +81,26 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
         String bindingId = request.getBindingId();
         AutosleepServiceInstance serviceInstance = serviceRepository
                 .findOne(request.getInstance().getServiceInstanceId());
-        if (serviceInstance.isNoOptOut()) {
-            throw new ServiceBrokerException("unbinding this service is forbidden");
-        } else {
-            log.debug("deleteServiceInstanceBinding - {}", bindingId);
-            ApplicationBinding binding = bindingRepository.findOne(bindingId);
-            log.debug("deleteServiceInstanceBinding on app ", binding.getAppGuid());
-            ApplicationInfo appInfo = appRepository.findOne(binding.getAppGuid());
-            if (appInfo != null) {
-                log.error("Deleting a binding with no related application info. This should never happen.");
-                appInfo.getStateMachine().onOptOut();
+
+        log.debug("deleteServiceInstanceBinding - {}", bindingId);
+        ApplicationBinding binding = bindingRepository.findOne(bindingId);
+        String appId = binding.getAppGuid();
+        log.debug("deleteServiceInstanceBinding on app ", appId);
+        ApplicationInfo appInfo = appRepository.findOne(appId);
+        if (appInfo != null) {
+            log.error("Deleting a binding with no related application info. This should never happen.");
+            appInfo.getStateMachine().onOptOut();
+            appInfo.removeBoundService(serviceInstance.getServiceInstanceId(), !serviceInstance.isNoOptOut());
+
+            if (appInfo.getServiceInstances().size() == 0) {
+                appRepository.delete(appId);
+            } else {
+                appRepository.save(appInfo);
             }
-            bindingRepository.delete(bindingId);
-            appRepository.save(appInfo);
-            //task launched will cancel by itself
-            return binding;
         }
+        bindingRepository.delete(bindingId);
+
+        //task launched will cancel by itself
+        return binding;
     }
 }

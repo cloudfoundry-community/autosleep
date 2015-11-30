@@ -1,7 +1,6 @@
 package org.cloudfoundry.autosleep.scheduling;
 
 import org.cloudfoundry.autosleep.config.Deployment;
-import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -10,6 +9,7 @@ import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.remote.CloudFoundryException;
 import org.cloudfoundry.autosleep.remote.EntityNotFoundException;
 import org.cloudfoundry.autosleep.remote.EntityNotFoundException.EntityType;
+import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,13 +30,7 @@ import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationBinderTest {
@@ -104,17 +98,22 @@ public class ApplicationBinderTest {
         when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
         when(autosleepServiceInstance.getExcludeNames()).thenReturn(null);
         //it will return every ids
-        when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
+        when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
+                //do not return app id
+                .filter(remoteApplicationId -> !remoteApplicationIds.equals(APP_ID))
+                .map(remoteApplicationId -> BeanGenerator.createAppInfo(remoteApplicationId, "another_service_id"))
+                .collect(Collectors.toList()));
         applicationBinder.run();
 
         verify(applicationBinder, times(1)).rescheduleWithDefaultPeriod();
         verify(cloudFoundryApi, times(1)).listApplications(eq(SPACE_ID), eq(null));
-        //Normaly remote app has not be binded
+        //Normaly remote app has not be bound
         verify(cloudFoundryApi, times(1))
                 .bindServiceInstance(argThat(anyListOfSize(remoteApplicationIds.size() - 1, ApplicationIdentity.class)),
                         anyString());
 
         Pattern pattern = Pattern.compile(".*");
+
         when(autosleepServiceInstance.getExcludeNames()).thenReturn(pattern);
         applicationBinder.run();
         verify(cloudFoundryApi, times(1)).listApplications(eq(SPACE_ID), eq(pattern));
@@ -128,7 +127,7 @@ public class ApplicationBinderTest {
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 //do not return app id
                 .filter(remoteApplicationId -> !remoteApplicationIds.equals(APP_ID))
-                .map(remoteApplicationId -> new ApplicationInfo(remoteApplicationId, "testNoNewSid"))
+                .map(remoteApplicationId -> BeanGenerator.createAppInfo(remoteApplicationId, SERVICE_ID))
                 .collect(Collectors.toList()));
         applicationBinder.run();
 
@@ -177,6 +176,39 @@ public class ApplicationBinderTest {
             }
         };
     }
+
+  /*  @Test
+    public void testNewAppearedAlreadyLinkedToAnotherOne() throws Exception {
+        when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
+
+
+        when(autosleepServiceInstance.getExcludeNames()).thenReturn(null);
+
+        //it will return every ids
+        when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
+
+        applicationBinder.run();
+
+        verify(applicationBinder, times(1)).rescheduleWithDefaultPeriod();
+        verify(cloudFoundryApi, times(1)).listApplications(eq(SPACE_ID), eq(null));
+
+        //Normaly remote app has not be binded
+        verify(cloudFoundryApi, times(1))
+                .bindServiceInstance(argThat(anyListOfSize(remoteApplicationIds.size() - 1, ApplicationIdentity.class)),
+                        anyString());
+
+        Pattern pattern = Pattern.compile(".*");
+        when(autosleepServiceInstance.getExcludeNames()).thenReturn(pattern);
+
+        remoteApplicationIds.add(UUID.randomUUID());
+        applicationBinder.run();
+        verify(cloudFoundryApi, times(1)).listApplications(eq(SPACE_ID), eq(pattern));
+        verify(cloudFoundryApi, times(1))
+                .bindServiceInstance(argThat(anyListOfSize(1, ApplicationIdentity.class)),
+                        anyString());
+
+
+    }*/
 
 
 }

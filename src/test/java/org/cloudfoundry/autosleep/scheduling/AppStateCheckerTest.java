@@ -9,6 +9,7 @@ import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
 import org.cloudfoundry.autosleep.remote.CloudFoundryException;
 import org.cloudfoundry.autosleep.remote.EntityNotFoundException;
 import org.cloudfoundry.autosleep.remote.EntityNotFoundException.EntityType;
+import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.junit.Before;
@@ -68,7 +69,7 @@ public class AppStateCheckerTest {
         when(applicationActivity.getLastLog()).thenReturn(Instant.now());
         when(applicationActivity.getState()).thenReturn(AppState.STARTED);
 
-        applicationInfo = spy(new ApplicationInfo(APP_UID, "ACTestSId").withRemoteInfo(applicationActivity));
+        applicationInfo = spy(BeanGenerator.createAppInfo(APP_UID, "ACTestSId").withRemoteInfo(applicationActivity));
 
         when(cloudFoundryApi.getApplicationActivity(APP_UID)).thenReturn(applicationActivity);
 

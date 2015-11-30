@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public class ApplicationStateMachine {
 
-    public enum State {MONITORED, IGNORED}
+    public enum State { MONITORED, IGNORED }
 
     private State state;
 
