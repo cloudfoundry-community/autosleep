@@ -23,16 +23,15 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import javax.validation.constraints.Null;
 import java.time.Duration;
 import java.util.*;
 
+import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
-import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
@@ -41,10 +40,6 @@ public class AutosleepServiceInstanceServiceTest {
     private static final UUID ORG_TEST = UUID.randomUUID();
 
     private static final UUID SPACE_TEST = UUID.randomUUID();
-
-    private static final UUID[] APP_TEST = {
-            UUID.randomUUID(), UUID.randomUUID()
-    };
 
     private static final String SERVICE_DEFINITION_ID = "serviceDefinitionId";
 
@@ -113,7 +108,8 @@ public class AutosleepServiceInstanceServiceTest {
         verify(passwordEncoder, never()).encode(anyString());
         assertThat(si, is(notNullValue()));
 
-        verify(globalWatcher, times(1)).watchServiceBindings(SERVICE_INSTANCE_ID, Config.delayBeforeFirstServiceCheck);
+        verify(globalWatcher, times(1)).watchServiceBindings((AutosleepServiceInstance) si,
+                Config.delayBeforeFirstServiceCheck);
         verify(serviceRepository, times(1)).save(any(AutosleepServiceInstance.class));
 
         assertThat(si, is(instanceOf(AutosleepServiceInstance.class)));

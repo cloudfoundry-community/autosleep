@@ -1,9 +1,9 @@
 package org.cloudfoundry.autosleep.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -53,7 +53,7 @@ public class GlobalWatcher {
         bindingRepository.findAll().forEach(this::watchApp);
         serviceRepository.findAll()
                 .forEach(autosleepServiceInstance ->
-                        watchServiceBindings(autosleepServiceInstance.getServiceInstanceId(), null));
+                        watchServiceBindings(autosleepServiceInstance, null));
     }
 
     public void watchApp(ApplicationBinding binding) {
@@ -70,11 +70,11 @@ public class GlobalWatcher {
         checker.startNow();
     }
 
-    public void watchServiceBindings(String serviceId, Duration delayBeforeTreatment) {
+    public void watchServiceBindings(AutosleepServiceInstance service, Duration delayBeforeTreatment) {
         ApplicationBinder applicationBinder = ApplicationBinder.builder()
                 .clock(clock)
-                .period(Config.defaultServiceBindingRefresh)
-                .serviceInstanceId(serviceId)
+                .period(service.getInterval())
+                .serviceInstanceId(service.getServiceInstanceId())
                 .cloudFoundryApi(cloudFoundryApi)
                 .serviceRepository(serviceRepository)
                 .applicationRepository(applicationRepository)
