@@ -17,10 +17,10 @@ ${DEFAULT_SECRET}  P@$$w0rd!
 	Should Contain               ${result.stdout}    502
 	Should Be Equal As Integers  ${result.rc}    1
 
-2) No-optout can not unbind
+2) No-optout can unbind, but will be rebound
     [Documentation]     Check that we can not unbind an app from a service with no-optout option set to true
     # create service instance with noptout
-    ${result} =                  Run Process  cf  cs  autosleep  default  ${SERVICE_INSTANCE_NAME}  -c  {"inactivity": "${DEFAULT_INACTIVITY}", "excludeAppNameRegExp" : "${EXCLUDE_ALL_APP_NAMES}", "no_optout" : "true", "secret" : "${DEFAULT_SECRET}"}
+    ${result} =                  Run Process  cf  cs  autosleep  default  ${SERVICE_INSTANCE_NAME}  -c  {"inactivity": "${DEFAULT_INACTIVITY}", "no_optout" : "true", "secret" : "${DEFAULT_SECRET}"}
 	Should Not Contain          ${result.stdout}    FAIL
     Should Be Equal As Integers  ${result.rc}    0
 
@@ -28,8 +28,12 @@ ${DEFAULT_SECRET}  P@$$w0rd!
 
     ## unbind service instance
     ${result} =                 Run Process  cf  unbind-service  ${TESTED_APP_NAME}  ${SERVICE_INSTANCE_NAME}
-    Should Contain          ${result.stdout}    FAIL
-    Should Be Equal As Integers  ${result.rc}    1
+    Should Not Contain          ${result.stdout}    FAIL
+    Should Be Equal As Integers  ${result.rc}    0
+
+    ${doublePeriod}=      Evaluate  ${DEFAULT_INACTIVITY_IN_S}*3
+
+    Wait Until Keyword Succeeds     ${doublePeriod}s  3s  Check App Bound
 
 3) No-optout service can not change without secret
     [Documentation]        Check that the no-optout option of a service can not be updated without providing a secret
@@ -63,10 +67,6 @@ ${DEFAULT_SECRET}  P@$$w0rd!
     # bound app
     Bind service instance
 
-    # check unbind -> refuse
-    ${result} =                 Run Process  cf  unbind-service  ${TESTED_APP_NAME}  ${SERVICE_INSTANCE_NAME}
-    Should Contain          ${result.stdout}    FAIL
-    Should Be Equal As Integers  ${result.rc}    1
 
     # update with right secret
     ${result} =                  Run Process  cf  update-service  ${SERVICE_INSTANCE_NAME}  -c  { "no_optout" : "false", "secret" : "${DEFAULT_SECRET}"}

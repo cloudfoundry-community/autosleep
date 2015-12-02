@@ -164,9 +164,10 @@ public class ApiControllerTest {
 
     @Test
     public void testListApplications() throws Exception {
-        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId, "serviceId").withRemoteInfo(new
+        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId).withRemoteInfo(new
                 ApplicationActivity(new ApplicationIdentity(applicationId, "applicationName"),
                 AppState.STARTED, Instant.now(), Instant.now()));
+        applicationInfo.addBoundService("serviceId");
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
         mockMvc.perform(get("/api/applications/")
@@ -201,9 +202,10 @@ public class ApiControllerTest {
     @Test
     public void testListApplicationById() throws Exception {
         String serviceId = "serviceIdListById";
-        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId, serviceId).withRemoteInfo(new
+        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId).withRemoteInfo(new
                 ApplicationActivity(new ApplicationIdentity(applicationId, "applicationName"),
                 AppState.STARTED, Instant.now(), Instant.now()));
+        applicationInfo.addBoundService(serviceId);
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
         mockMvc.perform(get("/api/services/" + serviceId + "/applications/")

@@ -49,7 +49,7 @@ DebugHelper.prototype.listApplications = function (targetUrl, showDeleteButton )
                 row = $("<row>").addClass("row");
                 row.append($("<div>").addClass("col-xs-4 text-center").html(application.uuid));
                 row.append($("<div>").addClass("col-xs-2 text-center").html(application.name));
-                if (application.stateMachine.state != "IGNORED") {
+                if (application.watched) {
                     row.append($("<div>").addClass("col-xs-2 text-center").html(application.appState));
                 } else
                     row.append($("<div>").addClass("col-xs-2 text-center").html("-"));
@@ -62,10 +62,10 @@ DebugHelper.prototype.listApplications = function (targetUrl, showDeleteButton )
                     row.append($("<div>").addClass("col-xs-2 text-center").html("-"));
 
                 var stateElement = $("<span>").attr("data-toggle","tooltip")
-                    .attr("title",application.stateMachine.state)
+                    .attr("title",application.watched?"WATCHED":"IGNORED")
                     .addClass("col-xs-1 text-center glyphicon");
 
-                    if (application.stateMachine.state === "IGNORED") {
+                    if (!application.watched) {
                         stateElement.addClass("glyphicon-eye-close");
                     } else {
                         stateElement.addClass("glyphicon-eye-open");

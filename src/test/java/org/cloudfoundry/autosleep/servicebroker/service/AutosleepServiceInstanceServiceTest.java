@@ -8,6 +8,7 @@ import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
+import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
@@ -203,16 +204,19 @@ public class AutosleepServiceInstanceServiceTest {
 
     }
 
+
+
+
     @Test
     public void testCleanAppOnDeleteServiceInstance() throws Exception {
         //mocking app repository so that it return 3 apps linked to the service and 2 linked to others
         when(applicationRepository.findAll()).thenReturn(Arrays.asList(
-                        new ApplicationInfo(UUID.randomUUID(), SERVICE_INSTANCE_ID),
-                        new ApplicationInfo(UUID.randomUUID(), SERVICE_INSTANCE_ID),
-                        new ApplicationInfo(UUID.randomUUID(), SERVICE_INSTANCE_ID),
-                        new ApplicationInfo(UUID.randomUUID(), "àç!àpoiu"),
-                        new ApplicationInfo(UUID.randomUUID(), "lkv nàç "))
-        );
+                BeanGenerator.createAppInfo(SERVICE_INSTANCE_ID),
+                        BeanGenerator.createAppInfo(SERVICE_INSTANCE_ID),
+                        BeanGenerator.createAppInfo(SERVICE_INSTANCE_ID),
+                        BeanGenerator.createAppInfo("àç!àpoiu"),
+                        BeanGenerator.createAppInfo("lkv nàç ")
+        ));
 
         instanceService.deleteServiceInstance(deleteRequest);
         verify(serviceRepository, times(1)).delete(SERVICE_INSTANCE_ID);

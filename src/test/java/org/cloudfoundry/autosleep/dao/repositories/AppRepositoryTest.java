@@ -5,6 +5,7 @@ import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.junit.After;
 import org.junit.Before;
@@ -48,7 +49,7 @@ public abstract class AppRepositoryTest {
     }
 
     private ApplicationInfo buildAppInfo(UUID uuid) {
-        return new ApplicationInfo(uuid,"APTestServiceId").withRemoteInfo(new ApplicationActivity(
+        return BeanGenerator.createAppInfo(uuid,"APTestServiceId").withRemoteInfo(new ApplicationActivity(
                 new ApplicationIdentity(uuid, "appname"),
                 AppState.STARTED,
                 Instant.now(), Instant.now()));
@@ -63,7 +64,6 @@ public abstract class AppRepositoryTest {
     @Test
     public void testMultipleInsertsAndRetrieves() {
         List<String> ids = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-
 
         List<ApplicationInfo> initialList = new ArrayList<>();
         ids.forEach(id -> initialList.add(buildAppInfo(UUID.fromString(id))));
@@ -88,7 +88,6 @@ public abstract class AppRepositoryTest {
         for (ApplicationInfo object : storedElement) {
             assertTrue("Retrieved element should be the same as initial element", initialList.contains(object));
         }
-
     }
 
     @Test
@@ -102,7 +101,6 @@ public abstract class AppRepositoryTest {
         assertThat(retrieved, is(equalTo(original)));
         assertTrue("Succeed in getting a binding that does not exist", dao.findOne("thisAppShouldNotExist") == null);
     }
-
 
 
     @Test

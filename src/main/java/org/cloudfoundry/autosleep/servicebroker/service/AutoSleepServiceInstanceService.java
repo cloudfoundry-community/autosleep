@@ -117,7 +117,8 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
         //clean stored app linked to the service (already unbound)
         appRepository.findAll().forEach(
                 aInfo -> {
-                    if (aInfo.getServiceInstanceId().equals(serviceInstance.getServiceInstanceId())) {
+                    aInfo.removeBoundService(serviceInstance.getServiceInstanceId(),false);
+                    if (aInfo.getServiceInstances().size() == 0) {
                         appRepository.delete(aInfo);
                     }
                 }

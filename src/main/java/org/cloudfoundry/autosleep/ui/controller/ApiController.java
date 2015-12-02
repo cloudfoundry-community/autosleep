@@ -44,7 +44,7 @@ public class ApiController {
         log.debug("listApplications");
         List<ApplicationInfo> result = new ArrayList<>();
         applicationRepository.findAll().forEach(app -> {
-            if (app.getServiceInstanceId().equals(serviceInstanceId)) {
+            if (app.getServiceInstances().keySet().contains(serviceInstanceId)) {
                 result.add(app);
             }
         });

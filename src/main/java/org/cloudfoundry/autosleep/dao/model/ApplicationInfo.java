@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.dao.model;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
@@ -12,12 +13,14 @@ import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
 
 @Getter
 @Slf4j
 @JsonAutoDetect()
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ApplicationInfo {
 
     @JsonSerialize
@@ -46,10 +49,16 @@ public class ApplicationInfo {
     private Instant lastCheck;
 
     @JsonSerialize
-    private ApplicationStateMachine stateMachine = new ApplicationStateMachine();
+    private final HashMap<String /**serviceId.**/,ServiceInstanceState> serviceInstances = new HashMap<>();
 
-    @JsonSerialize
-    private String serviceInstanceId;
+
+    public enum ServiceInstanceState {
+        /** service instance is bound to the application. */
+        BOUND ,
+        /** service (with NO_OPTOUT_PARAMETER set to false) was manually unbound,
+         * it won't be automatically bound again.*/
+        BLACKLISTED
+    }
 
     /**
      * Should never be called. Only for JSON auto serialization.
@@ -58,14 +67,31 @@ public class ApplicationInfo {
     private ApplicationInfo() {
     }
 
-    public ApplicationInfo(UUID uuid, String serviceId) {
+    public ApplicationInfo(UUID uuid) {
         this.uuid = uuid;
-        this.serviceInstanceId = serviceId;
     }
 
     public ApplicationInfo withRemoteInfo(ApplicationActivity activity) {
         updateRemoteInfo(activity);
         return this;
+    }
+
+    public void addBoundService(String serviceId) {
+        serviceInstances.put(serviceId, ServiceInstanceState.BOUND);
+    }
+
+    public void removeBoundService(String serviceId, boolean addToBlackList) {
+        if (addToBlackList) {
+            serviceInstances.put(serviceId, ServiceInstanceState.BLACKLISTED);
+        } else {
+            serviceInstances.remove(serviceId);
+        }
+    }
+
+    public boolean isWatched() {
+        return serviceInstances.values().stream().filter(
+                serviceInstanceState -> serviceInstanceState == ServiceInstanceState.BOUND
+        ).findAny().isPresent();
     }
 
     public void updateRemoteInfo(ApplicationActivity activity) {
@@ -95,7 +121,7 @@ public class ApplicationInfo {
     @Override
     public String toString() {
         return "[ApplicationInfo:" + getName() + "/" + getUuid() + " lastEvent:"
-                + getLastEvent() + " lastLog:" + getLastLog() + " serviceId:" + getServiceInstanceId() + "]";
+                + getLastEvent() + " lastLog:" + getLastLog() + "]";
     }
 
     @Override
@@ -114,9 +140,7 @@ public class ApplicationInfo {
                 && Objects.equals(this.getLastEvent(), other.getLastEvent())
                 && Objects.equals(this.getLastCheck(), other.getLastCheck())
                 && Objects.equals(this.getNextCheck(), other.getNextCheck())
-                && Objects.equals(this.getStateMachine(), other.getStateMachine())
-                && Objects.equals(this.getAppState(), other.getAppState())
-                && Objects.equals(this.getServiceInstanceId(), other.getServiceInstanceId());
+                && Objects.equals(this.getAppState(), other.getAppState());
     }
 
     @Override
