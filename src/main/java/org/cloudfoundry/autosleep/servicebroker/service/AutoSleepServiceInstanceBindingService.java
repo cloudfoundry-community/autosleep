@@ -53,8 +53,6 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
         ApplicationInfo appInfo = appRepository.findOne(appId);
         if (appInfo == null) {
             appInfo = new ApplicationInfo(UUID.fromString(appId));
-        } else {
-            appInfo.getStateMachine().onOptIn();
         }
         String serviceId = request.getServiceInstanceId();
         appInfo.addBoundService(serviceId);
@@ -89,9 +87,7 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
         ApplicationInfo appInfo = appRepository.findOne(appId);
         if (appInfo != null) {
             log.error("Deleting a binding with no related application info. This should never happen.");
-            appInfo.getStateMachine().onOptOut();
             appInfo.removeBoundService(serviceInstance.getServiceInstanceId(), !serviceInstance.isNoOptOut());
-
             if (appInfo.getServiceInstances().size() == 0) {
                 appRepository.delete(appId);
             } else {

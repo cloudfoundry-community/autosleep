@@ -43,27 +43,21 @@ public class AppStateChecker extends AbstractPeriodicTask {
         if (applicationInfo == null) {
             handleApplicationNotFound();
         } else {
-            switch (applicationInfo.getStateMachine().getState()) {
-                case IGNORED:
-                    handleApplicationIgnored(applicationInfo);
-                    break;
-                case MONITORED:
-                    handleApplicationMonitored(applicationInfo);
-                    break;
-
-                default:
-                    log.error("unknown state");
+            if (applicationInfo.isWatched()) {
+                handleApplicationMonitored(applicationInfo);
+            } else {
+                handleApplicationIgnored(applicationInfo);
             }
         }
     }
 
-    private void handleApplicationNotFound() {
+    protected void handleApplicationNotFound() {
         log.error("ApplicationInfo is null, this should never happen!");
         stopTask();
     }
 
 
-    private void handleApplicationIgnored(ApplicationInfo applicationInfo) {
+    protected void handleApplicationIgnored(ApplicationInfo applicationInfo) {
         log.debug("App has been unbound. Cancelling task.");
         stopTask();
         applicationInfo.clearCheckInformation();
@@ -71,7 +65,7 @@ public class AppStateChecker extends AbstractPeriodicTask {
     }
 
 
-    private void handleApplicationMonitored(ApplicationInfo applicationInfo) {
+    protected void handleApplicationMonitored(ApplicationInfo applicationInfo) {
         Duration rescheduleDelta = null;
         try {
             ApplicationActivity applicationActivity = cloudFoundryApi.getApplicationActivity(appUid);

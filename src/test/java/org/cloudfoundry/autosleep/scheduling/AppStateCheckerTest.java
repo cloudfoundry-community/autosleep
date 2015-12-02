@@ -3,11 +3,7 @@ package org.cloudfoundry.autosleep.scheduling;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.remote.ApplicationActivity;
-import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
-import org.cloudfoundry.autosleep.remote.CloudFoundryException;
-import org.cloudfoundry.autosleep.remote.EntityNotFoundException;
+import org.cloudfoundry.autosleep.remote.*;
 import org.cloudfoundry.autosleep.remote.EntityNotFoundException.EntityType;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
@@ -90,7 +86,6 @@ public class AppStateCheckerTest {
 
     @Test
     public void testStart() throws Exception {
-        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         doAnswer(invocationOnMock -> {
             log.debug("Fake scheduling");
             spyChecker.run();
@@ -105,34 +100,34 @@ public class AppStateCheckerTest {
 
     @Test
     public void testRunOnActive() throws Exception {
-        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(cloudFoundryApi, never()).stopApplication(APP_UID);
         verify(clock, times(1)).scheduleTask(any(), anyObject(), any());
         verify(spyChecker, never()).rescheduleWithDefaultPeriod();
         verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
+        verify(spyChecker, times(1)).handleApplicationMonitored(applicationInfo);
     }
 
     @Test
     public void testRunOnInactive() throws Exception {
         when(applicationActivity.getLastEvent()).thenReturn(Instant.now().minus(INTERVAL.multipliedBy(2)));
         when(applicationActivity.getLastLog()).thenReturn(Instant.now().minus(INTERVAL.multipliedBy(2)));
-        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(cloudFoundryApi, times(1)).stopApplication(APP_UID);
         verify(applicationInfo, times(1)).markAsPutToSleep();
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
+        verify(spyChecker, times(1)).handleApplicationMonitored(applicationInfo);
         verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
     }
 
     @Test
     public void testRunOnAlreadyStopped() throws Exception {
         when(applicationActivity.getState()).thenReturn(CloudApplication.AppState.STOPPED);
-        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(cloudFoundryApi, never()).stopApplication(APP_UID);
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
         verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
+        verify(spyChecker, times(1)).handleApplicationMonitored(applicationInfo);
     }
 
     @Test
@@ -140,31 +135,31 @@ public class AppStateCheckerTest {
         when(cloudFoundryApi.getApplicationActivity(APP_UID))
                 .thenThrow(new CloudFoundryException(new Exception("Mock call")))
                 .thenThrow(new EntityNotFoundException(EntityType.application, APP_UID.toString()));
-        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         spyChecker.run();
         verify(cloudFoundryApi, never()).stopApplication(APP_UID);
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
         verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
         spyChecker.run();
         verify(spyChecker, times(2)).rescheduleWithDefaultPeriod();
+        verify(spyChecker, times(2)).handleApplicationMonitored(applicationInfo);
     }
 
     @Test
     public void testRunOnLastEventNotFound() throws Exception {
-        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         when(applicationActivity.getLastLog()).thenReturn(null);
         when(applicationActivity.getLastEvent()).thenReturn(null);
         spyChecker.run();
         verify(cloudFoundryApi, never()).stopApplication(APP_UID);
         verify(spyChecker, times(1)).rescheduleWithDefaultPeriod();
         verify(applicationRepository, times(1)).save(any(ApplicationInfo.class));
+        verify(spyChecker, times(1)).handleApplicationMonitored(applicationInfo);
     }
 
     @Test
     public void testRunOnOptedOut() throws Exception {
-        applicationInfo.getStateMachine().onOptOut();
-        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(applicationInfo);
+        when(applicationInfo.isWatched()).thenReturn(false);
         spyChecker.run();
+        verify(spyChecker, times(1)).handleApplicationIgnored(applicationInfo);
         verify(cloudFoundryApi, never()).stopApplication(APP_UID);
         verify(applicationInfo, times(1)).clearCheckInformation();
         verify(spyChecker, never()).rescheduleWithDefaultPeriod();
@@ -181,6 +176,7 @@ public class AppStateCheckerTest {
         verify(clock, never()).scheduleTask(anyObject(), anyObject(), anyObject());
         verify(cloudFoundryApi, never()).stopApplication(APP_UID);
         verify(clock, times(1)).removeTask(BINDING_ID);
+        verify(spyChecker, times(1)).handleApplicationNotFound();
     }
 
     @Test
@@ -191,6 +187,7 @@ public class AppStateCheckerTest {
         verify(spyChecker, times(1)).run();
         verify(cloudFoundryApi, never()).stopApplication(APP_UID);
         verify(clock, times(1)).removeTask(BINDING_ID);
+        verify(spyChecker, times(1)).handleApplicationNotFound();
 
     }
 

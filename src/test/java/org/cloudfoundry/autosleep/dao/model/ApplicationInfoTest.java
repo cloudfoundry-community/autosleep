@@ -30,7 +30,7 @@ public class ApplicationInfoTest {
     @Test
     public void testSerialization() {
         RedisSerializer<ApplicationInfo> serializer = new Jackson2JsonRedisSerializer<>(ApplicationInfo.class);
-        ApplicationInfo origin = getAnApplicationInfo().withRemoteInfo(newApplicationActivity(yesterday, now));
+        ApplicationInfo origin = getABoundedAppInfo().withRemoteInfo(newApplicationActivity(yesterday, now));
         byte[] serialized = serializer.serialize(origin);
         ApplicationInfo retrieved = serializer.deserialize(serialized);
         log.debug("Object origin = {}", origin);
@@ -49,33 +49,54 @@ public class ApplicationInfoTest {
     @SuppressWarnings({"ObjectEqualsNull", "EqualsBetweenInconvertibleTypes", "EqualsWithItself"})
     @Test
     public void testEquals() throws Exception {
-        ApplicationInfo sampleApp = getAnApplicationInfo().withRemoteInfo(newApplicationActivity(yesterday, now));
+        ApplicationInfo sampleApp = getABoundedAppInfo().withRemoteInfo(newApplicationActivity(yesterday, now));
         assertFalse(sampleApp.equals(null));
         assertFalse(sampleApp.equals("toto"));
         assertTrue(sampleApp.equals(sampleApp));
 
-        ApplicationInfo other = getAnApplicationInfo().withRemoteInfo(newApplicationActivity(yesterday, now));
+        ApplicationInfo other = getABoundedAppInfo().withRemoteInfo(newApplicationActivity(yesterday, now));
         assertTrue(sampleApp.equals(other));
 
         other.updateRemoteInfo(newApplicationActivity(now, yesterday));
         assertFalse(sampleApp.equals(other));
     }
 
-    private ApplicationInfo getAnApplicationInfo() {
-        ApplicationInfo applicationInfo =  new ApplicationInfo(appUuid);
+    private ApplicationInfo getABoundedAppInfo() {
+        ApplicationInfo applicationInfo =  getAnAppInfo();
         applicationInfo.addBoundService("AInfoTestServiceId");
+        return applicationInfo;
+    }
+
+    private ApplicationInfo getAnAppInfo() {
+        ApplicationInfo applicationInfo =  new ApplicationInfo(appUuid);
         return applicationInfo;
     }
 
     @Test
     public void testHashCode() throws Exception {
-        assertTrue(getAnApplicationInfo().withRemoteInfo(newApplicationActivity(yesterday, now)).hashCode()
-                == getAnApplicationInfo().withRemoteInfo(newApplicationActivity(yesterday, now)).hashCode());
+        assertTrue(getABoundedAppInfo().withRemoteInfo(newApplicationActivity(yesterday, now)).hashCode()
+                == getABoundedAppInfo().withRemoteInfo(newApplicationActivity(yesterday, now)).hashCode());
     }
 
     @Test
     public void testToString() throws Exception {
-        assertNotNull(getAnApplicationInfo().withRemoteInfo(newApplicationActivity(yesterday, now)).toString());
+        assertNotNull(getABoundedAppInfo().withRemoteInfo(newApplicationActivity(yesterday, now)).toString());
+    }
+
+    @Test
+    public void testIsWatched() throws Exception {
+        ApplicationInfo info = getAnAppInfo();
+        assertFalse(info.isWatched());
+        String serviceId = "testIsWatched";
+        info.addBoundService(serviceId);
+        assertTrue(info.isWatched());
+
+        info.removeBoundService(serviceId,true);
+        assertFalse(info.isWatched());
+
+        info.addBoundService(serviceId);
+        info.removeBoundService(serviceId,false);
+        assertFalse(info.isWatched());
     }
 
     private ApplicationActivity newApplicationActivity(Instant lastEvent, Instant lastLog) {

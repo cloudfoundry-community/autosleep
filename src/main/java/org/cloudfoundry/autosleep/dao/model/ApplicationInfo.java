@@ -1,11 +1,10 @@
 package org.cloudfoundry.autosleep.dao.model;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
@@ -21,6 +20,7 @@ import java.util.UUID;
 @Getter
 @Slf4j
 @JsonAutoDetect()
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ApplicationInfo {
 
     @JsonSerialize
@@ -47,9 +47,6 @@ public class ApplicationInfo {
     @JsonSerialize(using = InstantSerializer.class)
     @JsonDeserialize(using = InstantDeserializer.class)
     private Instant lastCheck;
-
-    @JsonSerialize @Setter
-    private ApplicationStateMachine stateMachine = new ApplicationStateMachine();
 
     @JsonSerialize
     private final HashMap<String /**serviceId.**/,ServiceInstanceState> serviceInstances = new HashMap<>();
@@ -91,7 +88,6 @@ public class ApplicationInfo {
         }
     }
 
-    @JsonIgnore
     public boolean isWatched() {
         return serviceInstances.values().stream().filter(
                 serviceInstanceState -> serviceInstanceState == ServiceInstanceState.BOUND
@@ -144,7 +140,6 @@ public class ApplicationInfo {
                 && Objects.equals(this.getLastEvent(), other.getLastEvent())
                 && Objects.equals(this.getLastCheck(), other.getLastCheck())
                 && Objects.equals(this.getNextCheck(), other.getNextCheck())
-                && Objects.equals(this.getStateMachine(), other.getStateMachine())
                 && Objects.equals(this.getAppState(), other.getAppState());
     }
 
