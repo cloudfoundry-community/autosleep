@@ -86,13 +86,14 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
         log.debug("deleteServiceInstanceBinding on app ", appId);
         ApplicationInfo appInfo = appRepository.findOne(appId);
         if (appInfo != null) {
-            log.error("Deleting a binding with no related application info. This should never happen.");
             appInfo.removeBoundService(serviceInstance.getServiceInstanceId(), !serviceInstance.isNoOptOut());
             if (appInfo.getServiceInstances().size() == 0) {
                 appRepository.delete(appId);
             } else {
                 appRepository.save(appInfo);
             }
+        } else {
+            log.error("Deleting a binding with no related application info. This should never happen.");
         }
         bindingRepository.delete(bindingId);
 

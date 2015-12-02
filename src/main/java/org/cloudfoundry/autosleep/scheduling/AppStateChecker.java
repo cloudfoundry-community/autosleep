@@ -52,13 +52,13 @@ public class AppStateChecker extends AbstractPeriodicTask {
     }
 
     protected void handleApplicationNotFound() {
-        log.error("ApplicationInfo is null, this should never happen!");
+        log.debug("Application unknown (must have unbound). Cancelling task.");
         stopTask();
     }
 
 
     protected void handleApplicationIgnored(ApplicationInfo applicationInfo) {
-        log.debug("App has been unbound. Cancelling task.");
+        log.debug("Known application, but ignored (blacklisted). Cancelling task.");
         stopTask();
         applicationInfo.clearCheckInformation();
         applicationRepository.save(applicationInfo);
