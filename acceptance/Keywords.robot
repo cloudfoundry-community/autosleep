@@ -2,106 +2,29 @@
 Library         String
 Library         Process
 
+
 *** Variables ***
-${TESTED_APP_NAME}  static_test
+#autosleep under brokers-sandboxes
+${SPACE_GUID}	2d745a4b-67e3-4398-986e-2adbcf8f7ec9
+#default
+${SERVICE_NAME}	autosleep
+${PLAN_GUID}	0179eda6-bbcb-408a-aff9-d21d748056dc
+${TESTED_APP_NAME}	static_test
+${TESTED_APP_GUID}  3a4e9275-e937-4735-b272-84ddea21b1f6
 ${SERVICE_INSTANCE_NAME}  my-autosleep-acc
 ${DEFAULT_INACTIVITY_IN_S}  20
 ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
 ${EXCLUDE_ALL_APP_NAMES}  .*
 # Sometimes app instance aren't well synchronize. ${INACTIVITY_BUFFER_IN_S} will be added after inactivity, before checking anything
 ${INACTIVITY_BUFFER_IN_S}  20
+&{DEFAULT_INSTANCE_PARAMETERS}	inactivity=${DEFAULT_INACTIVITY}	excludeAppNameRegExp=${EXCLUDE_ALL_APP_NAMES}
+
+*** Settings ***
+Library			Cloudfoundry	${SPACE_GUID}	${TESTED_APP_GUID}	${SERVICE_NAME}	${PLAN_GUID}	${SERVICE_INSTANCE_NAME}   ${DEFAULT_INSTANCE_PARAMETERS}
 
 
 
 *** Keywords ***
-Create service instance
-    [Documentation]             Create a service instance, checking that it doesn't fail
-	[Arguments]                 ${creation_parameters}={"inactivity": "${DEFAULT_INACTIVITY}", "excludeAppNameRegExp" : "${EXCLUDE_ALL_APP_NAMES}"}
-	${result} =                 Run Process  cf  cs  autosleep  default  ${SERVICE_INSTANCE_NAME}  -c  ${creation_parameters}
-	Should Not Contain          ${result.stdout}    FAIL
-	Should Be Equal As Integers    ${result.rc}    0
-	[Return]                    ${result.rc}
-
-Bind service instance
-    [Documentation]             Bind tested app to basic service instance, checking that it doesn't fail
-	${result} =                 Run Process  cf  bind-service  ${TESTED_APP_NAME}  ${SERVICE_INSTANCE_NAME}
-    Should Not Contain          ${result.stdout}    FAIL
-    Should Be Equal As Integers  ${result.rc}    0
-    [Return]                    ${result.rc}
-
-Unbind service instance
-    [Documentation]             Unbind, checking it doesn't fail
-	${result} =                 Run Process  cf  unbind-service  ${TESTED_APP_NAME}  ${SERVICE_INSTANCE_NAME}
-	Should Not Contain          ${result.stdout}    FAIL
-    Should Be Equal As Integers  ${result.rc}    0
-    [Return]                    ${result.rc}
-
-Check App Bound
-	[Documentation]				Return true if app is bound to the service
-	${regex} 					Set Variable 	${SERVICE_INSTANCE_NAME} *autosleep *default.* (${TESTED_APP_NAME}[ ,]).*
-	Log 						${regex}
-	${result} =                 Run Process  cf  services
-	Should Match Regexp			${result.stdout}  ${regex}
-
-Check No App Bound
-	[Documentation]				Return true if app is bound to the service
-	${regex} 					Set Variable 	${SERVICE_INSTANCE_NAME} *autosleep *default * create
-	Log 						${regex}
-	${result} =                 Run Process  cf  services
-	Should Match Regexp			${result.stdout}  ${regex}
-
-Delete service instance
-    [Documentation]             Delete base service instance, checking it doesn't fail
-	${result} =                 Run Process  cf  delete-service  -f  ${SERVICE_INSTANCE_NAME}
-	Should Not Contain          ${result.stdout}    FAIL
-    Should Be Equal As Integers  ${result.rc}    0
-    [Return]                    ${result.rc}
-
-Clean
-    [Documentation]     Try to unbind and delete base service instance, no matter if it fails
-	Run Process         cf  unbind-service  ${TESTED_APP_NAME}  ${SERVICE_INSTANCE_NAME}
-	Run Process         cf  delete-service  -f  ${SERVICE_INSTANCE_NAME}
-
-Check App Started
-    [Documentation]     Return true if cf app is started
-    [Arguments]         ${name}
-	${result} =         Run Process         cf  app  ${name}
-	Should Contain  ${result.stdout}    started
-
-Check App Stopped
-    [Documentation]     Return true if cf app is stopped
-    [Arguments]         ${name}
-	${result} =         Run Process         cf  app  ${name}
-	Should Contain  ${result.stdout}    stopped
-
-Start App
-    [Documentation]     Start App
-    [Arguments]         ${name}
-    ${result} =         Run Process         cf  start  ${name}
-    Log  ${result.stdout}
-    Should Be Equal As Integers  ${result.rc}    0
-
-Restart App
-    [Documentation]     Restart App
-    [Arguments]         ${name}
-    ${result} =         Run Process         cf  restart  ${name}
-    Log  ${result.stdout}
-    Should Be Equal As Integers  ${result.rc}    0
-
-Simulate HTTP Activity
-    [Documentation]     Curl first route of this app
-    [Arguments]         ${name}
-    ${appdata} =         Run Process         cf  app  ${name}
-    Log  ${appdata.stdout}
-    Should Be Equal As Integers  ${appdata.rc}    0
-
-    ${urlsList}=	Get Regexp Matches	${appdata.stdout}	urls: (.*)
-    ${onlyUrls}=    Get Substring   ${urlsList[0]}  6
-    @{urls} =	Split String	${onlyUrls}	 ,
-
-    ${result} =         Run Process         curl  ${urls[0]}
-    Should Be Equal As Integers  ${result.rc}    0
-
 Get Value From User On Console
     [Arguments]    ${prompt}
     Evaluate    sys.__stdout__.write("""\n${prompt}""")    sys

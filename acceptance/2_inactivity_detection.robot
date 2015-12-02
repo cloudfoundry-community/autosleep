@@ -2,8 +2,8 @@
 Resource        Keywords.robot
 Documentation   Test if inactivity is detected
 Force Tags      Service broker
-Test Setup      Run Keywords  Clean  Create service instance  Bind service instance
-Test Teardown   Run Keywords  Unbind service instance  Delete service instance
+Test Setup      Run Keywords  Clean all service data  Create service instance  Bind application
+Test Teardown   Run Keywords  Unbind application  Delete service instance
 
 *** Test Cases ***
 
@@ -12,25 +12,25 @@ Test Teardown   Run Keywords  Unbind service instance  Delete service instance
 
     ${smallPeriod}=     Evaluate  ${DEFAULT_INACTIVITY_IN_S}/4
     ${maxToWait}=      Evaluate  ${DEFAULT_INACTIVITY_IN_S}+${INACTIVITY_BUFFER_IN_S}
-
-    Restart App         ${TESTED_APP_NAME}
-    Check App Started   ${TESTED_APP_NAME}
-    Simulate HTTP Activity  ${TESTED_APP_NAME}
+	Stop application
+	Start application
+    Should be started
+    Ping application
     Sleep               ${smallPeriod}
-    Simulate HTTP Activity  ${TESTED_APP_NAME}
-    Check App Started       ${TESTED_APP_NAME}
+    Ping application
+    Should be started
 
-    Wait Until Keyword Succeeds     ${maxToWait}  10s  Check App Stopped   ${TESTED_APP_NAME}
+    Wait Until Keyword Succeeds     ${maxToWait}  10s  Should be stopped
 
 
 2) Detect inactivity after a restart
     [Documentation]     Check that app are stopped ${DEFAULT_INACTIVITY} after their last reboot
 
-    Restart App         ${TESTED_APP_NAME}
+    Stop application
+	Start application
     Sleep               10
-    Check App Started   ${TESTED_APP_NAME}
+    Should be started
 
     ${maxToWait}=      Evaluate  ${DEFAULT_INACTIVITY_IN_S}+${INACTIVITY_BUFFER_IN_S}
 
-    Wait Until Keyword Succeeds     ${maxToWait}  10s  Check App Stopped   ${TESTED_APP_NAME}
-
+    Wait Until Keyword Succeeds     ${maxToWait}  10s  Should be stopped

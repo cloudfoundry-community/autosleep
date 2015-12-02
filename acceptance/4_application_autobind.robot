@@ -2,7 +2,7 @@
 Resource        Keywords.robot
 Documentation   Test if application autobound is stopped
 Force Tags      Service broker
-Test Teardown   Run Keywords  Clean
+Test Teardown   Run Keywords  Clean all service data
 
 *** Variables ***
 ${INACTIVITY_IN_S}  30
@@ -12,18 +12,22 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
 
 1) Automatically bind application by service instance
     [Documentation]     Check that app is automatically bound by service instance
-    Clean
-    ${regex}                  Catenate   SEPARATOR=      ^(?:(?!    ${TESTED_APP_NAME}   ).)*$
-    Create service instance      {"inactivity": "${INACTIVITY}", "excludeAppNameRegExp" : "${regex}"}
-    Wait Until Keyword Succeeds     ${INACTIVITY_IN_S}s  3s  Check App Bound
+    Clean all service data
+	${regex}					Catenate   SEPARATOR=      ^(?:(?!    ${TESTED_APP_NAME}   ).)*$
+    ${parameters}				Create Dictionary	inactivity=${INACTIVITY}	excludeAppNameRegExp=${regex}
+    Create service instance      ${parameters}
+    Wait Until Keyword Succeeds     ${INACTIVITY_IN_S}s  3s  Should be bound
 
 
 2) Service does not bind ignored applications
     [Documentation]        Check that no application is bound by the service instance
-    Clean
-    Create service instance  {"inactivity": "${INACTIVITY}", "excludeAppNameRegExp" : "${EXCLUDE_ALL_APP_NAMES}"}
+    Clean all service data
+    ${parameters}				Create Dictionary	inactivity=${INACTIVITY}	excludeAppNameRegExp=${EXCLUDE_ALL_APP_NAMES}
+    Create service instance      ${parameters}
     ${halfPeriod}=      Evaluate  ${INACTIVITY_IN_S}/2
     Sleep                    ${halfPeriod}
-    Check No App Bound
+    ${app_bound}=		Get Bound Applications
+    ${length} = 		Get Length	${app_bound}
+    Should Be Equal As Integers	${length}	0
 
 
