@@ -7,6 +7,7 @@ import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.scheduling.ApplicationLocker;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
@@ -52,6 +53,9 @@ public class AutoSleepServiceInstanceBindingServiceTest {
     @Mock
     private AutosleepServiceInstance serviceInstance;
 
+    @Mock
+    private ApplicationLocker applicationLocker;
+
     @InjectMocks
     private AutoSleepServiceInstanceBindingService bindingService;
 
@@ -73,6 +77,10 @@ public class AutoSleepServiceInstanceBindingServiceTest {
         //avoir nullpointer when getting credentials
         when(serviceInstance.getInterval()).thenReturn(Duration.ofSeconds(10));
 
+        doAnswer(invocationOnMock -> {
+            ((Runnable)invocationOnMock.getArguments()[1]).run();
+            return null;
+        }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
 
     }
 
@@ -104,8 +112,8 @@ public class AutoSleepServiceInstanceBindingServiceTest {
 
     @Test
     public void testDeleteServiceInstanceBinding() throws Exception {
-        String bindingId = "testDelBinding";
-        String serviceId = "testDelBinding";
+        final String bindingId = "testDelBinding";
+        final String serviceId = "testDelBinding";
 
         when(serviceInstance.isNoOptOut()).thenReturn(false);
 

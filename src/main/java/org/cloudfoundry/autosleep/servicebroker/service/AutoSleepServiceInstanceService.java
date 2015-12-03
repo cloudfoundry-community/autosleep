@@ -3,9 +3,11 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Deployment;
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.scheduling.ApplicationLocker;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
@@ -41,18 +43,22 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
 
     private Deployment deployment;
 
+    private ApplicationLocker applicationLocker;
+
 
     @Autowired
     public AutoSleepServiceInstanceService(ApplicationRepository appRepository,
                                            ServiceRepository serviceRepository,
                                            GlobalWatcher watcher,
                                            PasswordEncoder passwordEncoder,
-                                           Deployment deployment) {
+                                           Deployment deployment,
+                                           ApplicationLocker applicationLocker) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.watcher = watcher;
         this.passwordEncoder = passwordEncoder;
         this.deployment = deployment;
+        this.applicationLocker = applicationLocker;
     }
 
     @Override
@@ -116,12 +122,17 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
 
         //clean stored app linked to the service (already unbound)
         appRepository.findAll().forEach(
-                aInfo -> {
-                    aInfo.removeBoundService(serviceInstance.getServiceInstanceId(),false);
-                    if (aInfo.getServiceInstances().size() == 0) {
-                        appRepository.delete(aInfo);
+                aInfo -> applicationLocker.executeThreadSafe(aInfo.getUuid().toString(), () -> {
+                    ApplicationInfo applicationInfoReloaded = appRepository.findOne(aInfo.getUuid().toString());
+                    if (applicationInfoReloaded != null && applicationInfoReloaded
+                            .isBoundToService(request.getServiceInstanceId())) {
+                        applicationInfoReloaded.removeBoundService(serviceInstance.getServiceInstanceId(), false);
+                        if (applicationInfoReloaded.getServiceInstances().isEmpty()) {
+                            appRepository.delete(applicationInfoReloaded);
+                            applicationLocker.removeApplication(applicationInfoReloaded.getUuid().toString());
+                        }
                     }
-                }
+                })
         );
         return serviceInstance;
     }

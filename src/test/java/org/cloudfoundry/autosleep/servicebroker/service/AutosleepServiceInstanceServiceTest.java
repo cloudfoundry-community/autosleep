@@ -7,6 +7,7 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.scheduling.ApplicationLocker;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
@@ -21,11 +22,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
 import static org.hamcrest.Matchers.*;
@@ -63,6 +67,9 @@ public class AutosleepServiceInstanceServiceTest {
     @Mock
     private Deployment deployment;
 
+    @Mock
+    private ApplicationLocker applicationLocker;
+
     @InjectMocks
     private AutoSleepServiceInstanceService instanceService;
 
@@ -77,7 +84,11 @@ public class AutosleepServiceInstanceServiceTest {
     @Before
     public void initService() {
         instanceService = new AutoSleepServiceInstanceService(applicationRepository, serviceRepository,
-                globalWatcher, passwordEncoder, deployment);
+                globalWatcher, passwordEncoder, deployment, applicationLocker);
+        doAnswer(invocationOnMock -> {
+            ((Runnable) invocationOnMock.getArguments()[1]).run();
+            return null;
+        }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
         when(passwordEncoder.encode(any(CharSequence.class))).thenReturn(passwordEncoded);
 
 
@@ -205,19 +216,21 @@ public class AutosleepServiceInstanceServiceTest {
     }
 
 
-
-
     @Test
     public void testCleanAppOnDeleteServiceInstance() throws Exception {
         //mocking app repository so that it return 3 apps linked to the service and 2 linked to others
-        when(applicationRepository.findAll()).thenReturn(Arrays.asList(
+        Map<String, ApplicationInfo> applicationInfos = Arrays.asList(
                 BeanGenerator.createAppInfo(SERVICE_INSTANCE_ID),
-                        BeanGenerator.createAppInfo(SERVICE_INSTANCE_ID),
-                        BeanGenerator.createAppInfo(SERVICE_INSTANCE_ID),
-                        BeanGenerator.createAppInfo("àç!àpoiu"),
-                        BeanGenerator.createAppInfo("lkv nàç ")
-        ));
+                BeanGenerator.createAppInfo(SERVICE_INSTANCE_ID),
+                BeanGenerator.createAppInfo(SERVICE_INSTANCE_ID),
+                BeanGenerator.createAppInfo("àç!àpoiu"),
+                BeanGenerator.createAppInfo("lkv nàç ")
+        ).stream().collect(Collectors.toMap(applicationInfo -> applicationInfo.getUuid().toString(),
+                applicationInfo -> applicationInfo));
+        when(applicationRepository.findAll()).thenReturn(applicationInfos.values());
 
+        when(applicationRepository.findOne(anyString()))
+                .then(invocationOnMock -> applicationInfos.get((String) invocationOnMock.getArguments()[0]));
         instanceService.deleteServiceInstance(deleteRequest);
         verify(serviceRepository, times(1)).delete(SERVICE_INSTANCE_ID);
         verify(applicationRepository, times(3)).delete(any(ApplicationInfo.class));

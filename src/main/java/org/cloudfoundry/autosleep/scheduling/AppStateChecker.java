@@ -20,35 +20,44 @@ public class AppStateChecker extends AbstractPeriodicTask {
 
     private final UUID appUid;
 
+    private final String serviceInstanceId;
+
     private final String bindingId;
 
     private final CloudFoundryApiService cloudFoundryApi;
 
     private final ApplicationRepository applicationRepository;
 
+    private final ApplicationLocker applicationLocker;
+
     @Builder
-    AppStateChecker(Clock clock, Duration period, UUID appUid, String bindingId,
-                    CloudFoundryApiService cloudFoundryApi, ApplicationRepository applicationRepository) {
+    AppStateChecker(Clock clock, Duration period, UUID appUid, String serviceInstanceId, String bindingId,
+                    CloudFoundryApiService cloudFoundryApi, ApplicationRepository applicationRepository,
+                    ApplicationLocker applicationLocker) {
         super(clock, period);
         this.appUid = appUid;
+        this.serviceInstanceId = serviceInstanceId;
         this.bindingId = bindingId;
         this.cloudFoundryApi = cloudFoundryApi;
         this.applicationRepository = applicationRepository;
+        this.applicationLocker = applicationLocker;
     }
 
 
     @Override
     public void run() {
-        ApplicationInfo applicationInfo = applicationRepository.findOne(appUid.toString());
-        if (applicationInfo == null) {
-            handleApplicationNotFound();
-        } else {
-            if (applicationInfo.isWatched()) {
-                handleApplicationMonitored(applicationInfo);
+        applicationLocker.executeThreadSafe(this.appUid.toString(), () -> {
+            ApplicationInfo applicationInfo = applicationRepository.findOne(appUid.toString());
+            if (applicationInfo == null) {
+                handleApplicationNotFound();
             } else {
-                handleApplicationIgnored(applicationInfo);
+                if (applicationInfo.isWatchedByService(serviceInstanceId)) {
+                    handleApplicationMonitored(applicationInfo);
+                } else {
+                    handleApplicationIgnored(applicationInfo);
+                }
             }
-        }
+        });
     }
 
     protected void handleApplicationNotFound() {
@@ -78,7 +87,7 @@ public class AppStateChecker extends AbstractPeriodicTask {
             }
         } catch (EntityNotFoundException c) {
             log.error("application not found. should not appear cause should not be in repository anymore", c);
-        }  catch (CloudFoundryException c) {
+        } catch (CloudFoundryException c) {
             log.error("error while requesting remote api", c);
         } finally {
             Instant nextCheckTime;

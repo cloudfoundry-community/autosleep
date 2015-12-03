@@ -10,6 +10,7 @@ import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.scheduling.ApplicationLocker;
 import org.cloudfoundry.autosleep.ui.model.ServerResponse;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
@@ -21,7 +22,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -37,10 +37,17 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -67,6 +74,9 @@ public class ApiControllerTest {
     @Mock
     private Catalog catalog;
 
+    @Mock
+    private ApplicationLocker applicationLocker;
+
 
     @InjectMocks
     private ApiController apiController;
@@ -80,7 +90,10 @@ public class ApiControllerTest {
     @Before
     public void init() {
         objectMapper = new ObjectMapper();
-        MockitoAnnotations.initMocks(this);
+        doAnswer(invocationOnMock -> {
+            ((Runnable)invocationOnMock.getArguments()[1]).run();
+            return null;
+        }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
         mockMvc = MockMvcBuilders.standaloneSetup(apiController).build();
         when(catalog.getServiceDefinitions()).thenReturn(Collections.singletonList(
                 new ServiceDefinition("serviceDefinitionId", "serviceDefinition", "", true,
