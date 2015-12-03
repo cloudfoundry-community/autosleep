@@ -22,9 +22,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Duration;
@@ -68,6 +67,9 @@ public class AutosleepServiceInstanceServiceTest {
     private Deployment deployment;
 
     @Mock
+    private Environment environment;
+
+    @Mock
     private ApplicationLocker applicationLocker;
 
     @InjectMocks
@@ -80,11 +82,12 @@ public class AutosleepServiceInstanceServiceTest {
     private DeleteServiceInstanceRequest deleteRequest;
 
     private String passwordEncoded = "passwordEncoded";
+    private String superPassword = "MEGAPASS";
 
     @Before
     public void initService() {
         instanceService = new AutoSleepServiceInstanceService(applicationRepository, serviceRepository,
-                globalWatcher, passwordEncoder, deployment, applicationLocker);
+                globalWatcher, passwordEncoder, deployment, applicationLocker, environment);
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArguments()[1]).run();
             return null;
@@ -100,6 +103,8 @@ public class AutosleepServiceInstanceServiceTest {
                 .withInstanceId(SERVICE_INSTANCE_ID);
 
         deleteRequest = new DeleteServiceInstanceRequest(SERVICE_INSTANCE_ID, SERVICE_DEFINITION_ID, PLAN_ID);
+
+        when(environment.getProperty(Config.EnvKey.password)).thenReturn(superPassword);
 
     }
 
@@ -215,7 +220,6 @@ public class AutosleepServiceInstanceServiceTest {
 
     }
 
-
     @Test
     public void testCleanAppOnDeleteServiceInstance() throws Exception {
         //mocking app repository so that it return 3 apps linked to the service and 2 linked to others
@@ -235,6 +239,21 @@ public class AutosleepServiceInstanceServiceTest {
         verify(serviceRepository, times(1)).delete(SERVICE_INSTANCE_ID);
         verify(applicationRepository, times(3)).delete(any(ApplicationInfo.class));
     }
+
+    @Test
+    public void testProcessSuperSecret() throws Exception {
+        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.SECRET_PARAMETER, "secret"));
+        updateRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.SECRET_PARAMETER, superPassword));
+        when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(new AutosleepServiceInstance(createRequest));
+        try {
+
+            instanceService.updateServiceInstance(updateRequest);
+        } catch (InvalidParameterException e) {
+            log.debug("Exception : " + e );
+            fail("No exception should be raised, as the super-password was provided");
+        }
+    }
+
 
     @Test
     public void testProcessSecretFailures() throws Exception {

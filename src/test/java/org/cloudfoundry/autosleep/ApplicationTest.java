@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Config;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.context.annotation.Configuration;
@@ -25,12 +26,12 @@ public class ApplicationTest {
         @PostConstruct
         public void initClientEnvironment() {
             log.debug("initClientEnvironment - setting properties");
-            System.setProperty("cf.client.target.endpoint", "http://somewhere.org");
-            System.setProperty("cf.client.skip.ssl.validation", "true");
-            System.setProperty("cf.client.username", "username");
-            System.setProperty("cf.client.password", "password");
-            System.setProperty("cf.client.clientId", "clientId");
-            System.setProperty("cf.client.clientId", "clientSecret");
+            System.setProperty(Config.EnvKey.cfEndPoint, "http://somewhere.org");
+            System.setProperty(Config.EnvKey.cfSkipSSLValidation, "true");
+            System.setProperty(Config.EnvKey.cfUserName, "username");
+            System.setProperty(Config.EnvKey.cfPassword, "password");
+            System.setProperty(Config.EnvKey.cfClientId, "clientId");
+            System.setProperty(Config.EnvKey.cfClientSecret, "clientSecret");
         }
     }
 

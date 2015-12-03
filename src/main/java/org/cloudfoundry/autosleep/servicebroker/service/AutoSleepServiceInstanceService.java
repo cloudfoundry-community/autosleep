@@ -19,6 +19,7 @@ import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.service.ServiceInstanceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -45,6 +46,8 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
 
     private ApplicationLocker applicationLocker;
 
+    private Environment environment;
+
 
     @Autowired
     public AutoSleepServiceInstanceService(ApplicationRepository appRepository,
@@ -52,13 +55,15 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
                                            GlobalWatcher watcher,
                                            PasswordEncoder passwordEncoder,
                                            Deployment deployment,
-                                           ApplicationLocker applicationLocker) {
+                                           ApplicationLocker applicationLocker,
+                                           Environment environment) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.watcher = watcher;
         this.passwordEncoder = passwordEncoder;
         this.deployment = deployment;
         this.applicationLocker = applicationLocker;
+        this.environment = environment;
     }
 
     @Override
@@ -147,19 +152,23 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
     }
 
     private void processSecret(String existingSecret, Map<String, Object> params) {
-        if (existingSecret != null
-                &&
-                (
-                        params.get(AutosleepServiceInstance.SECRET_PARAMETER) == null
-                                ||
-                                !passwordEncoder.matches((String) params.get(AutosleepServiceInstance.SECRET_PARAMETER),
-                                        existingSecret)
-                )) {
-            throw new InvalidParameterException(AutosleepServiceInstance.SECRET_PARAMETER,
-                    "Provided parameter  does not match the provided one on creation.");
-        } else if (params.get(AutosleepServiceInstance.SECRET_PARAMETER) != null) {
-            params.put(AutosleepServiceInstance.SECRET_PARAMETER,
-                    passwordEncoder.encode((String) params.get(AutosleepServiceInstance.SECRET_PARAMETER)));
+        Object receivedSecret = params.get(AutosleepServiceInstance.SECRET_PARAMETER);
+        if (existingSecret != null) {
+            if (receivedSecret != null) {
+                if (passwordEncoder.matches((String) receivedSecret, existingSecret)) {
+                    log.debug("secret password provided is correct");
+                } else if (receivedSecret.equals(environment.getProperty(Config.EnvKey.password))) {
+                    log.debug("SUPER SECRET provided");
+                } else {
+                    throw new InvalidParameterException(AutosleepServiceInstance.SECRET_PARAMETER,
+                            "Provided secret does not match the one provided on creation nor the " + Config.EnvKey
+                                    .password + " value.");
+                }
+            } else {
+                throw new InvalidParameterException(AutosleepServiceInstance.SECRET_PARAMETER, "No secret provided.");
+            }
+        } else if (receivedSecret != null) {
+            params.put(AutosleepServiceInstance.SECRET_PARAMETER, passwordEncoder.encode((String) receivedSecret));
         }
     }
 

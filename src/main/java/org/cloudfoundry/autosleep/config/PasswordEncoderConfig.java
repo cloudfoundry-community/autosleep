@@ -16,7 +16,7 @@ public class PasswordEncoderConfig {
 
     @Bean
     public PasswordEncoder getPasswordEncoder() {
-        String secret = environment.getProperty("cf.security.password.encodingSecret");
+        String secret = environment.getProperty(Config.EnvKey.cfEncodingSecret);
         if (secret == null) {
             log.debug("no secret used");
             return new StandardPasswordEncoder();
