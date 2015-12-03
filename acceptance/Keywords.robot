@@ -101,3 +101,9 @@ Simulate HTTP Activity
 
     ${result} =         Run Process         curl  ${urls[0]}
     Should Be Equal As Integers  ${result.rc}    0
+
+Get Value From User On Console
+    [Arguments]    ${prompt}
+    Evaluate    sys.__stdout__.write("""\n${prompt}""")    sys
+    ${input}=    Evaluate    unicode(raw_input())
+    [Return]    ${input}
