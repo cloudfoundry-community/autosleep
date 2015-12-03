@@ -55,6 +55,9 @@ public class GlobalWatcherTest {
     @Mock
     private Deployment deployment;
 
+    @Mock
+    private ApplicationLocker applicationLocker;
+
     @InjectMocks
     @Spy
     private GlobalWatcher spyWatcher;
@@ -69,6 +72,10 @@ public class GlobalWatcherTest {
 
     @Before
     public void populateDb() throws CloudFoundryException {
+        doAnswer(invocationOnMock -> {
+            ((Runnable)invocationOnMock.getArguments()[1]).run();
+            return null;
+        }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
 
         //init mock binding repository with unattached binding
         List<ApplicationBinding> storedBindings = unattachedBinding.stream()

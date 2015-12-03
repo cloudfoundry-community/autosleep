@@ -28,9 +28,13 @@ public class AppStateCheckerTest {
 
     private static final UUID APP_UID = UUID.fromString("9AF63B10-9D25-4162-9AD2-5AA8173FFC3B");
 
+    private static final String INSTANCE_ID = "ACTestSId";
+
     private static final String BINDING_ID = "DP98USD";
 
     private static final Duration INTERVAL = Duration.ofMillis(300);
+
+
 
     @Mock
     private Clock clock;
@@ -49,6 +53,9 @@ public class AppStateCheckerTest {
     @Mock
     private ApplicationRepository applicationRepository;
 
+    @Mock
+    private ApplicationLocker applicationLocker;
+
     private AppStateChecker spyChecker;
 
 
@@ -58,6 +65,7 @@ public class AppStateCheckerTest {
     @Before
     public void buildMocks() throws EntityNotFoundException, CloudFoundryException {
         //default
+
         when(application.getGuid()).thenReturn(APP_UID);
         when(application.getName()).thenReturn("appName");
         when(applicationActivity.getApplication()).thenReturn(application);
@@ -65,7 +73,7 @@ public class AppStateCheckerTest {
         when(applicationActivity.getLastLog()).thenReturn(Instant.now());
         when(applicationActivity.getState()).thenReturn(AppState.STARTED);
 
-        applicationInfo = spy(BeanGenerator.createAppInfo(APP_UID, "ACTestSId").withRemoteInfo(applicationActivity));
+        applicationInfo = spy(BeanGenerator.createAppInfo(APP_UID, INSTANCE_ID).withRemoteInfo(applicationActivity));
 
         when(cloudFoundryApi.getApplicationActivity(APP_UID)).thenReturn(applicationActivity);
 
@@ -73,13 +81,20 @@ public class AppStateCheckerTest {
                 applicationInfo
         );
 
+        doAnswer(invocationOnMock -> {
+            ((Runnable)invocationOnMock.getArguments()[1]).run();
+            return null;
+        }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
+
 
         spyChecker = spy(AppStateChecker.builder()
                 .appUid(APP_UID)
+                .serviceInstanceId(INSTANCE_ID)
                 .bindingId(BINDING_ID)
                 .period(INTERVAL)
                 .cloudFoundryApi(cloudFoundryApi)
                 .clock(clock)
+                .applicationLocker(applicationLocker)
                 .applicationRepository(applicationRepository).build());
     }
 
@@ -157,7 +172,7 @@ public class AppStateCheckerTest {
 
     @Test
     public void testRunOnOptedOut() throws Exception {
-        when(applicationInfo.isWatched()).thenReturn(false);
+        when(applicationInfo.isWatchedByService(INSTANCE_ID)).thenReturn(false);
         spyChecker.run();
         verify(spyChecker, times(1)).handleApplicationIgnored(applicationInfo);
         verify(cloudFoundryApi, never()).stopApplication(APP_UID);

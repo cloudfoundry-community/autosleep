@@ -7,6 +7,7 @@ import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.scheduling.ApplicationLocker;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
@@ -34,70 +35,85 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
 
     private GlobalWatcher watcher;
 
+    private ApplicationLocker applicationLocker;
+
     @Autowired
     public AutoSleepServiceInstanceBindingService(ApplicationRepository appRepository,
                                                   ServiceRepository serviceRepository,
-                                                  BindingRepository bindingRepository, GlobalWatcher watcher) {
+                                                  BindingRepository bindingRepository,
+                                                  GlobalWatcher watcher,
+                                                  ApplicationLocker applicationLocker) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.bindingRepository = bindingRepository;
         this.watcher = watcher;
+        this.applicationLocker = applicationLocker;
     }
 
     @Override
     public ServiceInstanceBinding createServiceInstanceBinding(CreateServiceInstanceBindingRequest request) throws
             ServiceInstanceBindingExistsException, ServiceBrokerException {
-        String bindingId = request.getBindingId();
+        final String appId = request.getAppGuid();
+        final String bindingId = request.getBindingId();
+        final String serviceId = request.getServiceInstanceId();
         log.debug("createServiceInstanceBinding - {}", bindingId);
-        String appId = request.getAppGuid();
-        ApplicationInfo appInfo = appRepository.findOne(appId);
-        if (appInfo == null) {
-            appInfo = new ApplicationInfo(UUID.fromString(appId));
-        }
-        String serviceId = request.getServiceInstanceId();
-        appInfo.addBoundService(serviceId);
-
-        //retrieve service to return its params as credentials
         AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceId);
         Map<String, Object> credentials = new HashMap<>();
         credentials.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, serviceInstance.getInterval().toString());
 
-        ApplicationBinding binding = new ApplicationBinding(bindingId,
+        final ApplicationBinding binding = new ApplicationBinding(bindingId,
                 serviceId,
                 credentials,
                 null,
                 appId);
-        bindingRepository.save(binding);
-        appRepository.save(appInfo);
-        watcher.watchApp(binding);
+        applicationLocker.executeThreadSafe(appId, () -> {
+            ApplicationInfo appInfo = appRepository.findOne(appId);
+            if (appInfo == null) {
+                appInfo = new ApplicationInfo(UUID.fromString(appId));
+            }
+
+            appInfo.addBoundService(serviceId);
+
+            //retrieve service to return its params as credentials
+
+            bindingRepository.save(binding);
+            appRepository.save(appInfo);
+            watcher.watchApp(binding);
+        });
+
         return binding;
     }
 
     @Override
     public ServiceInstanceBinding deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest request)
             throws ServiceBrokerException {
-        String bindingId = request.getBindingId();
+        final String bindingId = request.getBindingId();
+        log.debug("deleteServiceInstanceBinding - {}", bindingId);
+
+        final ApplicationBinding binding = bindingRepository.findOne(bindingId);
+        final String appId = binding.getAppGuid();
+
         AutosleepServiceInstance serviceInstance = serviceRepository
                 .findOne(request.getInstance().getServiceInstanceId());
 
-        log.debug("deleteServiceInstanceBinding - {}", bindingId);
-        ApplicationBinding binding = bindingRepository.findOne(bindingId);
-        String appId = binding.getAppGuid();
-        log.debug("deleteServiceInstanceBinding on app ", appId);
-        ApplicationInfo appInfo = appRepository.findOne(appId);
-        if (appInfo != null) {
-            appInfo.removeBoundService(serviceInstance.getServiceInstanceId(), !serviceInstance.isNoOptOut());
-            if (appInfo.getServiceInstances().size() == 0) {
-                appRepository.delete(appId);
+        applicationLocker.executeThreadSafe(appId, () -> {
+            log.debug("deleteServiceInstanceBinding on app ", appId);
+            ApplicationInfo appInfo = appRepository.findOne(appId);
+            if (appInfo != null) {
+                appInfo.removeBoundService(serviceInstance.getServiceInstanceId(), !serviceInstance.isNoOptOut());
+                if (appInfo.getServiceInstances().size() == 0) {
+                    appRepository.delete(appId);
+                    applicationLocker.removeApplication(appId);
+                } else {
+                    appRepository.save(appInfo);
+                }
             } else {
-                appRepository.save(appInfo);
+                log.error("Deleting a binding with no related application info. This should never happen.");
             }
-        } else {
-            log.error("Deleting a binding with no related application info. This should never happen.");
-        }
-        bindingRepository.delete(bindingId);
+            bindingRepository.delete(bindingId);
 
-        //task launched will cancel by itself
+            //task launched will cancel by itself
+        });
         return binding;
     }
 }

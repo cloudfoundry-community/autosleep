@@ -31,12 +31,14 @@ public class GlobalWatcher {
 
     private Deployment deployment;
 
+    private ApplicationLocker applicationLocker;
+
 
     @Autowired
     public GlobalWatcher(Clock clock, BindingRepository bindingRepository,
                          ServiceRepository serviceRepository, ApplicationRepository applicationRepository,
                          CloudFoundryApiService cloudFoundryApi,
-                         Deployment deployment) {
+                         Deployment deployment, ApplicationLocker applicationLocker) {
         this.clock = clock;
         this.cloudFoundryApi = cloudFoundryApi;
         this.bindingRepository = bindingRepository;
@@ -44,6 +46,7 @@ public class GlobalWatcher {
         this.applicationRepository = applicationRepository;
         this.cloudFoundryApi = cloudFoundryApi;
         this.deployment = deployment;
+        this.applicationLocker = applicationLocker;
     }
 
     @PostConstruct
@@ -64,8 +67,10 @@ public class GlobalWatcher {
                 .period(interval)
                 .appUid(UUID.fromString(binding.getAppGuid()))
                 .cloudFoundryApi(cloudFoundryApi)
+                .serviceInstanceId(binding.getServiceInstanceId())
                 .bindingId(binding.getId())
                 .applicationRepository(applicationRepository)
+                .applicationLocker(applicationLocker)
                 .build();
         checker.startNow();
     }

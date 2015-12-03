@@ -94,6 +94,14 @@ public class ApplicationInfo {
         ).findAny().isPresent();
     }
 
+    public boolean isBoundToService(String serviceInstanceId) {
+        return serviceInstances.containsKey(serviceInstanceId);
+    }
+
+    public boolean isWatchedByService(String serviceInstanceId) {
+        return serviceInstances.get(serviceInstanceId) == ServiceInstanceState.BOUND;
+    }
+
     public void updateRemoteInfo(ApplicationActivity activity) {
         this.appState = activity.getState();
         this.lastEvent = activity.getLastEvent();

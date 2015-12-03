@@ -7,6 +7,7 @@ import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.scheduling.ApplicationLocker;
 import org.cloudfoundry.autosleep.ui.model.ServerResponse;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,9 @@ public class ApiController {
 
     @Autowired
     private ApplicationRepository applicationRepository;
+
+    @Autowired
+    private ApplicationLocker applicationLocker;
 
 
     @RequestMapping(value = "/services/{instanceId}/applications/")
@@ -89,8 +93,12 @@ public class ApiController {
     @RequestMapping(value = "/applications/{applicationId}", method = RequestMethod.DELETE)
     public ResponseEntity<String> deleteApplication(@PathVariable("applicationId") String applicationId) {
         log.debug("deleteApplication - {}", applicationId);
-        applicationRepository.delete(applicationId);
-        log.debug("deleteApplication - deleted");
+        applicationLocker.executeThreadSafe(applicationId, () -> {
+            applicationRepository.delete(applicationId);
+            applicationLocker.removeApplication(applicationId);
+            log.debug("deleteApplication - deleted");
+        });
+
         return new ResponseEntity<>("{}", HttpStatus.NO_CONTENT);
     }
 
