@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.remote;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.client.lib.CloudCredentials;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,17 +21,17 @@ import java.net.URL;
 public class CloudfoundryClientBuilder {
 
     @Autowired
-    private Environment environment;
+    private Environment env;
 
     @Bean
     public CloudFoundryClient buildClient() {
-        final String targetEndpoint = environment.getProperty("cf.client.target.endpoint");
-        final boolean skipSslValidation = Boolean.parseBoolean(environment.getProperty("cf.client.skip.ssl.validation",
+        final String targetEndpoint = env.getProperty(Config.EnvKey.cfEndPoint);
+        final boolean skipSslValidation = Boolean.parseBoolean(env.getProperty(Config.EnvKey.cfSkipSSLValidation,
                 "false"));
-        final String username = environment.getProperty("cf.client.username");
-        final String password = environment.getProperty("cf.client.password");
-        final String clientId = environment.getProperty("cf.client.clientId", "");
-        final String clientSecret = environment.getProperty("cf.client.clientSecret", "");
+        final String username = env.getProperty(Config.EnvKey.cfUserName);
+        final String password = env.getProperty(Config.EnvKey.cfPassword);
+        final String clientId = env.getProperty(Config.EnvKey.cfClientId, "");
+        final String clientSecret = env.getProperty(Config.EnvKey.cfClientSecret, "");
         try {
 
             log.debug("buildClient - targetEndpoint={}", targetEndpoint);
