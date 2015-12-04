@@ -7,13 +7,31 @@ import json
 class Cloudfoundry(object):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
 
-    def __init__(self, space_guid, application_guid, service_name, plan_guid, instance_name, default_create_instance_parameters):
+    def __init__(self, organization_name ,space_name, application_name, service_name, plan_name, instance_name, default_create_instance_parameters):
         Cloudfoundry._check_parameters(default_create_instance_parameters)
         self.client = build_client_from_configuration()
-        self.space_guid = space_guid
-        self.application_guid = application_guid
+        organization = self.client.organization.get_by_name(organization_name)
+        if organization is None:
+            raise AssertionError('Unknown organization %s' % organization_name)
+        space = self.client.space.get_by_name(organization['metadata']['guid'], space_name)
+        if space is None:
+            raise AssertionError('Unknown space %s' % space_name)
+        self.space_guid = space['metadata']['guid']
+        application = self.client.application.get_by_name(self.space_guid, application_name)
+        if application is None:
+            raise AssertionError('Unknown application %s' % application)
+        self.application_guid = application['metadata']['guid']
+        service = self.client.service.get_service_by_name(self.space_guid, service_name)
+        if service is None:
+            raise AssertionError('Unknown service %s' % application)
         self.service_name = service_name
-        self.plan_guid = plan_guid
+        self.plan_guid = None
+        for plan in self.client.service.list_plans(service['metadata']['guid']):
+            if plan['entity']['name'] == plan_name:
+                self.plan_guid = plan['metadata']['guid']
+                break
+        if self.plan_guid is None:
+            raise AssertionError('Unknown plan %s' % plan_name)
         self.instance_name = instance_name
         self.default_create_instance_parameters = default_create_instance_parameters
         self.instance_guid = None
@@ -43,11 +61,6 @@ class Cloudfoundry(object):
             logging.info('clean_all_service_data - instance deleted')
         self.instance_guid = None
         self.binding_guid = None
-
-    def should_be_in_marketplace(self):
-        service = self.client.service.get_service_by_name(self.space_guid, self.service_name)
-        if service is None:
-            raise AssertionError('%s is not deployed in market place' % self.service_name)
 
     def create_service_instance(self, parameters=None):
         if self.instance_guid is not None:
@@ -80,8 +93,6 @@ class Cloudfoundry(object):
             self.instance_guid = None
             logging.info('delete_service_instance - ok')
 
-    def should_be_deployed(self):
-        self.client.application.get_by_id(self.application_guid)
 
     def bind_application(self):
         if self.instance_guid is None:
