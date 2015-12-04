@@ -7,25 +7,26 @@ Test Teardown   Run Keywords  Delete service instance
 *** Variables ***
 ${INACTIVITY_IN_S}  30
 ${INACTIVITY}  PT${INACTIVITY_IN_S}S
-
+&{INSTANCE_PARAMETERS}=	inactivity=${INACTIVITY}	excludeAppNameRegExp=${EXCLUDE_ALL_APP_NAMES}
 
 *** Test Cases ***
 
-1) Detect inactivity after http activity
+1) Unbound application should remain started
     [Documentation]     Check that app are still started ${DEFAULT_INACTIVITY} after their last http activity
 
-	Clean
-	Create service instance      {"inactivity": "${INACTIVITY}", "excludeAppNameRegExp" : "${EXCLUDE_ALL_APP_NAMES}"}
+	Clean all service data
+	Create service instance      ${INSTANCE_PARAMETERS}
 
-    Restart App         ${TESTED_APP_NAME}
+	Stop application
+	Start application
     Sleep               10
-    Check App Started   ${TESTED_APP_NAME}
+    Should be started
 
-	Bind service instance
-    Unbind service instance
+	Bind application
+    Unbind application
 
 	${maxToWait}=      Evaluate  ${INACTIVITY_IN_S}+${INACTIVITY_BUFFER_IN_S}
 	Sleep				${maxToWait}
-    Check App Started       ${TESTED_APP_NAME}
+    Should be started
 
 
