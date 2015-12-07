@@ -20,3 +20,6 @@ CLIENT_ENDPOINT = cfg.get("client", "target_endpoint")
 CLIENT_SKIP_SSL = cfg.get("client", "skip_ssl_verification").lower() == "true"
 CLIENT_USER = cfg.get("client", "username")
 CLIENT_PASSWORD = cfg.get("client", "password")
+
+
+AUTOSLEEP_ENDPOINT = cfg.get("autosleep", "target_endpoint")
