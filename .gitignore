@@ -18,3 +18,4 @@ output.xml
 report.html
 coverage-error.log
 *.pyc
+acceptance/acceptance.cfg

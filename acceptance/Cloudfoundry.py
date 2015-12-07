@@ -1,4 +1,4 @@
-from cloudfoundry_client import build_client_from_configuration, InvalidStatusCode
+from cloudfoundry_client import CloudFoundryClient, InvalidStatusCode
 import httplib
 import logging
 import json
@@ -7,9 +7,10 @@ import json
 class Cloudfoundry(object):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
 
-    def __init__(self, organization_name ,space_name, application_name, service_name, plan_name, instance_name, default_create_instance_parameters):
+    def __init__(self, target_endpoint, skip_verification, login, password, organization_name ,space_name, application_name, service_name, plan_name, instance_name, default_create_instance_parameters):
         Cloudfoundry._check_parameters(default_create_instance_parameters)
-        self.client = build_client_from_configuration()
+        self.client = CloudFoundryClient(target_endpoint, skip_verification=skip_verification)
+        self.client.credentials_manager.init_with_credentials(login, password)
         organization = self.client.organization.get_by_name(organization_name)
         if organization is None:
             raise AssertionError('Unknown organization %s' % organization_name)

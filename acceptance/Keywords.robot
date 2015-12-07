@@ -1,16 +1,9 @@
 *** Settings ***
 Library         String
 Library         Process
-
+Variables       Configuration.py
 
 *** Variables ***
-#autosleep under brokers-sandboxes
-${ORGANIZATION_NAME}    brokers-sandboxes
-${SPACE_NAME}	autosleep
-${SERVICE_NAME}	autosleep
-${PLAN_NAME}	default
-${TESTED_APP_NAME}	static_test
-${SERVICE_INSTANCE_NAME}  my-autosleep-acc
 ${DEFAULT_INACTIVITY_IN_S}  20
 ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
 ${EXCLUDE_ALL_APP_NAMES}  .*
@@ -19,7 +12,7 @@ ${INACTIVITY_BUFFER_IN_S}  20
 &{DEFAULT_INSTANCE_PARAMETERS}	inactivity=${DEFAULT_INACTIVITY}	excludeAppNameRegExp=${EXCLUDE_ALL_APP_NAMES}
 
 *** Settings ***
-Library			Cloudfoundry	${ORGANIZATION_NAME}    ${SPACE_NAME}	${TESTED_APP_NAME}	${SERVICE_NAME}	${PLAN_NAME}	${SERVICE_INSTANCE_NAME}   ${DEFAULT_INSTANCE_PARAMETERS}
+Library			Cloudfoundry	${CLIENT_ENDPOINT}    ${CLIENT_SKIP_SSL}	${CLIENT_USER}	${CLIENT_PASSWORD}      ${ORGANIZATION_NAME}    ${SPACE_NAME}	${TESTED_APP_NAME}	${SERVICE_NAME}	${PLAN_NAME}	${SERVICE_INSTANCE_NAME}   ${DEFAULT_INSTANCE_PARAMETERS}
 
 
 
