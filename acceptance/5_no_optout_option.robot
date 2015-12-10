@@ -72,11 +72,8 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
     # check unbind -> accept
     Unbind application
 
-0) No-optout service can change with admin secret
+6) No-optout service can change with admin secret
     [Documentation]        Check that the no-optout option can be changed if the admin secret is provided
-    # ask the tester for the admin secret
-    #${adminSecret} = 	Get Value From User 	Enter admin secret: 	 hidden=yes
-    ${adminSecret}=     Get Value From User On Console  Enter admin secret:
     # create service instance with noptout
     ${parameters}                Create Dictionary	inactivity=${DEFAULT_INACTIVITY}	excludeAppNameRegExp=${EXCLUDE_ALL_APP_NAMES}   no_optout=true  secret=${DEFAULT_SECRET}
     Create service instance       ${parameters}
@@ -84,8 +81,8 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
     # bound app
     Bind application
 
-    # update with right secret
-    ${parameters}                Create Dictionary	no_optout=false	secret=${adminSecret}
+    # update with right admin secret
+    ${parameters}                Create Dictionary	no_optout=false	secret=${USER_PASSWORD}
 
     # check unbind -> accept
     Unbind application

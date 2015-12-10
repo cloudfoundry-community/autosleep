@@ -17,8 +17,3 @@ Library         Autosleep       ${AUTOSLEEP_ENDPOINT}   ${USER_NAME}   ${USER_PA
 
 
 *** Keywords ***
-Get Value From User On Console
-    [Arguments]    ${prompt}
-    Evaluate    sys.__stdout__.write("""\n${prompt}""")    sys
-    ${input}=    Evaluate    unicode(raw_input())
-    [Return]    ${input}
