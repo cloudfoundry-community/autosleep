@@ -6,7 +6,7 @@ How to run the acceptance tests.
 ### What you need on your computer to run the test
 - Install robotframework. Check [the instructions](https://code.google.com/p/robotframework/wiki/Installation) on their website. Most of times, `pip install robotframework`will do.
 - Retrieve the content of the "acceptance" folder from the sources.
-- [CloudFoundry CLI](https://github.com/cloudfoundry/cli#downloads) installed .
+- The cloudfoundry python client. To install it, run in the console the following command ```pip install cloudfoundry-client```
 
 
 ### What you need in your cloudfoundry environment
@@ -14,17 +14,12 @@ How to run the acceptance tests.
 - Autosleep registered as a service broker (see [how to publish on the market place](publish.md)).
 
 ## Run the tests
-Edit `{ACCEPTANCE_TEST_DIRECTORY}/Keywords.robot` file, to edit this line
+1. First copy `{ACCEPTANCE_TEST_DIRECTORY}/acceptance.tmpl.cfg` under `{ACCEPTANCE_TEST_DIRECTORY}/acceptance.cfg`
+2. Fill the information in the  `{ACCEPTANCE_TEST_DIRECTORY}/acceptance.cfg` file
+3. Simply launch the test with the following command:
 
 ```
-${TESTED_APP_NAME}  static_test
-```
-Replace *static_test* with your test application name.
-
-Then simply launch the test with the following command:
-
-```
-pybot {ACCEPTANCE_TEST_DIRECTORY}
+pybot --pythonpath {ACCEPTANCE_TEST_DIRECTORY} {ACCEPTANCE_TEST_DIRECTORY}
 ```
 
 

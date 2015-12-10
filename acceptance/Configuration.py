@@ -13,8 +13,7 @@ SERVICE_NAME = cfg.get("information", "service_name")
 PLAN_NAME = cfg.get("information", "plan_name")
 TESTED_APP_NAME = cfg.get("information", "application_name")
 SERVICE_INSTANCE_NAME = cfg.get("information", "service_instance_name")
-USER_NAME = cfg.get("security", "user")
-USER_PASSWORD = cfg.get("security", "password")
+
 
 CLIENT_ENDPOINT = cfg.get("client", "target_endpoint")
 CLIENT_SKIP_SSL = cfg.get("client", "skip_ssl_verification").lower() == "true"
@@ -23,3 +22,5 @@ CLIENT_PASSWORD = cfg.get("client", "password")
 
 
 AUTOSLEEP_ENDPOINT = cfg.get("autosleep", "target_endpoint")
+USER_NAME = cfg.get("autosleep", "user")
+USER_PASSWORD = cfg.get("autosleep", "password")
