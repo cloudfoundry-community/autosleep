@@ -1,0 +1,29 @@
+@startuml
+title app FSM
+scale 350 width
+[*] --> Candidate
+
+state Candidate {
+}
+
+Candidate -> Enrolled: [auto-enrollment period tick \n && qualifies ]
+Candidate -> Enrolled: [bind request]
+
+state Enrolled {
+
+    state Active {
+      Started --> Stopping : [inactivity threshold met] \n/ register-route-service && stop
+      Starting --> Starting: [incoming traffic received]\n / queue-traffic
+      Starting --> Started: [start complete]\n / release queued traffic & unregister-route-service
+    }
+
+    state Sleeping {
+      Stopping --> Stopped
+      Stopped --> Starting: [incoming traffic received] / \n queue-traffic & start
+    }
+}
+
+Enrolled --> Candidate: [unbind request] / release any queued traffic \n& unregister-route-service if any
+
+@enduml
+

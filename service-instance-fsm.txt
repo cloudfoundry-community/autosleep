@@ -1,0 +1,12 @@
+@startuml
+title app FSM
+scale 350 width
+[*] --> StandardEnrollment
+StandardEnrollment --> ForcedEnrollment: [update(enrollment=forced,unlockSecret=s)]
+StandardEnrollment: delete(): accept
+ForcedEnrollment : unlockSecret
+ForcedEnrollment --> StandardEnrollment: [update(enrollment=regular,unlockSecret=s)]
+ForcedEnrollment --> StandardEnrollment: [update(enrollment=regular,admin_secret=s)]
+ForcedEnrollment: delete() : reject
+@enduml
+
