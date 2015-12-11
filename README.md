@@ -9,8 +9,8 @@ You can check the [specification proposal here] (https://docs.google.com/documen
 
 ### What's already working:
 For now we provide a [service broker] (https://docs.cloudfoundry.org/services/managing-service-brokers.html) which instances will:
-* automatically bind applications in space (according to a regexp).
-* watch every bound application, detect inactivity (based on **https logs** and **redeploy/restart events**) and stop the application if needed.
+* automatically bind applications in space (filtering out applications whose name matches a regexp).
+* watch every bound application, measure inactivity (based on **https logs** and **redeploy/restart events**) and stop the application when an inactivity threshold is reached.
 
 Download [latest release] (https://github.com/Orange-OpenSource/autosleep/releases/) if you want to have a try.
 
