@@ -23,7 +23,7 @@ public class AutosleepCatalogBuilder {
         return new Catalog(Collections.singletonList(new ServiceDefinition(
                 "autosleep",
                 "autosleep",
-                "Service that put your application to sleep when inactive",
+                "Automatically stops inactive apps",
                 true,
                 false,
                 Collections.singletonList(
