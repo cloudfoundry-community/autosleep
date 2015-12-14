@@ -82,12 +82,12 @@ public class DashboardControllerTest {
     public void testApps() throws Exception {
         when(serviceRepository.findOne(any())).thenReturn(getServiceInstance(false));
 
-        mockMvc.perform(get(Config.Path.dashboardPrefix + serviceInstanceId).accept(MediaType.TEXT_HTML)).andExpect(
-                status().isOk());
+        mockMvc.perform(get(Config.Path.dashboardContext + "/" + serviceInstanceId).accept(MediaType.TEXT_HTML))
+                .andExpect(status().isOk());
 
         when(serviceRepository.findOne(any())).thenReturn(getServiceInstance(true));
-        mockMvc.perform(get(Config.Path.dashboardPrefix + serviceInstanceId).accept(MediaType.TEXT_HTML)).andExpect(
-                status().isOk());
+        mockMvc.perform(get(Config.Path.dashboardContext + "/" + serviceInstanceId).accept(MediaType.TEXT_HTML))
+                .andExpect(status().isOk());
     }
 
 

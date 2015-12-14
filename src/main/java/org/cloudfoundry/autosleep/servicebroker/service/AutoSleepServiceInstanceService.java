@@ -79,7 +79,7 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
             request.setParameters(processParameters(null, request.getParameters()));
             serviceInstance = new AutosleepServiceInstance(request);
             if (deployment != null) {
-                serviceInstance.withDashboardUrl(deployment.getFirstUri() + Config.Path.dashboardPrefix + serviceId);
+                serviceInstance.withDashboardUrl(deployment.getFirstUri() + Config.Path.dashboardContext + serviceId);
             }
             // save in repository before calling remote because otherwise local service binding controller will
             // fail retrieving the service

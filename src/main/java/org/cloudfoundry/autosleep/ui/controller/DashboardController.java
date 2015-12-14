@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Controller
-@RequestMapping(Config.Path.dashboardPrefix)
+@RequestMapping(Config.Path.dashboardContext)
 @Slf4j
 public class DashboardController {
 

@@ -10,7 +10,10 @@ public interface Config {
     Duration delayBeforeFirstServiceCheck = Duration.ofSeconds(10);
 
     interface Path {
-        String dashboardPrefix = "/dashboard/";
+        String apiContext = "/api";
+        String servicesSubPath = "/services/";
+        String applicationsSubPath = "/applications/";
+        String dashboardContext = "/dashboard";
     }
 
 
