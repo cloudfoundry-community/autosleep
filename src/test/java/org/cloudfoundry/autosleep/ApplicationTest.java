@@ -11,9 +11,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 
 import javax.annotation.PostConstruct;
 
-/**
- * Created by ben on 06/11/15.
- */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {ApplicationTest.MockClientConfiguration.class, Application.class})
 @WebAppConfiguration

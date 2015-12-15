@@ -1,7 +1,9 @@
 package org.cloudfoundry.autosleep.servicebroker.configuration;
 
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
+import org.cloudfoundry.community.servicebroker.model.DashboardClient;
 import org.cloudfoundry.community.servicebroker.model.Plan;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +23,14 @@ public class AutosleepCatalogBuilder {
     private static final String DEFAULT_PLAN_UNIQUE_ID = "78C0A1DB-ACC9-4B6D-AF22-A1EF63C2CE06";
 
     private static final String DEFAULT_SERVICE_BROKER_ID = "autosleep";
+    private static final String DEFAULT_DASHBOARD_CLIENT_SECRET = "p-autosleep-secret";
+    private static final String DEFAULT_DASHBOARD_CLIENT_ID = "p-autosleep-id";
 
     @Autowired
     private Environment environment;
+
+    @Autowired
+    private Deployment deployment;
 
     @Bean
     public Catalog buildCatalog() {
@@ -43,7 +50,7 @@ public class AutosleepCatalogBuilder {
                 Arrays.asList("autosleep", "document"),
                 getServiceDefinitionMetadata(),
                 null,
-                null)));
+                getDashboardClient())));
     }
 
     /* Used by Pivotal CF console */
@@ -58,6 +65,15 @@ public class AutosleepCatalogBuilder {
         sdMetadata.put("documentationUrl", "https://github.com/Orange-OpenSource/autosleep");
         sdMetadata.put("supportUrl", "https://github.com/Orange-OpenSource/autosleep");
         return sdMetadata;
+    }
+
+    private DashboardClient getDashboardClient() {
+        String redirectUri = deployment.getFirstUri() + Config.Path.OAUTH_CONTEXT;
+        String dashboardId = environment.getProperty(Config.EnvKey.DASHBOARD_CLIENT_ID,
+                DEFAULT_DASHBOARD_CLIENT_ID);
+        String dashboardSecret = environment.getProperty(Config.EnvKey.DASHBOARD_CLIENT_SECRET,
+                DEFAULT_DASHBOARD_CLIENT_SECRET);
+        return new DashboardClient(dashboardId,dashboardSecret,redirectUri);
     }
 
 

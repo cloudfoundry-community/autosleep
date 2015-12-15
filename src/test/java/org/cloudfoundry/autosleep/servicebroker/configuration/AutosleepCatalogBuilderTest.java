@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep.servicebroker.configuration;
+    package org.cloudfoundry.autosleep.servicebroker.configuration;
 
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.Plan;
