@@ -9,4 +9,3 @@ ForcedEnrollment : unlockSecret
 ForcedEnrollment --> StandardEnrollment: [update(enrollment=regular,unlockSecret=s)]
 ForcedEnrollment --> StandardEnrollment: [update(enrollment=regular,unlockSecret=adminSecret)]
 ForcedEnrollment : unbind(): accept but still candidate to automatic enrollment
-ForcedEnrollment
