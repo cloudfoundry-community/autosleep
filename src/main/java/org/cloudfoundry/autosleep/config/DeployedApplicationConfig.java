@@ -12,7 +12,6 @@ import java.io.IOException;
 @Configuration
 @Slf4j
 public class DeployedApplicationConfig {
-    static final String APPLICATION_DESCRIPTION_ENVIRONMENT_KEY = "VCAP_APPLICATION";
 
     @Autowired
     private Environment environment;
@@ -21,7 +20,7 @@ public class DeployedApplicationConfig {
 
     @Bean
     public Deployment loadCurrentDeployment() throws IOException {
-        String deployment = environment.getProperty(APPLICATION_DESCRIPTION_ENVIRONMENT_KEY);
+        String deployment = environment.getProperty(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY);
         if (deployment == null) {
             return null;
         } else {
