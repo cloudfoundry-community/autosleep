@@ -20,6 +20,7 @@ public interface Config {
     interface EnvKey {
         String SECURITY_PASSWORD = "security.user.password";
 
+
         String CF_PASSWORD = "cf.client.password";
         String CF_USERNAME = "cf.client.username";
         String CF_CLIENT_ID = "cf.client.clientId";
@@ -28,6 +29,8 @@ public interface Config {
         String CF_ENDPOINT = "cf.client.target.endpoint";
 
         String CF_ENCODING_SECRET = "cf.security.password.encodingSecret";
+
+        String CF_SERVICE_BROKER_ID = "cf.service.broker.id";
 
     }
 }
