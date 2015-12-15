@@ -1,5 +1,5 @@
 @startuml
-title app FSM
+title Service Instance FSM
 scale 1024 width
 [*] --> StandardEnrollment
 StandardEnrollment --> ForcedEnrollment: [update(enrollment=forced,unlockSecret=s)]

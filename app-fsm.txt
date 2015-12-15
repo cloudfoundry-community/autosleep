@@ -1,13 +1,25 @@
 @startuml
 title app FSM
 scale 350 width
-[*] --> Candidate
 
-state Candidate {
+[*] --> Candidate: scan apps in space
+
+
+state NotEnrolled {
+
+
+
+    state Candidate {
+     }
+
+    Candidate --> Enrolled: [auto-enrollment period tick \n && qualifies ]
+    NotEnrolled --> Enrolled: [bind request]
+
+    state OptedOut {
+    }
 }
 
-Candidate -> Enrolled: [auto-enrollment period tick \n && qualifies ]
-Candidate -> Enrolled: [bind request]
+NotEnrolled: onEntry: release any queued traffic \n& unregister-route-service if any
 
 state Enrolled {
 
@@ -18,12 +30,20 @@ state Enrolled {
     }
 
     state Sleeping {
-      Stopping --> Stopped
+
+      state Stopping {
+
+      }
+
+      Stopping --> Stopped: [stop completes]
       Stopped --> Starting: [incoming traffic received] / \n queue-traffic & start
+      Stopped --> Starting: [start request]
     }
 }
 
-Enrolled --> Candidate: [unbind request] / release any queued traffic \n& unregister-route-service if any
+Enrolled --> Candidate: [unbind request\n && forced-enrollment]
+Enrolled --> OptedOut: [unbind request\n && standard-enrollment]
+
 
 @enduml
 
