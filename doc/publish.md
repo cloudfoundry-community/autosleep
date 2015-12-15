@@ -19,6 +19,7 @@ Autosleep service needs properties to work . The properties that are used are:
 - __cf.client.clientId__: the client id of the application (optional)
 - __cf.client.clientSecret__: the client secret of the application (optional)
 - __cf.security.password.encodingSecret__: the secret used to hash password (optional). If none provided, it will use "".
+- __cf.service.broker.id__: the service broker id. If none provided, it will use "autosleep".
 
 There are two ways of providing these properties to autosleep.
 

@@ -58,7 +58,7 @@ public class AutosleepServiceInstance extends ServiceInstance {
 
     public AutosleepServiceInstance(CreateServiceInstanceRequest request) throws HttpMessageNotReadableException {
         super(request);
-        interval = Config.defaultInactivityPeriod;
+        interval = Config.DEFAULT_INACTIVITY_PERIOD;
         noOptOut = Boolean.FALSE;
         updateFromParameters(request.getParameters());
     }

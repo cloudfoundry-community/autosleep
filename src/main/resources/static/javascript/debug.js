@@ -5,7 +5,6 @@ function DebugHelper  (pathServiceInstance, serviceDefinitionId, planId) {
     this.pathDashboardPfx = "/dashboard/";
     this.pathApiByServicePfx = "/api/services/";
     this.pathApiListBindingSfx = "/bindings/";
-    this.pathApiListApplicationSfx = "/applications/";
     this.pathApiListApplications = "/api/applications/";
     this.pathDebugPageServiceBindingsPfx = "/admin/debug/";
     this.pathDebugPageServiceBindingsSfx = "/bindings/";
@@ -15,21 +14,11 @@ function DebugHelper  (pathServiceInstance, serviceDefinitionId, planId) {
     console.log("DebugHelper - "+serviceDefinitionId+" - "+planId);
 }
 
-DebugHelper.prototype.listApplicationsById = function(serviceInstanceId){
-    var targetUrl =  this.pathApiByServicePfx+serviceInstanceId +this.pathApiListApplicationSfx;
-    this.listApplications(targetUrl,false);
-};
 
-DebugHelper.prototype.listAllApplications = function(){
-    var targetUrl =  this.pathApiListApplications;
-    this.listApplications(targetUrl,true);
-};
-
-
-DebugHelper.prototype.listApplications = function (targetUrl, showDeleteButton ){
+DebugHelper.prototype.listApplications = function (){
     var that = this;
     $.ajax({
-        url : targetUrl,
+        url : this.pathApiListApplications,
         success : function (serverResponse) {
             var container = $("#allApplications");
             var row ;
@@ -73,15 +62,13 @@ DebugHelper.prototype.listApplications = function (targetUrl, showDeleteButton )
 
                 row.append(stateElement);
 
-                if(showDeleteButton){
-                    var button = $("<button>", {type : "button"}).addClass("btn btn-circle")
-                        .append($("<i>").addClass("glyphicon glyphicon-remove text-center"));
-                    row.append($("<div>").addClass("col-xs-1").append(button));
-                    button.on("click", function(e){
-                        e.preventDefault();
-                        that.deleteApplication(application.uuid);
-                    });
-                }
+                var button = $("<button>", {type : "button"}).addClass("btn btn-circle")
+                    .append($("<i>").addClass("glyphicon glyphicon-remove text-center"));
+                row.append($("<div>").addClass("col-xs-1").append(button));
+                button.on("click", function(e){
+                    e.preventDefault();
+                    that.deleteApplication(application.uuid);
+                });
 
                 container.append(row);
             });

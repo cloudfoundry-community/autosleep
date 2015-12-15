@@ -4,7 +4,12 @@ layout 'layouts/main.tpl', true,
         pageTitle: 'Applications',
         noNavigation: skipNavigation,
         additionalScripts: contents {
-            script(src: '/javascript/debug.js', "")
+            if (serviceInstance) {
+                script(src: '/javascript/dashboard.js', "")
+            } else {
+                script(src: '/javascript/debug.js', "")
+            }
+
             script(type: "text/javascript") {
                 yieldUnescaped 'var helper = null;'
 
@@ -16,20 +21,19 @@ layout 'layouts/main.tpl', true,
 
                 yieldUnescaped 'window.onload = function(){ '
                 yieldUnescaped 'initNavbar();'
-                yieldUnescaped 'helper = new DebugHelper("'
-                yield "$pathServiceInstances"
-                yieldUnescaped '", "'
-                yield "$serviceDefinitionId"
-                yieldUnescaped '", "'
-                yield "$planId"
-                yieldUnescaped '");'
-
                 if (serviceInstance) {
-                    yieldUnescaped "helper.listApplicationsById(serviceInstance);"
-                } else {
-                    yieldUnescaped "helper.listAllApplications();"
+                    yieldUnescaped 'helper = new DashboardHelper();'
+                    yieldUnescaped "helper.listApplications(serviceInstance);"
+                } else{
+                    yieldUnescaped 'helper = new DebugHelper("'
+                    yield "$pathServiceInstances"
+                    yieldUnescaped '", "'
+                    yield "$serviceDefinitionId"
+                    yieldUnescaped '", "'
+                    yield "$planId"
+                    yieldUnescaped '");'
+                    yieldUnescaped "helper.listApplications();"
                 }
-
                 yieldUnescaped '}'
             }
         },

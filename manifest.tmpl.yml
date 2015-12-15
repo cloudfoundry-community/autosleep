@@ -18,4 +18,6 @@ applications:
       -Dcf.client.password=<password>
       -Dcf.client.clientId=<client_id>
       -Dcf.client.clientSecret=<client_secret>
+      -Dcf.security.password.encodingSecret=<password_encoding_secret>
+      -Dcf.service.broker.id=<service_broker_id>
     

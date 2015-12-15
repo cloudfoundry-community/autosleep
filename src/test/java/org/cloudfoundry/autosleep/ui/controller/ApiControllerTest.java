@@ -2,6 +2,7 @@ package org.cloudfoundry.autosleep.ui.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
@@ -91,7 +92,7 @@ public class ApiControllerTest {
     public void init() {
         objectMapper = new ObjectMapper();
         doAnswer(invocationOnMock -> {
-            ((Runnable)invocationOnMock.getArguments()[1]).run();
+            ((Runnable) invocationOnMock.getArguments()[1]).run();
             return null;
         }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
         mockMvc = MockMvcBuilders.standaloneSetup(apiController).build();
@@ -115,7 +116,7 @@ public class ApiControllerTest {
         when(serviceRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
 
 
-        mockMvc.perform(get("/api/services/").accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH).accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
@@ -140,7 +141,7 @@ public class ApiControllerTest {
                 null, null, UUID.randomUUID().toString());
         when(bindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
 
-        mockMvc.perform(get("/api/services/" + serviceInstanceId + "/bindings/")
+        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "/bindings/")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
@@ -158,7 +159,8 @@ public class ApiControllerTest {
 
 
                 });
-        mockMvc.perform(get("/api/services/" + serviceInstanceId + "-tmp" + "/bindings/")
+        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "-tmp"
+                + "/bindings/")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
@@ -183,7 +185,7 @@ public class ApiControllerTest {
         applicationInfo.addBoundService("serviceId");
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
-        mockMvc.perform(get("/api/applications/")
+        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.APPLICATIONS_SUB_PATH)
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content()
@@ -205,7 +207,7 @@ public class ApiControllerTest {
     @Test
     public void testDeleteApplication() throws Exception {
         String applicationId = "applicationToDelete";
-        mockMvc.perform(delete("/api/applications/" + applicationId))
+        mockMvc.perform(delete(Config.Path.API_CONTEXT + Config.Path.APPLICATIONS_SUB_PATH + applicationId))
                 .andExpect(status().is(HttpStatus.NO_CONTENT.value()))
                 .andDo(mvcResult -> verify(applicationRepository, times(1)).delete(eq(applicationId)));
 
@@ -221,7 +223,7 @@ public class ApiControllerTest {
         applicationInfo.addBoundService(serviceId);
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
-        mockMvc.perform(get("/api/services/" + serviceId + "/applications/")
+        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceId + "/applications/")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content()
