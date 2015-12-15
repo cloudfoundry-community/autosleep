@@ -1,5 +1,6 @@
 package org.cloudfoundry.autosleep.config;
 
+import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -7,18 +8,13 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.core.env.Environment;
 
-import java.util.Arrays;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -39,14 +35,14 @@ public class DeployedApplicationConfigTest {
 
     @Test
     public void testLoadCurrentDeployment() throws Exception {
-        when(environment.getProperty(eq(DeployedApplicationConfig.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY)))
+        when(environment.getProperty(eq(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY)))
                 .thenReturn(null);
         Deployment deployment = config.loadCurrentDeployment();
         assertThat(deployment, is(nullValue()));
 
-        when(environment.getProperty(eq(DeployedApplicationConfig.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY)))
-                .thenReturn(getSampleVcapApplication())
-                .thenReturn(getSampleVcapApplication(URIS));
+        when(environment.getProperty(eq(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY)))
+                .thenReturn(BeanGenerator.getSampleVcapApplication(APP_ID, APPLICATION_NAME))
+                .thenReturn(BeanGenerator.getSampleVcapApplication(APP_ID, APPLICATION_NAME, URIS));
         deployment = config.loadCurrentDeployment();
         assertThat(deployment.getApplicationUris(), is(notNullValue()));
         assertThat(deployment.getApplicationUris().size(), is(equalTo(0)));
@@ -62,33 +58,4 @@ public class DeployedApplicationConfigTest {
 
     }
 
-    private String getSampleVcapApplication(String ... uris) {
-        return "{\"limits\":{\"mem\":1024,\"disk\":1024,\"fds\":16384},"
-                + "\"application_id\":\"" + APP_ID.toString() + "\","
-                + "\"application_version\":\"b546c9d4-8885-4d50-a855-490ddb5b5a1c\","
-                + "\"application_name\":\"" + APPLICATION_NAME + "\","
-                + "\"application_uris\":["
-                + String.join(", ",
-                Arrays.asList(uris).stream()
-                        .map(uri -> "\"" + uri + "\"")
-                        .collect(Collectors.toList()))
-                + "],"
-                + " \"version\":\"b546c9d4-8885-4d50-a855-490ddb5b5a1c\","
-                + "\"name\":\"autosleep-app\","
-                + "\"space_name\":\"autosleep\""
-                + ",\"space_id\":\"2d745a4b-67e3-4398-986e-2adbcf8f7ec9\","
-                + "\"uris\":[\"autosleep-app-ben.cf.ns.nd-paas.itn.ftgroup\","
-                + "\"autosleep-nonnational-artotype.cf.ns.nd-paas.itn.ftgroup\","
-                + "\"autosleep.cf.ns.nd-paas.itn.ftgroup\"]"
-                + ",\"users\":null,"
-                + "\"instance_id\":\"7984a682cab9447891674f862299c77f\","
-                + "\"instance_index\":0,"
-                + "\"host\":\"0.0.0.0\","
-                + "\"port\":61302,"
-                + "\"started_at\":\"2015-11-18 15:49:06 +0000\","
-                + "\"started_at_timestamp\":1447861746,"
-                + "\"start\":\"2015-11-18 15:49:06 +0000\","
-                + "\"state_timestamp\":1447861746"
-                + "}";
-    }
 }

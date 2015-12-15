@@ -14,12 +14,12 @@ public interface Config {
         String SERVICES_SUB_PATH = "/services/";
         String APPLICATIONS_SUB_PATH = "/applications/";
         String DASHBOARD_CONTEXT = "/dashboard";
+        String OAUTH_CONTEXT = "/auth/callback'";
     }
 
 
     interface EnvKey {
         String SECURITY_PASSWORD = "security.user.password";
-
 
         String CF_PASSWORD = "cf.client.password";
         String CF_USERNAME = "cf.client.username";
@@ -31,6 +31,12 @@ public interface Config {
         String CF_ENCODING_SECRET = "cf.security.password.encodingSecret";
 
         String CF_SERVICE_BROKER_ID = "cf.service.broker.id";
+
+
+        String DASHBOARD_CLIENT_ID = "dashboard.client.id";
+        String DASHBOARD_CLIENT_SECRET = "dashboard.client.secret";
+
+        String APPLICATION_DESCRIPTION_ENVIRONMENT_KEY = "VCAP_APPLICATION";
 
     }
 }
