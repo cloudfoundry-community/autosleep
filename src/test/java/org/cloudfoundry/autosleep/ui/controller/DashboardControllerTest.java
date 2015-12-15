@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -80,14 +82,19 @@ public class DashboardControllerTest {
 
     @Test
     public void testApps() throws Exception {
-        when(serviceRepository.findOne(any())).thenReturn(getServiceInstance(false));
+        when(serviceRepository.findOne(eq(serviceInstanceId)))
+                .thenReturn(getServiceInstance(false))
+                .thenReturn(getServiceInstance(true))
+                .thenReturn(null);
 
-        mockMvc.perform(get(Config.Path.dashboardContext + "/" + serviceInstanceId).accept(MediaType.TEXT_HTML))
+        mockMvc.perform(get(Config.Path.DASHBOARD_CONTEXT + "/" + serviceInstanceId).accept(MediaType.TEXT_HTML))
                 .andExpect(status().isOk());
 
-        when(serviceRepository.findOne(any())).thenReturn(getServiceInstance(true));
-        mockMvc.perform(get(Config.Path.dashboardContext + "/" + serviceInstanceId).accept(MediaType.TEXT_HTML))
+        mockMvc.perform(get(Config.Path.DASHBOARD_CONTEXT + "/" + serviceInstanceId).accept(MediaType.TEXT_HTML))
                 .andExpect(status().isOk());
+
+        mockMvc.perform(get(Config.Path.DASHBOARD_CONTEXT + "/" + serviceInstanceId).accept(MediaType.TEXT_HTML))
+                .andExpect(status().is(HttpStatus.NOT_FOUND.value()));
     }
 
 

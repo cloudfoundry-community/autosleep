@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-@RequestMapping(Config.Path.apiContext)
+@RequestMapping(Config.Path.API_CONTEXT)
 @Slf4j
 public class ApiController {
 
@@ -42,7 +42,7 @@ public class ApiController {
     private ApplicationLocker applicationLocker;
 
 
-    @RequestMapping(value = Config.Path.servicesSubPath + "{instanceId}/applications/")
+    @RequestMapping(value = Config.Path.SERVICES_SUB_PATH + "{instanceId}/applications/")
     @ResponseBody
     public ServerResponse<List<ApplicationInfo>> listApplicationsById(@PathVariable("instanceId") String
                                                                               serviceInstanceId) {
@@ -56,7 +56,7 @@ public class ApiController {
         return new ServerResponse<>(Instant.now(), result);
     }
 
-    @RequestMapping(Config.Path.servicesSubPath)
+    @RequestMapping(Config.Path.SERVICES_SUB_PATH)
     @ResponseBody
     public ServerResponse<List<AutosleepServiceInstance>> listInstances() {
         log.debug("listServiceInstances");
@@ -65,7 +65,7 @@ public class ApiController {
         return new ServerResponse<>(Instant.now(), result);
     }
 
-    @RequestMapping(Config.Path.servicesSubPath + "{instanceId}/bindings/")
+    @RequestMapping(Config.Path.SERVICES_SUB_PATH + "{instanceId}/bindings/")
     @ResponseBody
     public ServerResponse<List<ApplicationBinding>> listBindings(@PathVariable("instanceId") String serviceInstanceId)
             throws ServiceInstanceDoesNotExistException {
@@ -80,7 +80,7 @@ public class ApiController {
         return new ServerResponse<>(Instant.now(), result);
     }
 
-    @RequestMapping(value = Config.Path.applicationsSubPath)
+    @RequestMapping(value = Config.Path.APPLICATIONS_SUB_PATH)
     @ResponseBody
     public ServerResponse<List<ApplicationInfo>> listApplications() {
         log.debug("listApplications");
@@ -90,7 +90,7 @@ public class ApiController {
     }
 
 
-    @RequestMapping(value = Config.Path.applicationsSubPath + "{applicationId}", method = RequestMethod.DELETE)
+    @RequestMapping(value = Config.Path.APPLICATIONS_SUB_PATH + "{applicationId}", method = RequestMethod.DELETE)
     public ResponseEntity<String> deleteApplication(@PathVariable("applicationId") String applicationId) {
         log.debug("deleteApplication - {}", applicationId);
         applicationLocker.executeThreadSafe(applicationId, () -> {

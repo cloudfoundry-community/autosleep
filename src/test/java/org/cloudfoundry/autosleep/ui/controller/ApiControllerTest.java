@@ -116,7 +116,7 @@ public class ApiControllerTest {
         when(serviceRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
 
 
-        mockMvc.perform(get(Config.Path.apiContext + Config.Path.servicesSubPath).accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH).accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
@@ -141,7 +141,7 @@ public class ApiControllerTest {
                 null, null, UUID.randomUUID().toString());
         when(bindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
 
-        mockMvc.perform(get(Config.Path.apiContext + Config.Path.servicesSubPath + serviceInstanceId + "/bindings/")
+        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "/bindings/")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
@@ -159,7 +159,7 @@ public class ApiControllerTest {
 
 
                 });
-        mockMvc.perform(get(Config.Path.apiContext + Config.Path.servicesSubPath + serviceInstanceId + "-tmp"
+        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "-tmp"
                 + "/bindings/")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content()
@@ -185,7 +185,7 @@ public class ApiControllerTest {
         applicationInfo.addBoundService("serviceId");
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
-        mockMvc.perform(get(Config.Path.apiContext + Config.Path.applicationsSubPath)
+        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.APPLICATIONS_SUB_PATH)
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content()
@@ -207,7 +207,7 @@ public class ApiControllerTest {
     @Test
     public void testDeleteApplication() throws Exception {
         String applicationId = "applicationToDelete";
-        mockMvc.perform(delete(Config.Path.apiContext + Config.Path.applicationsSubPath + applicationId))
+        mockMvc.perform(delete(Config.Path.API_CONTEXT + Config.Path.APPLICATIONS_SUB_PATH + applicationId))
                 .andExpect(status().is(HttpStatus.NO_CONTENT.value()))
                 .andDo(mvcResult -> verify(applicationRepository, times(1)).delete(eq(applicationId)));
 
@@ -223,7 +223,7 @@ public class ApiControllerTest {
         applicationInfo.addBoundService(serviceId);
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
-        mockMvc.perform(get(Config.Path.apiContext + Config.Path.servicesSubPath + serviceId + "/applications/")
+        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceId + "/applications/")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content()

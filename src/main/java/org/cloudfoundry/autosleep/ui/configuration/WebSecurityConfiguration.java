@@ -15,8 +15,8 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.antMatcher("/**").authorizeRequests().anyRequest().authenticated();
-        http.requestMatchers().antMatchers(Config.Path.dashboardContext + "/**",
-                Config.Path.apiContext + Config.Path.servicesSubPath + "/*/applications/",
+        http.requestMatchers().antMatchers(Config.Path.DASHBOARD_CONTEXT + "/**",
+                Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + "/*/applications/",
                 "/css/**", "/fonts/**",
                 "/javascript/**").and().authorizeRequests().anyRequest().anonymous();
     }

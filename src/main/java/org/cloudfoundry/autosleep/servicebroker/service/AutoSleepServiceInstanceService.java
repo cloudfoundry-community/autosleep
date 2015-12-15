@@ -79,12 +79,13 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
             request.setParameters(processParameters(null, request.getParameters()));
             serviceInstance = new AutosleepServiceInstance(request);
             if (deployment != null) {
-                serviceInstance.withDashboardUrl(deployment.getFirstUri() + Config.Path.dashboardContext + serviceId);
+                serviceInstance.withDashboardUrl(deployment.getFirstUri() + Config.Path.DASHBOARD_CONTEXT + "/"
+                        + serviceId);
             }
             // save in repository before calling remote because otherwise local service binding controller will
             // fail retrieving the service
             serviceRepository.save(serviceInstance);
-            watcher.watchServiceBindings(serviceInstance, Config.delayBeforeFirstServiceCheck);
+            watcher.watchServiceBindings(serviceInstance, Config.DELAY_BEFORE_FIRST_SERVICE_CHECK);
         }
         return serviceInstance;
     }
@@ -157,12 +158,12 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
             if (receivedSecret != null) {
                 if (passwordEncoder.matches((String) receivedSecret, existingSecret)) {
                     log.debug("secret password provided is correct");
-                } else if (receivedSecret.equals(environment.getProperty(Config.EnvKey.password))) {
+                } else if (receivedSecret.equals(environment.getProperty(Config.EnvKey.SECURITY_PASSWORD))) {
                     log.debug("SUPER SECRET provided");
                 } else {
                     throw new InvalidParameterException(AutosleepServiceInstance.SECRET_PARAMETER,
-                            "Provided secret does not match the one provided on creation nor the " + Config.EnvKey
-                                    .password + " value.");
+                            "Provided secret does not match the one provided on creation nor the "
+                                    + Config.EnvKey.SECURITY_PASSWORD + " value.");
                 }
             } else {
                 throw new InvalidParameterException(AutosleepServiceInstance.SECRET_PARAMETER, "No secret provided.");

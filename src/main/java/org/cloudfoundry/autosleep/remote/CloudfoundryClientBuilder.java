@@ -25,13 +25,13 @@ public class CloudfoundryClientBuilder {
 
     @Bean
     public CloudFoundryClient buildClient() {
-        final String targetEndpoint = env.getProperty(Config.EnvKey.cfEndPoint);
-        final boolean skipSslValidation = Boolean.parseBoolean(env.getProperty(Config.EnvKey.cfSkipSSLValidation,
+        final String targetEndpoint = env.getProperty(Config.EnvKey.CF_ENDPOINT);
+        final boolean skipSslValidation = Boolean.parseBoolean(env.getProperty(Config.EnvKey.CF_SKIP_SSL_VALIDATION,
                 "false"));
-        final String username = env.getProperty(Config.EnvKey.cfUserName);
-        final String password = env.getProperty(Config.EnvKey.cfPassword);
-        final String clientId = env.getProperty(Config.EnvKey.cfClientId, "");
-        final String clientSecret = env.getProperty(Config.EnvKey.cfClientSecret, "");
+        final String username = env.getProperty(Config.EnvKey.CF_USERNAME);
+        final String password = env.getProperty(Config.EnvKey.CF_PASSWORD);
+        final String clientId = env.getProperty(Config.EnvKey.CF_CLIENT_ID, "");
+        final String clientSecret = env.getProperty(Config.EnvKey.CF_CLIENT_SECRET, "");
         try {
 
             log.debug("buildClient - targetEndpoint={}", targetEndpoint);

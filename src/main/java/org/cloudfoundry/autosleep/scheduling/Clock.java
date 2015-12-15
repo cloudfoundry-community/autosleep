@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +22,7 @@ public class Clock {
 
     //TODO redis that
     private final Map<String/*taskId*/, ScheduledFuture<?>> tasks = new HashMap<>();
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Config.nbThreadForTask);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Config.NB_THREAD_FOR_TASK);
 
     /**
      * Schedule a Runnable to be run after a certain delay.

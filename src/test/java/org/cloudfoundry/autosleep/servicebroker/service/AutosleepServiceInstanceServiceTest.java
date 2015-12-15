@@ -104,7 +104,7 @@ public class AutosleepServiceInstanceServiceTest {
 
         deleteRequest = new DeleteServiceInstanceRequest(SERVICE_INSTANCE_ID, SERVICE_DEFINITION_ID, PLAN_ID);
 
-        when(environment.getProperty(Config.EnvKey.password)).thenReturn(superPassword);
+        when(environment.getProperty(Config.EnvKey.SECURITY_PASSWORD)).thenReturn(superPassword);
 
     }
 
@@ -126,7 +126,7 @@ public class AutosleepServiceInstanceServiceTest {
         assertThat(si, is(notNullValue()));
 
         verify(globalWatcher, times(1)).watchServiceBindings((AutosleepServiceInstance) si,
-                Config.delayBeforeFirstServiceCheck);
+                Config.DELAY_BEFORE_FIRST_SERVICE_CHECK);
         verify(serviceRepository, times(1)).save(any(AutosleepServiceInstance.class));
 
         assertThat(si, is(instanceOf(AutosleepServiceInstance.class)));
