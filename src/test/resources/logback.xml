@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration debug="true">
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <Target>System.out</Target>
+        <encoder>
+            <pattern>%-5level %logger{30}\(%line\) - %message%n</pattern>
+        </encoder>
+    </appender>
+    <logger name="org.cloudfoundry.integrationclient" >
+        <level value="DEBUG" />
+    </logger>
+    <logger name="org.cloudfoundry.client.spring.util" >
+        <level value="DEBUG" />
+    </logger>
+    <logger name="org.apache.http.wire">
+        <level value="DEBUG" />
+    </logger>
+
+    <root>
+        <appender-ref ref="stdout" />
+        <!--<level value="OFF" />-->
+        <level value="DEBUG" />
+    </root>
+</configuration>

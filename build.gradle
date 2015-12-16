@@ -1,0 +1,57 @@
+
+buildscript {
+    dependencies {
+    }
+    repositories {
+        mavenLocal()
+        jcenter()
+    }
+}
+repositories {
+    mavenLocal()
+    jcenter()
+    //Forced to use it for org.cloudfoundry:spring-boot-cf-service-broker,
+    // maven { url "http://repo.spring.io/libs-snapshot" }
+    //URL repo to get the desired compiled version
+    maven { url "https://jitpack.io" }
+}
+
+apply plugin: 'java'
+apply plugin: 'war'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
+
+task wrapper(type: Wrapper) {
+    gradleVersion = "2.7"
+}
+
+
+dependencies {
+    // Lombok
+    providedCompile "org.projectlombok:lombok:$lombokVersion"
+    //Client library
+    //compile "org.cloudfoundry:cloudfoundry-client-lib:$cfClientLibVersion"
+    compile("com.github.cloudfoundry:cf-java-client:$cfClientLibCommitId")
+    //Logs
+    compile "org.slf4j:slf4j-api:$slf4jVersion"
+    compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+    compile "ch.qos.logback:logback-classic:$logbakVersion"
+
+    //stream
+    compile "io.projectreactor:reactor-core:$reactorVersion"
+    compile "io.projectreactor:reactor-stream:$reactorVersion"
+
+    testCompile "junit:junit:$junitVersion"
+    testCompile "org.springframework:spring-test:$springTestVersion"
+
+}
+
+sourceSets.main.compileClasspath += configurations.providedCompile
+sourceSets.test.compileClasspath += configurations.providedCompile
+sourceSets.test.runtimeClasspath += configurations.providedCompile
