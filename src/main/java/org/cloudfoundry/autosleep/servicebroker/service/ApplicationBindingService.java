@@ -19,6 +19,7 @@ import org.cloudfoundry.community.servicebroker.service.ServiceInstanceBindingSe
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -26,7 +27,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-public class AutosleepServiceInstanceBindingService implements ServiceInstanceBindingService {
+public class ApplicationBindingService implements ServiceInstanceBindingService {
 
     private ApplicationRepository appRepository;
 
@@ -39,11 +40,11 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
     private ApplicationLocker applicationLocker;
 
     @Autowired
-    public AutosleepServiceInstanceBindingService(ApplicationRepository appRepository,
-                                                  ServiceRepository serviceRepository,
-                                                  BindingRepository bindingRepository,
-                                                  GlobalWatcher watcher,
-                                                  ApplicationLocker applicationLocker) {
+    public ApplicationBindingService(ApplicationRepository appRepository,
+                                     ServiceRepository serviceRepository,
+                                     BindingRepository bindingRepository,
+                                     GlobalWatcher watcher,
+                                     ApplicationLocker applicationLocker) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.bindingRepository = bindingRepository;
@@ -56,24 +57,20 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
             ServiceInstanceBindingExistsException, ServiceBrokerException {
         final String appId = request.getAppGuid();
         final String bindingId = request.getBindingId();
-        final String serviceId = request.getServiceInstanceId();
+        final String serviceInstanceId = request.getServiceInstanceId();
         log.debug("createServiceInstanceBinding - {}", bindingId);
-        AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceId);
-        Map<String, Object> credentials = new HashMap<>();
-        credentials.put(Config.ServiceInstanceParameters.IDLE_DURATION, serviceInstance.getInterval().toString());
+        AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceInstanceId);
 
-        final ApplicationBinding binding = new ApplicationBinding(bindingId,
-                serviceId,
-                credentials,
-                null,
-                appId);
+        ApplicationBinding binding = ApplicationBinding.builder().serviceInstanceId(serviceInstanceId)
+                .serviceBindingId(bindingId)
+                .applicationId(appId).build();
         applicationLocker.executeThreadSafe(appId, () -> {
             ApplicationInfo appInfo = appRepository.findOne(appId);
             if (appInfo == null) {
                 appInfo = new ApplicationInfo(UUID.fromString(appId));
             }
 
-            appInfo.addBoundService(serviceId);
+            appInfo.addBoundService(serviceInstanceId);
 
             //retrieve service to return its params as credentials
 
@@ -82,7 +79,9 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
             watcher.watchApp(binding);
         });
 
-        return binding;
+        return new ServiceInstanceBinding(bindingId, serviceInstanceId,
+                Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION,
+                        serviceInstance.getIdleDuration().toString()), null, appId);
     }
 
     @Override
@@ -92,7 +91,7 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
         log.debug("deleteServiceInstanceBinding - {}", bindingId);
 
         final ApplicationBinding binding = bindingRepository.findOne(bindingId);
-        final String appId = binding.getAppGuid();
+        final String appId = binding.getApplicationId();
 
         AutosleepServiceInstance serviceInstance = serviceRepository
                 .findOne(request.getInstance().getServiceInstanceId());
@@ -101,7 +100,8 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
             log.debug("deleteServiceInstanceBinding on app ", appId);
             ApplicationInfo appInfo = appRepository.findOne(appId);
             if (appInfo != null) {
-                appInfo.removeBoundService(serviceInstance.getServiceInstanceId(), !serviceInstance.isNoOptOut());
+                appInfo.removeBoundService(serviceInstance.getServiceInstanceId(),
+                        !serviceInstance.isForcedAutoEnrollment());
                 if (appInfo.getServiceInstances().size() == 0) {
                     appRepository.delete(appId);
                     applicationLocker.removeApplication(appId);
@@ -115,6 +115,8 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
 
             //task launched will cancel by itself
         });
-        return binding;
+        return new ServiceInstanceBinding(binding.getServiceBindingId(), binding.getServiceInstanceId(),
+                Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION,
+                        serviceInstance.getIdleDuration().toString()), null, appId);
     }
 }

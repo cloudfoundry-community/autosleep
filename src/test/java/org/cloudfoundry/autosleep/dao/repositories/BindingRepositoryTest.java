@@ -42,7 +42,8 @@ public abstract class BindingRepositoryTest {
 
     @Test
     public void testInsert() {
-        dao.save(new ApplicationBinding("testInsert", "testInsert", null, null, APP_GUID));
+        dao.save(ApplicationBinding.builder().serviceBindingId("testInsert")
+                .serviceInstanceId("testInsert").applicationId(APP_GUID).build());
         assertThat(countServices(), is(equalTo(1)));
     }
 
@@ -51,7 +52,8 @@ public abstract class BindingRepositoryTest {
         List<String> ids = Arrays.asList("testInsert1", "testInsert2");
         String serviceId = "testServiceId";
         List<ApplicationBinding> initialList = new ArrayList<>();
-        ids.forEach(id -> initialList.add(new ApplicationBinding(id, serviceId, null, null, APP_GUID)));
+        ids.forEach(id -> initialList.add(ApplicationBinding.builder().serviceBindingId(id)
+                .serviceInstanceId(serviceId).applicationId(APP_GUID).build()));
 
         //test save all
         dao.save(initialList);
@@ -82,18 +84,18 @@ public abstract class BindingRepositoryTest {
     public void testEquality() {
         String bindingId = "bidingIdEquality";
         String serviceId = "serviceIdEquality";
-        ApplicationBinding original = new ApplicationBinding(bindingId, serviceId, null, null, APP_GUID);
+        ApplicationBinding original = ApplicationBinding.builder().serviceBindingId(bindingId)
+                .serviceInstanceId(serviceId).applicationId(APP_GUID).build();
 
         dao.save(original);
         ApplicationBinding binding = dao.findOne(bindingId);
         assertFalse("Service binding should have been found", binding == null);
         assertThat(binding.getServiceInstanceId(), is(equalTo(serviceId)));
-        assertThat(binding.getAppGuid(), is(equalTo(APP_GUID)));
+        assertThat(binding.getApplicationId(), is(equalTo(APP_GUID)));
         assertThat(binding, is(equalTo(original)));
         assertTrue("Succeed in getting a binding that does not exist", dao.findOne("testGetServiceFail") == null);
 
     }
-
 
 
     @Test
@@ -104,14 +106,16 @@ public abstract class BindingRepositoryTest {
 
     @Test
     public void testDelete() {
-        String deleteByIdSuccess = "deleteByIdSuccess";
-        String deleteByInstanceSuccess = "deleteByInstanceSuccess";
-        String deleteByMass1 = "deleteByMass1";
-        String deleteByMass2 = "deleteByMass2";
-        dao.save(new ApplicationBinding(deleteByIdSuccess, "service", null, null, APP_GUID));
-        dao.save(new ApplicationBinding(deleteByInstanceSuccess, "service", null, null, APP_GUID));
-        dao.save(new ApplicationBinding(deleteByMass1, "service", null, null, APP_GUID));
-        dao.save(new ApplicationBinding(deleteByMass2, "service", null, null, APP_GUID));
+        final String deleteByIdSuccess = "deleteByIdSuccess";
+        final String deleteByInstanceSuccess = "deleteByInstanceSuccess";
+        final String deleteByMass1 = "deleteByMass1";
+        final String deleteByMass2 = "deleteByMass2";
+        ApplicationBinding.ApplicationBindingBuilder builder = ApplicationBinding.builder();
+        builder.applicationId(APP_GUID).serviceInstanceId("service");
+        dao.save(builder.serviceBindingId(deleteByIdSuccess).build());
+        dao.save(builder.serviceBindingId(deleteByInstanceSuccess).build());
+        dao.save(builder.serviceBindingId(deleteByMass1).build());
+        dao.save(builder.serviceBindingId(deleteByMass2).build());
 
         int nbServicesInit = 4;
         assertThat(countServices(), is(equalTo(nbServicesInit)));

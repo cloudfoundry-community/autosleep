@@ -48,17 +48,17 @@ layout 'layouts/main.tpl', true,
                         ul(class: "o-square-list") {
                             li {
                                 span(class: "") {
-                                    yield "interval : $interval"
+                                    yield "idleDuration : $idleDuration"
                                 }
                             }
                             li {
                                 span {
-                                    yield "no optout : $noOptout"
+                                    yield "forcedAutoEnrollment : $forcedAutoEnrollment"
                                 }
                             }
                             li {
                                 span(class: "") {
-                                    yield "exclude : $excludeNames"
+                                    yield "excludeFromAutoEnrollment : $excludeFromAutoEnrollment"
                                 }
                             }
                         }

@@ -14,6 +14,6 @@ public class RedisBindingRepository extends RedisGenericRepository<ApplicationBi
 
     @Override
     protected String getObjectId(ApplicationBinding object) {
-        return object.getId();
+        return object.getServiceBindingId();
     }
 }

@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = AutosleepCatalogBuilder.class)
 public class AutosleepCatalogBuilderTest {
     private static final String SERVICE_BROKER_ID = UUID.randomUUID().toString();
-    
+
     @Mock
     private Environment environment;
 

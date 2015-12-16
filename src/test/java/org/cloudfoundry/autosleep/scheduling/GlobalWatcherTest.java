@@ -86,7 +86,7 @@ public class GlobalWatcherTest {
 
         //init mock serviceRepo
         AutosleepServiceInstance mockService = mock(AutosleepServiceInstance.class);
-        when(mockService.getInterval()).thenReturn(INTERVAL);
+        when(mockService.getIdleDuration()).thenReturn(INTERVAL);
         when(mockServiceRepo.findOne(any())).thenReturn(mockService);
 
         List<AutosleepServiceInstance> fakeServices = serviceIds.stream()

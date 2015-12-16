@@ -11,6 +11,7 @@ import org.cloudfoundry.autosleep.scheduling.ApplicationLocker;
 import org.cloudfoundry.autosleep.scheduling.GlobalWatcher;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
+import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
-public class AutosleepServiceInstanceBindingServiceTest {
+public class ApplicationBindingServiceTest {
 
     private static final UUID APP_UID = UUID.randomUUID();
 
@@ -51,13 +52,16 @@ public class AutosleepServiceInstanceBindingServiceTest {
 
 
     @Mock
-    private AutosleepServiceInstance serviceInstance;
+    private ServiceInstance serviceInstance;
+
+    @Mock
+    private AutosleepServiceInstance autosleepServiceInstance;
 
     @Mock
     private ApplicationLocker applicationLocker;
 
     @InjectMocks
-    private AutosleepServiceInstanceBindingService bindingService;
+    private ApplicationBindingService bindingService;
 
 
     private CreateServiceInstanceBindingRequest createRequestTemplate;
@@ -72,10 +76,10 @@ public class AutosleepServiceInstanceBindingServiceTest {
                 PLAN_ID,
                 APP_UID.toString());
         when(applicationInfo.getUuid()).thenReturn(APP_UID);
-        when(serviceRepository.findOne(any(String.class))).thenReturn(serviceInstance);
+        when(serviceRepository.findOne(any(String.class))).thenReturn(autosleepServiceInstance);
 
         //avoir nullpointer when getting credentials
-        when(serviceInstance.getInterval()).thenReturn(Duration.ofSeconds(10));
+        when(autosleepServiceInstance.getIdleDuration()).thenReturn(Duration.ofSeconds(10));
 
         doAnswer(invocationOnMock -> {
             ((Runnable)invocationOnMock.getArguments()[1]).run();
@@ -102,7 +106,9 @@ public class AutosleepServiceInstanceBindingServiceTest {
 
         when(appRepo.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         when(bindingRepo.findOne(bindingId))
-                .thenReturn(new ApplicationBinding(bindingId, serviceId, null, null, APP_UID.toString()));
+                .thenReturn(ApplicationBinding.builder().serviceBindingId(bindingId)
+                        .serviceInstanceId(serviceId)
+                        .applicationId(APP_UID.toString()).build());
 
         return new DeleteServiceInstanceBindingRequest(bindingId,
                 serviceInstance,
@@ -115,7 +121,7 @@ public class AutosleepServiceInstanceBindingServiceTest {
         final String bindingId = "testDelBinding";
         final String serviceId = "testDelBinding";
 
-        when(serviceInstance.isNoOptOut()).thenReturn(false);
+        when(autosleepServiceInstance.isForcedAutoEnrollment()).thenReturn(false);
 
         HashMap<String,ApplicationInfo.ServiceInstanceState> services = new HashMap<>();
         services.put(serviceId, ApplicationInfo.ServiceInstanceState.BLACKLISTED);
@@ -137,7 +143,7 @@ public class AutosleepServiceInstanceBindingServiceTest {
         String serviceId = "testDelBindingOnNoOptout";
 
         DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteTest(serviceId,bindingId);
-        when(serviceInstance.isNoOptOut()).thenReturn(true);
+        when(autosleepServiceInstance.isForcedAutoEnrollment()).thenReturn(true);
 
         bindingService.deleteServiceInstanceBinding(deleteRequest);
 

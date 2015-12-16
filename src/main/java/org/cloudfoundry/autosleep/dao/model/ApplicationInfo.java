@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
@@ -20,6 +22,7 @@ import java.util.UUID;
 @Getter
 @Slf4j
 @JsonAutoDetect()
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ApplicationInfo {
 
@@ -58,13 +61,6 @@ public class ApplicationInfo {
         /** service (with AUTO_ENROLLMENT set to false) was manually unbound,
          * it won't be automatically bound again.*/
         BLACKLISTED
-    }
-
-    /**
-     * Should never be called. Only for JSON auto serialization.
-     */
-    @SuppressWarnings("unused")
-    private ApplicationInfo() {
     }
 
     public ApplicationInfo(UUID uuid) {

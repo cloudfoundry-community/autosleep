@@ -45,5 +45,9 @@ public interface Config {
         String AUTO_ENROLLMENT = "auto-enrollment";
 
         String SECRET = "secret";
+
+        enum Enrollment {
+            standard , forced
+        }
     }
 }

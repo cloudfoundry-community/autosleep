@@ -1,12 +1,10 @@
 package org.cloudfoundry.autosleep.dao.repositories;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
-import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,22 +13,22 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {RepositoryConfig.class})
-public abstract class  ServiceRepositoryTest {
+public abstract class ServiceRepositoryTest {
 
     private static final String ORG_TEST = "orgTest";
     private static final String SPACE_TEST = "spaceTest";
@@ -48,7 +46,9 @@ public abstract class  ServiceRepositoryTest {
         testDeleteMass02,
     }
 
-    private CreateServiceInstanceRequest createRequestTemplate;
+    private Duration duration = Duration.ofMinutes(15);
+    private Pattern excludePattern = Pattern.compile(".*");
+
 
     private long nbServicesInit;
 
@@ -58,33 +58,38 @@ public abstract class  ServiceRepositoryTest {
      */
     @Before
     public void populateDao() {
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put(Config.ServiceInstanceParameters.IDLE_DURATION, Duration.ofMinutes(15));
-        parameters.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, Pattern.compile(".*"));
-        createRequestTemplate = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, SERVICE_PLAN_ID, ORG_TEST,
-                SPACE_TEST, parameters);
+        Duration duration = Duration.ofMinutes(15);
+        Pattern excludePattern = Pattern.compile(".*");
 
         dao.deleteAll();
 
-        Arrays.asList(InsertedInstanceIds.values()).forEach(serviceInstanceId -> dao.save(new
-                AutosleepServiceInstance(createRequestTemplate.withServiceInstanceId(serviceInstanceId
-                .name()))));
+        Arrays.asList(InsertedInstanceIds.values()).forEach(serviceInstanceId -> dao.save(
+                AutosleepServiceInstance.builder()
+                        .serviceDefinitionId(SERVICE_DEFINITION_ID)
+                        .planId(SERVICE_PLAN_ID)
+                        .organizationId(ORG_TEST)
+                        .spaceId(SPACE_TEST)
+                        .serviceInstanceId(serviceInstanceId.name())
+                        .idleDuration(duration)
+                        .excludeFromAutoEnrollment(excludePattern)
+                        .build()));
         nbServicesInit = countServices();
 
     }
 
     @Test
     public void testInsert() {
-        dao.save(new AutosleepServiceInstance(createRequestTemplate.withServiceInstanceId("testInsertServiceSuccess")));
+        dao.save(AutosleepServiceInstance.builder().serviceInstanceId("testInsertServiceSuccess").build());
         assertThat(countServices(), is(equalTo(nbServicesInit + 1)));
     }
 
     @Test
     public void testMultipleInsertsAndRetrieves() throws ServiceInstanceExistsException, ServiceBrokerException {
         List<String> ids = Arrays.asList("testInsertServiceSuccess1", "testInsertServiceSuccess2");
-        List<AutosleepServiceInstance> initialList = new ArrayList<>();
-        ids.forEach(id -> initialList.add(new AutosleepServiceInstance(createRequestTemplate.withServiceInstanceId(
-                id))));
+        List<AutosleepServiceInstance> initialList = ids.stream()
+                .map(id -> AutosleepServiceInstance.builder().serviceInstanceId(id).build())
+                .collect(Collectors.toList());
+
 
         //test save all
         dao.save(initialList);
@@ -119,8 +124,8 @@ public abstract class  ServiceRepositoryTest {
     @Test
     public void testGetServiceEquality() {
         String serviceId = "GetTest";
-        AutosleepServiceInstance originalService = new AutosleepServiceInstance(createRequestTemplate
-                .withServiceInstanceId(serviceId));
+        AutosleepServiceInstance originalService = AutosleepServiceInstance.builder()
+                .serviceInstanceId(serviceId).build();
         dao.save(originalService);
         AutosleepServiceInstance serviceInstance = dao.findOne(serviceId);
         assertThat("Two objects should be equal", serviceInstance, is(equalTo(originalService)));
@@ -133,12 +138,13 @@ public abstract class  ServiceRepositoryTest {
         assertFalse("Service should have been found", serviceInstance == null);
         assertThat(serviceInstance.getServiceInstanceId(), is(
                 equalTo(InsertedInstanceIds.testGetServiceSuccess.name())));
-        assertThat(serviceInstance.getPlanId(), is(equalTo(createRequestTemplate.getPlanId())));
+        assertThat(serviceInstance.getPlanId(), is(equalTo(SERVICE_PLAN_ID)));
         assertThat(serviceInstance.getServiceDefinitionId(),
-                is(equalTo(createRequestTemplate.getServiceDefinitionId())));
-        assertThat(serviceInstance.getOrganizationGuid(), is(equalTo(ORG_TEST)));
-        assertThat(serviceInstance.getSpaceGuid(), is(equalTo(SPACE_TEST)));
-        assertThat(serviceInstance.getInterval(), is(equalTo(Duration.ofMinutes(15))));
+                is(equalTo(SERVICE_DEFINITION_ID)));
+        assertThat(serviceInstance.getOrganizationId(), is(equalTo(ORG_TEST)));
+        assertThat(serviceInstance.getSpaceId(), is(equalTo(SPACE_TEST)));
+        assertThat(serviceInstance.getIdleDuration(), is(equalTo(duration)));
+        assertThat(serviceInstance.getExcludeFromAutoEnrollment().pattern(), is(equalTo(excludePattern.pattern())));
         assertTrue("Succeed in getting a service that does not exist", dao.findOne("testGetServiceFail") == null);
 
     }

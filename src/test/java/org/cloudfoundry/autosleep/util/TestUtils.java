@@ -3,9 +3,6 @@ package org.cloudfoundry.autosleep.util;
 
 import java.util.function.Function;
 
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.fail;
 
 public class TestUtils {
@@ -47,9 +44,11 @@ public class TestUtils {
                                                           CheckerFunction<T>... checkers) {
         try {
             executor.applyThrows();
-            fail();
+            fail("Expected exception " + wantedClass.getName() + " not thrown");
         } catch (Exception exc) {
-            assertThat(exc, is(instanceOf(wantedClass)));
+            if (!wantedClass.isInstance(exc)) {
+                throw new RuntimeException("Expected " + wantedClass.getName() + " got " + wantedClass.getName(), exc);
+            }
             T expectedClass = wantedClass.cast(exc);
             for (CheckerFunction<T> checker : checkers) {
                 checker.check(expectedClass);

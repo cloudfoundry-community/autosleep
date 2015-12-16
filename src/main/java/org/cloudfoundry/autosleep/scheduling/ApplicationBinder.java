@@ -60,8 +60,8 @@ public class ApplicationBinder extends AbstractPeriodicTask {
                 log.debug("{} local applications (already watched, or to be ignored)",
                         watchedOrIgnoredApplications.size());
                 List<ApplicationIdentity> applicationIdentities = cloudFoundryApi
-                        .listApplications(UUID.fromString(serviceInstance.getSpaceGuid()),
-                                serviceInstance.getExcludeNames());
+                        .listApplications(UUID.fromString(serviceInstance.getSpaceId()),
+                                serviceInstance.getExcludeFromAutoEnrollment());
                 List<ApplicationIdentity> newApplications = applicationIdentities.stream()
                         .filter(application ->
                                 deployment == null || !deployment.getApplicationId().equals(application.getGuid()))

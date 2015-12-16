@@ -7,13 +7,10 @@ import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.community.servicebroker.controller.ServiceInstanceController;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
-import org.cloudfoundry.community.servicebroker.model.ErrorMessage;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,7 +19,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,12 +59,13 @@ public class DashboardController {
             parameters.put("serviceInstance", serviceInstanceId);
             parameters.put("skipNavigation", true);
 
-            parameters.put("noOptout", serviceInstance.isNoOptOut());
-            parameters.put("interval", serviceInstance.getInterval().toString());
-            if (serviceInstance.getExcludeNames() != null) {
-                parameters.put("excludeNames", serviceInstance.getExcludeNames().toString());
+            parameters.put("forcedAutoEnrollment", serviceInstance.isForcedAutoEnrollment());
+            parameters.put("idleDuration", serviceInstance.getIdleDuration().toString());
+            if (serviceInstance.getExcludeFromAutoEnrollment() != null) {
+                parameters.put("excludeFromAutoEnrollment",
+                        serviceInstance.getExcludeFromAutoEnrollment().pattern());
             } else {
-                parameters.put("excludeNames", "none");
+                parameters.put("excludeFromAutoEnrollment", "none");
             }
             return new ModelAndView("views/applications", parameters);
         } else {
