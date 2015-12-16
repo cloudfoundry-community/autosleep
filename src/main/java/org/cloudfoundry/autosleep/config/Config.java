@@ -14,7 +14,6 @@ public interface Config {
         String SERVICES_SUB_PATH = "/services/";
         String APPLICATIONS_SUB_PATH = "/applications/";
         String DASHBOARD_CONTEXT = "/dashboard";
-        String OAUTH_CONTEXT = "/auth/callback'";
     }
 
 
@@ -32,9 +31,6 @@ public interface Config {
 
         String CF_SERVICE_BROKER_ID = "cf.service.broker.id";
 
-
-        String DASHBOARD_CLIENT_ID = "dashboard.client.id";
-        String DASHBOARD_CLIENT_SECRET = "dashboard.client.secret";
 
         String APPLICATION_DESCRIPTION_ENVIRONMENT_KEY = "VCAP_APPLICATION";
 
