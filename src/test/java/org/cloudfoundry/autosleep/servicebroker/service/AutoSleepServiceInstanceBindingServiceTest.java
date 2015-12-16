@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
-public class AutoSleepServiceInstanceBindingServiceTest {
+public class AutosleepServiceInstanceBindingServiceTest {
 
     private static final UUID APP_UID = UUID.randomUUID();
 
@@ -57,7 +57,7 @@ public class AutoSleepServiceInstanceBindingServiceTest {
     private ApplicationLocker applicationLocker;
 
     @InjectMocks
-    private AutoSleepServiceInstanceBindingService bindingService;
+    private AutosleepServiceInstanceBindingService bindingService;
 
 
     private CreateServiceInstanceBindingRequest createRequestTemplate;

@@ -25,7 +25,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBindingService {
+public class AutosleepServiceInstanceBindingService implements ServiceInstanceBindingService {
 
     private ApplicationRepository appRepository;
 
@@ -38,7 +38,7 @@ public class AutoSleepServiceInstanceBindingService implements ServiceInstanceBi
     private ApplicationLocker applicationLocker;
 
     @Autowired
-    public AutoSleepServiceInstanceBindingService(ApplicationRepository appRepository,
+    public AutosleepServiceInstanceBindingService(ApplicationRepository appRepository,
                                                   ServiceRepository serviceRepository,
                                                   BindingRepository bindingRepository,
                                                   GlobalWatcher watcher,

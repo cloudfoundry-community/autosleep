@@ -73,7 +73,7 @@ public class AutosleepServiceInstanceServiceTest {
     private ApplicationLocker applicationLocker;
 
     @InjectMocks
-    private AutoSleepServiceInstanceService instanceService;
+    private AutosleepServiceInstanceService instanceService;
 
     private CreateServiceInstanceRequest createRequest;
 
@@ -86,7 +86,7 @@ public class AutosleepServiceInstanceServiceTest {
 
     @Before
     public void initService() {
-        instanceService = new AutoSleepServiceInstanceService(applicationRepository, serviceRepository,
+        instanceService = new AutosleepServiceInstanceService(applicationRepository, serviceRepository,
                 globalWatcher, passwordEncoder, deployment, applicationLocker, environment);
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArguments()[1]).run();

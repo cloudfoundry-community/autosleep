@@ -32,7 +32,7 @@ import java.util.regex.PatternSyntaxException;
 
 @Service
 @Slf4j
-public class AutoSleepServiceInstanceService implements ServiceInstanceService {
+public class AutosleepServiceInstanceService implements ServiceInstanceService {
 
     private ApplicationRepository appRepository;
 
@@ -50,7 +50,7 @@ public class AutoSleepServiceInstanceService implements ServiceInstanceService {
 
 
     @Autowired
-    public AutoSleepServiceInstanceService(ApplicationRepository appRepository,
+    public AutosleepServiceInstanceService(ApplicationRepository appRepository,
                                            ServiceRepository serviceRepository,
                                            GlobalWatcher watcher,
                                            PasswordEncoder passwordEncoder,
