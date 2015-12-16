@@ -55,7 +55,7 @@ public class ApplicationInfo {
     public enum ServiceInstanceState {
         /** service instance is bound to the application. */
         BOUND ,
-        /** service (with NO_OPTOUT_PARAMETER set to false) was manually unbound,
+        /** service (with AUTO_ENROLLMENT set to false) was manually unbound,
          * it won't be automatically bound again.*/
         BLACKLISTED
     }

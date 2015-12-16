@@ -27,13 +27,6 @@ import java.util.regex.Pattern;
 @Setter
 @Slf4j
 public class AutosleepServiceInstance extends ServiceInstance {
-    public static final String INACTIVITY_PARAMETER = "inactivity";
-
-    public static final String EXCLUDE_PARAMETER = "excludeAppNameRegExp";
-
-    public static final String NO_OPTOUT_PARAMETER = "no_optout";
-
-    public static final String SECRET_PARAMETER = "secret";
 
     @JsonSerialize(using = IntervalSerializer.class)
     @JsonDeserialize(using = IntervalDeserializer.class)
@@ -75,17 +68,17 @@ public class AutosleepServiceInstance extends ServiceInstance {
     }
 
     public void updateFromParameters(Map<String, Object> params) {
-        if (params.containsKey(SECRET_PARAMETER)) {
-            secretHash = (String) params.get(SECRET_PARAMETER);
+        if (params.containsKey(Config.ServiceInstanceParameters.SECRET)) {
+            secretHash = (String) params.get(Config.ServiceInstanceParameters.SECRET);
         }
-        if (params.containsKey(INACTIVITY_PARAMETER)) {
-            interval = (Duration) params.get(INACTIVITY_PARAMETER);
+        if (params.containsKey(Config.ServiceInstanceParameters.IDLE_DURATION)) {
+            interval = (Duration) params.get(Config.ServiceInstanceParameters.IDLE_DURATION);
         }
-        if (params.containsKey(EXCLUDE_PARAMETER)) {
-            excludeNames = (Pattern) params.get(EXCLUDE_PARAMETER);
+        if (params.containsKey(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT)) {
+            excludeNames = (Pattern) params.get(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT);
         }
-        if (params.containsKey(NO_OPTOUT_PARAMETER)) {
-            noOptOut = (Boolean) params.get(NO_OPTOUT_PARAMETER);
+        if (params.containsKey(Config.ServiceInstanceParameters.AUTO_ENROLLMENT)) {
+            noOptOut = (Boolean) params.get(Config.ServiceInstanceParameters.AUTO_ENROLLMENT);
         }
     }
 

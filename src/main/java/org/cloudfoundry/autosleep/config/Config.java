@@ -39,4 +39,15 @@ public interface Config {
         String APPLICATION_DESCRIPTION_ENVIRONMENT_KEY = "VCAP_APPLICATION";
 
     }
+
+    interface ServiceInstanceParameters {
+
+        String IDLE_DURATION = "idle-duration";
+
+        String EXCLUDE_FROM_AUTO_ENROLLMENT = "exclude-from-auto-enrollment";
+
+        String AUTO_ENROLLMENT = "auto-enrollment";
+
+        String SECRET = "secret";
+    }
 }

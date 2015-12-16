@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
@@ -59,7 +60,7 @@ public class AutosleepServiceInstanceBindingService implements ServiceInstanceBi
         log.debug("createServiceInstanceBinding - {}", bindingId);
         AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceId);
         Map<String, Object> credentials = new HashMap<>();
-        credentials.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, serviceInstance.getInterval().toString());
+        credentials.put(Config.ServiceInstanceParameters.IDLE_DURATION, serviceInstance.getInterval().toString());
 
         final ApplicationBinding binding = new ApplicationBinding(bindingId,
                 serviceId,

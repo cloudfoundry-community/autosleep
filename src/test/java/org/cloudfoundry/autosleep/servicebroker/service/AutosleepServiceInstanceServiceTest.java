@@ -120,7 +120,7 @@ public class AutosleepServiceInstanceServiceTest {
 
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(null);
         // Duration verification
-        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PT10H"));
+        createRequest.setParameters(Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PT10H"));
         ServiceInstance si = instanceService.createServiceInstance(createRequest);
         verify(passwordEncoder, never()).encode(anyString());
         assertThat(si, is(notNullValue()));
@@ -135,7 +135,8 @@ public class AutosleepServiceInstanceServiceTest {
         assertThat(serviceInstance.getInterval(), is(equalTo(Duration.ofHours(10))));
 
         // Exclude names verification
-        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.EXCLUDE_PARAMETER, ".*"));
+        createRequest.setParameters(
+                Collections.singletonMap(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, ".*"));
         si = instanceService.createServiceInstance(createRequest);
         verify(passwordEncoder, never()).encode(anyString());
         assertThat(si, is(notNullValue()));
@@ -146,7 +147,7 @@ public class AutosleepServiceInstanceServiceTest {
         assertThat(serviceInstance.getExcludeNames().pattern(), is(equalTo(".*")));
 
         // Secret verification
-        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.SECRET_PARAMETER, "password"));
+        createRequest.setParameters(Collections.singletonMap(Config.ServiceInstanceParameters.SECRET, "password"));
         si = instanceService.createServiceInstance(createRequest);
         verify(passwordEncoder, times(1)).encode(eq("password"));
         assertThat(si, is(notNullValue()));
@@ -157,8 +158,8 @@ public class AutosleepServiceInstanceServiceTest {
 
         //No opt out verification
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(AutosleepServiceInstance.SECRET_PARAMETER, "secret");
-        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, "true");
+        parameters.put(Config.ServiceInstanceParameters.SECRET, "secret");
+        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, "true");
         createRequest.setParameters(parameters);
         si = instanceService.createServiceInstance(createRequest);
         assertThat(si, is(notNullValue()));
@@ -186,12 +187,12 @@ public class AutosleepServiceInstanceServiceTest {
                 ServiceInstanceDoesNotExistException.class);
 
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(AutosleepServiceInstance.SECRET_PARAMETER, "secret");
-        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, Boolean.TRUE);
+        parameters.put(Config.ServiceInstanceParameters.SECRET, "secret");
+        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, Boolean.TRUE);
         createRequest.setParameters(parameters);
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(new AutosleepServiceInstance(createRequest));
 
-        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, "false");
+        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, "false");
         UpdateServiceInstanceRequest changePlanRequest = new UpdateServiceInstanceRequest(PLAN_ID + "_other",
                 parameters)
                 .withInstanceId(SERVICE_INSTANCE_ID);
@@ -199,8 +200,8 @@ public class AutosleepServiceInstanceServiceTest {
         verifyThrown(() -> instanceService.updateServiceInstance(changePlanRequest),
                 ServiceInstanceUpdateNotSupportedException.class);
 
-        parameters.put(AutosleepServiceInstance.SECRET_PARAMETER, "secret");
-        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, "false");
+        parameters.put(Config.ServiceInstanceParameters.SECRET, "secret");
+        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, "false");
         updateRequest.setParameters(parameters);
         ServiceInstance si = instanceService.updateServiceInstance(updateRequest);
         verify(serviceRepository, times(1)).save(any(AutosleepServiceInstance.class));
@@ -242,8 +243,8 @@ public class AutosleepServiceInstanceServiceTest {
 
     @Test
     public void testProcessSuperSecret() throws Exception {
-        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.SECRET_PARAMETER, "secret"));
-        updateRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.SECRET_PARAMETER, superPassword));
+        createRequest.setParameters(Collections.singletonMap(Config.ServiceInstanceParameters.SECRET, "secret"));
+        updateRequest.setParameters(Collections.singletonMap(Config.ServiceInstanceParameters.SECRET, superPassword));
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(new AutosleepServiceInstance(createRequest));
         try {
 
@@ -257,48 +258,49 @@ public class AutosleepServiceInstanceServiceTest {
 
     @Test
     public void testProcessSecretFailures() throws Exception {
-        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.SECRET_PARAMETER, "secret"));
+        createRequest.setParameters(Collections.singletonMap(Config.ServiceInstanceParameters.SECRET, "secret"));
         when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(new AutosleepServiceInstance(createRequest));
         verifyThrown(() -> instanceService.updateServiceInstance(updateRequest), InvalidParameterException.class,
                 exceptionThrown ->
                         assertThat(exceptionThrown.getParameterName(),
-                                is(equalTo(AutosleepServiceInstance.SECRET_PARAMETER))));
+                                is(equalTo(Config.ServiceInstanceParameters.SECRET))));
 
-        updateRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.SECRET_PARAMETER, "secret"));
+        updateRequest.setParameters(Collections.singletonMap(Config.ServiceInstanceParameters.SECRET, "secret"));
         when(passwordEncoder.matches(any(CharSequence.class), anyString())).thenReturn(false);
         verifyThrown(() -> instanceService.updateServiceInstance(updateRequest), InvalidParameterException.class,
                 exceptionThrown ->
                         assertThat(exceptionThrown.getParameterName(),
-                                is(equalTo(AutosleepServiceInstance.SECRET_PARAMETER))));
+                                is(equalTo(Config.ServiceInstanceParameters.SECRET))));
     }
 
     @Test
     public void testProcessInactivityFailures() throws Exception {
-        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, "PP"));
+        createRequest.setParameters(Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PP"));
         verifyThrown(() -> instanceService.createServiceInstance(createRequest), InvalidParameterException.class,
                 exceptionThrown ->
                         assertThat(exceptionThrown.getParameterName(),
-                                is(equalTo(AutosleepServiceInstance.INACTIVITY_PARAMETER))));
+                                is(equalTo(Config.ServiceInstanceParameters.IDLE_DURATION))));
     }
 
 
     @Test
     public void testProcessExcludeNamesFailure() throws Exception {
-        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.EXCLUDE_PARAMETER, "*"));
+        createRequest.setParameters(
+                Collections.singletonMap(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, "*"));
         verifyThrown(() -> instanceService.createServiceInstance(createRequest), InvalidParameterException.class,
                 exceptionThrown ->
                         assertThat(exceptionThrown.getParameterName(),
-                                is(equalTo(AutosleepServiceInstance.EXCLUDE_PARAMETER))));
+                                is(equalTo(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT))));
     }
 
     @Test
     public void testProcessNoOptOutFailure() throws Exception {
         //No secret provided
-        createRequest.setParameters(Collections.singletonMap(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, "true"));
+        createRequest.setParameters(Collections.singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, "true"));
         verifyThrown(() -> instanceService.createServiceInstance(createRequest), InvalidParameterException.class,
                 exceptionThrown ->
                         assertThat(exceptionThrown.getParameterName(),
-                                is(equalTo(AutosleepServiceInstance.NO_OPTOUT_PARAMETER))));
+                                is(equalTo(Config.ServiceInstanceParameters.AUTO_ENROLLMENT))));
     }
 
 }

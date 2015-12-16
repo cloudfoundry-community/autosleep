@@ -7,7 +7,6 @@ import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceReque
 import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import java.time.Duration;
 import java.util.*;
@@ -51,10 +50,10 @@ public class AutosleepServiceInstanceTest {
     @Before
     public void init() {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, duration);
-        parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, exclude);
-        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, noOptOut);
-        parameters.put(AutosleepServiceInstance.SECRET_PARAMETER, secretHash);
+        parameters.put(Config.ServiceInstanceParameters.IDLE_DURATION, duration);
+        parameters.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, exclude);
+        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, noOptOut);
+        parameters.put(Config.ServiceInstanceParameters.SECRET, secretHash);
 
         createRequest = new CreateServiceInstanceRequest(
                 SERVICE_DEFINITION_ID, PLAN, ORG, SPACE, parameters).withServiceInstanceId(SERVICE_ID);
@@ -78,7 +77,7 @@ public class AutosleepServiceInstanceTest {
     public void testUpdate() {
         AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(createRequest);
         serviceInstance.updateFromParameters(Collections
-                .singletonMap(AutosleepServiceInstance.INACTIVITY_PARAMETER, Duration.ofSeconds(2)));
+                .singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, Duration.ofSeconds(2)));
         assertThat(serviceInstance.getInterval(), is(not(equalTo(duration))));
         assertThat(serviceInstance.getExcludeNames(), is(equalTo(exclude)));
         assertThat(serviceInstance.isNoOptOut(), is(equalTo(noOptOut)));
@@ -86,7 +85,7 @@ public class AutosleepServiceInstanceTest {
 
         serviceInstance = new AutosleepServiceInstance(createRequest);
         serviceInstance.updateFromParameters(Collections
-                .singletonMap(AutosleepServiceInstance.EXCLUDE_PARAMETER, Pattern.compile("..*")));
+                .singletonMap(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, Pattern.compile("..*")));
         assertThat(serviceInstance.getInterval(), is(equalTo(duration)));
         assertThat(serviceInstance.getExcludeNames(), is(not(equalTo(exclude))));
         assertThat(serviceInstance.isNoOptOut(), is(equalTo(noOptOut)));
@@ -94,7 +93,7 @@ public class AutosleepServiceInstanceTest {
 
         serviceInstance = new AutosleepServiceInstance(createRequest);
         serviceInstance.updateFromParameters(Collections
-                .singletonMap(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, !noOptOut));
+                .singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, !noOptOut));
         assertThat(serviceInstance.getInterval(), is(equalTo(duration)));
         assertThat(serviceInstance.getExcludeNames(), is(equalTo(exclude)));
         assertThat(serviceInstance.isNoOptOut(), is(not(equalTo(noOptOut))));

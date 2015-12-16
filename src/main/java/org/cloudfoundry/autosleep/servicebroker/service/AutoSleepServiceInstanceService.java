@@ -34,6 +34,7 @@ import java.util.regex.PatternSyntaxException;
 @Slf4j
 public class AutosleepServiceInstanceService implements ServiceInstanceService {
 
+
     private ApplicationRepository appRepository;
 
     private ServiceRepository serviceRepository;
@@ -153,7 +154,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     }
 
     private void processSecret(String existingSecret, Map<String, Object> params) {
-        Object receivedSecret = params.get(AutosleepServiceInstance.SECRET_PARAMETER);
+        Object receivedSecret = params.get(Config.ServiceInstanceParameters.SECRET);
         if (existingSecret != null) {
             if (receivedSecret != null) {
                 if (passwordEncoder.matches((String) receivedSecret, existingSecret)) {
@@ -161,29 +162,29 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                 } else if (receivedSecret.equals(environment.getProperty(Config.EnvKey.SECURITY_PASSWORD))) {
                     log.debug("SUPER SECRET provided");
                 } else {
-                    throw new InvalidParameterException(AutosleepServiceInstance.SECRET_PARAMETER,
+                    throw new InvalidParameterException(Config.ServiceInstanceParameters.SECRET,
                             "Provided secret does not match the one provided on creation nor the "
                                     + Config.EnvKey.SECURITY_PASSWORD + " value.");
                 }
             } else {
-                throw new InvalidParameterException(AutosleepServiceInstance.SECRET_PARAMETER, "No secret provided.");
+                throw new InvalidParameterException(Config.ServiceInstanceParameters.SECRET, "No secret provided.");
             }
         } else if (receivedSecret != null) {
-            params.put(AutosleepServiceInstance.SECRET_PARAMETER, passwordEncoder.encode((String) receivedSecret));
+            params.put(Config.ServiceInstanceParameters.SECRET, passwordEncoder.encode((String) receivedSecret));
         }
     }
 
 
     private void processInactivity(Map<String, Object> params) throws InvalidParameterException {
-        if (params.get(AutosleepServiceInstance.INACTIVITY_PARAMETER) != null) {
-            String inactivityPattern = (String) params.get(AutosleepServiceInstance.INACTIVITY_PARAMETER);
+        if (params.get(Config.ServiceInstanceParameters.IDLE_DURATION) != null) {
+            String inactivityPattern = (String) params.get(Config.ServiceInstanceParameters.IDLE_DURATION);
             log.debug("pattern " + inactivityPattern);
             try {
-                params.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, Duration.parse(inactivityPattern));
+                params.put(Config.ServiceInstanceParameters.IDLE_DURATION, Duration.parse(inactivityPattern));
             } catch (DateTimeParseException e) {
                 log.error("Wrong format for inactivity duration - format should respect ISO-8601 duration format "
                         + "PnDTnHnMn");
-                throw new InvalidParameterException(AutosleepServiceInstance.INACTIVITY_PARAMETER,
+                throw new InvalidParameterException(Config.ServiceInstanceParameters.IDLE_DURATION,
                         "param badly formatted (ISO-8601). Example: \"PT15M\" for 15mn");
             }
         }
@@ -191,37 +192,37 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
 
     private void processExcludeNames(Map<String, Object> params) throws InvalidParameterException {
         Pattern excludeNames = null;
-        if (params.get(AutosleepServiceInstance.EXCLUDE_PARAMETER) != null) {
-            String excludeNamesStr = (String) params.get(AutosleepServiceInstance.EXCLUDE_PARAMETER);
+        if (params.get(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT) != null) {
+            String excludeNamesStr = (String) params.get(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT);
             if (!excludeNamesStr.trim().equals("")) {
                 log.debug("excludeNames " + excludeNamesStr);
                 try {
                     excludeNames = Pattern.compile(excludeNamesStr);
                 } catch (PatternSyntaxException p) {
                     log.error("Wrong format for exclusion  - format cannot be compiled to a valid regexp");
-                    throw new InvalidParameterException(AutosleepServiceInstance.EXCLUDE_PARAMETER,
+                    throw new InvalidParameterException(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT,
                             "should be a valid regexp");
                 }
             }
         }
-        params.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, excludeNames);
+        params.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, excludeNames);
     }
 
     private void processNoOptOut(Map<String, Object> params) throws InvalidParameterException {
-        if (params.get(AutosleepServiceInstance.NO_OPTOUT_PARAMETER) != null) {
-            checkSecuredParameter(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, params);
-            String noOptOut = (String) params.get(AutosleepServiceInstance.NO_OPTOUT_PARAMETER);
+        if (params.get(Config.ServiceInstanceParameters.AUTO_ENROLLMENT) != null) {
+            checkSecuredParameter(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, params);
+            String noOptOut = (String) params.get(Config.ServiceInstanceParameters.AUTO_ENROLLMENT);
             log.debug("noOptOut " + noOptOut);
-            params.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER,
-                    Boolean.parseBoolean((String) params.get(AutosleepServiceInstance.NO_OPTOUT_PARAMETER)));
+            params.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
+                    Boolean.parseBoolean((String) params.get(Config.ServiceInstanceParameters.AUTO_ENROLLMENT)));
         }
     }
 
     private void checkSecuredParameter(String parameterName, Map<String, Object> params) {
-        if (params.get(AutosleepServiceInstance.SECRET_PARAMETER) == null) {
+        if (params.get(Config.ServiceInstanceParameters.SECRET) == null) {
             throw new InvalidParameterException(parameterName,
                     "Trying to set or change a protected parameter without providing the right '"
-                            + AutosleepServiceInstance.SECRET_PARAMETER + "'.");
+                            + Config.ServiceInstanceParameters.SECRET + "'.");
         }
     }
 

@@ -105,8 +105,8 @@ public class ApiControllerTest {
     @Test
     public void testListInstances() throws Exception {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, Duration.ofMinutes(15));
-        parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, Pattern.compile(".*"));
+        parameters.put(Config.ServiceInstanceParameters.IDLE_DURATION, Duration.ofMinutes(15));
+        parameters.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, Pattern.compile(".*"));
         CreateServiceInstanceRequest createRequestTemplate = new CreateServiceInstanceRequest("definition",
                 "plan",
                 "org",

@@ -69,11 +69,11 @@ public class DashboardControllerTest {
 
     private AutosleepServiceInstance getServiceInstance(boolean withExcludeParam) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, Duration.parse("PT1M"));
-        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, true);
-        parameters.put(AutosleepServiceInstance.SECRET_PARAMETER, "Pa$$w0rd");
+        parameters.put(Config.ServiceInstanceParameters.IDLE_DURATION, Duration.parse("PT1M"));
+        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, true);
+        parameters.put(Config.ServiceInstanceParameters.SECRET, "Pa$$w0rd");
         if (withExcludeParam) {
-            parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, Pattern.compile(".*"));
+            parameters.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, Pattern.compile(".*"));
         }
         CreateServiceInstanceRequest createRequest = new CreateServiceInstanceRequest(
                 serviceDefinitionId, planId, "morg", "mySpace", parameters).withServiceInstanceId(serviceInstanceId);
