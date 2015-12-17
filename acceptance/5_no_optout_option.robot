@@ -41,7 +41,7 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
 
     # update service -> refuse
     ${parameters}                Create Dictionary	auto-enrollment=standard
-    Run Keyword And Expect Error    InvalidStatusCode: 502*Service broker error: \'secret\': *    Update service instance   ${parameters}
+    Run Keyword And Expect Error    InvalidStatusCode: 502*Service broker error: \'auto-enrollment\': *    Update service instance   ${parameters}
 
 
 4) Auto-enrollment service can not change with wrong secret
