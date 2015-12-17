@@ -32,7 +32,7 @@ public class AutosleepCatalogBuilder {
         String serviceBrokerId = environment.getProperty(Config.EnvKey.CF_SERVICE_BROKER_ID, DEFAULT_SERVICE_BROKER_ID);
         return new Catalog(Collections.singletonList(new ServiceDefinition(
                 serviceBrokerId,
-                "autosleep",
+                serviceBrokerId,
                 "Automatically stops inactive apps",
                 true,
                 false,
