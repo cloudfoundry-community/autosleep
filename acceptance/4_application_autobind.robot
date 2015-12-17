@@ -14,7 +14,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
     [Documentation]     Check that app is automatically bound by service instance
     Clean all service data
 	${regex}					Catenate   SEPARATOR=      ^(?:(?!    ${TESTED_APP_NAME}   ).)*$
-    ${parameters}				Create Dictionary	inactivity=${INACTIVITY}	excludeAppNameRegExp=${regex}
+    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${regex}
     Create service instance      ${parameters}
     Wait Until Keyword Succeeds     ${INACTIVITY_IN_S}s  3s  Should be bound
 
@@ -22,7 +22,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
 2) Service does not bind ignored applications
     [Documentation]        Check that no application is bound by the service instance
     Clean all service data
-    ${parameters}				Create Dictionary	inactivity=${INACTIVITY}	excludeAppNameRegExp=${EXCLUDE_ALL_APP_NAMES}
+    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}
     Create service instance      ${parameters}
     ${halfPeriod}=      Evaluate  ${INACTIVITY_IN_S}/2
     Sleep                    ${halfPeriod}

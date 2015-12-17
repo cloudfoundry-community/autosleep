@@ -53,8 +53,7 @@ public class DebugController {
         parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
         parameters.put("serviceDefinitionId", serviceDefinition.getId());
         parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
-        parameters.put("skipNavigation", false);
-        return new ModelAndView("views/applications", parameters);
+        return new ModelAndView("views/admin/debug/applications", parameters);
     }
 
 }

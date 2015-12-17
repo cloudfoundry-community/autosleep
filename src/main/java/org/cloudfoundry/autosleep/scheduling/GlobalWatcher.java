@@ -60,15 +60,16 @@ public class GlobalWatcher {
     }
 
     public void watchApp(ApplicationBinding binding) {
-        Duration interval = serviceRepository.findOne(binding.getServiceInstanceId()).getInterval();
-        log.debug("Initializing a watch on app {}, for an interval of {} ", binding.getAppGuid(), interval.toString());
+        Duration interval = serviceRepository.findOne(binding.getServiceInstanceId()).getIdleDuration();
+        log.debug("Initializing a watch on app {}, for an idleDuration of {} ", binding.getApplicationId(),
+                interval.toString());
         AppStateChecker checker = AppStateChecker.builder()
                 .clock(clock)
                 .period(interval)
-                .appUid(UUID.fromString(binding.getAppGuid()))
+                .appUid(UUID.fromString(binding.getApplicationId()))
                 .cloudFoundryApi(cloudFoundryApi)
                 .serviceInstanceId(binding.getServiceInstanceId())
-                .bindingId(binding.getId())
+                .bindingId(binding.getServiceBindingId())
                 .applicationRepository(applicationRepository)
                 .applicationLocker(applicationLocker)
                 .build();
@@ -78,7 +79,7 @@ public class GlobalWatcher {
     public void watchServiceBindings(AutosleepServiceInstance service, Duration delayBeforeTreatment) {
         ApplicationBinder applicationBinder = ApplicationBinder.builder()
                 .clock(clock)
-                .period(service.getInterval())
+                .period(service.getIdleDuration())
                 .serviceInstanceId(service.getServiceInstanceId())
                 .cloudFoundryApi(cloudFoundryApi)
                 .serviceRepository(serviceRepository)

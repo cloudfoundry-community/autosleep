@@ -71,7 +71,7 @@ public class ApplicationBinderTest {
     @Before
     public void buildMocks() throws CloudFoundryException {
         //default
-        when(autosleepServiceInstance.getSpaceGuid()).thenReturn(SPACE_ID.toString());
+        when(autosleepServiceInstance.getSpaceId()).thenReturn(SPACE_ID.toString());
         when(autosleepServiceInstance.getServiceInstanceId()).thenReturn(SERVICE_ID);
         when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
@@ -96,7 +96,7 @@ public class ApplicationBinderTest {
     @Test
     public void testNewAppeared() throws Exception {
         when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
-        when(autosleepServiceInstance.getExcludeNames()).thenReturn(null);
+        when(autosleepServiceInstance.getExcludeFromAutoEnrollment()).thenReturn(null);
         //it will return every ids
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 //do not return app id
@@ -114,7 +114,7 @@ public class ApplicationBinderTest {
 
         Pattern pattern = Pattern.compile(".*");
 
-        when(autosleepServiceInstance.getExcludeNames()).thenReturn(pattern);
+        when(autosleepServiceInstance.getExcludeFromAutoEnrollment()).thenReturn(pattern);
         applicationBinder.run();
         verify(cloudFoundryApi, times(1)).listApplications(eq(SPACE_ID), eq(pattern));
 
@@ -182,7 +182,7 @@ public class ApplicationBinderTest {
         when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
 
 
-        when(autosleepServiceInstance.getExcludeNames()).thenReturn(null);
+        when(autosleepServiceInstance.getExcludeFromAutoEnrollment()).thenReturn(null);
 
         //it will return every ids
         when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
@@ -198,7 +198,7 @@ public class ApplicationBinderTest {
                         anyString());
 
         Pattern pattern = Pattern.compile(".*");
-        when(autosleepServiceInstance.getExcludeNames()).thenReturn(pattern);
+        when(autosleepServiceInstance.getExcludeFromAutoEnrollment()).thenReturn(pattern);
 
         remoteApplicationIds.add(UUID.randomUUID());
         applicationBinder.run();

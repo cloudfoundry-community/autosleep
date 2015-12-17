@@ -1,13 +1,10 @@
-function DashboardHelper(){
-    this.pathApiByServicePfx = "/api/services/";
-    this.pathApiListApplicationSfx = "/applications/";
-}
 
-DashboardHelper.prototype.listApplications = function(serviceInstanceId){
-    var targetUrl =  this.pathApiByServicePfx+serviceInstanceId +this.pathApiListApplicationSfx;
+
+function listApplications (serviceInstanceId){
+    var targetUrl =  "/api/services/"+serviceInstanceId +"/applications/";
     var that = this;
     $.ajax({
-        url : this.pathApiByServicePfx+serviceInstanceId +this.pathApiListApplicationSfx,
+        url : targetUrl,
         success : function (serverResponse) {
             var container = $("#allApplications");
             var row ;
@@ -58,7 +55,9 @@ DashboardHelper.prototype.listApplications = function(serviceInstanceId){
                     .on('update.countdown', function(event) {
                         $this.html(event.strftime('%D days %H:%M:%S'));
                     }).on('finish.countdown', function() {
-                        that.listApplications(targetUrl, showDeleteButton);
+                        setTimeout(function(){
+                            that.listApplications(serviceInstanceId);
+                        }, 1000);
                     });
             });
 
@@ -68,4 +67,4 @@ DashboardHelper.prototype.listApplications = function(serviceInstanceId){
             displayDanger("Error listing applications: "+xhr.responseText);
         }
     });
-};
+}

@@ -6,7 +6,6 @@ import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
-import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.Plan;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
 import org.junit.Before;
@@ -27,7 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -69,15 +67,25 @@ public class DashboardControllerTest {
 
     private AutosleepServiceInstance getServiceInstance(boolean withExcludeParam) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, Duration.parse("PT1M"));
-        parameters.put(AutosleepServiceInstance.NO_OPTOUT_PARAMETER, true);
-        parameters.put(AutosleepServiceInstance.SECRET_PARAMETER, "Pa$$w0rd");
+        parameters.put(Config.ServiceInstanceParameters.IDLE_DURATION, Duration.parse("PT1M"));
+        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, true);
+        parameters.put(Config.ServiceInstanceParameters.SECRET, "Pa$$w0rd");
         if (withExcludeParam) {
-            parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, Pattern.compile(".*"));
+            parameters.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, Pattern.compile(".*"));
         }
-        CreateServiceInstanceRequest createRequest = new CreateServiceInstanceRequest(
-                serviceDefinitionId, planId, "morg", "mySpace", parameters).withServiceInstanceId(serviceInstanceId);
-        return new AutosleepServiceInstance(createRequest);
+        AutosleepServiceInstance.AutosleepServiceInstanceBuilder builder = AutosleepServiceInstance.builder()
+                .idleDuration(Duration.parse("PT1M"))
+                .forcedAutoEnrollment(true)
+                .secret("Pa$$w0rd")
+                .serviceDefinitionId(serviceDefinitionId)
+                .planId(planId)
+                .organizationId("orgGuid")
+                .spaceId("spaceId")
+                .serviceInstanceId(serviceInstanceId);
+        if (withExcludeParam) {
+            builder.excludeFromAutoEnrollment(Pattern.compile(".*"));
+        }
+        return builder.build();
     }
 
     @Test

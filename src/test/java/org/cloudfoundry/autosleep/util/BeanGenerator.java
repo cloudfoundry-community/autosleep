@@ -16,22 +16,18 @@ public class BeanGenerator {
     public static final UUID SERVICE_DEFINITION_ID = UUID.randomUUID();
     public static final UUID PLAN_ID = UUID.randomUUID();
 
-    private static final CreateServiceInstanceRequest createRequest =
-            new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID.toString(),
-                    PLAN_ID.toString(),
-                    ORG_TEST.toString(),
-                    SPACE_TEST.toString(),
-                    Collections.emptyMap());
-
-    public static AutosleepServiceInstance createServiceInstance() {
-        return createServiceInstance(null);
-    }
 
     public static AutosleepServiceInstance createServiceInstance(String serviceId) {
         if (serviceId == null) {
             serviceId = UUID.randomUUID().toString();
         }
-        return new AutosleepServiceInstance(createRequest.withServiceInstanceId(serviceId));
+
+        return AutosleepServiceInstance.builder()
+                .serviceDefinitionId(SERVICE_DEFINITION_ID.toString())
+                .planId(PLAN_ID.toString())
+                .organizationId(ORG_TEST.toString())
+                .spaceId(SPACE_TEST.toString())
+                .serviceInstanceId(serviceId).build();
     }
 
     public static ApplicationBinding createBinding(String serviceId, String bindingId, String appId) {
@@ -44,7 +40,8 @@ public class BeanGenerator {
         if (appId == null) {
             appId = UUID.randomUUID().toString();
         }
-        return new ApplicationBinding(bindingId, serviceId, null, null, appId);
+        return ApplicationBinding.builder().serviceBindingId(bindingId)
+                .serviceInstanceId(serviceId).applicationId(appId).build();
     }
 
     public static ApplicationBinding createBinding(String bindingId) {
@@ -56,20 +53,20 @@ public class BeanGenerator {
     }
 
     public static ApplicationInfo createAppInfo(String serviceId) {
-        return createAppInfo(null,serviceId);
+        return createAppInfo(null, serviceId);
     }
 
     public static ApplicationInfo createAppInfo(UUID appUuid, String serviceId) {
         if (appUuid == null) {
             appUuid = UUID.randomUUID();
         }
-        ApplicationInfo applicationInfo =  new ApplicationInfo(appUuid);
+        ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
         applicationInfo.addBoundService(serviceId);
         return applicationInfo;
     }
 
 
-    public static String getSampleVcapApplication(UUID applicationId, String applicationName, String ... uris) {
+    public static String getSampleVcapApplication(UUID applicationId, String applicationName, String... uris) {
         return "{\"limits\":{\"mem\":1024,\"disk\":1024,\"fds\":16384},"
                 + "\"application_id\":\"" + applicationId.toString() + "\","
                 + "\"application_version\":\"b546c9d4-8885-4d50-a855-490ddb5b5a1c\","

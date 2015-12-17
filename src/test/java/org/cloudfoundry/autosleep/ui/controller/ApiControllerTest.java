@@ -105,14 +105,12 @@ public class ApiControllerTest {
     @Test
     public void testListInstances() throws Exception {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(AutosleepServiceInstance.INACTIVITY_PARAMETER, Duration.ofMinutes(15));
-        parameters.put(AutosleepServiceInstance.EXCLUDE_PARAMETER, Pattern.compile(".*"));
-        CreateServiceInstanceRequest createRequestTemplate = new CreateServiceInstanceRequest("definition",
-                "plan",
-                "org",
-                "space", parameters);
-        AutosleepServiceInstance serviceInstance = new AutosleepServiceInstance(
-                createRequestTemplate.withServiceInstanceId(serviceInstanceId));
+        parameters.put(Config.ServiceInstanceParameters.IDLE_DURATION, Duration.ofMinutes(15));
+        parameters.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, Pattern.compile(".*"));
+
+        AutosleepServiceInstance serviceInstance = AutosleepServiceInstance.builder()
+                .serviceInstanceId(serviceInstanceId).build();
+
         when(serviceRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
 
 
@@ -137,8 +135,9 @@ public class ApiControllerTest {
 
     @Test
     public void testListBindings() throws Exception {
-        ApplicationBinding serviceBinding = new ApplicationBinding(serviceBindingId, serviceInstanceId,
-                null, null, UUID.randomUUID().toString());
+        ApplicationBinding serviceBinding = ApplicationBinding.builder().serviceBindingId(serviceBindingId)
+                .serviceInstanceId(serviceInstanceId)
+                .applicationId(UUID.randomUUID().toString()).build();
         when(bindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
 
         mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "/bindings/")
@@ -155,7 +154,7 @@ public class ApiControllerTest {
                                                     ApplicationBinding[].class));
                     assertThat(serviceBindings.getBody(), is(notNullValue()));
                     assertThat(serviceBindings.getBody().length, is(equalTo(1)));
-                    assertThat(serviceBindings.getBody()[0].getId(), is(equalTo(serviceBindingId)));
+                    assertThat(serviceBindings.getBody()[0].getServiceBindingId(), is(equalTo(serviceBindingId)));
 
 
                 });

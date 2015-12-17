@@ -7,7 +7,7 @@ Test Teardown   Run Keywords  Delete service instance
 *** Variables ***
 ${INACTIVITY_IN_S}  30
 ${INACTIVITY}  PT${INACTIVITY_IN_S}S
-&{INSTANCE_PARAMETERS}=	inactivity=${INACTIVITY}	excludeAppNameRegExp=${EXCLUDE_ALL_APP_NAMES}
+&{INSTANCE_PARAMETERS}		idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}
 
 *** Test Cases ***
 

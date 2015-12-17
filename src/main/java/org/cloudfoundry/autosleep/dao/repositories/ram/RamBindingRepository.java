@@ -8,7 +8,7 @@ public class RamBindingRepository extends HashmapRepository<ApplicationBinding> 
 
     @Override
     protected String getObjectId(ApplicationBinding binding) {
-        return binding.getId();
+        return binding.getServiceBindingId();
     }
 
 }

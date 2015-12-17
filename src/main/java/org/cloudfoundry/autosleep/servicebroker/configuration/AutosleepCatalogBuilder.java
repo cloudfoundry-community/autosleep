@@ -23,21 +23,16 @@ public class AutosleepCatalogBuilder {
     private static final String DEFAULT_PLAN_UNIQUE_ID = "78C0A1DB-ACC9-4B6D-AF22-A1EF63C2CE06";
 
     private static final String DEFAULT_SERVICE_BROKER_ID = "autosleep";
-    private static final String DEFAULT_DASHBOARD_CLIENT_SECRET = "p-autosleep-secret";
-    private static final String DEFAULT_DASHBOARD_CLIENT_ID = "p-autosleep-id";
 
     @Autowired
     private Environment environment;
-
-    @Autowired
-    private Deployment deployment;
 
     @Bean
     public Catalog buildCatalog() {
         String serviceBrokerId = environment.getProperty(Config.EnvKey.CF_SERVICE_BROKER_ID, DEFAULT_SERVICE_BROKER_ID);
         return new Catalog(Collections.singletonList(new ServiceDefinition(
                 serviceBrokerId,
-                "autosleep",
+                serviceBrokerId,
                 "Automatically stops inactive apps",
                 true,
                 false,
@@ -50,7 +45,7 @@ public class AutosleepCatalogBuilder {
                 Arrays.asList("autosleep", "document"),
                 getServiceDefinitionMetadata(),
                 null,
-                getDashboardClient())));
+                null)));
     }
 
     /* Used by Pivotal CF console */
@@ -66,15 +61,5 @@ public class AutosleepCatalogBuilder {
         sdMetadata.put("supportUrl", "https://github.com/Orange-OpenSource/autosleep");
         return sdMetadata;
     }
-
-    private DashboardClient getDashboardClient() {
-        String redirectUri = deployment.getFirstUri() + Config.Path.OAUTH_CONTEXT;
-        String dashboardId = environment.getProperty(Config.EnvKey.DASHBOARD_CLIENT_ID,
-                DEFAULT_DASHBOARD_CLIENT_ID);
-        String dashboardSecret = environment.getProperty(Config.EnvKey.DASHBOARD_CLIENT_SECRET,
-                DEFAULT_DASHBOARD_CLIENT_SECRET);
-        return new DashboardClient(dashboardId,dashboardSecret,redirectUri);
-    }
-
 
 }

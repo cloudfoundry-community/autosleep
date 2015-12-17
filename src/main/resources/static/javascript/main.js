@@ -1,10 +1,15 @@
 
 function initNavbar(){
+    var lastActive = null;
     $("#navigationTabs").children().each(function() {
         var $this = $(this);
-        if($this.children().first().attr("href") == window.location.pathname)
-            $this.addClass("active");
+        if(window.location.pathname.indexOf($this.children().first().attr("href") ) == 0){
+            lastActive = $this;
+        }
     });
+    if(lastActive != null){
+        lastActive.addClass("active");
+    }
 }
 
 
