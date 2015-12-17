@@ -57,7 +57,6 @@ public class DashboardController {
             parameters.put("serviceDefinitionId", serviceDefinition.getId());
             parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
             parameters.put("serviceInstance", serviceInstanceId);
-            parameters.put("skipNavigation", true);
 
             parameters.put("forcedAutoEnrollment", serviceInstance.isForcedAutoEnrollment());
             parameters.put("idleDuration", serviceInstance.getIdleDuration().toString());
@@ -67,7 +66,7 @@ public class DashboardController {
             } else {
                 parameters.put("excludeFromAutoEnrollment", "none");
             }
-            return new ModelAndView("views/applications", parameters);
+            return new ModelAndView("views/dashboard", parameters);
         } else {
             log.debug("appForService - service {} not found", serviceInstanceId);
             throw new ServiceInstanceDoesNotExistException(serviceInstanceId);

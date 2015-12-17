@@ -79,7 +79,10 @@ DebugHelper.prototype.listApplications = function (){
                     .on('update.countdown', function(event) {
                         $this.html(event.strftime('%D days %H:%M:%S'));
                     }).on('finish.countdown', function() {
-                        that.listApplications();
+                        setTimeout(function(){
+                            that.listApplications();
+                        }, 1000);
+
                     });
                });
 
