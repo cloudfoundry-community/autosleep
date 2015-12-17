@@ -24,7 +24,7 @@ public class ApplicationInfoTest {
 
     private final Instant yesterday = Instant.now().minus(Duration.ofDays(1));
     private final Instant now = Instant.now();
-    private final UUID appUuid = UUID.randomUUID();
+    private final String appUuid = UUID.randomUUID().toString();
 
 
     @Test
@@ -68,7 +68,7 @@ public class ApplicationInfoTest {
     }
 
     private ApplicationInfo getAnAppInfo() {
-        ApplicationInfo applicationInfo =  new ApplicationInfo(appUuid);
+        ApplicationInfo applicationInfo =  new ApplicationInfo(appUuid.toString());
         return applicationInfo;
     }
 

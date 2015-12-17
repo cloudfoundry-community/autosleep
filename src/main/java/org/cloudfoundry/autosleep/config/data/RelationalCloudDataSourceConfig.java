@@ -9,7 +9,7 @@ import javax.sql.DataSource;
 
 @Configuration
 @Profile("mysql-cloud")
-/** could also work for postgres-cloud or oracle-cloud profiles **/
+/** could also work for postgres-cloud or oracle-cloud profiles. **/
 public class RelationalCloudDataSourceConfig extends AbstractCloudConfig {
 
     @Bean

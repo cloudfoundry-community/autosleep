@@ -67,7 +67,7 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
         applicationLocker.executeThreadSafe(appId, () -> {
             ApplicationInfo appInfo = appRepository.findOne(appId);
             if (appInfo == null) {
-                appInfo = new ApplicationInfo(UUID.fromString(appId));
+                appInfo = new ApplicationInfo(appId);
             }
 
             appInfo.addBoundService(serviceInstanceId);

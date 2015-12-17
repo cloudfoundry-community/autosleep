@@ -5,7 +5,7 @@ applications:
   host: autosleep
   domain: cf.ns.nd-paas.itn.ftgroup
   services:
-    - redis
+    - mysql
   buildpack: java_buildpack
   env:
     JAVA_OPTS: >

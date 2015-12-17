@@ -1,19 +1,11 @@
 package org.cloudfoundry.autosleep.dao.model;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
 
 import javax.persistence.Entity;
-import java.util.Map;
+import javax.persistence.Id;
 import java.util.Objects;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -23,19 +15,14 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 public class ApplicationBinding {
+
+    @Id
     private String serviceBindingId;
 
     private String serviceInstanceId;
 
     private String applicationId;
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public ApplicationBinding(String id, String serviceInstanceId, Map<String, Object> credentials, String
-            syslogDrainUrl, String appGuid) {
-        super(id, serviceInstanceId, credentials, syslogDrainUrl, appGuid);
-        //will throw an exception if wrong format TODO check if needed with new java-client-lib
-        UUID.fromString(appGuid);
-    }
 
     @Override
     public String toString() {
@@ -54,13 +41,6 @@ public class ApplicationBinding {
             return Objects.equals(serviceBindingId, other.serviceBindingId)
                     && Objects.equals(serviceInstanceId, other.serviceInstanceId);
         }
-        ApplicationBinding other = (ApplicationBinding) object;
-
-        return Objects.equals(this.getId(), other.getId())
-                && Objects.equals(this.getServiceInstanceId(), other.getServiceInstanceId())
-                && Objects.equals(this.getAppGuid(), other.getAppGuid())
-                && Objects.equals(this.getCredentials(), other.getCredentials())
-                && Objects.equals(this.getSyslogDrainUrl(), other.getSyslogDrainUrl());
     }
 
     @Override

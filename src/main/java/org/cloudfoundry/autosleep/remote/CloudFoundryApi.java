@@ -46,7 +46,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             }
             log.debug("Building ApplicationInfo(lastEventTime={}, lastLogTime={}, state)",
                     lastEventTime, lastLogTime);
-            return new ApplicationActivity(new ApplicationIdentity(app.getMeta().getGuid(), app.getName()),
+            return new ApplicationActivity(new ApplicationIdentity(app.getMeta().getGuid().toString(), app.getName()),
                     app.getState(),
                     lastEventTime == null ? null : lastEventTime.toInstant(),
                     lastLogTime == null ? null : lastLogTime.toInstant());
@@ -99,7 +99,8 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                                             !excludeNames.matcher(cloudApplication.getName()).matches())
                     )
                     .map(cloudApplication ->
-                            new ApplicationIdentity(cloudApplication.getMeta().getGuid(), cloudApplication.getName()))
+                            new ApplicationIdentity(cloudApplication.getMeta().getGuid().toString(),
+                                    cloudApplication.getName()))
                     .collect(Collectors.toList());
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);

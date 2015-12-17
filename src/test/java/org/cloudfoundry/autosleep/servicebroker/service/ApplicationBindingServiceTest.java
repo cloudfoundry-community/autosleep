@@ -75,7 +75,7 @@ public class ApplicationBindingServiceTest {
         createRequestTemplate = new CreateServiceInstanceBindingRequest(SERVICE_DEFINITION_ID,
                 PLAN_ID,
                 APP_UID.toString());
-        when(applicationInfo.getUuid()).thenReturn(APP_UID);
+        when(applicationInfo.getUuid()).thenReturn(APP_UID.toString());
         when(serviceRepository.findOne(any(String.class))).thenReturn(autosleepServiceInstance);
 
         //avoir nullpointer when getting credentials

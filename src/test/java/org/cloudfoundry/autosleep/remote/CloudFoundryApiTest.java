@@ -237,9 +237,10 @@ public class CloudFoundryApiTest {
 
     @Test
     public void testBindServiceInstance() throws Exception {
-        ApplicationIdentity applicationStarted = new ApplicationIdentity(appStartedUuid, "applicationStarted");
+        ApplicationIdentity applicationStarted = new ApplicationIdentity(appStartedUuid.toString(),
+                "applicationStarted");
         List<ApplicationIdentity> applications = Arrays.asList(applicationStarted,
-                new ApplicationIdentity(appStoppedUuid, "applicationStopped"));
+                new ApplicationIdentity(appStoppedUuid.toString(), "applicationStopped"));
         CloudService service = new CloudService(new Meta(serviceInstanceUuid, new Date(), new Date()),
                 "serviceInstance");
         when(cloudFoundryClient.getServices())

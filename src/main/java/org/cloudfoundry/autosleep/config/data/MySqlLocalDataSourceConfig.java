@@ -1,21 +1,46 @@
 package org.cloudfoundry.autosleep.config.data;
 
+import org.apache.commons.dbcp.BasicDataSource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 
-@Configuration
+@Component
 @Profile("mysql-local")
-public class MySqlLocalDataSourceConfig extends AbstractLocalDataSourceConfig {
+public class MySqlLocalDataSourceConfig  {
+
+    @Value("${mysql.username}")
+    private String username;
+
+    @Value("${mysql.password}")
+    private String password;
+
+    @Value("${mysql.url}")
+    private String url;
+
+    @Value("${mysql.driver}")
+    private String driver;
+
 
     @Bean
     public DataSource dataSource() {
-        return createBasicDataSource("jdbc:mysql://localhost/autosleep",
-                "com.mysql.jdbc.Driver",
-                "admin",
-                "admin");
+        BasicDataSource dataSource = new BasicDataSource();
+        dataSource.setUrl(url);
+        dataSource.setDriverClassName(driver);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+
+       /* dataSource.setUrl("jdbc:mysql://localhost/autosleep");
+        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+        dataSource.setUsername("admin");
+        dataSource.setPassword("admin");*/
+
+        return dataSource;
     }
+
+
 
 }

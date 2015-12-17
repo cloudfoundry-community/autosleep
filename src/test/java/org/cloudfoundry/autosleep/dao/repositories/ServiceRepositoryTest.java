@@ -157,8 +157,6 @@ public abstract class ServiceRepositoryTest {
 
     @Test
     public void testDelete() {
-        //wrong id shouldn't raise anything
-        dao.delete("testDeleteServiceFail");
 
         //delete a service by id
         dao.delete(InsertedInstanceIds.testDeleteServiceByIdSuccess.name());

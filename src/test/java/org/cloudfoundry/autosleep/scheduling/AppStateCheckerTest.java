@@ -66,14 +66,15 @@ public class AppStateCheckerTest {
     public void buildMocks() throws EntityNotFoundException, CloudFoundryException {
         //default
 
-        when(application.getGuid()).thenReturn(APP_UID);
+        when(application.getGuid()).thenReturn(APP_UID.toString());
         when(application.getName()).thenReturn("appName");
         when(applicationActivity.getApplication()).thenReturn(application);
         when(applicationActivity.getLastEvent()).thenReturn(Instant.now());
         when(applicationActivity.getLastLog()).thenReturn(Instant.now());
         when(applicationActivity.getState()).thenReturn(AppState.STARTED);
 
-        applicationInfo = spy(BeanGenerator.createAppInfo(APP_UID, INSTANCE_ID).withRemoteInfo(applicationActivity));
+        applicationInfo = spy(BeanGenerator.createAppInfo(APP_UID.toString(), INSTANCE_ID)
+                .withRemoteInfo(applicationActivity));
 
         when(cloudFoundryApi.getApplicationActivity(APP_UID)).thenReturn(applicationActivity);
 

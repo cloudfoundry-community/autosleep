@@ -14,11 +14,12 @@ import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.UUID;
 
 @Getter
 @Slf4j
@@ -28,8 +29,10 @@ import java.util.UUID;
 @Entity
 public class ApplicationInfo {
 
+    @Id
+    @Column(length = 40)
     @JsonSerialize
-    private UUID uuid;
+    private String uuid;
 
     @JsonSerialize
     private String name;
@@ -65,7 +68,7 @@ public class ApplicationInfo {
         BLACKLISTED
     }
 
-    public ApplicationInfo(UUID uuid) {
+    public ApplicationInfo(String uuid) {
         this.uuid = uuid;
     }
 

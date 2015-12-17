@@ -120,9 +120,6 @@ public abstract class BindingRepositoryTest {
         int nbServicesInit = 4;
         assertThat(countServices(), is(equalTo(nbServicesInit)));
 
-        //wrong id shouldn't raise anything
-        dao.delete("testDeleteServiceFail");
-
         //delete a service by binding id
         dao.delete(deleteByIdSuccess);
         assertThat(countServices(), is(equalTo(nbServicesInit - 1)));

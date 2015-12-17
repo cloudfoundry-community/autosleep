@@ -12,6 +12,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -30,8 +32,14 @@ import static org.junit.Assert.*;
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {RepositoryConfig.class})
+@ContextConfiguration(classes = { RepositoryConfig.class,AppRepositoryTest.TestConfig.class})
 public abstract class AppRepositoryTest {
+
+    @PropertySource("/application.properties")
+    @Configuration
+    static class TestConfig{
+
+    }
 
     private final Instant yesterday = Instant.now().minus(Duration.ofDays(1));
     private final Instant now = Instant.now();
@@ -48,7 +56,7 @@ public abstract class AppRepositoryTest {
         dao.deleteAll();
     }
 
-    private ApplicationInfo buildAppInfo(UUID uuid) {
+    private ApplicationInfo buildAppInfo(String uuid) {
         return BeanGenerator.createAppInfo(uuid,"APTestServiceId").withRemoteInfo(new ApplicationActivity(
                 new ApplicationIdentity(uuid, "appname"),
                 AppState.STARTED,
@@ -57,7 +65,7 @@ public abstract class AppRepositoryTest {
 
     @Test
     public void testInsert() {
-        dao.save(buildAppInfo(UUID.randomUUID()));
+        dao.save(buildAppInfo(UUID.randomUUID().toString()));
         assertThat(countTotal(), is(equalTo(1)));
     }
 
@@ -66,7 +74,7 @@ public abstract class AppRepositoryTest {
         List<String> ids = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
 
         List<ApplicationInfo> initialList = new ArrayList<>();
-        ids.forEach(id -> initialList.add(buildAppInfo(UUID.fromString(id))));
+        ids.forEach(id -> initialList.add(buildAppInfo(id)));
 
         //test save all
         dao.save(initialList);
@@ -92,10 +100,10 @@ public abstract class AppRepositoryTest {
 
     @Test
     public void testFind() {
-        UUID appId = UUID.randomUUID();
+        String appId = UUID.randomUUID().toString();
         ApplicationInfo original = buildAppInfo(appId);
         dao.save(original);
-        ApplicationInfo retrieved = dao.findOne(appId.toString());
+        ApplicationInfo retrieved = dao.findOne(appId);
         assertFalse("Service binding should have been found", retrieved == null);
         assertThat(retrieved.getUuid(), is(equalTo(appId)));
         assertThat(retrieved, is(equalTo(original)));
@@ -111,11 +119,11 @@ public abstract class AppRepositoryTest {
 
     @Test
     public void testDelete() {
-        UUID deleteByIdSuccess = UUID.randomUUID();
-        UUID deleteByInstanceSuccess = UUID.randomUUID();
-        UUID deleteByMass1 = UUID.randomUUID();
-        UUID deleteByMass2 = UUID.randomUUID();
-        UUID deleteOtherRandom = UUID.randomUUID();
+        String deleteByIdSuccess = UUID.randomUUID().toString();
+        String deleteByInstanceSuccess = UUID.randomUUID().toString();
+        String deleteByMass1 = UUID.randomUUID().toString();
+        String deleteByMass2 = UUID.randomUUID().toString();
+        String deleteOtherRandom = UUID.randomUUID().toString();
 
         dao.save(buildAppInfo(deleteByIdSuccess));
         dao.save(buildAppInfo(deleteByInstanceSuccess));
@@ -125,9 +133,6 @@ public abstract class AppRepositoryTest {
 
         int nbServicesInit = 5;
         assertThat(countTotal(), is(equalTo(nbServicesInit)));
-
-        //wrong id shouldn't raise anything
-        dao.delete("testDeleteServiceFail");
 
         //delete a service by binding id
         dao.delete(deleteByIdSuccess.toString());
