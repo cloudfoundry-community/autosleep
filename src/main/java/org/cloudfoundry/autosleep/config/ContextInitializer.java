@@ -5,6 +5,7 @@ import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudException;
 import org.springframework.cloud.CloudFactory;
 import org.springframework.cloud.service.ServiceInfo;
+import org.springframework.cloud.service.common.MysqlServiceInfo;
 import org.springframework.cloud.service.common.RedisServiceInfo;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
@@ -27,11 +28,12 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
      * Will point to in-memory storage.
      */
     private static final String DEFAULT_PROFILE = "default";
-    private static final List<String> validLocalProfiles = Collections.singletonList("redis");
+    private static final List<String> validLocalProfiles = Arrays.asList("mysql","redis");
     private static final Map<Class<? extends ServiceInfo>, String> autorizedPersistenceProfiles =
             new HashMap<>();
 
     static {
+        autorizedPersistenceProfiles.put(MysqlServiceInfo.class, "mysql");
         autorizedPersistenceProfiles.put(RedisServiceInfo.class, "redis");
     }
 

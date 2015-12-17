@@ -14,6 +14,7 @@ import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 
+import javax.persistence.Entity;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Objects;
@@ -24,6 +25,7 @@ import java.util.UUID;
 @JsonAutoDetect()
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Entity
 public class ApplicationInfo {
 
     @JsonSerialize
