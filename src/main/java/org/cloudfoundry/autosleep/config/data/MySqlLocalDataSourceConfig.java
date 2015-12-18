@@ -32,12 +32,6 @@ public class MySqlLocalDataSourceConfig  {
         dataSource.setDriverClassName(driver);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
-
-       /* dataSource.setUrl("jdbc:mysql://localhost/autosleep");
-        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
-        dataSource.setUsername("admin");
-        dataSource.setPassword("admin");*/
-
         return dataSource;
     }
 
