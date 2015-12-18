@@ -5,19 +5,15 @@ import org.cloudfoundry.autosleep.servicebroker.service.InvalidParameterExceptio
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.regex.Pattern;
 
+import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.*;
-
-import static org.hamcrest.Matchers.is;
-
-
-import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
+import static org.junit.Assert.assertThat;
 
 public class ParameterReaderFactoryTest {
 
@@ -29,14 +25,14 @@ public class ParameterReaderFactoryTest {
         assertThat(idleDurationReader.getParameterName(), is(equalTo(Config.ServiceInstanceParameters.IDLE_DURATION)));
 
         //default case
-        assertThat(idleDurationReader.readParameter(Collections.emptyMap(), true),
+        assertThat(idleDurationReader.readParameter(null, true),
                 is(equalTo(Config.DEFAULT_INACTIVITY_PERIOD)));
-        assertThat(idleDurationReader.readParameter(Collections.emptyMap(), false),
+        assertThat(idleDurationReader.readParameter(null, false),
                 is(nullValue()));
 
         //bad syntax
         verifyThrown(() -> idleDurationReader
-                        .readParameter(Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "12"),
+                        .readParameter("12",
                                 true),
                 InvalidParameterException.class,
                 parameterChecked ->
@@ -44,9 +40,7 @@ public class ParameterReaderFactoryTest {
                                 is(equalTo(Config.ServiceInstanceParameters.IDLE_DURATION))));
 
         //good syntax
-        assertThat(idleDurationReader
-                .readParameter(Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PT12M"),
-                        true), is(equalTo(Duration.ofMinutes(12))));
+        assertThat(idleDurationReader.readParameter("PT12M", true), is(equalTo(Duration.ofMinutes(12))));
 
     }
 
@@ -58,15 +52,14 @@ public class ParameterReaderFactoryTest {
         assertThat(enrollmentParameterReader.getParameterName(),
                 is(equalTo(Config.ServiceInstanceParameters.AUTO_ENROLLMENT)));
         //default case are null
-        assertThat(enrollmentParameterReader.readParameter(Collections.emptyMap(), true),
+        assertThat(enrollmentParameterReader.readParameter(null, true),
                 is(Config.ServiceInstanceParameters.Enrollment.standard));
-        assertThat(enrollmentParameterReader.readParameter(Collections.emptyMap(), false),
+        assertThat(enrollmentParameterReader.readParameter(null, false),
                 is(nullValue()));
 
         //bad syntax is well thrown
         verifyThrown(() -> enrollmentParameterReader
-                        .readParameter(Collections.singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
-                                "fart"), true),
+                        .readParameter("fart", true),
                 InvalidParameterException.class,
                 parameterChecked ->
                         assertThat(parameterChecked.getParameterName(),
@@ -74,13 +67,11 @@ public class ParameterReaderFactoryTest {
 
         //good syntax
         Config.ServiceInstanceParameters.Enrollment enrollment = enrollmentParameterReader
-                .readParameter(Collections.singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, Config
-                        .ServiceInstanceParameters.Enrollment.standard.name()), true);
+                .readParameter(Config.ServiceInstanceParameters.Enrollment.standard.name(), true);
         assertThat(enrollment, is(equalTo(Config
                 .ServiceInstanceParameters.Enrollment.standard)));
         enrollment = enrollmentParameterReader
-                .readParameter(Collections.singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, Config
-                        .ServiceInstanceParameters.Enrollment.forced.name()), false);
+                .readParameter(Config.ServiceInstanceParameters.Enrollment.forced.name(), false);
         assertThat(enrollment, is(equalTo(Config
                 .ServiceInstanceParameters.Enrollment.forced)));
     }
@@ -93,19 +84,16 @@ public class ParameterReaderFactoryTest {
                 is(equalTo(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT)));
 
         //default case are null
-        assertThat(excludeFromAutoEnrollmentReader.readParameter(Collections.emptyMap(), false),
+        assertThat(excludeFromAutoEnrollmentReader.readParameter(null, false),
                 is(nullValue()));
-        assertThat(excludeFromAutoEnrollmentReader.readParameter(Collections.singletonMap(Config
-                        .ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, ""), false),
+        assertThat(excludeFromAutoEnrollmentReader.readParameter("", false),
                 is(nullValue()));
-        assertThat(excludeFromAutoEnrollmentReader.readParameter(Collections.emptyMap(), false),
+        assertThat(excludeFromAutoEnrollmentReader.readParameter(null, false),
                 is(nullValue()));
 
         //bad syntax is well thrown
         verifyThrown(() -> excludeFromAutoEnrollmentReader
-                        .readParameter(Collections
-                                        .singletonMap(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT,
-                                                "*"),
+                        .readParameter("*",
                                 true),
                 InvalidParameterException.class,
                 parameterChecked ->
@@ -113,9 +101,7 @@ public class ParameterReaderFactoryTest {
                                 is(equalTo(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT))));
 
         String pattern = ".*";
-        Pattern result = excludeFromAutoEnrollmentReader
-                .readParameter(Collections.singletonMap(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT,
-                        pattern), true);
+        Pattern result = excludeFromAutoEnrollmentReader.readParameter(pattern, true);
         assertThat(result, is(not(nullValue())));
         assertThat(result.pattern(), is(equalTo(pattern)));
     }
@@ -126,12 +112,10 @@ public class ParameterReaderFactoryTest {
         assertThat(secretReader.getParameterName(), is(equalTo(Config.ServiceInstanceParameters.SECRET)));
 
         //default case are null
-        assertThat(secretReader.readParameter(Collections.emptyMap(), false), is(nullValue()));
-        assertThat(secretReader.readParameter(Collections.emptyMap(), false), is(nullValue()));
+        assertThat(secretReader.readParameter(null, false), is(nullValue()));
+        assertThat(secretReader.readParameter(null, false), is(nullValue()));
 
         String secret = "P@ssword!";
-        assertThat(secretReader.readParameter(
-                        Collections.singletonMap(Config.ServiceInstanceParameters.SECRET, secret), true),
-                is(equalTo(secret)));
+        assertThat(secretReader.readParameter(secret, true), is(equalTo(secret)));
     }
 }

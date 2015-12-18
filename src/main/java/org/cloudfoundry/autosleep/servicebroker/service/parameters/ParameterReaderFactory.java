@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -28,10 +29,10 @@ public class ParameterReaderFactory {
             }
 
             @Override
-            public Duration readParameter(Map<String, Object> parameters, boolean withDefault) throws
+            public Duration readParameter(Object parameter, boolean withDefault) throws
                     InvalidParameterException {
-                if (parameters.get(Config.ServiceInstanceParameters.IDLE_DURATION) != null) {
-                    String inactivityPattern = (String) parameters.get(Config.ServiceInstanceParameters.IDLE_DURATION);
+                if (parameter != null) {
+                    String inactivityPattern = (String) parameter;
                     log.debug("pattern " + inactivityPattern);
                     try {
                         return Duration.parse(inactivityPattern);
@@ -61,11 +62,10 @@ public class ParameterReaderFactory {
             }
 
             @Override
-            public Pattern readParameter(Map<String, Object> parameters, boolean withDefault) throws
+            public Pattern readParameter(Object parameter, boolean withDefault) throws
                     InvalidParameterException {
-                if (parameters.get(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT) != null) {
-                    String excludeNamesStr = (String) parameters.get(Config.ServiceInstanceParameters
-                            .EXCLUDE_FROM_AUTO_ENROLLMENT);
+                if (parameter != null) {
+                    String excludeNamesStr = (String) parameter;
                     if (!excludeNamesStr.trim().equals("")) {
                         log.debug("excludeFromAutoEnrollment " + excludeNamesStr);
                         try {
@@ -95,11 +95,11 @@ public class ParameterReaderFactory {
             }
 
             @Override
-            public Config.ServiceInstanceParameters.Enrollment readParameter(Map<String, Object> parameters, boolean
+            public Config.ServiceInstanceParameters.Enrollment readParameter(Object parameter, boolean
                     withDefault) throws
                     InvalidParameterException {
-                if (parameters.get(Config.ServiceInstanceParameters.AUTO_ENROLLMENT) != null) {
-                    String autoEnrollment = (String) parameters.get(Config.ServiceInstanceParameters.AUTO_ENROLLMENT);
+                if (parameter != null) {
+                    String autoEnrollment = (String) parameter;
                     log.debug("forcedAutoEnrollment " + autoEnrollment);
                     try {
                         return Config.ServiceInstanceParameters.Enrollment.valueOf(autoEnrollment);
@@ -132,11 +132,10 @@ public class ParameterReaderFactory {
             }
 
             @Override
-            public String readParameter(Map<String, Object> parameters, boolean withDefault) throws
+            public String readParameter(Object parameter, boolean withDefault) throws
                     InvalidParameterException {
-                Object receivedSecret = parameters.get(Config.ServiceInstanceParameters.SECRET);
-                if (receivedSecret != null) {
-                    return String.class.cast(receivedSecret);
+                if (parameter != null) {
+                    return String.class.cast(parameter);
                 } else {
                     return null;
                 }
