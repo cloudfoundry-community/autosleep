@@ -2,6 +2,7 @@ package org.cloudfoundry.autosleep.remote;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.remote.EntityNotFoundException.EntityType;
+import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.util.LastDateComputer;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
 import org.cloudfoundry.client.lib.domain.ApplicationLog;
@@ -61,7 +62,6 @@ public class CloudFoundryApiTest {
 
     private static final UUID serviceInstanceNotFoundUuid = UUID.randomUUID();
 
-    private static final UUID serviceInstanceErrorUuid = UUID.randomUUID();
 
     @Mock
     private CloudFoundryClient cloudFoundryClient;
@@ -76,47 +76,61 @@ public class CloudFoundryApiTest {
 
     @Before
     public void setUp() {
-        sampleApplicationStarted = new CloudApplication("sampleApplicationStarted", "commandUrl", "buildPackUrl",
-                1024, 1, Collections.singletonList("accessUri"),
-                Arrays.asList("service1", "service2"), AppState.STARTED);
-        sampleApplicationStopped = new CloudApplication("sampleApplicationStopped", "commandUrl", "buildPackUrl",
-                1024, 1, Collections.singletonList("accessUri"),
-                Arrays.asList("service1", "service2"), AppState.STOPPED);
-
-        when(cloudFoundryClient.getApplication(appStartedUuid)).thenReturn(sampleApplicationStarted);
-        when(cloudFoundryClient.getApplication(appStoppedUuid)).thenReturn(sampleApplicationStopped);
-        when(cloudFoundryClient.getApplication(notFoundUuid))
-                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND, "Application not found"));
-        when(cloudFoundryClient.getApplication(errorOnGet))
-                .thenThrow(new RuntimeException("runtime error"))
-                .thenThrow(new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Remote error") );
-
-
+        sampleApplicationStarted = new CloudApplication(new Meta(appStartedUuid, null, null),
+                "sampleApplicationStarted");
+        sampleApplicationStarted.setState(AppState.STARTED);
+        sampleApplicationStopped = new CloudApplication(new Meta(appStoppedUuid, null, null),
+                "sampleApplicationStopped");
+        sampleApplicationStopped.setState(AppState.STOPPED);
     }
 
+    @Test
+    public void test_get_application_activity_fails_on_runtime_exception_on_get_application() {
+        //given an exception will occur
+        when(cloudFoundryClient.getApplication(errorOnGet))
+                .thenThrow(new RuntimeException("runtime error"));
+        //when get activity is invoked then proper error is thrown
+        verifyThrown(() -> cloudFoundryApi.getApplicationActivity(errorOnGet), CloudFoundryException.class);
+    }
 
     @Test
-    public void testGetApplicationActivity() throws Exception {
-        verifyThrown(() -> cloudFoundryApi.getApplicationActivity(errorOnGet), CloudFoundryException.class);
-        verifyThrown(() -> cloudFoundryApi.getApplicationActivity(errorOnGet), CloudFoundryException.class);
+    public void test_error_thrown_when_not_found() {
+        //given application is not found remotely
+        when(cloudFoundryClient.getApplication(notFoundUuid))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND, "Application not found"));
+        //when get activity is invoked then proper error is thrown
         verifyThrown(() -> cloudFoundryApi.getApplicationActivity(notFoundUuid), EntityNotFoundException.class,
                 exceptionThrown -> {
                     assertThat(exceptionThrown.getEntityType(), is(equalTo(EntityType.application)));
                     assertThat(exceptionThrown.getEntityId(), is(equalTo(notFoundUuid.toString())));
                 });
+    }
 
-
-        Date lastLogTime = new Date(Instant
-                .now().plusSeconds(-5).getEpochSecond() * 1000);
-        Date lastEventTime = new Date(Instant
-                .now().plusSeconds(-60).getEpochSecond() * 1000);
-        Date lastActionTime = lastEventTime.getTime() > lastLogTime.getTime() ? lastEventTime : lastLogTime;
-
-        log.debug("lastLogTime = {}, lastEventTime={}, lastActionTime={}",
-                lastLogTime, lastEventTime, lastActionTime);
-
+    @Test
+    public void test_get_application_activity_fails_on_runtime_exception_on_get_recent_log() {
+        //given application is found
+        when(cloudFoundryClient.getApplication(appStartedUuid)).thenReturn(sampleApplicationStarted);
+        // and an exception will occur on recent log
         when(cloudFoundryClient.getRecentLogs(sampleApplicationStarted.getName()))
-                .thenThrow(new RuntimeException("First call failsr"))
+                .thenThrow(new RuntimeException("Call fail"));
+        //when get activity is invoked then proper error is thrown
+        verifyThrown(() -> cloudFoundryApi.getApplicationActivity(appStartedUuid), CloudFoundryException.class);
+    }
+
+
+    @Test
+    public void test_get_application_activity_succeeds() throws Exception {
+        final Date lastLogTime = new Date(Instant
+                .now().plusSeconds(-5).getEpochSecond() * 1000);
+        final Date lastEventTime = new Date(Instant
+                .now().plusSeconds(-60).getEpochSecond() * 1000);
+        final Date lastActionTime = lastEventTime.getTime() > lastLogTime.getTime() ? lastEventTime : lastLogTime;
+
+
+        //given application is found
+        when(cloudFoundryClient.getApplication(appStartedUuid)).thenReturn(sampleApplicationStarted);
+        //and both recentlog and application events return data
+        when(cloudFoundryClient.getRecentLogs(sampleApplicationStarted.getName()))
                 .thenReturn(Arrays.asList(new ApplicationLog(sampleApplicationStarted.getName(), "",
                                 new Date(lastLogTime.getTime() - 10000),
                                 MessageType.STDERR, "sourceName", "sourceId"),
@@ -130,8 +144,11 @@ public class CloudFoundryApiTest {
                     event.setTimestamp(lastEventTime);
                     return Collections.singletonList(event);
                 });
-        verifyThrown(() -> cloudFoundryApi.getApplicationActivity(appStartedUuid), CloudFoundryException.class);
+        //when get application activity is invoked
         ApplicationActivity applicationActivity = cloudFoundryApi.getApplicationActivity(appStartedUuid);
+
+
+        //then data is returned with expected values
         assertThat(applicationActivity, notNullValue());
         assertThat(applicationActivity.getState(), is(equalTo(AppState.STARTED)));
 
@@ -144,42 +161,111 @@ public class CloudFoundryApiTest {
     }
 
     @Test
-    public void testStopApplication() throws Exception {
+    public void test_stop_and_start_application_fails_on_runtime_exception_on_get_application() {
+        //given an exception will occur
+        when(cloudFoundryClient.getApplication(errorOnGet))
+                .thenThrow(new RuntimeException("runtime error"));
+        //when stop or start application is invoked then proper error is thrown
         verifyThrown(() -> cloudFoundryApi.stopApplication(errorOnGet), CloudFoundryException.class);
-        verifyThrown(() -> cloudFoundryApi.stopApplication(errorOnGet), CloudFoundryException.class);
+        verifyThrown(() -> cloudFoundryApi.startApplication(errorOnGet), CloudFoundryException.class);
+    }
+
+    @Test
+    public void test_stop_application_fails_on_runtime_exception_on_stop_call() {
+        //given application is found
+        when(cloudFoundryClient.getApplication(appStartedUuid)).thenReturn(sampleApplicationStarted);
+        //and stop throws an error
+        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).stopApplication(any(String.class));
+        //when stop or start is invoked then proper error is thrown
+        verifyThrown(() -> cloudFoundryApi.stopApplication(appStartedUuid), CloudFoundryException.class);
+    }
+
+    @Test
+    public void test_sart_application_fails_on_runtime_exception_on_start_call() {
+        //given application is found
+        when(cloudFoundryClient.getApplication(appStoppedUuid)).thenReturn(sampleApplicationStopped);
+        //and stop throws an error
+        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).startApplication(any(String.class));
+        //when stop or start is invoked then proper error is thrown
+        verifyThrown(() -> cloudFoundryApi.startApplication(appStoppedUuid), CloudFoundryException.class);
+    }
+
+
+    @Test
+    public void test_stop_and_start_application_when_not_found() {
+        //given application is not found remotely
+        when(cloudFoundryClient.getApplication(notFoundUuid))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND, "Application not found"));
+        //when stop or start application is invoked then proper error is thrown
         verifyThrown(() -> cloudFoundryApi.stopApplication(notFoundUuid), EntityNotFoundException.class,
                 exceptionThrown -> {
                     assertThat(exceptionThrown.getEntityType(), is(equalTo(EntityType.application)));
                     assertThat(exceptionThrown.getEntityId(), is(equalTo(notFoundUuid.toString())));
                 });
-
-        cloudFoundryApi.stopApplication(appStartedUuid);
-        cloudFoundryApi.stopApplication(appStoppedUuid);
-
-        verify(cloudFoundryClient, times(5)).getApplication(any(UUID.class));
-        verify(cloudFoundryClient, times(1)).stopApplication(sampleApplicationStarted.getName());
-        verify(cloudFoundryClient, never()).stopApplication(sampleApplicationStopped.getName());
-        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).stopApplication(any(String.class));
-        verifyThrown(() -> cloudFoundryApi.stopApplication(appStartedUuid), CloudFoundryException.class);
-    }
-
-
-    @Test
-    public void testStartApplication() throws Exception {
-        verifyThrown(() -> cloudFoundryApi.startApplication(errorOnGet), CloudFoundryException.class);
-        verifyThrown(() -> cloudFoundryApi.startApplication(errorOnGet), CloudFoundryException.class);
         verifyThrown(() -> cloudFoundryApi.startApplication(notFoundUuid), EntityNotFoundException.class,
                 exceptionThrown -> {
                     assertThat(exceptionThrown.getEntityType(), is(equalTo(EntityType.application)));
                     assertThat(exceptionThrown.getEntityId(), is(equalTo(notFoundUuid.toString())));
                 });
-        cloudFoundryApi.startApplication(appStartedUuid);
+    }
+
+    @Test
+    public void test_stop_on_stopped_application() throws Exception {
+        //given get activity return a stopped application
+        when(cloudFoundryClient.getApplication(appStoppedUuid)).thenReturn(sampleApplicationStopped);
+        //when stop application is invoked
+        cloudFoundryApi.stopApplication(appStoppedUuid);
+        //then client got application
+        verify(cloudFoundryClient, times(1)).getApplication(appStoppedUuid);
+        //and did not asked for stop
+        verify(cloudFoundryClient, never()).stopApplication(anyString());
+    }
+
+    @Test
+    public void test_stop_on_started_application() throws Exception {
+        //given get activity return a stopped application
+        when(cloudFoundryClient.getApplication(appStartedUuid)).thenReturn(sampleApplicationStarted);
+        //when stop application is invoked
+        cloudFoundryApi.stopApplication(appStartedUuid);
+        //then client got application
+        verify(cloudFoundryClient, times(1)).getApplication(appStartedUuid);
+        //and did asked for stop
+        verify(cloudFoundryClient, times(1)).stopApplication(sampleApplicationStarted.getName());
+    }
+
+
+    @Test
+    public void test_start_on_stopped_application() throws Exception {
+        //given get activity return a stopped or start application
+        when(cloudFoundryClient.getApplication(appStoppedUuid)).thenReturn(sampleApplicationStopped);
+        //when start application is invoked
         cloudFoundryApi.startApplication(appStoppedUuid);
-        verify(cloudFoundryClient, times(5)).getApplication(any(UUID.class));
+        //then client got application
+        verify(cloudFoundryClient, times(1)).getApplication(appStoppedUuid);
+        //and did asked for start
         verify(cloudFoundryClient, times(1)).startApplication(sampleApplicationStopped.getName());
+    }
+
+    @Test
+    public void test_start_on_started_application() throws Exception {
+        //given get activity return a stopped application
+        when(cloudFoundryClient.getApplication(appStartedUuid)).thenReturn(sampleApplicationStarted);
+        //when start application is invoked
+        cloudFoundryApi.startApplication(appStartedUuid);
+        //then client got application
+        verify(cloudFoundryClient, times(1)).getApplication(appStartedUuid);
+        //and did not asked for start
         verify(cloudFoundryClient, never()).startApplication(sampleApplicationStarted.getName());
-        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).startApplication(any(String.class));
-        verifyThrown(() -> cloudFoundryApi.startApplication(appStoppedUuid), CloudFoundryException.class);
+    }
+
+
+    @Test
+    public void test_list_fails_on_runtime_exception() {
+        //given list fails
+        when(cloudFoundryClient.getApplications())
+                .thenThrow(new RuntimeException("First call fails"));
+        //when list application is invoked, proper error is thrown
+        verifyThrown(() -> cloudFoundryApi.listApplications(null, null), CloudFoundryException.class);
 
     }
 
@@ -193,8 +279,8 @@ public class CloudFoundryApiTest {
         );
         List<Integer> applicationsIdsPerSpaces = Arrays.asList(1, 2);
 
+        //given we have an organization, with two spaces. Each space contains two applications
         when(cloudFoundryClient.getApplications())
-                .thenThrow(new RuntimeException("First call fails"))
                 .thenReturn(
                         spaces.stream().flatMap(space ->
                                         applicationsIdsPerSpaces.stream().map(cpt -> {
@@ -205,21 +291,24 @@ public class CloudFoundryApiTest {
                                             return application;
                                         }).collect(Collectors.toList()).stream()
                         ).collect(Collectors.toList()));
-
-
-        //test that remote call throws an exception
-        verifyThrown(() -> cloudFoundryApi.listApplications(null, null), CloudFoundryException.class);
-
+        //when list applications is invoked without filters
         List<ApplicationIdentity> applicationIdentities = cloudFoundryApi.listApplications(null, null);
+        //then we get all applications
         assertThat(applicationIdentities, is(notNullValue()));
         assertThat(applicationIdentities.size(), is(equalTo(spaces.size() * applicationsIdsPerSpaces.size())));
 
+        //given same conditions
+        //when list applications filtering on first space
         applicationIdentities = cloudFoundryApi.listApplications(spaces.get(0).getMeta().getGuid(), null);
+        //then we get only applications of this space
         assertThat(applicationIdentities, is(notNullValue()));
         assertThat(applicationIdentities.size(), is(equalTo(applicationsIdsPerSpaces.size())));
 
+        //given same conditions
+        //when list applications filtering an application name pattern
         applicationIdentities = cloudFoundryApi.listApplications(null,
                 Pattern.compile(".*-application-" + applicationsIdsPerSpaces.get(0)));
+        //then we get only applications which name match this pattern
         assertThat(applicationIdentities, is(notNullValue()));
         assertThat(applicationIdentities.size(), is(equalTo(spaces.size())));
 
@@ -228,57 +317,91 @@ public class CloudFoundryApiTest {
         assertThat(applicationIdentities, is(notNullValue()));
         assertThat(applicationIdentities.size(), is(equalTo(1)));
 
+        //given same conditions
+        //when list applications filtering all application name pattern and a space
         applicationIdentities = cloudFoundryApi.listApplications(spaces.get(0).getMeta().getGuid(),
                 Pattern.compile(".*"));
+        //then we get a result with no entities
         assertThat(applicationIdentities, is(notNullValue()));
         assertThat(applicationIdentities.size(), is(equalTo(0)));
     }
 
 
     @Test
-    public void testBindServiceInstance() throws Exception {
-        ApplicationIdentity applicationStarted = new ApplicationIdentity(appStartedUuid.toString(),
-                "applicationStarted");
-        List<ApplicationIdentity> applications = Arrays.asList(applicationStarted,
-                new ApplicationIdentity(appStoppedUuid.toString(), "applicationStopped"));
-        CloudService service = new CloudService(new Meta(serviceInstanceUuid, new Date(), new Date()),
+    public void test_bind_fails_on_runtime_exception_on_get_service() {
+        //given get service fails
+        when(cloudFoundryClient.getServices())
+                .thenThrow(new RuntimeException("some error"));
+        //when bind application (single or list) is invoked, proper error is thrown
+        ApplicationIdentity sampleIdentity = BeanGenerator.createAppIdentity(appStartedUuid.toString());
+        verifyThrown(() -> cloudFoundryApi.bindServiceInstance(sampleIdentity, serviceInstanceUuid.toString()),
+                CloudFoundryException.class);
+        verifyThrown(() -> cloudFoundryApi.bindServiceInstance(Collections.singletonList(sampleIdentity),
+                        serviceInstanceUuid.toString()),
+                CloudFoundryException.class);
+
+    }
+
+
+    private CloudService only_one_remote_service(UUID serviceId) {
+        CloudService service = new CloudService(new Meta(serviceId, new Date(), new Date()),
                 "serviceInstance");
         when(cloudFoundryClient.getServices())
-                .thenThrow(new RuntimeException("some error"))
-                .thenThrow(new RuntimeException("some error"))
                 .thenReturn(Collections.singletonList(service));
+        return service;
+    }
 
-
-        verifyThrown(() -> cloudFoundryApi.bindServiceInstance(applicationStarted, serviceInstanceUuid.toString()),
+    @Test
+    public void test_bind_fails_on_runtime_exception_ob_bind_service() {
+        //given get service returns a service
+        only_one_remote_service(serviceInstanceUuid);
+        //and bind service fails with a runtime error
+        doThrow(new RuntimeException("runtime failed")).when(cloudFoundryClient).bindService(anyString(), anyString());
+        //when bind application (single or list) is invoked, proper error is thrown
+        ApplicationIdentity sampleIdentity = BeanGenerator.createAppIdentity(appStartedUuid.toString());
+        verifyThrown(() -> cloudFoundryApi.bindServiceInstance(sampleIdentity, serviceInstanceUuid.toString()),
                 CloudFoundryException.class);
-        verifyThrown(() -> cloudFoundryApi.bindServiceInstance(applications, serviceInstanceUuid.toString()),
+        verifyThrown(() -> cloudFoundryApi.bindServiceInstance(Collections.singletonList(sampleIdentity),
+                        serviceInstanceUuid.toString()),
                 CloudFoundryException.class);
+    }
 
-        verifyThrown(() -> cloudFoundryApi
-                        .bindServiceInstance(applicationStarted, serviceInstanceNotFoundUuid.toString()),
+    @Test
+    public void test_bind_fails_on_service_not_found() {
+        //given get service returns a service
+        only_one_remote_service(serviceInstanceUuid);
+        //when bind application (single or list) is invoked on an other servoce, proper error is thrown
+        ApplicationIdentity sampleIdentity = BeanGenerator.createAppIdentity(appStartedUuid.toString());
+        verifyThrown(() -> cloudFoundryApi.bindServiceInstance(sampleIdentity, serviceInstanceNotFoundUuid.toString()),
                 EntityNotFoundException.class,
                 exceptionThrown -> {
                     assertThat(exceptionThrown.getEntityType(), is(equalTo(EntityType.service)));
                     assertThat(exceptionThrown.getEntityId(), is(equalTo(serviceInstanceNotFoundUuid.toString())));
                 });
-        verifyThrown(() -> cloudFoundryApi
-                        .bindServiceInstance(applications, serviceInstanceNotFoundUuid.toString()),
+        verifyThrown(() -> cloudFoundryApi.bindServiceInstance(Collections.singletonList(sampleIdentity),
+                        serviceInstanceNotFoundUuid.toString()),
                 EntityNotFoundException.class,
                 exceptionThrown -> {
                     assertThat(exceptionThrown.getEntityType(), is(equalTo(EntityType.service)));
                     assertThat(exceptionThrown.getEntityId(), is(equalTo(serviceInstanceNotFoundUuid.toString())));
                 });
+    }
 
 
-        cloudFoundryApi.bindServiceInstance(applicationStarted, serviceInstanceUuid.toString());
-        verify(cloudFoundryClient, times(1)).bindService(eq(applicationStarted.getName()), eq(service.getName()));
+    @Test
+    public void test_bind_succeeds() throws Exception {
+        //given get service returns a service
+        CloudService service = only_one_remote_service(serviceInstanceUuid);
+        //when bind application (single or list) is invoked
+        ApplicationIdentity sampleIdentity = BeanGenerator.createAppIdentity(appStartedUuid.toString());
+        cloudFoundryApi.bindServiceInstance(sampleIdentity, serviceInstanceUuid.toString());
+        List<ApplicationIdentity> applications = Arrays.asList(sampleIdentity,
+                BeanGenerator.createAppIdentity(appStoppedUuid.toString()));
         cloudFoundryApi.bindServiceInstance(applications, serviceInstanceUuid.toString());
+        //then bind service is invoked on each application
         verify(cloudFoundryClient, times(1 + applications.size()))
                 .bindService(any(String.class), eq(service.getName()));
 
-        doThrow(new RuntimeException("runtime failed")).when(cloudFoundryClient).bindService(anyString(), anyString());
-        verifyThrown(() -> cloudFoundryApi.bindServiceInstance(applicationStarted, serviceInstanceUuid.toString()),
-                CloudFoundryException.class);
 
     }
 
