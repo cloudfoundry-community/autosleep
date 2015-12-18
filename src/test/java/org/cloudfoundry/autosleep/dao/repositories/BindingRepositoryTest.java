@@ -3,6 +3,7 @@ package org.cloudfoundry.autosleep.dao.repositories;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.util.ApplicationConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +24,7 @@ import static org.junit.Assert.*;
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {RepositoryConfig.class})
+@ContextConfiguration(classes = {ApplicationConfiguration.class, RepositoryConfig.class})
 public abstract class BindingRepositoryTest {
 
     private static final String APP_GUID = "2F5A0947-6468-401B-B12A-963405121937";

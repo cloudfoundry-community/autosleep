@@ -5,6 +5,7 @@ import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.util.ApplicationConfiguration;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.junit.After;
@@ -32,14 +33,9 @@ import static org.junit.Assert.*;
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = { RepositoryConfig.class,AppRepositoryTest.TestConfig.class})
+@ContextConfiguration(classes = {ApplicationConfiguration.class, RepositoryConfig.class})
 public abstract class AppRepositoryTest {
 
-    @PropertySource("/application.properties")
-    @Configuration
-    static class TestConfig{
-
-    }
 
     private final Instant yesterday = Instant.now().minus(Duration.ofDays(1));
     private final Instant now = Instant.now();
@@ -57,7 +53,7 @@ public abstract class AppRepositoryTest {
     }
 
     private ApplicationInfo buildAppInfo(String uuid) {
-        return BeanGenerator.createAppInfo(uuid,"APTestServiceId").withRemoteInfo(new ApplicationActivity(
+        return BeanGenerator.createAppInfo(uuid, "APTestServiceId").withRemoteInfo(new ApplicationActivity(
                 new ApplicationIdentity(uuid, "appname"),
                 AppState.STARTED,
                 Instant.now(), Instant.now()));

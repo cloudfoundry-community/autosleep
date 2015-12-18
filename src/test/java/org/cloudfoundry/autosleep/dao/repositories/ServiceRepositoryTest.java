@@ -3,6 +3,7 @@ package org.cloudfoundry.autosleep.dao.repositories;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.util.ApplicationConfiguration;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
 import org.junit.Before;
@@ -27,7 +28,7 @@ import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {RepositoryConfig.class})
+@ContextConfiguration(classes = {ApplicationConfiguration.class, RepositoryConfig.class})
 public abstract class ServiceRepositoryTest {
 
     private static final String ORG_TEST = "orgTest";
