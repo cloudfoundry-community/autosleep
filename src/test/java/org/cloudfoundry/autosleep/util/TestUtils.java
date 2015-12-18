@@ -47,7 +47,8 @@ public class TestUtils {
             fail("Expected exception " + wantedClass.getName() + " not thrown");
         } catch (Exception exc) {
             if (!wantedClass.isInstance(exc)) {
-                throw new RuntimeException("Expected " + wantedClass.getName() + " got " + wantedClass.getName(), exc);
+                throw new RuntimeException("Expected " + wantedClass.getName() + " got " + exc.getClass().getName(),
+                        exc);
             }
             T expectedClass = wantedClass.cast(exc);
             for (CheckerFunction<T> checker : checkers) {
