@@ -96,7 +96,8 @@ public class GlobalWatcherTest {
 
         when(cloudFoundryApi.listApplications(any(UUID.class), any(Pattern.class)))
                 .thenReturn(remoteApplications.stream()
-                        .map(id -> new ApplicationIdentity(id, id.toString())).collect(Collectors.toList()));
+                        .map(id -> new ApplicationIdentity(id.toString(), id.toString()))
+                        .collect(Collectors.toList()));
 
     }
 

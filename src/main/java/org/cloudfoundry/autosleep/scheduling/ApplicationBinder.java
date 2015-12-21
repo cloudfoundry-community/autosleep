@@ -50,7 +50,7 @@ public class ApplicationBinder extends AbstractPeriodicTask {
         AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceInstanceId);
         if (serviceInstance != null) {
             try {
-                Set<UUID> watchedOrIgnoredApplications = new HashSet<>();
+                Set<String> watchedOrIgnoredApplications = new HashSet<>();
                 applicationRepository.findAll()
                         .forEach(applicationInfo -> {
                             if (applicationInfo.getServiceInstances().keySet().contains(serviceInstanceId)) {

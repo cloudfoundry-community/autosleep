@@ -15,7 +15,6 @@ import org.cloudfoundry.autosleep.scheduling.ApplicationLocker;
 import org.cloudfoundry.autosleep.ui.model.ServerResponse;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
-import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.Plan;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
 import org.junit.Before;
@@ -38,17 +37,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -57,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(MockitoJUnitRunner.class)
 public class ApiControllerTest {
 
-    private static final UUID applicationId = UUID.randomUUID();
+    private static final String applicationId = UUID.randomUUID().toString();
 
     private static final String serviceInstanceId = "serviceInstanceId";
 
@@ -178,7 +171,7 @@ public class ApiControllerTest {
 
     @Test
     public void testListApplications() throws Exception {
-        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId).withRemoteInfo(new
+        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId.toString()).withRemoteInfo(new
                 ApplicationActivity(new ApplicationIdentity(applicationId, "applicationName"),
                 AppState.STARTED, Instant.now(), Instant.now()));
         applicationInfo.addBoundService("serviceId");
@@ -199,7 +192,7 @@ public class ApiControllerTest {
                                                     ApplicationInfo[].class));
                     assertThat(applicationInfos.getBody(), is(notNullValue()));
                     assertThat(applicationInfos.getBody().length, is(equalTo(1)));
-                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId)));
+                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId.toString())));
                 });
     }
 
@@ -216,7 +209,7 @@ public class ApiControllerTest {
     @Test
     public void testListApplicationById() throws Exception {
         String serviceId = "serviceIdListById";
-        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId).withRemoteInfo(new
+        ApplicationInfo applicationInfo = new ApplicationInfo(applicationId.toString()).withRemoteInfo(new
                 ApplicationActivity(new ApplicationIdentity(applicationId, "applicationName"),
                 AppState.STARTED, Instant.now(), Instant.now()));
         applicationInfo.addBoundService(serviceId);
@@ -237,7 +230,7 @@ public class ApiControllerTest {
                                                     ApplicationInfo[].class));
                     assertThat(applicationInfos.getBody(), is(notNullValue()));
                     assertThat(applicationInfos.getBody().length, is(equalTo(1)));
-                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId)));
+                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId.toString())));
                 });
     }
 

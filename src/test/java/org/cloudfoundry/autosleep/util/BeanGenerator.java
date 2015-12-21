@@ -3,10 +3,9 @@ package org.cloudfoundry.autosleep.util;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
-import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
+import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -56,13 +55,17 @@ public class BeanGenerator {
         return createAppInfo(null, serviceId);
     }
 
-    public static ApplicationInfo createAppInfo(UUID appUuid, String serviceId) {
+    public static ApplicationInfo createAppInfo(String appUuid, String serviceId) {
         if (appUuid == null) {
-            appUuid = UUID.randomUUID();
+            appUuid = UUID.randomUUID().toString();
         }
         ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
         applicationInfo.addBoundService(serviceId);
         return applicationInfo;
+    }
+
+    public static ApplicationIdentity createAppIdentity(String appUuid) {
+        return new ApplicationIdentity(appUuid, appUuid + "-name");
     }
 
 

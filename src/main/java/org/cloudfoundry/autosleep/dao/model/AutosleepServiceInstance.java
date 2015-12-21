@@ -15,6 +15,8 @@ import org.cloudfoundry.autosleep.util.serializer.IntervalSerializer;
 import org.cloudfoundry.autosleep.util.serializer.PatternDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.PatternSerializer;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -25,8 +27,10 @@ import java.util.regex.Pattern;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
+@Entity
 public class AutosleepServiceInstance {
 
+    @Id
     @JsonProperty
     private String serviceInstanceId;
 
@@ -35,7 +39,6 @@ public class AutosleepServiceInstance {
 
     @JsonProperty
     private String planId;
-
 
     @JsonProperty
     private String organizationId;
@@ -56,8 +59,6 @@ public class AutosleepServiceInstance {
 
     @JsonProperty
     private String secret;
-
-
 
 
     @Override

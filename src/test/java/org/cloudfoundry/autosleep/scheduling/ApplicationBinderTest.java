@@ -76,10 +76,11 @@ public class ApplicationBinderTest {
         when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(autosleepServiceInstance);
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenReturn(remoteApplicationIds.stream()
-                        .map(applicationId -> new ApplicationIdentity(applicationId, applicationId.toString()))
+                        .map(applicationId -> new ApplicationIdentity(applicationId.toString(),
+                                applicationId.toString()))
                         .collect(Collectors.toList()));
 
-        when(deployment.getApplicationId()).thenReturn(APP_ID);
+        when(deployment.getApplicationId()).thenReturn(APP_ID.toString());
 
         applicationBinder = spy(ApplicationBinder.builder()
                 .clock(clock)
@@ -101,13 +102,14 @@ public class ApplicationBinderTest {
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 //do not return app id
                 .filter(remoteApplicationId -> !remoteApplicationIds.equals(APP_ID))
-                .map(remoteApplicationId -> BeanGenerator.createAppInfo(remoteApplicationId, "another_service_id"))
+                .map(remoteApplicationId -> BeanGenerator.createAppInfo(remoteApplicationId.toString(),
+                        "another_service_id"))
                 .collect(Collectors.toList()));
         applicationBinder.run();
 
         verify(applicationBinder, times(1)).rescheduleWithDefaultPeriod();
         verify(cloudFoundryApi, times(1)).listApplications(eq(SPACE_ID), eq(null));
-        //Normaly remote app has not be bound
+        //Normally remote app has not be bound
         verify(cloudFoundryApi, times(1))
                 .bindServiceInstance(argThat(anyListOfSize(remoteApplicationIds.size() - 1, ApplicationIdentity.class)),
                         anyString());
@@ -127,7 +129,7 @@ public class ApplicationBinderTest {
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 //do not return app id
                 .filter(remoteApplicationId -> !remoteApplicationIds.equals(APP_ID))
-                .map(remoteApplicationId -> BeanGenerator.createAppInfo(remoteApplicationId, SERVICE_ID))
+                .map(remoteApplicationId -> BeanGenerator.createAppInfo(remoteApplicationId.toString(), SERVICE_ID))
                 .collect(Collectors.toList()));
         applicationBinder.run();
 
@@ -153,7 +155,8 @@ public class ApplicationBinderTest {
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenThrow(new CloudFoundryException(null))
                 .thenReturn(remoteApplicationIds.stream()
-                        .map(applicationId -> new ApplicationIdentity(applicationId, applicationId.toString()))
+                        .map(applicationId -> new ApplicationIdentity(applicationId.toString(),
+                                applicationId.toString()))
                         .collect(Collectors.toList()));
         doThrow(new EntityNotFoundException(EntityType.service, SERVICE_ID)).when(cloudFoundryApi)
                 .bindServiceInstance(anyListOf(ApplicationIdentity.class), eq(SERVICE_ID));

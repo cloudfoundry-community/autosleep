@@ -1,18 +1,11 @@
 package org.cloudfoundry.autosleep.dao.model;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
 
-import java.util.Map;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.util.Objects;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -20,7 +13,10 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
+@Entity
 public class ApplicationBinding {
+
+    @Id
     private String serviceBindingId;
 
     private String serviceInstanceId;

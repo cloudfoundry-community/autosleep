@@ -23,7 +23,6 @@ apply plugin: 'java'
 apply plugin: 'spring-boot'
 apply plugin: 'war'
 apply from: 'test.gradle'
-apply from: 'coverage.gradle'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -87,7 +86,11 @@ dependencies {
     // Spring Data
     compile "org.springframework.data:spring-data-jpa:$springDataJpaVersion"
     compile "org.springframework.data:spring-data-redis:$springDataRedisVersion"
-
+    // MySQL Persistence
+    runtime "mysql:mysql-connector-java:$mysqlConnectorVersion"
+    compile "commons-dbcp:commons-dbcp"
+    compile "org.hibernate:hibernate-entitymanager"
+    //runtime "com.h2database:h2"
     // Redis Persistence
     compile "redis.clients:jedis:$redisJedisVersion"
     // Spring Cloud

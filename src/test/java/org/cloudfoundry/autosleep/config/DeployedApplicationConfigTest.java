@@ -50,7 +50,7 @@ public class DeployedApplicationConfigTest {
 
         deployment = config.loadCurrentDeployment();
         assertThat(deployment, is(notNullValue()));
-        assertThat(deployment.getApplicationId(), is(equalTo(APP_ID)));
+        assertThat(deployment.getApplicationId(), is(equalTo(APP_ID.toString())));
         assertThat(deployment.getApplicationName(), is(equalTo(APPLICATION_NAME)));
         assertThat(deployment.getApplicationUris(), is(notNullValue()));
         assertThat(deployment.getApplicationUris().size(), is(equalTo(URIS.length)));
