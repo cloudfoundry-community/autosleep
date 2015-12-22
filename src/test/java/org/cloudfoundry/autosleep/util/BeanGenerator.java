@@ -3,8 +3,10 @@ package org.cloudfoundry.autosleep.util;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.business.remote.ApplicationIdentity;
+import org.cloudfoundry.client.lib.domain.CloudApplication;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -61,6 +63,13 @@ public class BeanGenerator {
         }
         ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
         applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
+        return applicationInfo;
+    }
+
+    public static ApplicationInfo createAppInfo(String appUuid, String name, Instant lastLog, Instant lastEvent,
+                                                CloudApplication.AppState state) {
+        ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
+        applicationInfo.updateDiagnosticInfo(state, lastLog, lastEvent, name);
         return applicationInfo;
     }
 

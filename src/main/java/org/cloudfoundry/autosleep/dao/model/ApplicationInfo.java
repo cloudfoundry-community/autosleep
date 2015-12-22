@@ -7,7 +7,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
@@ -71,7 +70,7 @@ public class ApplicationInfo {
 
         private HashMap<String /**serviceId.**/, EnrollmentState.State> states;
 
-        private EnrollmentState(){
+        private EnrollmentState() {
             states = new HashMap<>();
         }
 
@@ -119,8 +118,7 @@ public class ApplicationInfo {
     private EnrollmentState enrollmentState;
 
 
-
-    private ApplicationInfo(){
+    private ApplicationInfo() {
         diagnosticInfo = new DiagnosticInfo();
         enrollmentState = new EnrollmentState();
     }
@@ -131,18 +129,12 @@ public class ApplicationInfo {
         this.uuid = uuid;
     }
 
-    public ApplicationInfo withRemoteInfo(ApplicationActivity activity) {
-        updateDiagnosticInfo(activity);
-        return this;
-    }
 
-
-
-    public void updateDiagnosticInfo(ApplicationActivity activity) {
-        this.diagnosticInfo.appState = activity.getState();
-        this.diagnosticInfo.lastLog = activity.getLastLog();
-        this.diagnosticInfo.lastEvent = activity.getLastEvent();
-        this.name = activity.getApplication().getName();
+    public void updateDiagnosticInfo(AppState state, Instant lastLog, Instant lastEvent, String name) {
+        this.diagnosticInfo.appState = state;
+        this.diagnosticInfo.lastLog = lastLog;
+        this.diagnosticInfo.lastEvent = lastEvent;
+        this.name = name;
     }
 
     public void markAsChecked(Instant next) {
@@ -164,7 +156,7 @@ public class ApplicationInfo {
 
     @Override
     public String toString() {
-        return "[ApplicationInfo:" + name+ "/" + uuid + " lastEvent:"
+        return "[ApplicationInfo:" + name + "/" + uuid + " lastEvent:"
                 + diagnosticInfo.lastEvent + " lastLog:" + diagnosticInfo.lastLog + "]";
     }
 

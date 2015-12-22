@@ -1,7 +1,7 @@
 package org.cloudfoundry.autosleep.dao.repositories;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.RepositoryConfig;
+import org.cloudfoundry.autosleep.dao.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.util.ApplicationConfiguration;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;

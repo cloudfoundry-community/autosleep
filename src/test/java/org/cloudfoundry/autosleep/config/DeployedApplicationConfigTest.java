@@ -37,7 +37,7 @@ public class DeployedApplicationConfigTest {
     public void testLoadCurrentDeployment() throws Exception {
         when(environment.getProperty(eq(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY)))
                 .thenReturn(null);
-        Deployment deployment = config.loadCurrentDeployment();
+        DeployedApplicationConfig.Deployment deployment = config.loadCurrentDeployment();
         assertThat(deployment, is(nullValue()));
 
         when(environment.getProperty(eq(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY)))
