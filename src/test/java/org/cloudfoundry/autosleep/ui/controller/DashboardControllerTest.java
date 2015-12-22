@@ -1,7 +1,7 @@
 package org.cloudfoundry.autosleep.ui.controller;
 
 import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -65,7 +65,7 @@ public class DashboardControllerTest {
                         Collections.singletonList(new Plan(planId, "plan", "")))));
     }
 
-    private AutosleepServiceInstance getServiceInstance(boolean withExcludeParam) {
+    private SpaceEnrollerConfig getServiceInstance(boolean withExcludeParam) {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(Config.ServiceInstanceParameters.IDLE_DURATION, Duration.parse("PT1M"));
         parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, true);
@@ -73,7 +73,7 @@ public class DashboardControllerTest {
         if (withExcludeParam) {
             parameters.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, Pattern.compile(".*"));
         }
-        AutosleepServiceInstance.AutosleepServiceInstanceBuilder builder = AutosleepServiceInstance.builder()
+        SpaceEnrollerConfig.SpaceEnrollerConfigBuilder builder = SpaceEnrollerConfig.builder()
                 .idleDuration(Duration.parse("PT1M"))
                 .forcedAutoEnrollment(true)
                 .secret("Pa$$w0rd")

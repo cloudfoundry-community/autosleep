@@ -3,7 +3,7 @@ package org.cloudfoundry.autosleep.scheduling;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Deployment;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.remote.CloudFoundryApiService;
@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class ApplicationBinder extends AbstractPeriodicTask {
+public class SpaceEnroller extends AbstractPeriodicTask {
 
 
     private final String serviceInstanceId;
@@ -33,10 +33,10 @@ public class ApplicationBinder extends AbstractPeriodicTask {
     private Deployment deployment;
 
     @Builder
-    ApplicationBinder(Clock clock, Duration period, String serviceInstanceId,
-                      CloudFoundryApiService cloudFoundryApi, ServiceRepository serviceRepository,
-                      ApplicationRepository applicationRepository,
-                      Deployment deployment) {
+    SpaceEnroller(Clock clock, Duration period, String serviceInstanceId,
+                  CloudFoundryApiService cloudFoundryApi, ServiceRepository serviceRepository,
+                  ApplicationRepository applicationRepository,
+                  Deployment deployment) {
         super(clock, period);
         this.serviceInstanceId = serviceInstanceId;
         this.cloudFoundryApi = cloudFoundryApi;
@@ -47,13 +47,13 @@ public class ApplicationBinder extends AbstractPeriodicTask {
 
     @Override
     public void run() {
-        AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceInstanceId);
+        SpaceEnrollerConfig serviceInstance = serviceRepository.findOne(serviceInstanceId);
         if (serviceInstance != null) {
             try {
                 Set<String> watchedOrIgnoredApplications = new HashSet<>();
                 applicationRepository.findAll()
                         .forEach(applicationInfo -> {
-                            if (applicationInfo.getServiceInstances().keySet().contains(serviceInstanceId)) {
+                            if (!applicationInfo.getEnrollmentState().isCandidate(serviceInstanceId)) {
                                 watchedOrIgnoredApplications.add(applicationInfo.getUuid());
                             }
                         });

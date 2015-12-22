@@ -16,7 +16,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Slf4j
-public class AppStateChecker extends AbstractPeriodicTask {
+public class ApplicationStopper extends AbstractPeriodicTask {
 
     private final UUID appUid;
 
@@ -31,9 +31,9 @@ public class AppStateChecker extends AbstractPeriodicTask {
     private final ApplicationLocker applicationLocker;
 
     @Builder
-    AppStateChecker(Clock clock, Duration period, UUID appUid, String serviceInstanceId, String bindingId,
-                    CloudFoundryApiService cloudFoundryApi, ApplicationRepository applicationRepository,
-                    ApplicationLocker applicationLocker) {
+    ApplicationStopper(Clock clock, Duration period, UUID appUid, String serviceInstanceId, String bindingId,
+                       CloudFoundryApiService cloudFoundryApi, ApplicationRepository applicationRepository,
+                       ApplicationLocker applicationLocker) {
         super(clock, period);
         this.appUid = appUid;
         this.serviceInstanceId = serviceInstanceId;
@@ -51,7 +51,7 @@ public class AppStateChecker extends AbstractPeriodicTask {
             if (applicationInfo == null) {
                 handleApplicationNotFound();
             } else {
-                if (applicationInfo.isWatchedByService(serviceInstanceId)) {
+                if (applicationInfo.getEnrollmentState().isEnrolledByService(serviceInstanceId)) {
                     handleApplicationMonitored(applicationInfo);
                 } else {
                     handleApplicationIgnored(applicationInfo);
@@ -79,7 +79,7 @@ public class AppStateChecker extends AbstractPeriodicTask {
         try {
             ApplicationActivity applicationActivity = cloudFoundryApi.getApplicationActivity(appUid);
             log.debug("Checking on app {} state, for bindingId {}", appUid, bindingId);
-            applicationInfo.updateRemoteInfo(applicationActivity);
+            applicationInfo.updateDiagnosticInfo(applicationActivity);
             if (applicationActivity.getState() == CloudApplication.AppState.STOPPED) {
                 log.debug("App already stopped.");
             } else {

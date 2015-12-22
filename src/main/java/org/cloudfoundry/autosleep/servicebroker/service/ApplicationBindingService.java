@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -20,37 +20,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 
 @Service
 @Slf4j
 public class ApplicationBindingService implements ServiceInstanceBindingService {
 
+    @Autowired
     private ApplicationRepository appRepository;
 
+    @Autowired
     private ServiceRepository serviceRepository;
 
+    @Autowired
     private BindingRepository bindingRepository;
 
+    @Autowired
     private GlobalWatcher watcher;
 
+    @Autowired
     private ApplicationLocker applicationLocker;
 
-    @Autowired
-    public ApplicationBindingService(ApplicationRepository appRepository,
-                                     ServiceRepository serviceRepository,
-                                     BindingRepository bindingRepository,
-                                     GlobalWatcher watcher,
-                                     ApplicationLocker applicationLocker) {
-        this.appRepository = appRepository;
-        this.serviceRepository = serviceRepository;
-        this.bindingRepository = bindingRepository;
-        this.watcher = watcher;
-        this.applicationLocker = applicationLocker;
-    }
 
     @Override
     public ServiceInstanceBinding createServiceInstanceBinding(CreateServiceInstanceBindingRequest request) throws
@@ -59,7 +49,7 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
         final String bindingId = request.getBindingId();
         final String serviceInstanceId = request.getServiceInstanceId();
         log.debug("createServiceInstanceBinding - {}", bindingId);
-        AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceInstanceId);
+        SpaceEnrollerConfig serviceInstance = serviceRepository.findOne(serviceInstanceId);
 
         ApplicationBinding binding = ApplicationBinding.builder().serviceInstanceId(serviceInstanceId)
                 .serviceBindingId(bindingId)
@@ -70,7 +60,7 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
                 appInfo = new ApplicationInfo(appId);
             }
 
-            appInfo.addBoundService(serviceInstanceId);
+            appInfo.getEnrollmentState().addEnrollmentState(serviceInstanceId);
 
             //retrieve service to return its params as credentials
 
@@ -93,16 +83,16 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
         final ApplicationBinding binding = bindingRepository.findOne(bindingId);
         final String appId = binding.getApplicationId();
 
-        AutosleepServiceInstance serviceInstance = serviceRepository
+        SpaceEnrollerConfig serviceInstance = serviceRepository
                 .findOne(request.getInstance().getServiceInstanceId());
 
         applicationLocker.executeThreadSafe(appId, () -> {
             log.debug("deleteServiceInstanceBinding on app ", appId);
             ApplicationInfo appInfo = appRepository.findOne(appId);
             if (appInfo != null) {
-                appInfo.removeBoundService(serviceInstance.getServiceInstanceId(),
+                appInfo.getEnrollmentState().updateEnrollment(serviceInstance.getServiceInstanceId(),
                         !serviceInstance.isForcedAutoEnrollment());
-                if (appInfo.getServiceInstances().size() == 0) {
+                if (appInfo.getEnrollmentState().getStates().size() == 0) {
                     appRepository.delete(appId);
                     applicationLocker.removeApplication(appId);
                 } else {

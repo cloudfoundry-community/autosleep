@@ -7,16 +7,14 @@ import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializer;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
@@ -27,24 +25,6 @@ public class ApplicationInfoTest {
     private final String appUuid = UUID.randomUUID().toString();
 
 
-    @Test
-    public void testSerialization() {
-        RedisSerializer<ApplicationInfo> serializer = new Jackson2JsonRedisSerializer<>(ApplicationInfo.class);
-        ApplicationInfo origin = getABoundedAppInfo().withRemoteInfo(newApplicationActivity(yesterday, now));
-        byte[] serialized = serializer.serialize(origin);
-        ApplicationInfo retrieved = serializer.deserialize(serialized);
-        log.debug("Object origin = {}", origin);
-        log.debug("Object retrieved = {}", retrieved);
-        assertThat("Serialization and deserialisation should return the same object ", origin, is(equalTo(retrieved)));
-
-        //test serialization when nextCheck not null
-        origin.markAsChecked(Instant.now());
-        serialized = serializer.serialize(origin);
-        retrieved = serializer.deserialize(serialized);
-        log.debug("Object origin = {}", origin);
-        log.debug("Object retrieved = {}", retrieved);
-        assertThat("Serialization and deserialisation should return the same object ", origin, is(equalTo(retrieved)));
-    }
 
     @SuppressWarnings({"ObjectEqualsNull", "EqualsBetweenInconvertibleTypes", "EqualsWithItself"})
     @Test
@@ -57,13 +37,11 @@ public class ApplicationInfoTest {
         ApplicationInfo other = getABoundedAppInfo().withRemoteInfo(newApplicationActivity(yesterday, now));
         assertTrue(sampleApp.equals(other));
 
-        other.updateRemoteInfo(newApplicationActivity(now, yesterday));
-        assertFalse(sampleApp.equals(other));
     }
 
     private ApplicationInfo getABoundedAppInfo() {
         ApplicationInfo applicationInfo =  getAnAppInfo();
-        applicationInfo.addBoundService("AInfoTestServiceId");
+        applicationInfo.getEnrollmentState().addEnrollmentState("AInfoTestServiceId");
         return applicationInfo;
     }
 
@@ -86,17 +64,17 @@ public class ApplicationInfoTest {
     @Test
     public void testIsWatched() throws Exception {
         ApplicationInfo info = getAnAppInfo();
-        assertFalse(info.isWatched());
+        assertFalse(info.getEnrollmentState().isWatched());
         String serviceId = "testIsWatched";
-        info.addBoundService(serviceId);
-        assertTrue(info.isWatched());
+        info.getEnrollmentState().addEnrollmentState(serviceId);
+        assertTrue(info.getEnrollmentState().isWatched());
 
-        info.removeBoundService(serviceId,true);
-        assertFalse(info.isWatched());
+        info.getEnrollmentState().updateEnrollment(serviceId, true);
+        assertFalse(info.getEnrollmentState().isWatched());
 
-        info.addBoundService(serviceId);
-        info.removeBoundService(serviceId,false);
-        assertFalse(info.isWatched());
+        info.getEnrollmentState().addEnrollmentState(serviceId);
+        info.getEnrollmentState().updateEnrollment(serviceId, false);
+        assertFalse(info.getEnrollmentState().isWatched());
     }
 
     private ApplicationActivity newApplicationActivity(Instant lastEvent, Instant lastLog) {

@@ -14,7 +14,7 @@ import static org.junit.Assert.assertThat;
 
 
 
-public class AutosleepServiceInstanceTest {
+public class SpaceEnrollerConfigTest {
     private static final String SERVICE_INSTANCE_ID = UUID.randomUUID().toString();
 
     private static final String SERVICE_DEFINITION_ID = UUID.randomUUID().toString();
@@ -25,8 +25,8 @@ public class AutosleepServiceInstanceTest {
 
     private static final String PLAN_ID = UUID.randomUUID().toString();
 
-    private AutosleepServiceInstance getNewServiceInstance() {
-        return AutosleepServiceInstance.builder().serviceInstanceId(SERVICE_INSTANCE_ID)
+    private SpaceEnrollerConfig getNewServiceInstance() {
+        return SpaceEnrollerConfig.builder().serviceInstanceId(SERVICE_INSTANCE_ID)
                 .serviceDefinitionId(SERVICE_DEFINITION_ID)
                 .forcedAutoEnrollment(true)
                 .idleDuration(Duration.ofHours(1))

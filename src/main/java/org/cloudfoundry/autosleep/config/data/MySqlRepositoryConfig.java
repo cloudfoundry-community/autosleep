@@ -1,6 +1,6 @@
 package org.cloudfoundry.autosleep.config.data;
 
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.hibernate.dialect.MySQL5Dialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.springframework.context.annotation.Bean;
@@ -40,7 +40,7 @@ public class MySqlRepositoryConfig {
 
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
-        em.setPackagesToScan(AutosleepServiceInstance.class.getPackage().getName());
+        em.setPackagesToScan(SpaceEnrollerConfig.class.getPackage().getName());
         em.setPersistenceProvider(new HibernatePersistenceProvider());
         em.setJpaPropertyMap(properties);
 

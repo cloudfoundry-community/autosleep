@@ -28,6 +28,7 @@ import java.util.UUID;
 import static java.lang.Math.toIntExact;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.*;
 
 
@@ -38,6 +39,7 @@ public abstract class AppRepositoryTest {
 
 
     private final Instant yesterday = Instant.now().minus(Duration.ofDays(1));
+
     private final Instant now = Instant.now();
 
     @Autowired
@@ -53,10 +55,12 @@ public abstract class AppRepositoryTest {
     }
 
     private ApplicationInfo buildAppInfo(String uuid) {
-        return BeanGenerator.createAppInfo(uuid, "APTestServiceId").withRemoteInfo(new ApplicationActivity(
+        ApplicationInfo result =  BeanGenerator.createAppInfo(uuid, "APTestServiceId").withRemoteInfo(new ApplicationActivity(
                 new ApplicationIdentity(uuid, "appname"),
                 AppState.STARTED,
                 Instant.now(), Instant.now()));
+        result.getEnrollmentState().addEnrollmentState("serviceId");
+        return result;
     }
 
     @Test
@@ -98,10 +102,14 @@ public abstract class AppRepositoryTest {
     public void testFind() {
         String appId = UUID.randomUUID().toString();
         ApplicationInfo original = buildAppInfo(appId);
+        int nbEnrollment = original.getEnrollmentState().getStates().size();
         dao.save(original);
         ApplicationInfo retrieved = dao.findOne(appId);
-        assertFalse("Service binding should have been found", retrieved == null);
+        assertThat(retrieved, is(notNullValue()));
         assertThat(retrieved.getUuid(), is(equalTo(appId)));
+        assertThat(retrieved.getEnrollmentState(), is(notNullValue()));
+        assertThat(retrieved.getEnrollmentState().getStates(), is(notNullValue()));
+        assertThat(retrieved.getEnrollmentState().getStates().size(), is(equalTo(nbEnrollment)));
         assertThat(retrieved, is(equalTo(original)));
         assertTrue("Succeed in getting a binding that does not exist", dao.findOne("thisAppShouldNotExist") == null);
     }

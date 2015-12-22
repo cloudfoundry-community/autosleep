@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.ApplicationLocker;
@@ -111,14 +111,14 @@ public class AutosleepServiceInstanceServiceTest {
     private String superPassword = "MEGAPASS";
 
 
-    private List<AutosleepServiceInstance> serviceInstances = new ArrayList<>();
+    private List<SpaceEnrollerConfig> serviceInstances = new ArrayList<>();
 
     @Before
     public void initService() {
         serviceInstances.clear();
         doAnswer(invocationOnMock ->
-                        serviceInstances.add((AutosleepServiceInstance) invocationOnMock.getArguments()[0])
-        ).when(serviceRepository).save(any(AutosleepServiceInstance.class));
+                        serviceInstances.add((SpaceEnrollerConfig) invocationOnMock.getArguments()[0])
+        ).when(serviceRepository).save(any(SpaceEnrollerConfig.class));
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArguments()[1]).run();
             return null;
@@ -172,16 +172,16 @@ public class AutosleepServiceInstanceServiceTest {
         ServiceInstance si = instanceService.createServiceInstance(createRequest);
 
         //then global watcher is invoked
-        verify(globalWatcher, times(1)).watchServiceBindings(any(AutosleepServiceInstance.class),
+        verify(globalWatcher, times(1)).watchServiceBindings(any(SpaceEnrollerConfig.class),
                 eq(Config.DELAY_BEFORE_FIRST_SERVICE_CHECK));
         //and no password encoded
         verify(passwordEncoder, never()).encode(anyString());
         //service is returned
         assertThat(si, is(notNullValue()));
         //and service is saved in database
-        verify(serviceRepository, times(1)).save(any(AutosleepServiceInstance.class));
+        verify(serviceRepository, times(1)).save(any(SpaceEnrollerConfig.class));
         assertThat(serviceInstances.size(), is(equalTo(1)));
-        AutosleepServiceInstance serviceInstance = serviceInstances.get(0);
+        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
         //and default values are applied
         assertFalse(serviceInstance.isForcedAutoEnrollment());
         assertThat(serviceInstance.getIdleDuration(), is(equalTo(Config.DEFAULT_INACTIVITY_PERIOD)));
@@ -191,7 +191,7 @@ public class AutosleepServiceInstanceServiceTest {
 
 
     @Test
-    public void test_duration_is_well_read() throws Exception {
+    public void arbitrary_duration_is_stored() throws Exception {
         //given the service does not exist
         when(serviceRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
@@ -201,9 +201,9 @@ public class AutosleepServiceInstanceServiceTest {
 
 
         //then  service is saved with good duration
-        verify(serviceRepository, times(1)).save(any(AutosleepServiceInstance.class));
+        verify(serviceRepository, times(1)).save(any(SpaceEnrollerConfig.class));
         assertThat(serviceInstances.size(), is(equalTo(1)));
-        AutosleepServiceInstance serviceInstance = serviceInstances.get(0);
+        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
         assertThat(serviceInstance.getIdleDuration(), is(equalTo(Duration.ofHours(10))));
     }
 
@@ -219,7 +219,7 @@ public class AutosleepServiceInstanceServiceTest {
 
         //then  service is saved with good exclusion
         assertThat(serviceInstances.size(), is(equalTo(1)));
-        AutosleepServiceInstance serviceInstance = serviceInstances.get(0);
+        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
         assertThat(serviceInstance.getExcludeFromAutoEnrollment().pattern(), is(equalTo(".*")));
     }
 
@@ -238,7 +238,7 @@ public class AutosleepServiceInstanceServiceTest {
 
         //and  service is saved with password encoded
         assertThat(serviceInstances.size(), is(equalTo(1)));
-        AutosleepServiceInstance serviceInstance = serviceInstances.get(0);
+        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
         assertThat(serviceInstance.getSecret(), is(equalTo(passwordEncoded)));
     }
 
@@ -274,7 +274,7 @@ public class AutosleepServiceInstanceServiceTest {
         //then service is saved with forced auto enrollment
         assertThat(si, is(notNullValue()));
         assertThat(serviceInstances.size(), is(equalTo(1)));
-        AutosleepServiceInstance serviceInstance = serviceInstances.get(0);
+        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
         assertTrue(serviceInstance.isForcedAutoEnrollment());
     }
 
@@ -312,8 +312,8 @@ public class AutosleepServiceInstanceServiceTest {
                 ServiceInstanceDoesNotExistException.class);
     }
 
-    private AutosleepServiceInstance service_exist_in_database() {
-        AutosleepServiceInstance existingServiceInstance = AutosleepServiceInstance.builder()
+    private SpaceEnrollerConfig service_exist_in_database() {
+        SpaceEnrollerConfig existingServiceInstance = SpaceEnrollerConfig.builder()
                 .serviceInstanceId(SERVICE_INSTANCE_ID)
                 .planId(PLAN_ID)
                 .secret("secret")
@@ -369,7 +369,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void test_update_succeeds_when_autoenrollment_with_secret() throws Exception {
         //given service exists and password matches
-        final AutosleepServiceInstance existingServiceInstance = service_exist_in_database();
+        final SpaceEnrollerConfig existingServiceInstance = service_exist_in_database();
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
 
         //when user gives auto enrollment with secret
@@ -381,7 +381,7 @@ public class AutosleepServiceInstanceServiceTest {
         ServiceInstance si = instanceService.updateServiceInstance(updateRequest);
 
         //then service is updated
-        verify(serviceRepository, times(1)).save(any(AutosleepServiceInstance.class));
+        verify(serviceRepository, times(1)).save(any(SpaceEnrollerConfig.class));
         assertThat(si, is(notNullValue()));
         assertFalse(existingServiceInstance.isForcedAutoEnrollment());
     }

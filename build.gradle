@@ -3,7 +3,6 @@ import org.apache.tools.ant.filters.ReplaceTokens
 buildscript {
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
-        classpath("org.kt3k.gradle.plugin:coveralls-gradle-plugin:$gradleCoverallsVersion")
     }
     repositories {
         mavenLocal()
@@ -85,14 +84,10 @@ dependencies {
     compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     // Spring Data
     compile "org.springframework.data:spring-data-jpa:$springDataJpaVersion"
-    compile "org.springframework.data:spring-data-redis:$springDataRedisVersion"
     // MySQL Persistence
     runtime "mysql:mysql-connector-java:$mysqlConnectorVersion"
-    compile "commons-dbcp:commons-dbcp"
-    compile "org.hibernate:hibernate-entitymanager"
-    //runtime "com.h2database:h2"
-    // Redis Persistence
-    compile "redis.clients:jedis:$redisJedisVersion"
+    compile "commons-dbcp:commons-dbcp:1.4"
+    compile "org.hibernate:hibernate-entitymanager:4.3.11.Final"
     // Spring Cloud
     compile "org.springframework.cloud:spring-cloud-spring-service-connector:$springCloudServiceConnectorVersion"
     compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector:$springCloudCFConnectorVersion"

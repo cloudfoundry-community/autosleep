@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class AppStateCheckerTest {
+public class ApplicationStopperTest {
 
     private static final UUID APP_UID = UUID.fromString("9AF63B10-9D25-4162-9AD2-5AA8173FFC3B");
 
@@ -56,7 +56,7 @@ public class AppStateCheckerTest {
     @Mock
     private ApplicationLocker applicationLocker;
 
-    private AppStateChecker spyChecker;
+    private ApplicationStopper spyChecker;
 
 
     /**
@@ -87,7 +87,7 @@ public class AppStateCheckerTest {
         }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
 
 
-        spyChecker = spy(AppStateChecker.builder()
+        spyChecker = spy(ApplicationStopper.builder()
                 .appUid(APP_UID)
                 .serviceInstanceId(INSTANCE_ID)
                 .bindingId(BINDING_ID)
@@ -220,7 +220,7 @@ public class AppStateCheckerTest {
     @Test
     public void task_is_removed_when_application_not_watched_by_service() throws Exception {
         //given application is marked as ignored
-        when(applicationInfo.isWatchedByService(INSTANCE_ID)).thenReturn(false);
+        applicationInfo.getEnrollmentState().updateEnrollment(INSTANCE_ID, false);
         //when task is run
         spyChecker.run();
         //then it sees it as an ignored application

@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.scheduling.ApplicationLocker;
@@ -93,7 +93,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             } else if (autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced) {
                 checkSecuredParameter(autoEnrollmentReader.getParameterName(), secret);
             }
-            AutosleepServiceInstance serviceInstance = AutosleepServiceInstance.builder()
+            SpaceEnrollerConfig serviceInstance = SpaceEnrollerConfig.builder()
                     .serviceInstanceId(request.getServiceInstanceId())
                     .serviceDefinitionId(request.getServiceDefinitionId())
                     .planId(request.getPlanId())
@@ -121,7 +121,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     @Override
     public ServiceInstance getServiceInstance(String serviceInstanceId) {
         log.debug("getServiceInstance - {}", serviceInstanceId);
-        AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceInstanceId);
+        SpaceEnrollerConfig serviceInstance = serviceRepository.findOne(serviceInstanceId);
         if (serviceInstance == null) {
             return null;
         } else {
@@ -137,7 +137,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             ServiceInstanceUpdateNotSupportedException, ServiceBrokerException, ServiceInstanceDoesNotExistException {
         String serviceId = request.getServiceInstanceId();
         log.debug("updateServiceInstance - {}", serviceId);
-        AutosleepServiceInstance serviceInstance = serviceRepository.findOne(serviceId);
+        SpaceEnrollerConfig serviceInstance = serviceRepository.findOne(serviceId);
         if (serviceInstance == null) {
             throw new ServiceInstanceDoesNotExistException(serviceId);
         } else if (!serviceInstance.getPlanId().equals(request.getPlanId())) {
@@ -182,14 +182,14 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
 
         //clean stored app linked to the service (already unbound)
         appRepository.findAll().forEach(
-                aInfo -> applicationLocker.executeThreadSafe(aInfo.getUuid().toString(), () -> {
-                    ApplicationInfo applicationInfoReloaded = appRepository.findOne(aInfo.getUuid().toString());
-                    if (applicationInfoReloaded != null && applicationInfoReloaded
-                            .isBoundToService(serviceInstanceId)) {
-                        applicationInfoReloaded.removeBoundService(serviceInstanceId, false);
-                        if (applicationInfoReloaded.getServiceInstances().isEmpty()) {
+                aInfo -> applicationLocker.executeThreadSafe(aInfo.getUuid(), () -> {
+                    ApplicationInfo applicationInfoReloaded = appRepository.findOne(aInfo.getUuid());
+                    if (applicationInfoReloaded != null && !applicationInfoReloaded.getEnrollmentState()
+                            .isCandidate(serviceInstanceId)) {
+                        applicationInfoReloaded.getEnrollmentState().updateEnrollment(serviceInstanceId, false);
+                        if (applicationInfoReloaded.getEnrollmentState().getStates().isEmpty()) {
                             appRepository.delete(applicationInfoReloaded);
-                            applicationLocker.removeApplication(applicationInfoReloaded.getUuid().toString());
+                            applicationLocker.removeApplication(applicationInfoReloaded.getUuid());
                         }
                     }
                 })

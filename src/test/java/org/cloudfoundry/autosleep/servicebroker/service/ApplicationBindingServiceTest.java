@@ -3,7 +3,7 @@ package org.cloudfoundry.autosleep.servicebroker.service;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -50,12 +50,15 @@ public class ApplicationBindingServiceTest {
     @Mock
     private ApplicationInfo applicationInfo;
 
+    @Mock
+    private ApplicationInfo.EnrollmentState enrollmentState;
+
 
     @Mock
     private ServiceInstance serviceInstance;
 
     @Mock
-    private AutosleepServiceInstance autosleepServiceInstance;
+    private SpaceEnrollerConfig spaceEnrollerConfig;
 
     @Mock
     private ApplicationLocker applicationLocker;
@@ -76,10 +79,11 @@ public class ApplicationBindingServiceTest {
                 PLAN_ID,
                 APP_UID.toString());
         when(applicationInfo.getUuid()).thenReturn(APP_UID.toString());
-        when(serviceRepository.findOne(any(String.class))).thenReturn(autosleepServiceInstance);
+        when(applicationInfo.getEnrollmentState()).thenReturn(enrollmentState);
+        when(serviceRepository.findOne(any(String.class))).thenReturn(spaceEnrollerConfig);
 
         //avoir nullpointer when getting credentials
-        when(autosleepServiceInstance.getIdleDuration()).thenReturn(Duration.ofSeconds(10));
+        when(spaceEnrollerConfig.getIdleDuration()).thenReturn(Duration.ofSeconds(10));
 
         doAnswer(invocationOnMock -> {
             ((Runnable)invocationOnMock.getArguments()[1]).run();
@@ -121,16 +125,16 @@ public class ApplicationBindingServiceTest {
         final String bindingId = "testDelBinding";
         final String serviceId = "testDelBinding";
 
-        when(autosleepServiceInstance.isForcedAutoEnrollment()).thenReturn(false);
+        when(spaceEnrollerConfig.isForcedAutoEnrollment()).thenReturn(false);
 
-        HashMap<String,ApplicationInfo.ServiceInstanceState> services = new HashMap<>();
-        services.put(serviceId, ApplicationInfo.ServiceInstanceState.BLACKLISTED);
-        when(applicationInfo.getServiceInstances()).thenReturn(services);
+        HashMap<String,ApplicationInfo.EnrollmentState.State> services = new HashMap<>();
+        services.put(serviceId, ApplicationInfo.EnrollmentState.State.BLACKLISTED);
+        when(enrollmentState.getStates()).thenReturn(services);
 
         DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteTest(serviceId,bindingId);
         bindingService.deleteServiceInstanceBinding(deleteRequest);
 
-        verify(applicationInfo,times(1)).removeBoundService(anyString(),eq(true));
+        verify(enrollmentState,times(1)).updateEnrollment(anyString(), eq(true));
 
         verify(bindingRepo, times(1)).delete(bindingId);
         verify(appRepo, times(1)).save(applicationInfo);
@@ -143,11 +147,11 @@ public class ApplicationBindingServiceTest {
         String serviceId = "testDelBindingOnNoOptout";
 
         DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteTest(serviceId,bindingId);
-        when(autosleepServiceInstance.isForcedAutoEnrollment()).thenReturn(true);
+        when(spaceEnrollerConfig.isForcedAutoEnrollment()).thenReturn(true);
 
         bindingService.deleteServiceInstanceBinding(deleteRequest);
 
-        verify(applicationInfo,times(1)).removeBoundService(anyString(),eq(false));
+        verify(enrollmentState,times(1)).updateEnrollment(anyString(), eq(false));
 
         verify(bindingRepo, times(1)).delete(bindingId);
         verify(appRepo, times(1)).delete(applicationInfo.getUuid().toString());

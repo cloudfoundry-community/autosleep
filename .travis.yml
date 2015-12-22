@@ -8,7 +8,6 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 services:
-  - redis-server
   - mysql
 before_script:
   - mysql -e "create database IF NOT EXISTS autosleep;" -uroot

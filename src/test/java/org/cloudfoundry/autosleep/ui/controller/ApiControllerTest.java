@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -101,7 +101,7 @@ public class ApiControllerTest {
         parameters.put(Config.ServiceInstanceParameters.IDLE_DURATION, Duration.ofMinutes(15));
         parameters.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, Pattern.compile(".*"));
 
-        AutosleepServiceInstance serviceInstance = AutosleepServiceInstance.builder()
+        SpaceEnrollerConfig serviceInstance = SpaceEnrollerConfig.builder()
                 .serviceInstanceId(serviceInstanceId).build();
 
         when(serviceRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
@@ -113,11 +113,11 @@ public class ApiControllerTest {
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
                     verify(serviceRepository, times(1)).findAll();
-                    ServerResponse<AutosleepServiceInstance[]> serviceInstances = objectMapper
+                    ServerResponse<SpaceEnrollerConfig[]> serviceInstances = objectMapper
                             .readValue(mvcResult.getResponse().getContentAsString(),
                                     TypeFactory.defaultInstance()
                                             .constructParametricType(ServerResponse.class,
-                                                    AutosleepServiceInstance[].class));
+                                                    SpaceEnrollerConfig[].class));
                     assertThat(serviceInstances.getBody(), is(notNullValue()));
                     assertThat(serviceInstances.getBody().length, is(equalTo(1)));
                     assertThat(serviceInstances.getBody()[0].getServiceInstanceId(),
@@ -174,7 +174,7 @@ public class ApiControllerTest {
         ApplicationInfo applicationInfo = new ApplicationInfo(applicationId.toString()).withRemoteInfo(new
                 ApplicationActivity(new ApplicationIdentity(applicationId, "applicationName"),
                 AppState.STARTED, Instant.now(), Instant.now()));
-        applicationInfo.addBoundService("serviceId");
+        applicationInfo.getEnrollmentState().addEnrollmentState("serviceId");
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
         mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.APPLICATIONS_SUB_PATH)
@@ -212,7 +212,7 @@ public class ApiControllerTest {
         ApplicationInfo applicationInfo = new ApplicationInfo(applicationId.toString()).withRemoteInfo(new
                 ApplicationActivity(new ApplicationIdentity(applicationId, "applicationName"),
                 AppState.STARTED, Instant.now(), Instant.now()));
-        applicationInfo.addBoundService(serviceId);
+        applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
         mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceId + "/applications/")

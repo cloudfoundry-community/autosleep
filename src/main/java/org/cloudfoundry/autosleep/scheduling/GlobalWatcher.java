@@ -3,7 +3,7 @@ package org.cloudfoundry.autosleep.scheduling;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -63,7 +63,7 @@ public class GlobalWatcher {
         Duration interval = serviceRepository.findOne(binding.getServiceInstanceId()).getIdleDuration();
         log.debug("Initializing a watch on app {}, for an idleDuration of {} ", binding.getApplicationId(),
                 interval.toString());
-        AppStateChecker checker = AppStateChecker.builder()
+        ApplicationStopper checker = ApplicationStopper.builder()
                 .clock(clock)
                 .period(interval)
                 .appUid(UUID.fromString(binding.getApplicationId()))
@@ -76,8 +76,8 @@ public class GlobalWatcher {
         checker.startNow();
     }
 
-    public void watchServiceBindings(AutosleepServiceInstance service, Duration delayBeforeTreatment) {
-        ApplicationBinder applicationBinder = ApplicationBinder.builder()
+    public void watchServiceBindings(SpaceEnrollerConfig service, Duration delayBeforeTreatment) {
+        SpaceEnroller spaceEnroller = SpaceEnroller.builder()
                 .clock(clock)
                 .period(service.getIdleDuration())
                 .serviceInstanceId(service.getServiceInstanceId())
@@ -86,7 +86,7 @@ public class GlobalWatcher {
                 .applicationRepository(applicationRepository)
                 .deployment(deployment)
                 .build();
-        applicationBinder.start(delayBeforeTreatment);
+        spaceEnroller.start(delayBeforeTreatment);
     }
 
 

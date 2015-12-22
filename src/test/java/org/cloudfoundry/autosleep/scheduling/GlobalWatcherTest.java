@@ -3,7 +3,7 @@ package org.cloudfoundry.autosleep.scheduling;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Deployment;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -85,11 +85,11 @@ public class GlobalWatcherTest {
         when(mockBindingRepo.findAll()).thenReturn(storedBindings);
 
         //init mock serviceRepo
-        AutosleepServiceInstance mockService = mock(AutosleepServiceInstance.class);
+        SpaceEnrollerConfig mockService = mock(SpaceEnrollerConfig.class);
         when(mockService.getIdleDuration()).thenReturn(INTERVAL);
         when(mockServiceRepo.findOne(any())).thenReturn(mockService);
 
-        List<AutosleepServiceInstance> fakeServices = serviceIds.stream()
+        List<SpaceEnrollerConfig> fakeServices = serviceIds.stream()
                 .map(BeanGenerator::createServiceInstance)
                 .collect(Collectors.toList());
         when(mockServiceRepo.findAll()).thenReturn(fakeServices);
@@ -113,7 +113,7 @@ public class GlobalWatcherTest {
         String bindingId = "testWatch";
         ApplicationBinding binding = BeanGenerator.createBinding(bindingId);
         spyWatcher.watchApp(binding);
-        verify(clock).scheduleTask(eq(bindingId), eq(Duration.ofSeconds(0)), any(AppStateChecker.class));
+        verify(clock).scheduleTask(eq(bindingId), eq(Duration.ofSeconds(0)), any(ApplicationStopper.class));
     }
 
 
@@ -122,10 +122,10 @@ public class GlobalWatcherTest {
         String serviceId = "serviceId";
 
         spyWatcher.watchServiceBindings(BeanGenerator.createServiceInstance(serviceId), Duration.ofSeconds(5));
-        verify(clock).scheduleTask(eq(serviceId), eq(Duration.ofSeconds(5)), any(ApplicationBinder.class));
+        verify(clock).scheduleTask(eq(serviceId), eq(Duration.ofSeconds(5)), any(SpaceEnroller.class));
 
         spyWatcher.watchServiceBindings(BeanGenerator.createServiceInstance(serviceId), null);
-        verify(clock).scheduleTask(eq(serviceId), eq(Duration.ofSeconds(0)), any(ApplicationBinder.class));
+        verify(clock).scheduleTask(eq(serviceId), eq(Duration.ofSeconds(0)), any(SpaceEnroller.class));
     }
 
 

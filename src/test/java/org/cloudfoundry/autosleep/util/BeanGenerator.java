@@ -2,7 +2,7 @@ package org.cloudfoundry.autosleep.util;
 
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
 
 import java.util.Arrays;
@@ -16,12 +16,12 @@ public class BeanGenerator {
     public static final UUID PLAN_ID = UUID.randomUUID();
 
 
-    public static AutosleepServiceInstance createServiceInstance(String serviceId) {
+    public static SpaceEnrollerConfig createServiceInstance(String serviceId) {
         if (serviceId == null) {
             serviceId = UUID.randomUUID().toString();
         }
 
-        return AutosleepServiceInstance.builder()
+        return SpaceEnrollerConfig.builder()
                 .serviceDefinitionId(SERVICE_DEFINITION_ID.toString())
                 .planId(PLAN_ID.toString())
                 .organizationId(ORG_TEST.toString())
@@ -60,7 +60,7 @@ public class BeanGenerator {
             appUuid = UUID.randomUUID().toString();
         }
         ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
-        applicationInfo.addBoundService(serviceId);
+        applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
         return applicationInfo;
     }
 

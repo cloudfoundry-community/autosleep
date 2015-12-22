@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @Entity
-public class AutosleepServiceInstance {
+public class SpaceEnrollerConfig {
 
     @Id
     @JsonProperty
@@ -75,10 +75,10 @@ public class AutosleepServiceInstance {
     public boolean equals(Object object) {
         if (object == this) {
             return true;
-        } else if (!(object instanceof AutosleepServiceInstance)) {
+        } else if (!(object instanceof SpaceEnrollerConfig)) {
             return false;
         } else {
-            AutosleepServiceInstance other = AutosleepServiceInstance.class.cast(object);
+            SpaceEnrollerConfig other = SpaceEnrollerConfig.class.cast(object);
             return Objects.equals(this.getServiceInstanceId(), other.getServiceInstanceId());
         }
     }

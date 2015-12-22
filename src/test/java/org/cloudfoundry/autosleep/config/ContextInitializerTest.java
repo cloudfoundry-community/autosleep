@@ -2,14 +2,13 @@ package org.cloudfoundry.autosleep.config;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.cloudfoundry.autosleep.dao.repositories.redis.RedisUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.cloud.Cloud;
-import org.springframework.cloud.service.common.RedisServiceInfo;
+import org.springframework.cloud.service.common.MysqlServiceInfo;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 
@@ -69,32 +68,22 @@ public class ContextInitializerTest {
         when(applicationContext.getEnvironment()).thenReturn(configurableEnvironment);
         when(cloud.getServiceInfos()).thenReturn(
                 Collections.singletonList(
-                        new RedisServiceInfo("redis", "localhost", RedisUtil.REDIS_DEFAULT_PORT, "password")));
+                        new MysqlServiceInfo("mysql", "localhost")));
         doCallRealMethod().when(contextInitializer).initialize(any(GenericApplicationContext.class));
 
     }
 
     @Test
-    public void testRedisCloud() {
+    public void testCloud() {
         when(contextInitializer.getCloud()).thenReturn(cloud);
 
         contextInitializer.initialize(applicationContext);
 
         assertThat(configurableEnvironment.getActiveProfilesContainer().size(), is(equalTo(2)));
-        assertTrue(configurableEnvironment.getActiveProfilesContainer().contains("redis"));
-        assertTrue(configurableEnvironment.getActiveProfilesContainer().contains("redis-cloud"));
+        assertTrue(configurableEnvironment.getActiveProfilesContainer().contains("mysql"));
+        assertTrue(configurableEnvironment.getActiveProfilesContainer().contains("mysql-cloud"));
     }
 
-    @Test
-    public void testRedisLocal() {
-        when(contextInitializer.getCloud()).thenReturn(null);
-        configurableEnvironment.getActiveProfilesContainer().add("redis");
-        contextInitializer.initialize(applicationContext);
-
-        assertThat(configurableEnvironment.getActiveProfilesContainer().size(), is(equalTo(2)));
-        assertTrue(configurableEnvironment.getActiveProfilesContainer().contains("redis"));
-        assertTrue(configurableEnvironment.getActiveProfilesContainer().contains("redis-local"));
-    }
 
     @Test
     public void tesDefault() {

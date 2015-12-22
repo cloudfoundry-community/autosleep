@@ -1,7 +1,6 @@
 package org.cloudfoundry.autosleep.dao.model;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AccessLevel;
@@ -15,6 +14,8 @@ import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 
 import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.time.Instant;
@@ -23,138 +24,166 @@ import java.util.Objects;
 
 @Getter
 @Slf4j
-@JsonAutoDetect()
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-@JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
 public class ApplicationInfo {
 
-    @Id
-    @Column(length = 40)
-    @JsonSerialize
-    private String uuid;
+    @Getter
+    @Slf4j
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    @Embeddable
+    public static class DiagnosticInfo {
+        @JsonSerialize(using = InstantSerializer.class)
+        @JsonDeserialize(using = InstantDeserializer.class)
+        private Instant lastEvent;
 
-    @JsonSerialize
-    private String name;
+        @JsonSerialize(using = InstantSerializer.class)
+        @JsonDeserialize(using = InstantDeserializer.class)
+        private Instant lastLog;
 
-    @JsonSerialize
-    private CloudApplication.AppState appState;
+        @JsonSerialize
+        private CloudApplication.AppState appState;
 
-    @JsonSerialize(using = InstantSerializer.class)
-    @JsonDeserialize(using = InstantDeserializer.class)
-    private Instant lastEvent;
+        @JsonSerialize(using = InstantSerializer.class)
+        @JsonDeserialize(using = InstantDeserializer.class)
+        private Instant nextCheck;
 
-    @JsonSerialize(using = InstantSerializer.class)
-    @JsonDeserialize(using = InstantDeserializer.class)
-    private Instant lastLog;
-
-    @JsonSerialize(using = InstantSerializer.class)
-    @JsonDeserialize(using = InstantDeserializer.class)
-    private Instant nextCheck;
-
-    @JsonSerialize(using = InstantSerializer.class)
-    @JsonDeserialize(using = InstantDeserializer.class)
-    private Instant lastCheck;
-
-    @JsonSerialize
-    private final HashMap<String /**serviceId.**/,ServiceInstanceState> serviceInstances = new HashMap<>();
-
-
-    public enum ServiceInstanceState {
-        /** service instance is bound to the application. */
-        BOUND ,
-        /** service (with AUTO_ENROLLMENT set to false) was manually unbound,
-         * it won't be automatically bound again.*/
-        BLACKLISTED
+        @JsonSerialize(using = InstantSerializer.class)
+        @JsonDeserialize(using = InstantDeserializer.class)
+        private Instant lastCheck;
     }
 
+    @Getter
+    @Slf4j
+    @Embeddable
+    public static class EnrollmentState {
+
+        public enum State {
+            /**
+             * service instance is bound to the application.
+             */
+            ENROLLED,
+            /**
+             * service (with AUTO_ENROLLMENT set to false) was manually unbound,
+             * it won't be automatically bound again.
+             */
+            BLACKLISTED
+        }
+
+        private HashMap<String /**serviceId.**/, EnrollmentState.State> states;
+
+        private EnrollmentState(){
+            states = new HashMap<>();
+        }
+
+        public void addEnrollmentState(String serviceId) {
+            states.put(serviceId, EnrollmentState.State.ENROLLED);
+        }
+
+        public void updateEnrollment(String serviceId, boolean addToBlackList) {
+            if (addToBlackList) {
+                states.put(serviceId, EnrollmentState.State.BLACKLISTED);
+            } else {
+                states.remove(serviceId);
+            }
+        }
+
+        public boolean isWatched() {
+            return states.values().stream().filter(
+                    serviceInstanceState -> serviceInstanceState == EnrollmentState.State.ENROLLED
+            ).findAny().isPresent();
+        }
+
+        public boolean isCandidate(String serviceInstanceId) {
+            return !states.containsKey(serviceInstanceId);
+        }
+
+        public boolean isEnrolledByService(String serviceInstanceId) {
+            return states.get(serviceInstanceId) == EnrollmentState.State.ENROLLED;
+        }
+
+    }
+
+    @Id
+    @Column(length = 40)
+    private String uuid;
+
+    private String name;
+
+    @Embedded
+    @JsonUnwrapped
+    private DiagnosticInfo diagnosticInfo;
+
+
+    @Embedded
+    @JsonUnwrapped
+    private EnrollmentState enrollmentState;
+
+
+
+    private ApplicationInfo(){
+        diagnosticInfo = new DiagnosticInfo();
+        enrollmentState = new EnrollmentState();
+    }
+
+
     public ApplicationInfo(String uuid) {
+        this();
         this.uuid = uuid;
     }
 
     public ApplicationInfo withRemoteInfo(ApplicationActivity activity) {
-        updateRemoteInfo(activity);
+        updateDiagnosticInfo(activity);
         return this;
     }
 
-    public void addBoundService(String serviceId) {
-        serviceInstances.put(serviceId, ServiceInstanceState.BOUND);
-    }
 
-    public void removeBoundService(String serviceId, boolean addToBlackList) {
-        if (addToBlackList) {
-            serviceInstances.put(serviceId, ServiceInstanceState.BLACKLISTED);
-        } else {
-            serviceInstances.remove(serviceId);
-        }
-    }
 
-    public boolean isWatched() {
-        return serviceInstances.values().stream().filter(
-                serviceInstanceState -> serviceInstanceState == ServiceInstanceState.BOUND
-        ).findAny().isPresent();
-    }
-
-    public boolean isBoundToService(String serviceInstanceId) {
-        return serviceInstances.containsKey(serviceInstanceId);
-    }
-
-    public boolean isWatchedByService(String serviceInstanceId) {
-        return serviceInstances.get(serviceInstanceId) == ServiceInstanceState.BOUND;
-    }
-
-    public void updateRemoteInfo(ApplicationActivity activity) {
-        this.appState = activity.getState();
-        this.lastEvent = activity.getLastEvent();
-        this.lastLog = activity.getLastLog();
+    public void updateDiagnosticInfo(ApplicationActivity activity) {
+        this.diagnosticInfo.appState = activity.getState();
+        this.diagnosticInfo.lastLog = activity.getLastLog();
+        this.diagnosticInfo.lastEvent = activity.getLastEvent();
         this.name = activity.getApplication().getName();
     }
 
     public void markAsChecked(Instant next) {
-        this.lastCheck = Instant.now();
-        this.nextCheck = next;
+        this.diagnosticInfo.lastCheck = Instant.now();
+        this.diagnosticInfo.nextCheck = next;
     }
 
     public void clearCheckInformation() {
-        this.lastCheck = Instant.now();
-        this.nextCheck = null;
-        this.appState = null;
+        this.diagnosticInfo.lastCheck = Instant.now();
+        this.diagnosticInfo.nextCheck = null;
+        this.diagnosticInfo.appState = null;
     }
 
     public void markAsPutToSleep() {
-        this.appState = AppState.STOPPED;
-        this.lastEvent = Instant.now();
+        this.diagnosticInfo.appState = AppState.STOPPED;
+        this.diagnosticInfo.lastEvent = Instant.now();
     }
 
 
     @Override
     public String toString() {
-        return "[ApplicationInfo:" + getName() + "/" + getUuid() + " lastEvent:"
-                + getLastEvent() + " lastLog:" + getLastLog() + "]";
+        return "[ApplicationInfo:" + name+ "/" + uuid + " lastEvent:"
+                + diagnosticInfo.lastEvent + " lastLog:" + diagnosticInfo.lastLog + "]";
     }
 
     @Override
     public boolean equals(Object object) {
         if (object == this) {
             return true;
-        }
-        if (!(object instanceof ApplicationInfo)) {
+        } else if (!(object instanceof ApplicationInfo)) {
             return false;
+        } else {
+            ApplicationInfo other = (ApplicationInfo) object;
+            return Objects.equals(uuid, other.uuid) && Objects.equals(name, other.name);
         }
-        ApplicationInfo other = (ApplicationInfo) object;
 
-        return Objects.equals(this.getUuid(), other.getUuid())
-                && Objects.equals(this.getName(), other.getName())
-                && Objects.equals(this.getLastLog(), other.getLastLog())
-                && Objects.equals(this.getLastEvent(), other.getLastEvent())
-                && Objects.equals(this.getLastCheck(), other.getLastCheck())
-                && Objects.equals(this.getNextCheck(), other.getNextCheck())
-                && Objects.equals(this.getAppState(), other.getAppState());
     }
 
     @Override
     public int hashCode() {
-        return getUuid().hashCode();
+        return uuid.hashCode();
     }
 
 

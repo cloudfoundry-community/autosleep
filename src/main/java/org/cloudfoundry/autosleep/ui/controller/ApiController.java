@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
@@ -49,7 +49,7 @@ public class ApiController {
         log.debug("listApplications");
         List<ApplicationInfo> result = new ArrayList<>();
         applicationRepository.findAll().forEach(app -> {
-            if (app.getServiceInstances().keySet().contains(serviceInstanceId)) {
+            if (app.getEnrollmentState().getStates().keySet().contains(serviceInstanceId)) {
                 result.add(app);
             }
         });
@@ -58,9 +58,9 @@ public class ApiController {
 
     @RequestMapping(Config.Path.SERVICES_SUB_PATH)
     @ResponseBody
-    public ServerResponse<List<AutosleepServiceInstance>> listInstances() {
+    public ServerResponse<List<SpaceEnrollerConfig>> listInstances() {
         log.debug("listServiceInstances");
-        List<AutosleepServiceInstance> result = new ArrayList<>();
+        List<SpaceEnrollerConfig> result = new ArrayList<>();
         serviceRepository.findAll().forEach(result::add);
         return new ServerResponse<>(Instant.now(), result);
     }
