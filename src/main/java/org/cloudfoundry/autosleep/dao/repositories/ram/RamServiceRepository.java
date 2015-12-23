@@ -8,7 +8,7 @@ public class RamServiceRepository  extends HashmapRepository<SpaceEnrollerConfig
 
     @Override
     protected String getObjectId(SpaceEnrollerConfig object) {
-        return object.getServiceInstanceId();
+        return object.getId();
     }
 
 }

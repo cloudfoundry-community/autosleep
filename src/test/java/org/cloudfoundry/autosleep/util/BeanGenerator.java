@@ -18,17 +18,17 @@ public class BeanGenerator {
     public static final UUID PLAN_ID = UUID.randomUUID();
 
 
-    public static SpaceEnrollerConfig createServiceInstance(String serviceId) {
-        if (serviceId == null) {
-            serviceId = UUID.randomUUID().toString();
-        }
+    public static SpaceEnrollerConfig createServiceInstance(){
+        return createServiceInstance(UUID.randomUUID().toString());
+    }
 
+    public static SpaceEnrollerConfig createServiceInstance(String serviceId) {
         return SpaceEnrollerConfig.builder()
                 .serviceDefinitionId(SERVICE_DEFINITION_ID.toString())
                 .planId(PLAN_ID.toString())
                 .organizationId(ORG_TEST.toString())
                 .spaceId(SPACE_TEST.toString())
-                .serviceInstanceId(serviceId).build();
+                .id(serviceId).build();
     }
 
     public static ApplicationBinding createBinding(String serviceId, String bindingId, String appId) {
@@ -72,9 +72,9 @@ public class BeanGenerator {
         return applicationInfo;
     }
 
-    public static ApplicationInfo createAppInfoLinkedToService(String appUuid, String name, Instant lastLog, Instant
+    public static ApplicationInfo createAppInfoWithDiagnostic(String appUuid, String name, Instant lastLog, Instant
             lastEvent,
-                                                               CloudApplication.AppState state) {
+                                                              CloudApplication.AppState state) {
         ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
         applicationInfo.updateDiagnosticInfo(state, lastLog, lastEvent, name);
         return applicationInfo;

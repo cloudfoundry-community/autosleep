@@ -7,9 +7,9 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.util.ApplicationLocker;
-import org.cloudfoundry.autosleep.worker.GlobalWatcher;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
+import org.cloudfoundry.autosleep.util.ApplicationLocker;
+import org.cloudfoundry.autosleep.worker.WorkerManagerService;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
@@ -40,7 +40,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     private ServiceRepository serviceRepository;
 
     @Autowired
-    private GlobalWatcher watcher;
+    private WorkerManagerService workerManager;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -93,8 +93,8 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             } else if (autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced) {
                 checkSecuredParameter(autoEnrollmentReader.getParameterName(), secret);
             }
-            SpaceEnrollerConfig serviceInstance = SpaceEnrollerConfig.builder()
-                    .serviceInstanceId(request.getServiceInstanceId())
+            SpaceEnrollerConfig spaceEnrollerConfig = SpaceEnrollerConfig.builder()
+                    .id(request.getServiceInstanceId())
                     .serviceDefinitionId(request.getServiceDefinitionId())
                     .planId(request.getPlanId())
                     .organizationId(request.getOrganizationGuid())
@@ -107,8 +107,8 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
 
             // save in repository before calling remote because otherwise local service binding controller will
             // fail retrieving the service
-            serviceRepository.save(serviceInstance);
-            watcher.watchServiceBindings(serviceInstance, Config.DELAY_BEFORE_FIRST_SERVICE_CHECK);
+            serviceRepository.save(spaceEnrollerConfig);
+            workerManager.registerSpaceEnroller(spaceEnrollerConfig);
             ServiceInstance result = new ServiceInstance(request);
             if (deployment != null) {
                 result.withDashboardUrl(deployment.getFirstUri() + Config.Path.DASHBOARD_CONTEXT + "/"
@@ -121,13 +121,13 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     @Override
     public ServiceInstance getServiceInstance(String serviceInstanceId) {
         log.debug("getServiceInstance - {}", serviceInstanceId);
-        SpaceEnrollerConfig serviceInstance = serviceRepository.findOne(serviceInstanceId);
-        if (serviceInstance == null) {
+        SpaceEnrollerConfig spaceEnrollerConfig = serviceRepository.findOne(serviceInstanceId);
+        if (spaceEnrollerConfig == null) {
             return null;
         } else {
-            return new ServiceInstance(new CreateServiceInstanceRequest(serviceInstance.getServiceDefinitionId(),
-                    serviceInstance.getPlanId(), serviceInstance.getOrganizationId(),
-                    serviceInstance.getSpaceId()).withServiceInstanceId(serviceInstanceId));
+            return new ServiceInstance(new CreateServiceInstanceRequest(spaceEnrollerConfig.getServiceDefinitionId(),
+                    spaceEnrollerConfig.getPlanId(), spaceEnrollerConfig.getOrganizationId(),
+                    spaceEnrollerConfig.getSpaceId()).withServiceInstanceId(serviceInstanceId));
         }
     }
 
@@ -135,12 +135,12 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     public ServiceInstance updateServiceInstance(
             UpdateServiceInstanceRequest request) throws
             ServiceInstanceUpdateNotSupportedException, ServiceBrokerException, ServiceInstanceDoesNotExistException {
-        String serviceId = request.getServiceInstanceId();
-        log.debug("updateServiceInstance - {}", serviceId);
-        SpaceEnrollerConfig serviceInstance = serviceRepository.findOne(serviceId);
-        if (serviceInstance == null) {
-            throw new ServiceInstanceDoesNotExistException(serviceId);
-        } else if (!serviceInstance.getPlanId().equals(request.getPlanId())) {
+        String spaceEnrollerConfigId = request.getServiceInstanceId();
+        log.debug("updateServiceInstance - {}", spaceEnrollerConfigId);
+        SpaceEnrollerConfig spaceEnrollerConfig = serviceRepository.findOne(spaceEnrollerConfigId);
+        if (spaceEnrollerConfig == null) {
+            throw new ServiceInstanceDoesNotExistException(spaceEnrollerConfigId);
+        } else if (!spaceEnrollerConfig.getPlanId().equals(request.getPlanId())) {
             /* org.cloudfoundry.community.servicebroker.model.ServiceInstance doesn't let us modify planId field
              * (private), and only handle service instance updates by re-creating them from scratch. As we need to
              * handle real updates (secret params), we are not supporting plan updates for now.*/
@@ -156,17 +156,17 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             } else if (autoEnrollment != null) {
                 // only auto enrollment parameter can be updated
                 checkSecuredParameter(autoEnrollmentReader.getParameterName(), secret);
-                if (serviceInstance.getSecret() != null && !
-                        (passwordEncoder.matches(secret, serviceInstance.getSecret())
+                if (spaceEnrollerConfig.getSecret() != null && !
+                        (passwordEncoder.matches(secret, spaceEnrollerConfig.getSecret())
                                 ||
                                 secret.equals(environment.getProperty(Config.EnvKey.SECURITY_PASSWORD)))) {
                     throw new InvalidParameterException(Config.ServiceInstanceParameters.SECRET,
                             "Provided secret does not match the one provided on creation nor the "
                                     + Config.EnvKey.SECURITY_PASSWORD + " value.");
                 }
-                serviceInstance.setForcedAutoEnrollment(
+                spaceEnrollerConfig.setForcedAutoEnrollment(
                         autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced);
-                serviceRepository.save(serviceInstance);
+                serviceRepository.save(spaceEnrollerConfig);
             }
             return new ServiceInstance(request);
         }
@@ -176,17 +176,17 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     @Override
     public ServiceInstance deleteServiceInstance(
             DeleteServiceInstanceRequest request) throws ServiceBrokerException {
-        final String serviceInstanceId = request.getServiceInstanceId();
-        log.debug("deleteServiceInstance - {}", serviceInstanceId);
-        serviceRepository.delete(serviceInstanceId);
+        final String spaceEnrollerConfigId = request.getServiceInstanceId();
+        log.debug("deleteServiceInstance - {}", spaceEnrollerConfigId);
+        serviceRepository.delete(spaceEnrollerConfigId);
 
         //clean stored app linked to the service (already unbound)
         appRepository.findAll().forEach(
                 aInfo -> applicationLocker.executeThreadSafe(aInfo.getUuid(), () -> {
                     ApplicationInfo applicationInfoReloaded = appRepository.findOne(aInfo.getUuid());
                     if (applicationInfoReloaded != null && !applicationInfoReloaded.getEnrollmentState()
-                            .isCandidate(serviceInstanceId)) {
-                        applicationInfoReloaded.getEnrollmentState().updateEnrollment(serviceInstanceId, false);
+                            .isCandidate(spaceEnrollerConfigId)) {
+                        applicationInfoReloaded.getEnrollmentState().updateEnrollment(spaceEnrollerConfigId, false);
                         if (applicationInfoReloaded.getEnrollmentState().getStates().isEmpty()) {
                             appRepository.delete(applicationInfoReloaded);
                             applicationLocker.removeApplication(applicationInfoReloaded.getUuid());

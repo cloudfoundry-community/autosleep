@@ -8,7 +8,7 @@ import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
-import org.cloudfoundry.autosleep.worker.GlobalWatcher;
+import org.cloudfoundry.autosleep.worker.WorkerManagerService;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
@@ -23,7 +23,13 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.UUID;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
@@ -45,7 +51,7 @@ public class ApplicationBindingServiceTest {
     private ApplicationRepository appRepo;
 
     @Mock
-    private GlobalWatcher watcher;
+    private WorkerManagerService workerManager;
 
     @Mock
     private ApplicationInfo applicationInfo;
@@ -99,7 +105,7 @@ public class ApplicationBindingServiceTest {
                 "Bid"));
         verify(appRepo, times(1)).save(any(ApplicationInfo.class));
         verify(bindingRepo, times(1)).save(any(ApplicationBinding.class));
-        verify(watcher, times(1)).watchApp(any());
+        verify(workerManager, times(1)).registerApplicationStopper(any(SpaceEnrollerConfig.class), anyString());
 
         when(appRepo.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         bindingService.createServiceInstanceBinding(createRequestTemplate.withServiceInstanceId("Sid").withBindingId(

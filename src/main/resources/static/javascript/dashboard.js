@@ -1,7 +1,7 @@
 
 
-function listApplications (serviceInstanceId){
-    var targetUrl =  "/api/services/"+serviceInstanceId +"/applications/";
+function listApplications (id){
+    var targetUrl =  "/api/services/"+id +"/applications/";
     var that = this;
     $.ajax({
         url : targetUrl,
@@ -56,7 +56,7 @@ function listApplications (serviceInstanceId){
                         $this.html(event.strftime('%D days %H:%M:%S'));
                     }).on('finish.countdown', function() {
                         setTimeout(function(){
-                            that.listApplications(serviceInstanceId);
+                            that.listApplications(id);
                         }, 1000);
                     });
             });

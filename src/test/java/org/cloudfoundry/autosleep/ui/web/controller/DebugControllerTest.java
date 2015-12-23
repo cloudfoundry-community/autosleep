@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(MockitoJUnitRunner.class)
 public class DebugControllerTest {
 
-    private static final String serviceInstanceId = "serviceInstanceId";
+    private static final String serviceInstanceId = "id";
 
     @Mock
     private ServiceRepository serviceRepository;

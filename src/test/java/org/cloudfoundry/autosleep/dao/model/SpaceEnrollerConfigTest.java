@@ -26,7 +26,7 @@ public class SpaceEnrollerConfigTest {
     private static final String PLAN_ID = UUID.randomUUID().toString();
 
     private SpaceEnrollerConfig getNewServiceInstance() {
-        return SpaceEnrollerConfig.builder().serviceInstanceId(SERVICE_INSTANCE_ID)
+        return SpaceEnrollerConfig.builder().id(SERVICE_INSTANCE_ID)
                 .serviceDefinitionId(SERVICE_DEFINITION_ID)
                 .forcedAutoEnrollment(true)
                 .idleDuration(Duration.ofHours(1))

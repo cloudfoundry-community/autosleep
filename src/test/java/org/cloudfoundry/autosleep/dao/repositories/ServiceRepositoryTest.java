@@ -70,7 +70,7 @@ public abstract class ServiceRepositoryTest {
                         .planId(SERVICE_PLAN_ID)
                         .organizationId(ORG_TEST)
                         .spaceId(SPACE_TEST)
-                        .serviceInstanceId(serviceInstanceId.name())
+                        .id(serviceInstanceId.name())
                         .idleDuration(duration)
                         .excludeFromAutoEnrollment(excludePattern)
                         .build()));
@@ -80,7 +80,7 @@ public abstract class ServiceRepositoryTest {
 
     @Test
     public void testInsert() {
-        dao.save(SpaceEnrollerConfig.builder().serviceInstanceId("testInsertServiceSuccess").build());
+        dao.save(SpaceEnrollerConfig.builder().id("testInsertServiceSuccess").build());
         assertThat(countServices(), is(equalTo(nbServicesInit + 1)));
     }
 
@@ -88,7 +88,7 @@ public abstract class ServiceRepositoryTest {
     public void testMultipleInsertsAndRetrieves() throws ServiceInstanceExistsException, ServiceBrokerException {
         List<String> ids = Arrays.asList("testInsertServiceSuccess1", "testInsertServiceSuccess2");
         List<SpaceEnrollerConfig> initialList = ids.stream()
-                .map(id -> SpaceEnrollerConfig.builder().serviceInstanceId(id).build())
+                .map(id -> SpaceEnrollerConfig.builder().id(id).build())
                 .collect(Collectors.toList());
 
 
@@ -113,10 +113,10 @@ public abstract class ServiceRepositoryTest {
         storedElement = dao.findAll(ids);
         log.debug("initial list {}", initialList.size());
         for (SpaceEnrollerConfig object : initialList) {
-            log.debug("initial object {} ", object.getServiceInstanceId());
+            log.debug("initial object {} ", object.getId());
         }
         for (SpaceEnrollerConfig object : storedElement) {
-            log.debug("found object {} , checking if in initial list", object.getServiceInstanceId());
+            log.debug("found object {} , checking if in initial list", object.getId());
             assertTrue("Retrieved element should be the same as initial element", initialList.contains(object));
         }
 
@@ -125,8 +125,7 @@ public abstract class ServiceRepositoryTest {
     @Test
     public void testGetServiceEquality() {
         String serviceId = "GetTest";
-        SpaceEnrollerConfig originalService = SpaceEnrollerConfig.builder()
-                .serviceInstanceId(serviceId).build();
+        SpaceEnrollerConfig originalService = SpaceEnrollerConfig.builder().id(serviceId).build();
         dao.save(originalService);
         SpaceEnrollerConfig serviceInstance = dao.findOne(serviceId);
         assertThat("Two objects should be equal", serviceInstance, is(equalTo(originalService)));
@@ -137,7 +136,7 @@ public abstract class ServiceRepositoryTest {
 
         SpaceEnrollerConfig serviceInstance = dao.findOne(InsertedInstanceIds.testGetServiceSuccess.name());
         assertFalse("Service should have been found", serviceInstance == null);
-        assertThat(serviceInstance.getServiceInstanceId(), is(
+        assertThat(serviceInstance.getId(), is(
                 equalTo(InsertedInstanceIds.testGetServiceSuccess.name())));
         assertThat(serviceInstance.getPlanId(), is(equalTo(SERVICE_PLAN_ID)));
         assertThat(serviceInstance.getServiceDefinitionId(),

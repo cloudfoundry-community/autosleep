@@ -32,7 +32,7 @@ public class SpaceEnrollerConfig {
 
     @Id
     @JsonProperty
-    private String serviceInstanceId;
+    private String id;
 
     @JsonProperty
     private String serviceDefinitionId;
@@ -63,7 +63,7 @@ public class SpaceEnrollerConfig {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + " : [id:" + getServiceInstanceId()
+        return this.getClass().getSimpleName() + " : [id:" + getId()
                 + " idleDuration:+" + idleDuration.toString()
                 + " excludeFromAutoEnrollment:"
                 + (excludeFromAutoEnrollment != null ? excludeFromAutoEnrollment.toString() : "")
@@ -79,13 +79,13 @@ public class SpaceEnrollerConfig {
             return false;
         } else {
             SpaceEnrollerConfig other = SpaceEnrollerConfig.class.cast(object);
-            return Objects.equals(this.getServiceInstanceId(), other.getServiceInstanceId());
+            return Objects.equals(this.getId(), other.getId());
         }
     }
 
     @Override
     public int hashCode() {
-        return this.getServiceInstanceId().hashCode();
+        return this.getId().hashCode();
     }
 
 }

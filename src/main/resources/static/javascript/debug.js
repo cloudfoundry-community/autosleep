@@ -161,14 +161,14 @@ DebugHelper.prototype.listServiceInstances = function(){
                 container.append(row);
             }
             $.each(serverResponse.body, function(idx, serviceInstance){
-                var linkToDashboard = $("<a>", {href : that.pathDashboardPfx+serviceInstance.serviceInstanceId
+                var linkToDashboard = $("<a>", {href : that.pathDashboardPfx+serviceInstance.id
                 }).addClass("glyphicon glyphicon-dashboard");
 
-                var linkToBindings = $("<a>", {href : that.pathDebugPageServiceBindingsPfx+serviceInstance.serviceInstanceId
+                var linkToBindings = $("<a>", {href : that.pathDebugPageServiceBindingsPfx+serviceInstance.id
                 +that.pathDebugPageServiceBindingsSfx}).addClass("glyphicon glyphicon-paperclip");
 
                 row = $("<row>").addClass("row");
-                row.append($("<div>").addClass("col-xs-4").html(serviceInstance.serviceInstanceId));
+                row.append($("<div>").addClass("col-xs-4").html(serviceInstance.id));
                 row.append($("<div>").addClass("col-xs-2 text-center text-overflow").html(serviceInstance.planId));
                 row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.idleDuration));
                 row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.excludeFromAutoEnrollment));
@@ -185,7 +185,7 @@ DebugHelper.prototype.listServiceInstances = function(){
                 row.append($("<div>").addClass("col-xs-1 text-center").append(button));
                 button.on("click", function(e){
                     e.preventDefault();
-                    that.deleteServiceInstance(serviceInstance.serviceInstanceId);
+                    that.deleteServiceInstance(serviceInstance.id);
                 });
                 container.append(row);
             });
@@ -197,10 +197,10 @@ DebugHelper.prototype.listServiceInstances = function(){
     });
 };
 
-DebugHelper.prototype.deleteServiceInstance = function(serviceInstanceId){
+DebugHelper.prototype.deleteServiceInstance = function(id){
     var that = this;
     $.ajax({
-        url : this.pathServiceInstance+"/"+serviceInstanceId
+        url : this.pathServiceInstance+"/"+id
                 + "?service_id="+this.serviceDefinitionId+"&plan_id="+this.planId,
         type : 'DELETE',
         success : function () {
@@ -213,7 +213,7 @@ DebugHelper.prototype.deleteServiceInstance = function(serviceInstanceId){
     });
 };
 
-DebugHelper.prototype.addServiceBinding = function(serviceInstanceId){
+DebugHelper.prototype.addServiceBinding = function(id){
     var that = this;
     var data = {
         service_id : this.serviceDefinitionId,
@@ -224,13 +224,13 @@ DebugHelper.prototype.addServiceBinding = function(serviceInstanceId){
         parameters : {}
     };
     $.ajax({
-        url : this.pathServiceInstance+"/"+serviceInstanceId+"/service_bindings/" + $("#createServiceBindingId").val(),
+        url : this.pathServiceInstance+"/"+id+"/service_bindings/" + $("#createServiceBindingId").val(),
         type : 'PUT',
         contentType  : 'application/json; charset=UTF-8',
         data : JSON.stringify(data),
         success : function () {
             displaySuccess("Service binding created");
-            that.listServiceBindings(serviceInstanceId);
+            that.listServiceBindings(id);
         },
         error : function(xhr){
             displayDanger("Error adding service binding: "+xhr.responseText);
@@ -238,10 +238,10 @@ DebugHelper.prototype.addServiceBinding = function(serviceInstanceId){
     });
 };
 
-DebugHelper.prototype.listServiceBindings = function(serviceInstanceId){
+DebugHelper.prototype.listServiceBindings = function(id){
     var that = this;
     $.ajax({
-        url : that.pathApiByServicePfx + serviceInstanceId + that.pathApiListBindingSfx ,
+        url : that.pathApiByServicePfx + id + that.pathApiListBindingSfx ,
         success : function (serverResponse) {
             var container = $("#allServiceBindings");
             var row;
@@ -262,7 +262,7 @@ DebugHelper.prototype.listServiceBindings = function(serviceInstanceId){
                 row.append($("<div>").addClass("col-xs-2").append(button));
                 button.on("click", function(e){
                     e.preventDefault();
-                    that.deleteServiceBinding(serviceInstanceId, serviceBinding.serviceBindingId);
+                    that.deleteServiceBinding(id, serviceBinding.serviceBindingId);
                 });
                 container.append(row);
             });

@@ -81,7 +81,7 @@ public class DashboardControllerTest {
                 .planId(planId)
                 .organizationId("orgGuid")
                 .spaceId("spaceId")
-                .serviceInstanceId(serviceInstanceId);
+                .id(serviceInstanceId);
         if (withExcludeParam) {
             builder.excludeFromAutoEnrollment(Pattern.compile(".*"));
         }

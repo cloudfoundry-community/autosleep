@@ -8,10 +8,10 @@ import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
-import org.cloudfoundry.autosleep.worker.GlobalWatcher;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReaderFactory;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
+import org.cloudfoundry.autosleep.worker.WorkerManagerService;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
@@ -54,7 +54,7 @@ public class AutosleepServiceInstanceServiceTest {
 
     private static final String PLAN_ID = "planId";
 
-    private static final String SERVICE_INSTANCE_ID = "serviceInstanceId";
+    private static final String SERVICE_INSTANCE_ID = "id";
 
     @Mock
     private ApplicationRepository applicationRepository;
@@ -63,7 +63,7 @@ public class AutosleepServiceInstanceServiceTest {
     private ServiceRepository serviceRepository;
 
     @Mock
-    private GlobalWatcher globalWatcher;
+    private WorkerManagerService workerManager;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -172,8 +172,7 @@ public class AutosleepServiceInstanceServiceTest {
         ServiceInstance si = instanceService.createServiceInstance(createRequest);
 
         //then global watcher is invoked
-        verify(globalWatcher, times(1)).watchServiceBindings(any(SpaceEnrollerConfig.class),
-                eq(Config.DELAY_BEFORE_FIRST_SERVICE_CHECK));
+        verify(workerManager, times(1)).registerSpaceEnroller(any(SpaceEnrollerConfig.class));
         //and no password encoded
         verify(passwordEncoder, never()).encode(anyString());
         //service is returned
@@ -314,7 +313,7 @@ public class AutosleepServiceInstanceServiceTest {
 
     private SpaceEnrollerConfig service_exist_in_database() {
         SpaceEnrollerConfig existingServiceInstance = SpaceEnrollerConfig.builder()
-                .serviceInstanceId(SERVICE_INSTANCE_ID)
+                .id(SERVICE_INSTANCE_ID)
                 .planId(PLAN_ID)
                 .secret("secret")
                 .forcedAutoEnrollment(true).build();

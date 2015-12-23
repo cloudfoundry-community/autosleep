@@ -57,7 +57,7 @@ public class ApiControllerTest {
 
     private static final String applicationId = UUID.randomUUID().toString();
 
-    private static final String serviceInstanceId = "serviceInstanceId";
+    private static final String serviceInstanceId = "id";
 
     private static final String serviceBindingId = "serviceBindingId";
 
@@ -107,7 +107,7 @@ public class ApiControllerTest {
         parameters.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, Pattern.compile(".*"));
 
         SpaceEnrollerConfig serviceInstance = SpaceEnrollerConfig.builder()
-                .serviceInstanceId(serviceInstanceId).build();
+                .id(serviceInstanceId).build();
 
         when(serviceRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
 
@@ -125,7 +125,7 @@ public class ApiControllerTest {
                                                     SpaceEnrollerConfig[].class));
                     assertThat(serviceInstances.getBody(), is(notNullValue()));
                     assertThat(serviceInstances.getBody().length, is(equalTo(1)));
-                    assertThat(serviceInstances.getBody()[0].getServiceInstanceId(),
+                    assertThat(serviceInstances.getBody()[0].getId(),
                             is(equalTo(serviceInstanceId)));
 
                 });
@@ -177,7 +177,7 @@ public class ApiControllerTest {
     @Test
     public void testListApplications() throws Exception {
 
-        ApplicationInfo applicationInfo = BeanGenerator.createAppInfoLinkedToService(applicationId, "applicationName",
+        ApplicationInfo applicationInfo = BeanGenerator.createAppInfoWithDiagnostic(applicationId, "applicationName",
                 Instant.now(), Instant.now(), AppState.STARTED);
 
         applicationInfo.getEnrollmentState().addEnrollmentState("serviceId");
@@ -215,7 +215,7 @@ public class ApiControllerTest {
     @Test
     public void testListApplicationById() throws Exception {
         String serviceId = "serviceIdListById";
-        ApplicationInfo applicationInfo = BeanGenerator.createAppInfoLinkedToService(applicationId.toString(),
+        ApplicationInfo applicationInfo = BeanGenerator.createAppInfoWithDiagnostic(applicationId.toString(),
                 "appName",
                 Instant.now(), Instant.now(), AppState.STARTED);
         applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);

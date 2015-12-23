@@ -9,7 +9,7 @@ import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
-import org.cloudfoundry.autosleep.worker.GlobalWatcher;
+import org.cloudfoundry.autosleep.worker.WorkerManagerService;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
@@ -36,7 +36,7 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
     private BindingRepository bindingRepository;
 
     @Autowired
-    private GlobalWatcher watcher;
+    private WorkerManagerService workerManager;
 
     @Autowired
     private ApplicationLocker applicationLocker;
@@ -47,11 +47,11 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
             ServiceInstanceBindingExistsException, ServiceBrokerException {
         final String appId = request.getAppGuid();
         final String bindingId = request.getBindingId();
-        final String serviceInstanceId = request.getServiceInstanceId();
+        final String configId = request.getServiceInstanceId();
         log.debug("createServiceInstanceBinding - {}", bindingId);
-        SpaceEnrollerConfig serviceInstance = serviceRepository.findOne(serviceInstanceId);
+        SpaceEnrollerConfig spaceEnrollerConfig = serviceRepository.findOne(configId);
 
-        ApplicationBinding binding = ApplicationBinding.builder().serviceInstanceId(serviceInstanceId)
+        ApplicationBinding binding = ApplicationBinding.builder().serviceInstanceId(configId)
                 .serviceBindingId(bindingId)
                 .applicationId(appId).build();
         applicationLocker.executeThreadSafe(appId, () -> {
@@ -60,18 +60,18 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
                 appInfo = new ApplicationInfo(appId);
             }
 
-            appInfo.getEnrollmentState().addEnrollmentState(serviceInstanceId);
+            appInfo.getEnrollmentState().addEnrollmentState(configId);
 
             //retrieve service to return its params as credentials
 
             bindingRepository.save(binding);
             appRepository.save(appInfo);
-            watcher.watchApp(binding);
+            workerManager.registerApplicationStopper(spaceEnrollerConfig, appId);
         });
 
-        return new ServiceInstanceBinding(bindingId, serviceInstanceId,
+        return new ServiceInstanceBinding(bindingId, configId,
                 Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION,
-                        serviceInstance.getIdleDuration().toString()), null, appId);
+                        spaceEnrollerConfig.getIdleDuration().toString()), null, appId);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
             log.debug("deleteServiceInstanceBinding on app ", appId);
             ApplicationInfo appInfo = appRepository.findOne(appId);
             if (appInfo != null) {
-                appInfo.getEnrollmentState().updateEnrollment(serviceInstance.getServiceInstanceId(),
+                appInfo.getEnrollmentState().updateEnrollment(serviceInstance.getId(),
                         !serviceInstance.isForcedAutoEnrollment());
                 if (appInfo.getEnrollmentState().getStates().size() == 0) {
                     appRepository.delete(appId);
