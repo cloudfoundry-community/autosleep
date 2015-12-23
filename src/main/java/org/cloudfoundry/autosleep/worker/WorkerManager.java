@@ -45,7 +45,7 @@ public class WorkerManager implements WorkerManagerService {
 
     @PostConstruct
     public void init() {
-        log.debug("Initializer watchers for every app already bound (except if handle by another instance of "
+        log.debug("Initializer watchers for every app already enrolled (except if handle by another instance of "
                 + "autosleep)");
         bindingRepository.findAll().forEach(applicationBinding -> {
             SpaceEnrollerConfig spaceEnrollerConfig =

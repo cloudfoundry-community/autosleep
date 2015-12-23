@@ -59,7 +59,7 @@ class SpaceEnroller extends AbstractPeriodicTask {
                                 watchedOrIgnoredApplications.add(applicationInfo.getUuid());
                             }
                         });
-                log.debug("{} local applications (already watched, or to be ignored)",
+                log.debug("{} known applications (already enrolled, or blacklisted)",
                         watchedOrIgnoredApplications.size());
                 List<ApplicationIdentity> applicationIdentities = cloudFoundryApi
                         .listApplications(UUID.fromString(serviceInstance.getSpaceId()),
@@ -73,7 +73,7 @@ class SpaceEnroller extends AbstractPeriodicTask {
                     log.debug("{} - new applications", newApplications.size());
                     cloudFoundryApi.bindServiceInstance(newApplications, serviceInstance.getId());
                 } else {
-                    log.debug("all applications are binded");
+                    log.debug("No new app to bind (all already enrolled or filtered by regexp)");
                 }
             } catch (EntityNotFoundException n) {
                 log.error("service not found. should not appear cause should not be in repository anymore", n);

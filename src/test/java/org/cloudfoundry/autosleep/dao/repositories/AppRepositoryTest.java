@@ -157,4 +157,23 @@ public abstract class AppRepositoryTest {
     private int countTotal() {
         return toIntExact(dao.count());
     }
+
+    /**
+     * test hibernate issue: storing an "empty" embedded object with every field null will result in a null object
+     * when retrieved from db.
+     */
+    @Test
+    public void empty_diagnostic_info_should_not_be_null_when_read_from_db() {
+        //
+
+        //create app with "empty" diagnostic
+        String uuid = UUID.randomUUID().toString();
+        ApplicationInfo info = new ApplicationInfo(uuid);
+        assertThat(info.getDiagnosticInfo(), is(notNullValue()));
+
+        dao.save(info);
+        ApplicationInfo retrievedInfo = dao.findOne(uuid);
+
+        assertThat(retrievedInfo.getDiagnosticInfo(), is(notNullValue()));
+    }
 }

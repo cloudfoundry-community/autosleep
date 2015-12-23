@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,24 +13,21 @@ import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.Objects;
 
 @Getter
 @Slf4j
 @Entity
+@EqualsAndHashCode
 public class ApplicationInfo {
 
     @Getter
     @Slf4j
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     @Embeddable
+    @EqualsAndHashCode
     public static class DiagnosticInfo {
         @JsonSerialize(using = InstantSerializer.class)
         @JsonDeserialize(using = InstantDeserializer.class)
@@ -49,11 +47,15 @@ public class ApplicationInfo {
         @JsonSerialize(using = InstantSerializer.class)
         @JsonDeserialize(using = InstantDeserializer.class)
         private Instant lastCheck;
+
+        //see https://issues.jboss.org/browse/HIBERNATE-50
+        private int hibernateWorkaround = 1;
     }
 
     @Getter
     @Slf4j
     @Embeddable
+    @EqualsAndHashCode
     public static class EnrollmentState {
 
         public enum State {
@@ -123,12 +125,10 @@ public class ApplicationInfo {
         enrollmentState = new EnrollmentState();
     }
 
-
     public ApplicationInfo(String uuid) {
         this();
         this.uuid = uuid;
     }
-
 
     public void updateDiagnosticInfo(AppState state, Instant lastLog, Instant lastEvent, String name) {
         this.diagnosticInfo.appState = state;
@@ -158,24 +158,6 @@ public class ApplicationInfo {
     public String toString() {
         return "[ApplicationInfo:" + name + "/" + uuid + " lastEvent:"
                 + diagnosticInfo.lastEvent + " lastLog:" + diagnosticInfo.lastLog + "]";
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (object == this) {
-            return true;
-        } else if (!(object instanceof ApplicationInfo)) {
-            return false;
-        } else {
-            ApplicationInfo other = (ApplicationInfo) object;
-            return Objects.equals(uuid, other.uuid) && Objects.equals(name, other.name);
-        }
-
-    }
-
-    @Override
-    public int hashCode() {
-        return uuid.hashCode();
     }
 
 
