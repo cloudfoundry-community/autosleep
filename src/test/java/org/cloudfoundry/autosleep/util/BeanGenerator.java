@@ -12,13 +12,14 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class BeanGenerator {
+
     public static final UUID ORG_TEST = UUID.randomUUID();
     public static final UUID SPACE_TEST = UUID.randomUUID();
     public static final UUID SERVICE_DEFINITION_ID = UUID.randomUUID();
     public static final UUID PLAN_ID = UUID.randomUUID();
 
 
-    public static SpaceEnrollerConfig createServiceInstance(){
+    public static SpaceEnrollerConfig createServiceInstance() {
         return createServiceInstance(UUID.randomUUID().toString());
     }
 
@@ -45,20 +46,16 @@ public class BeanGenerator {
                 .serviceInstanceId(serviceId).applicationId(appId).build();
     }
 
-    public static ApplicationBinding createBinding(String bindingId) {
-        return createBinding(null, bindingId, null);
-    }
-
     public static ApplicationBinding createBinding() {
         return createBinding(null, null, null);
     }
 
-    public static ApplicationInfo createAppInfoLinkedToService(String serviceId) {
-        return createAppInfoLinkedToService(null, serviceId);
-    }
-
     public static ApplicationInfo createAppInfo() {
         return createAppInfoLinkedToService(null, null);
+    }
+
+    public static ApplicationInfo createAppInfoLinkedToService(String serviceId) {
+        return createAppInfoLinkedToService(null, serviceId);
     }
 
     public static ApplicationInfo createAppInfoLinkedToService(String appUuid, String serviceId) {

@@ -98,14 +98,14 @@ public abstract class AppRepositoryTest {
     public void testFind() {
         String appId = UUID.randomUUID().toString();
         ApplicationInfo original = buildAppInfo(appId);
-        int nbEnrollment = original.getEnrollmentState().getStates().size();
         dao.save(original);
         ApplicationInfo retrieved = dao.findOne(appId);
         assertThat(retrieved, is(notNullValue()));
         assertThat(retrieved.getUuid(), is(equalTo(appId)));
         assertThat(retrieved.getEnrollmentState(), is(notNullValue()));
         assertThat(retrieved.getEnrollmentState().getStates(), is(notNullValue()));
-        assertThat(retrieved.getEnrollmentState().getStates().size(), is(equalTo(nbEnrollment)));
+        assertThat(retrieved.getEnrollmentState().getStates().size(), is(equalTo(original.getEnrollmentState()
+                .getStates().size())));
         assertThat(retrieved, is(equalTo(original)));
         assertTrue("Succeed in getting a binding that does not exist", dao.findOne("thisAppShouldNotExist") == null);
     }

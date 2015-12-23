@@ -5,6 +5,7 @@ import org.apache.commons.dbcp.BasicDataSource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.Connection;
 import java.util.Properties;
 
 
@@ -12,9 +13,9 @@ import java.util.Properties;
 public class JpaUtil {
     public static boolean isMySqlPresent() {
         final String propertiesLocation = "/application.properties";
-        try {
+        try (InputStream propertiesStream = JpaUtil.class.getResourceAsStream(propertiesLocation)) {
             Properties properties = new Properties();
-            InputStream propertiesStream = JpaUtil.class.getResourceAsStream(propertiesLocation);
+
             if (propertiesStream == null) {
                 log.debug("{} cannot be found in classpath", propertiesLocation);
                 return false;
@@ -29,8 +30,9 @@ public class JpaUtil {
                 dataSource.setDriverClassName(driver);
                 dataSource.setUsername(username);
                 dataSource.setPassword(password);
-                dataSource.getConnection();
-                return true;
+                try ( Connection connection = dataSource.getConnection()) {
+                    return connection != null;
+                }
             }
 
         } catch (IOException e) {
