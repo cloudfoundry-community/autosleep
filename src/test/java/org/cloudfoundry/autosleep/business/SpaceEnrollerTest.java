@@ -103,7 +103,7 @@ public class SpaceEnrollerTest {
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 //do not return app id
                 .filter(remoteApplicationId -> !remoteApplicationIds.equals(APP_ID))
-                .map(remoteApplicationId -> BeanGenerator.createAppInfo(remoteApplicationId.toString(),
+                .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId.toString(),
                         "another_service_id"))
                 .collect(Collectors.toList()));
         spaceEnroller.run();
@@ -130,7 +130,8 @@ public class SpaceEnrollerTest {
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 //do not return app id
                 .filter(remoteApplicationId -> !remoteApplicationIds.equals(APP_ID))
-                .map(remoteApplicationId -> BeanGenerator.createAppInfo(remoteApplicationId.toString(), SERVICE_ID))
+                .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId.toString()
+                        , SERVICE_ID))
                 .collect(Collectors.toList()));
         spaceEnroller.run();
 

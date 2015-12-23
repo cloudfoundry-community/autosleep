@@ -53,21 +53,28 @@ public class BeanGenerator {
         return createBinding(null, null, null);
     }
 
-    public static ApplicationInfo createAppInfo(String serviceId) {
-        return createAppInfo(null, serviceId);
+    public static ApplicationInfo createAppInfoLinkedToService(String serviceId) {
+        return createAppInfoLinkedToService(null, serviceId);
     }
 
-    public static ApplicationInfo createAppInfo(String appUuid, String serviceId) {
+    public static ApplicationInfo createAppInfo() {
+        return createAppInfoLinkedToService(null, null);
+    }
+
+    public static ApplicationInfo createAppInfoLinkedToService(String appUuid, String serviceId) {
         if (appUuid == null) {
             appUuid = UUID.randomUUID().toString();
         }
         ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
-        applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
+        if (serviceId != null ) {
+            applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
+        }
         return applicationInfo;
     }
 
-    public static ApplicationInfo createAppInfo(String appUuid, String name, Instant lastLog, Instant lastEvent,
-                                                CloudApplication.AppState state) {
+    public static ApplicationInfo createAppInfoLinkedToService(String appUuid, String name, Instant lastLog, Instant
+            lastEvent,
+                                                               CloudApplication.AppState state) {
         ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
         applicationInfo.updateDiagnosticInfo(state, lastLog, lastEvent, name);
         return applicationInfo;

@@ -6,8 +6,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.UUID;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -15,11 +13,9 @@ import static org.junit.Assert.assertTrue;
 @Slf4j
 public class ApplicationInfoTest {
 
-    private final String appUuid = UUID.randomUUID().toString();
-
     @Test
     public void testIsWatched() throws Exception {
-        ApplicationInfo info = BeanGenerator.createAppInfo(appUuid);
+        ApplicationInfo info = BeanGenerator.createAppInfo();
         assertFalse(info.getEnrollmentState().isWatched());
         String serviceId = "testIsWatched";
         info.getEnrollmentState().addEnrollmentState(serviceId);
