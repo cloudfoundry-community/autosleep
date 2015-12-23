@@ -73,7 +73,7 @@ public class ApplicationStopperTest {
         when(applicationActivity.getApplication()).thenReturn(application);
 
 
-        applicationInfo = BeanGenerator.createAppInfo(APP_UID.toString(), "applicationName",
+        applicationInfo = BeanGenerator.createAppInfoLinkedToService(APP_UID.toString(), "applicationName",
                 Instant.now(), Instant.now(), AppState.STARTED);
 
 

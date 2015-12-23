@@ -177,7 +177,7 @@ public class ApiControllerTest {
     @Test
     public void testListApplications() throws Exception {
 
-        ApplicationInfo applicationInfo = BeanGenerator.createAppInfo(applicationId, "applicationName",
+        ApplicationInfo applicationInfo = BeanGenerator.createAppInfoLinkedToService(applicationId, "applicationName",
                 Instant.now(), Instant.now(), AppState.STARTED);
 
         applicationInfo.getEnrollmentState().addEnrollmentState("serviceId");
@@ -215,7 +215,8 @@ public class ApiControllerTest {
     @Test
     public void testListApplicationById() throws Exception {
         String serviceId = "serviceIdListById";
-        ApplicationInfo applicationInfo = BeanGenerator.createAppInfo(applicationId.toString(), "appName",
+        ApplicationInfo applicationInfo = BeanGenerator.createAppInfoLinkedToService(applicationId.toString(),
+                "appName",
                 Instant.now(), Instant.now(), AppState.STARTED);
         applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));

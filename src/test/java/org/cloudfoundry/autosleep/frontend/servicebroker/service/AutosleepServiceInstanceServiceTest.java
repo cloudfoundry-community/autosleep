@@ -437,11 +437,11 @@ public class AutosleepServiceInstanceServiceTest {
     public void test_applications_are_cleaned_when_service_deleted() throws Exception {
         //given application repository contains some application that reference ONLY the service
         Map<String, ApplicationInfo> applicationInfos = Arrays.asList(
-                BeanGenerator.createAppInfo(SERVICE_INSTANCE_ID),
-                BeanGenerator.createAppInfo(SERVICE_INSTANCE_ID),
-                BeanGenerator.createAppInfo(SERVICE_INSTANCE_ID),
-                BeanGenerator.createAppInfo("àç!àpoiu"),
-                BeanGenerator.createAppInfo("lkv nàç ")
+                BeanGenerator.createAppInfoLinkedToService(SERVICE_INSTANCE_ID),
+                BeanGenerator.createAppInfoLinkedToService(SERVICE_INSTANCE_ID),
+                BeanGenerator.createAppInfoLinkedToService(SERVICE_INSTANCE_ID),
+                BeanGenerator.createAppInfoLinkedToService("àç!àpoiu"),
+                BeanGenerator.createAppInfoLinkedToService("lkv nàç ")
         ).stream().collect(Collectors.toMap(applicationInfo -> applicationInfo.getUuid().toString(),
                 applicationInfo -> applicationInfo));
         when(applicationRepository.findAll()).thenReturn(applicationInfos.values());

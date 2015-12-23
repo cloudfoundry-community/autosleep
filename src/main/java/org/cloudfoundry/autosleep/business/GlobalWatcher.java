@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.business;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.business.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.business.scheduling.Clock;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
@@ -8,7 +9,6 @@ import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
-import org.cloudfoundry.autosleep.business.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,35 +21,27 @@ import java.util.UUID;
 @Component
 public class GlobalWatcher {
 
+    @Autowired
     private Clock clock;
 
+    @Autowired
     private BindingRepository bindingRepository;
 
+    @Autowired
     private ServiceRepository serviceRepository;
 
+    @Autowired
     private ApplicationRepository applicationRepository;
 
+    @Autowired
     private CloudFoundryApiService cloudFoundryApi;
 
+    @Autowired
     private DeployedApplicationConfig.Deployment deployment;
 
+    @Autowired
     private ApplicationLocker applicationLocker;
 
-
-    @Autowired
-    public GlobalWatcher(Clock clock, BindingRepository bindingRepository,
-                         ServiceRepository serviceRepository, ApplicationRepository applicationRepository,
-                         CloudFoundryApiService cloudFoundryApi,
-                         DeployedApplicationConfig.Deployment deployment, ApplicationLocker applicationLocker) {
-        this.clock = clock;
-        this.cloudFoundryApi = cloudFoundryApi;
-        this.bindingRepository = bindingRepository;
-        this.serviceRepository = serviceRepository;
-        this.applicationRepository = applicationRepository;
-        this.cloudFoundryApi = cloudFoundryApi;
-        this.deployment = deployment;
-        this.applicationLocker = applicationLocker;
-    }
 
     @PostConstruct
     public void init() {

@@ -52,7 +52,7 @@ public abstract class AppRepositoryTest {
     }
 
     private ApplicationInfo buildAppInfo(String uuid) {
-        ApplicationInfo result = BeanGenerator.createAppInfo(uuid, "APTestServiceId");
+        ApplicationInfo result = BeanGenerator.createAppInfoLinkedToService(uuid, "APTestServiceId");
         result.updateDiagnosticInfo(AppState.STARTED,
                 Instant.now(), Instant.now(), "appName");
         result.getEnrollmentState().addEnrollmentState("serviceId");
