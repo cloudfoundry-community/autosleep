@@ -9,7 +9,7 @@ import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.worker.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
 import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException;
 

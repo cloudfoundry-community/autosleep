@@ -6,7 +6,7 @@ import org.cloudfoundry.autosleep.worker.scheduling.AbstractPeriodicTask;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.worker.remote.ApplicationActivity;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
 import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException;

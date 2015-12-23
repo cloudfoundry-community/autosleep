@@ -1,6 +1,8 @@
 package org.cloudfoundry.autosleep.worker;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;

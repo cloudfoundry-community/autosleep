@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep.worker.remote;
+package org.cloudfoundry.autosleep.worker.remote.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,5 +1,8 @@
 package org.cloudfoundry.autosleep.worker.remote;
 
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
+
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;

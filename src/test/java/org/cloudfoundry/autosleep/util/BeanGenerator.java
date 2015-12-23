@@ -3,7 +3,7 @@ package org.cloudfoundry.autosleep.util;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.worker.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 
 import java.time.Instant;

@@ -1,4 +1,4 @@
-package org.cloudfoundry.autosleep.worker.remote;
+package org.cloudfoundry.autosleep.worker.remote.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;

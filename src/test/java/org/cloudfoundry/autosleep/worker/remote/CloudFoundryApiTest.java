@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException.EntityType;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.util.LastDateComputer;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
 import org.cloudfoundry.client.lib.domain.ApplicationLog;
 import org.cloudfoundry.client.lib.domain.ApplicationLog.MessageType;
