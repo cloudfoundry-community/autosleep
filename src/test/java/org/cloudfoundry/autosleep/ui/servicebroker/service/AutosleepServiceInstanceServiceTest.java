@@ -6,7 +6,7 @@ import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReaderFactory;
@@ -60,7 +60,7 @@ public class AutosleepServiceInstanceServiceTest {
     private ApplicationRepository applicationRepository;
 
     @Mock
-    private ServiceRepository serviceRepository;
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Mock
     private WorkerManagerService workerManager;
@@ -118,7 +118,7 @@ public class AutosleepServiceInstanceServiceTest {
         serviceInstances.clear();
         doAnswer(invocationOnMock ->
                         serviceInstances.add((SpaceEnrollerConfig) invocationOnMock.getArguments()[0])
-        ).when(serviceRepository).save(any(SpaceEnrollerConfig.class));
+        ).when(spaceEnrollerConfigRepository).save(any(SpaceEnrollerConfig.class));
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArguments()[1]).run();
             return null;
@@ -142,7 +142,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void test_no_creation_accepted_when_already_exists() {
         //given the service already exists
-        when(serviceRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(true);
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(true);
         //when instance created then an error is thrown
         verifyThrown(() -> instanceService.createServiceInstance(createRequest), ServiceInstanceExistsException.class);
     }
@@ -151,7 +151,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void test_no_creation_accepted_when_unknown_parameter() {
         //given the service does not exist
-        when(serviceRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when an unknwon parameter is submitted
         String unknwonParameter = "unknownParameter";
@@ -166,7 +166,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void test_creation_with_default() throws Exception {
         //given the service does not exist
-        when(serviceRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when service is created
         ServiceInstance si = instanceService.createServiceInstance(createRequest);
@@ -178,7 +178,7 @@ public class AutosleepServiceInstanceServiceTest {
         //service is returned
         assertThat(si, is(notNullValue()));
         //and service is saved in database
-        verify(serviceRepository, times(1)).save(any(SpaceEnrollerConfig.class));
+        verify(spaceEnrollerConfigRepository, times(1)).save(any(SpaceEnrollerConfig.class));
         assertThat(serviceInstances.size(), is(equalTo(1)));
         SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
         //and default values are applied
@@ -192,7 +192,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void arbitrary_duration_is_stored() throws Exception {
         //given the service does not exist
-        when(serviceRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when user submit only the duration
         createRequest.setParameters(singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PT10H"));
@@ -200,7 +200,7 @@ public class AutosleepServiceInstanceServiceTest {
 
 
         //then  service is saved with good duration
-        verify(serviceRepository, times(1)).save(any(SpaceEnrollerConfig.class));
+        verify(spaceEnrollerConfigRepository, times(1)).save(any(SpaceEnrollerConfig.class));
         assertThat(serviceInstances.size(), is(equalTo(1)));
         SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
         assertThat(serviceInstance.getIdleDuration(), is(equalTo(Duration.ofHours(10))));
@@ -209,7 +209,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void test_exclusion_is_well_read() throws Exception {
         //given the service does not exist
-        when(serviceRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when user submit only the exclusion
         createRequest.setParameters(
@@ -225,7 +225,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void test_secret_is_well_read() throws Exception {
         //given the service does not exist
-        when(serviceRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when user submit only the secret
         createRequest.setParameters(singletonMap(Config.ServiceInstanceParameters.SECRET, "password"));
@@ -244,7 +244,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void test_forced_auto_enrollment_fails_without_secret() throws Exception {
         //given the service does not exist
-        when(serviceRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when user only gives forced auto enrollment
         createRequest.setParameters(singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, Config
@@ -260,7 +260,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void test_forced_auto_enrollment_succeeds_with_secret() throws Exception {
         //given the service does not exist
-        when(serviceRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when user submit forced auto enrollment and secret
         Map<String, Object> parameters = new HashMap<>();
@@ -294,7 +294,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void test_get_service_instance_not_found() {
         //given the repository does not contain the service
-        when(serviceRepository.findOne(SERVICE_INSTANCE_ID))
+        when(spaceEnrollerConfigRepository.findOne(SERVICE_INSTANCE_ID))
                 .thenReturn(null);
         ServiceInstance retrievedInstance = instanceService
                 .getServiceInstance(
@@ -305,7 +305,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Test
     public void test_update_on_non_existing() throws Exception {
         //given the repository does not contain the service
-        when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(null);
+        when(spaceEnrollerConfigRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(null);
         //when update is invoked the error is thrown
         verifyThrown(() -> instanceService.updateServiceInstance(updateRequest),
                 ServiceInstanceDoesNotExistException.class);
@@ -318,7 +318,7 @@ public class AutosleepServiceInstanceServiceTest {
                 .secret("secret")
                 .forcedAutoEnrollment(true).build();
 
-        when(serviceRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(existingServiceInstance);
+        when(spaceEnrollerConfigRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(existingServiceInstance);
         return existingServiceInstance;
     }
 
@@ -380,7 +380,7 @@ public class AutosleepServiceInstanceServiceTest {
         ServiceInstance si = instanceService.updateServiceInstance(updateRequest);
 
         //then service is updated
-        verify(serviceRepository, times(1)).save(any(SpaceEnrollerConfig.class));
+        verify(spaceEnrollerConfigRepository, times(1)).save(any(SpaceEnrollerConfig.class));
         assertThat(si, is(notNullValue()));
         assertFalse(existingServiceInstance.isForcedAutoEnrollment());
     }
@@ -426,7 +426,7 @@ public class AutosleepServiceInstanceServiceTest {
         ServiceInstance si = instanceService.deleteServiceInstance(deleteRequest);
 
         //then the repository is invoked
-        verify(serviceRepository, times(1)).delete(SERVICE_INSTANCE_ID);
+        verify(spaceEnrollerConfigRepository, times(1)).delete(SERVICE_INSTANCE_ID);
         assertThat(si, is(notNullValue()));
         assertThat(si.getServiceInstanceId(), is(equalTo(SERVICE_INSTANCE_ID)));
 
@@ -452,7 +452,7 @@ public class AutosleepServiceInstanceServiceTest {
         instanceService.deleteServiceInstance(deleteRequest);
 
         //then repository is invoked
-        verify(serviceRepository, times(1)).delete(SERVICE_INSTANCE_ID);
+        verify(spaceEnrollerConfigRepository, times(1)).delete(SERVICE_INSTANCE_ID);
         //and info on applications are removed
         verify(applicationRepository, times(3)).delete(any(ApplicationInfo.class));
     }

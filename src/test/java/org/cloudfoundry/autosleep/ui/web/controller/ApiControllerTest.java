@@ -8,7 +8,7 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.ui.web.model.ServerResponse;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
@@ -62,7 +62,7 @@ public class ApiControllerTest {
     private static final String serviceBindingId = "serviceBindingId";
 
     @Mock
-    private ServiceRepository serviceRepository;
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Mock
     private BindingRepository bindingRepository;
@@ -109,7 +109,7 @@ public class ApiControllerTest {
         SpaceEnrollerConfig serviceInstance = SpaceEnrollerConfig.builder()
                 .id(serviceInstanceId).build();
 
-        when(serviceRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
+        when(spaceEnrollerConfigRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
 
 
         mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH).accept(MediaType.APPLICATION_JSON))
@@ -117,7 +117,7 @@ public class ApiControllerTest {
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
-                    verify(serviceRepository, times(1)).findAll();
+                    verify(spaceEnrollerConfigRepository, times(1)).findAll();
                     ServerResponse<SpaceEnrollerConfig[]> serviceInstances = objectMapper
                             .readValue(mvcResult.getResponse().getContentAsString(),
                                     TypeFactory.defaultInstance()

@@ -6,7 +6,7 @@ import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
@@ -37,7 +37,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     private ApplicationRepository appRepository;
 
     @Autowired
-    private ServiceRepository serviceRepository;
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Autowired
     private WorkerManagerService workerManager;
@@ -77,7 +77,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
         String serviceId = request.getServiceInstanceId();
         log.debug("createServiceInstance - {}", serviceId);
 
-        if (serviceRepository.exists(serviceId)) {
+        if (spaceEnrollerConfigRepository.exists(serviceId)) {
             throw new ServiceInstanceExistsException(new ServiceInstance(request));
         } else {
             Config.ServiceInstanceParameters.Enrollment autoEnrollment = consumeParameter(request.getParameters(),
@@ -107,7 +107,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
 
             // save in repository before calling remote because otherwise local service binding controller will
             // fail retrieving the service
-            serviceRepository.save(spaceEnrollerConfig);
+            spaceEnrollerConfigRepository.save(spaceEnrollerConfig);
             workerManager.registerSpaceEnroller(spaceEnrollerConfig);
             ServiceInstance result = new ServiceInstance(request);
             if (deployment != null) {
@@ -121,7 +121,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     @Override
     public ServiceInstance getServiceInstance(String serviceInstanceId) {
         log.debug("getServiceInstance - {}", serviceInstanceId);
-        SpaceEnrollerConfig spaceEnrollerConfig = serviceRepository.findOne(serviceInstanceId);
+        SpaceEnrollerConfig spaceEnrollerConfig = spaceEnrollerConfigRepository.findOne(serviceInstanceId);
         if (spaceEnrollerConfig == null) {
             return null;
         } else {
@@ -137,7 +137,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             ServiceInstanceUpdateNotSupportedException, ServiceBrokerException, ServiceInstanceDoesNotExistException {
         String spaceEnrollerConfigId = request.getServiceInstanceId();
         log.debug("updateServiceInstance - {}", spaceEnrollerConfigId);
-        SpaceEnrollerConfig spaceEnrollerConfig = serviceRepository.findOne(spaceEnrollerConfigId);
+        SpaceEnrollerConfig spaceEnrollerConfig = spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId);
         if (spaceEnrollerConfig == null) {
             throw new ServiceInstanceDoesNotExistException(spaceEnrollerConfigId);
         } else if (!spaceEnrollerConfig.getPlanId().equals(request.getPlanId())) {
@@ -166,7 +166,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                 }
                 spaceEnrollerConfig.setForcedAutoEnrollment(
                         autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced);
-                serviceRepository.save(spaceEnrollerConfig);
+                spaceEnrollerConfigRepository.save(spaceEnrollerConfig);
             }
             return new ServiceInstance(request);
         }
@@ -178,7 +178,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             DeleteServiceInstanceRequest request) throws ServiceBrokerException {
         final String spaceEnrollerConfigId = request.getServiceInstanceId();
         log.debug("deleteServiceInstance - {}", spaceEnrollerConfigId);
-        serviceRepository.delete(spaceEnrollerConfigId);
+        spaceEnrollerConfigRepository.delete(spaceEnrollerConfigId);
 
         //clean stored app linked to the service (already unbound)
         appRepository.findAll().forEach(

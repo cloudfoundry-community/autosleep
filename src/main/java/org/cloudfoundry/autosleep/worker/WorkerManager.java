@@ -8,7 +8,7 @@ import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class WorkerManager implements WorkerManagerService {
     private BindingRepository bindingRepository;
 
     @Autowired
-    private ServiceRepository serviceRepository;
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Autowired
     private ApplicationRepository applicationRepository;
@@ -49,17 +49,17 @@ public class WorkerManager implements WorkerManagerService {
                 + "autosleep)");
         bindingRepository.findAll().forEach(applicationBinding -> {
             SpaceEnrollerConfig spaceEnrollerConfig =
-                    serviceRepository.findOne(applicationBinding.getServiceInstanceId());
+                    spaceEnrollerConfigRepository.findOne(applicationBinding.getServiceInstanceId());
             if (spaceEnrollerConfig != null) {
                 registerApplicationStopper(spaceEnrollerConfig, applicationBinding.getApplicationId());
             }
         });
-        serviceRepository.findAll().forEach(this::registerSpaceEnroller);
+        spaceEnrollerConfigRepository.findAll().forEach(this::registerSpaceEnroller);
     }
 
     @Override
     public void registerApplicationStopper(SpaceEnrollerConfig config, String applicationId) {
-        Duration interval = serviceRepository.findOne(config.getId()).getIdleDuration();
+        Duration interval = spaceEnrollerConfigRepository.findOne(config.getId()).getIdleDuration();
         log.debug("Initializing a watch on app {}, for an idleDuration of {} ", applicationId,
                 interval.toString());
         ApplicationStopper checker = ApplicationStopper.builder()
@@ -81,8 +81,8 @@ public class WorkerManager implements WorkerManagerService {
                 .clock(clock)
                 .period(service.getIdleDuration())
                 .spaceEnrollerConfigId(service.getId())
+                .spaceEnrollerConfigRepository(spaceEnrollerConfigRepository)
                 .cloudFoundryApi(cloudFoundryApi)
-                .serviceRepository(serviceRepository)
                 .applicationRepository(applicationRepository)
                 .deployment(deployment)
                 .build();

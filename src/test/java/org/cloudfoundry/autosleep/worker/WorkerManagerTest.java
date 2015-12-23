@@ -7,7 +7,7 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.worker.remote.ApplicationIdentity;
@@ -53,7 +53,7 @@ public class WorkerManagerTest {
     private CloudFoundryApiService mockRemote;
 
     @Mock
-    private ServiceRepository mockServiceRepo;
+    private SpaceEnrollerConfigRepository mockServiceRepo;
 
     @Mock
     private BindingRepository mockBindingRepo;

@@ -4,7 +4,7 @@ import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.Plan;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
@@ -37,7 +37,7 @@ public class DashboardControllerTest {
     private static final String serviceInstanceId = "dashboardCtrlTestSID";
 
     @Mock
-    private ServiceRepository serviceRepository;
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Mock
     private BindingRepository bindingRepository;
@@ -90,7 +90,7 @@ public class DashboardControllerTest {
 
     @Test
     public void testApps() throws Exception {
-        when(serviceRepository.findOne(eq(serviceInstanceId)))
+        when(spaceEnrollerConfigRepository.findOne(eq(serviceInstanceId)))
                 .thenReturn(getServiceInstance(false))
                 .thenReturn(getServiceInstance(true))
                 .thenReturn(null);

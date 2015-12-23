@@ -4,5 +4,5 @@ import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.springframework.data.repository.CrudRepository;
 
 
-public interface ServiceRepository extends CrudRepository<SpaceEnrollerConfig, String> {
+public interface SpaceEnrollerConfigRepository extends CrudRepository<SpaceEnrollerConfig, String> {
 }

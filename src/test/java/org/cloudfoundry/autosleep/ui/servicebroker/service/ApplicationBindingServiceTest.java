@@ -6,7 +6,7 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
@@ -42,7 +42,7 @@ public class ApplicationBindingServiceTest {
     private static final String PLAN_ID = "planId";
 
     @Mock
-    private ServiceRepository serviceRepository;
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Mock
     private BindingRepository bindingRepo;
@@ -86,7 +86,7 @@ public class ApplicationBindingServiceTest {
                 APP_UID.toString());
         when(applicationInfo.getUuid()).thenReturn(APP_UID.toString());
         when(applicationInfo.getEnrollmentState()).thenReturn(enrollmentState);
-        when(serviceRepository.findOne(any(String.class))).thenReturn(spaceEnrollerConfig);
+        when(spaceEnrollerConfigRepository.findOne(any(String.class))).thenReturn(spaceEnrollerConfig);
 
         //avoir nullpointer when getting credentials
         when(spaceEnrollerConfig.getIdleDuration()).thenReturn(Duration.ofSeconds(10));

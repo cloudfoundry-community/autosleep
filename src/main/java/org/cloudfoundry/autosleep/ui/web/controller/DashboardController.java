@@ -3,7 +3,7 @@ package org.cloudfoundry.autosleep.ui.web.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.community.servicebroker.controller.ServiceInstanceController;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
@@ -31,7 +31,7 @@ public class DashboardController {
     private Catalog catalog;
 
     @Autowired
-    private ServiceRepository serviceRepository;
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @ExceptionHandler({ServiceInstanceDoesNotExistException.class})
     @ResponseBody
@@ -47,7 +47,7 @@ public class DashboardController {
     @RequestMapping("/{serviceInstanceId}")
     public ModelAndView appForService(@PathVariable("serviceInstanceId") String serviceInstanceId)
             throws ServiceInstanceDoesNotExistException {
-        SpaceEnrollerConfig serviceInstance = serviceRepository.findOne(serviceInstanceId);
+        SpaceEnrollerConfig serviceInstance = spaceEnrollerConfigRepository.findOne(serviceInstanceId);
         if (serviceInstance != null) {
             log.debug("appForService - rendering view");
 

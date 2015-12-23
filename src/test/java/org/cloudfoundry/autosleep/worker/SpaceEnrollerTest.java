@@ -4,7 +4,7 @@ import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.worker.remote.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
@@ -50,7 +50,7 @@ public class SpaceEnrollerTest {
     private CloudFoundryApiService cloudFoundryApi;
 
     @Mock
-    private ServiceRepository serviceRepository;
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Mock
     private ApplicationRepository applicationRepository;
@@ -73,7 +73,7 @@ public class SpaceEnrollerTest {
         //default
         when(spaceEnrollerConfig.getSpaceId()).thenReturn(SPACE_ID.toString());
         when(spaceEnrollerConfig.getId()).thenReturn(SERVICE_ID);
-        when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
+        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenReturn(remoteApplicationIds.stream()
                         .map(applicationId -> new ApplicationIdentity(applicationId.toString(),
@@ -86,8 +86,8 @@ public class SpaceEnrollerTest {
                 .clock(clock)
                 .period(INTERVAL)
                 .spaceEnrollerConfigId(SERVICE_ID)
+                .spaceEnrollerConfigRepository(spaceEnrollerConfigRepository)
                 .cloudFoundryApi(cloudFoundryApi)
-                .serviceRepository(serviceRepository)
                 .applicationRepository(applicationRepository)
                 .deployment(deployment)
                 .build());
@@ -96,7 +96,7 @@ public class SpaceEnrollerTest {
 
     @Test
     public void testNewAppeared() throws Exception {
-        when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
+        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
         when(spaceEnrollerConfig.getExcludeFromAutoEnrollment()).thenReturn(null);
         //it will return every ids
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
@@ -124,7 +124,7 @@ public class SpaceEnrollerTest {
 
     @Test
     public void testNoNew() throws Exception {
-        when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
+        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
         //it will return every ids except final one
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 //do not return app id
@@ -143,7 +143,7 @@ public class SpaceEnrollerTest {
 
     @Test
     public void testRunServiceDeleted() {
-        when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(null);
+        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(null);
         spaceEnroller.run();
         verify(clock, times(1)).removeTask(eq(SERVICE_ID));
         verify(spaceEnroller, never()).rescheduleWithDefaultPeriod();
@@ -151,7 +151,7 @@ public class SpaceEnrollerTest {
 
     @Test
     public void testRunRemoteError() throws CloudFoundryException,  EntityNotFoundException {
-        when(serviceRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
+        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
         when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenThrow(new CloudFoundryException(null))

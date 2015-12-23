@@ -6,7 +6,7 @@ import org.junit.BeforeClass;
 import org.springframework.test.context.ActiveProfiles;
 
 @ActiveProfiles({"mysql", "mysql-local"})
-public class JpaServiceRepositoryTest extends ServiceRepositoryTest {
+public class JpaSpaceEnrollerConfigRepositoryTest extends ServiceRepositoryTest {
     @BeforeClass
     public static void skipIfNoMysql() {
         Assume.assumeTrue("Mysql should be present to run this test", JpaUtil.isMySqlPresent());

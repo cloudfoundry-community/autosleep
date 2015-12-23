@@ -37,7 +37,7 @@ public abstract class ServiceRepositoryTest {
     private static final String SERVICE_PLAN_ID = "PLAN";
 
     @Autowired
-    private ServiceRepository dao;
+    private SpaceEnrollerConfigRepository dao;
 
     private enum InsertedInstanceIds {
         testInsertServiceFail, testGetServiceSuccess, testUpdateServiceSuccess,

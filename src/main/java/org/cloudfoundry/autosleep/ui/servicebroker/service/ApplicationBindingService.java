@@ -7,7 +7,7 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
@@ -30,7 +30,7 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
     private ApplicationRepository appRepository;
 
     @Autowired
-    private ServiceRepository serviceRepository;
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Autowired
     private BindingRepository bindingRepository;
@@ -49,7 +49,7 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
         final String bindingId = request.getBindingId();
         final String configId = request.getServiceInstanceId();
         log.debug("createServiceInstanceBinding - {}", bindingId);
-        SpaceEnrollerConfig spaceEnrollerConfig = serviceRepository.findOne(configId);
+        SpaceEnrollerConfig spaceEnrollerConfig = spaceEnrollerConfigRepository.findOne(configId);
 
         ApplicationBinding binding = ApplicationBinding.builder().serviceInstanceId(configId)
                 .serviceBindingId(bindingId)
@@ -83,7 +83,7 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
         final ApplicationBinding binding = bindingRepository.findOne(bindingId);
         final String appId = binding.getApplicationId();
 
-        SpaceEnrollerConfig serviceInstance = serviceRepository
+        SpaceEnrollerConfig serviceInstance = spaceEnrollerConfigRepository
                 .findOne(request.getInstance().getServiceInstanceId());
 
         applicationLocker.executeThreadSafe(appId, () -> {

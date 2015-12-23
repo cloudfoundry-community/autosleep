@@ -7,7 +7,7 @@ import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepository;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.worker.remote.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
@@ -28,7 +28,7 @@ class SpaceEnroller extends AbstractPeriodicTask {
 
     private final CloudFoundryApiService cloudFoundryApi;
 
-    private final ServiceRepository serviceRepository;
+    private final SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     private final ApplicationRepository applicationRepository;
 
@@ -36,20 +36,20 @@ class SpaceEnroller extends AbstractPeriodicTask {
 
     @Builder
     SpaceEnroller(Clock clock, Duration period, String spaceEnrollerConfigId,
-                  CloudFoundryApiService cloudFoundryApi, ServiceRepository serviceRepository,
+                  CloudFoundryApiService cloudFoundryApi, SpaceEnrollerConfigRepository spaceEnrollerConfigRepository,
                   ApplicationRepository applicationRepository,
                   DeployedApplicationConfig.Deployment deployment) {
         super(clock, period);
         this.spaceEnrollerConfigId = spaceEnrollerConfigId;
         this.cloudFoundryApi = cloudFoundryApi;
-        this.serviceRepository = serviceRepository;
+        this.spaceEnrollerConfigRepository = spaceEnrollerConfigRepository;
         this.applicationRepository = applicationRepository;
         this.deployment = deployment;
     }
 
     @Override
     public void run() {
-        SpaceEnrollerConfig serviceInstance = serviceRepository.findOne(spaceEnrollerConfigId);
+        SpaceEnrollerConfig serviceInstance = spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId);
         if (serviceInstance != null) {
             try {
                 Set<String> watchedOrIgnoredApplications = new HashSet<>();
