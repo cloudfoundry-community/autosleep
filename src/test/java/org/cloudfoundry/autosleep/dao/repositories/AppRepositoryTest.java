@@ -14,17 +14,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import static java.lang.Math.toIntExact;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -33,11 +29,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {ApplicationConfiguration.class, RepositoryConfig.class})
 public abstract class AppRepositoryTest {
-
-
-    private final Instant yesterday = Instant.now().minus(Duration.ofDays(1));
-
-    private final Instant now = Instant.now();
 
     @Autowired
     private ApplicationRepository dao;
@@ -54,7 +45,9 @@ public abstract class AppRepositoryTest {
     private ApplicationInfo buildAppInfo(String uuid) {
         ApplicationInfo result = BeanGenerator.createAppInfoLinkedToService(uuid, "APTestServiceId");
         result.updateDiagnosticInfo(AppState.STARTED,
-                Instant.now(), Instant.now(), "appName");
+                BeanGenerator.createAppLog(),
+                BeanGenerator.createCloudEvent(),
+                "appName");
         result.getEnrollmentState().addEnrollmentState("serviceId");
         return result;
     }

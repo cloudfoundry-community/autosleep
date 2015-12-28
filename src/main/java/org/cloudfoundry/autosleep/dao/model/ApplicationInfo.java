@@ -3,10 +3,7 @@ package org.cloudfoundry.autosleep.dao.model;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
@@ -29,13 +26,14 @@ public class ApplicationInfo {
     @Embeddable
     @EqualsAndHashCode
     public static class DiagnosticInfo {
-        @JsonSerialize(using = InstantSerializer.class)
-        @JsonDeserialize(using = InstantDeserializer.class)
-        private Instant lastEvent;
 
-        @JsonSerialize(using = InstantSerializer.class)
-        @JsonDeserialize(using = InstantDeserializer.class)
-        private Instant lastLog;
+        @Embedded
+        @JsonUnwrapped
+        private ApplicationEvent lastEvent;
+
+        @Embedded
+        @JsonUnwrapped
+        private ApplicationLog lastLog;
 
         @JsonSerialize
         private CloudApplication.AppState appState;
@@ -50,7 +48,79 @@ public class ApplicationInfo {
 
         //see https://issues.jboss.org/browse/HIBERNATE-50
         private int hibernateWorkaround = 1;
+
+        @Getter
+        @Slf4j
+        @NoArgsConstructor(access = AccessLevel.PRIVATE)
+        @AllArgsConstructor
+        @Embeddable
+        @EqualsAndHashCode
+        public static class ApplicationLog {
+
+            @JsonSerialize
+            @Column(name = "log_message")
+            private String message;
+
+            @JsonSerialize(using = InstantSerializer.class)
+            @JsonDeserialize(using = InstantDeserializer.class)
+            @Column(name = "log_time")
+            private Instant timestamp;
+
+            @JsonSerialize
+            @Column(name = "log_message_type")
+            private String messageType;
+
+            @JsonSerialize
+            @Column(name = "log_source_name")
+            private String sourceName;
+
+            @JsonSerialize
+            @Column(name = "log_source_id")
+            private String sourceId;
+
+            //see https://issues.jboss.org/browse/HIBERNATE-50
+            //private int hibernateWorkaround = 2;
+
+        }
+
+        @Getter
+        @Setter
+        @Slf4j
+        @NoArgsConstructor(access = AccessLevel.PRIVATE)
+        @Embeddable
+        @EqualsAndHashCode
+        public static class ApplicationEvent {
+
+            @JsonSerialize
+            @Column(name = "event_name")
+            private String name;
+
+            @JsonSerialize
+            @Column(name = "event_type")
+            private String type;
+
+            @JsonSerialize
+            @Column(name = "event_actor")
+            private String actor;
+
+            @JsonSerialize
+            @Column(name = "event_actee")
+            private String actee;
+
+            @JsonSerialize(using = InstantSerializer.class)
+            @JsonDeserialize(using = InstantDeserializer.class)
+            @Column(name = "event_time")
+            private Instant timestamp;
+
+            //see https://issues.jboss.org/browse/HIBERNATE-50
+            // private int hibernateWorkaround = 3;
+
+            public ApplicationEvent(String name) {
+                this.name = name;
+            }
+        }
     }
+
 
     @Getter
     @Slf4j
@@ -130,7 +200,8 @@ public class ApplicationInfo {
         this.uuid = uuid;
     }
 
-    public void updateDiagnosticInfo(AppState state, Instant lastLog, Instant lastEvent, String name) {
+    public void updateDiagnosticInfo(AppState state, DiagnosticInfo.ApplicationLog lastLog, DiagnosticInfo
+            .ApplicationEvent lastEvent, String name) {
         this.diagnosticInfo.appState = state;
         this.diagnosticInfo.lastLog = lastLog;
         this.diagnosticInfo.lastEvent = lastEvent;
@@ -150,7 +221,10 @@ public class ApplicationInfo {
 
     public void markAsPutToSleep() {
         this.diagnosticInfo.appState = AppState.STOPPED;
-        this.diagnosticInfo.lastEvent = Instant.now();
+        DiagnosticInfo.ApplicationEvent applicationEvent = new DiagnosticInfo.ApplicationEvent("Autosleep-stop");
+        applicationEvent.setActor("autosleep");
+        applicationEvent.setTimestamp(Instant.now());
+        this.diagnosticInfo.lastEvent = applicationEvent;
     }
 
 
