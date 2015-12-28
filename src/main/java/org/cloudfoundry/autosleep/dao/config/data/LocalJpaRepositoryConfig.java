@@ -19,21 +19,6 @@ public class LocalJpaRepositoryConfig extends AbstractJpaRepositoryConfig {
         log.warn("<<<<<<<<<<<  Warning: loading IN MEMORY persistance profile >>>>>>>>>>>>>>>>>>");
     }
 
- /*   @Bean
-    public SpaceEnrollerConfigRepository ramServiceRepository() {
-        return new RamSpaceEnrollerConfigRepository();
-    }
-
-    @Bean
-    public BindingRepository ramBindingRepository() {
-        return new RamBindingRepository();
-    }
-
-    @Bean
-    public ApplicationRepository ramAppRepository() {
-        return new RamApplicationRepository();
-    }*/
-
     @Override
     protected String getHibernateDialect() {
         return H2Dialect.class.getName();

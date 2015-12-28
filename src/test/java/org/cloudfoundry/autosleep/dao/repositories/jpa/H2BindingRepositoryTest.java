@@ -1,8 +1,8 @@
-package org.cloudfoundry.autosleep.dao.repositories.ram;
+package org.cloudfoundry.autosleep.dao.repositories.jpa;
 
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepositoryTest;
 import org.springframework.test.context.ActiveProfiles;
 
 @ActiveProfiles({"default"})
-public class RamBindingRepositoryTest extends BindingRepositoryTest {
+public class H2BindingRepositoryTest extends BindingRepositoryTest {
 }

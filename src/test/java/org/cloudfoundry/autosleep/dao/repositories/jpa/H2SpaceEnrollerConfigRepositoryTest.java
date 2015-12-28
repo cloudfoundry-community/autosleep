@@ -1,8 +1,8 @@
-package org.cloudfoundry.autosleep.dao.repositories.ram;
+package org.cloudfoundry.autosleep.dao.repositories.jpa;
 
 import org.cloudfoundry.autosleep.dao.repositories.ServiceRepositoryTest;
 import org.springframework.test.context.ActiveProfiles;
 
 @ActiveProfiles({"default"})
-public class RamSpaceEnrollerConfigRepositoryTest extends ServiceRepositoryTest {
+public class H2SpaceEnrollerConfigRepositoryTest extends ServiceRepositoryTest {
 }
