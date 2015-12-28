@@ -11,6 +11,8 @@ services:
   - mysql
 before_script:
   - mysql -e "create database IF NOT EXISTS autosleep;" -uroot
+script:
+  - ./gradlew check -Dintegration-test=true
 branches:
   only:
     - master
