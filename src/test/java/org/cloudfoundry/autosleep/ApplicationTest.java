@@ -34,12 +34,10 @@ public class ApplicationTest {
             System.setProperty(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY,
                     BeanGenerator.getSampleVcapApplication(UUID.randomUUID(), "autosleep",
                             "http://somewhere-else.org"));
-
         }
     }
 
-
-   @Test
+    @Test
     public void testDummy() {
     }
 }
