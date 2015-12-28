@@ -3,7 +3,7 @@ package org.cloudfoundry.autosleep;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
-import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
@@ -39,7 +39,7 @@ public class ApplicationTest {
     }
 
 
-   @Ignore 
+   @Test
     public void testDummy() {
     }
 }
