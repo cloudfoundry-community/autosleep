@@ -1,21 +1,15 @@
 package org.cloudfoundry.autosleep.worker.remote;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException.EntityType;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.util.LastDateComputer;
+import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException.EntityType;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
-import org.cloudfoundry.client.lib.domain.ApplicationLog;
-import org.cloudfoundry.client.lib.domain.ApplicationLog.MessageType;
-import org.cloudfoundry.client.lib.domain.CloudApplication;
+import org.cloudfoundry.client.lib.domain.*;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.cloudfoundry.client.lib.domain.CloudEntity.Meta;
-import org.cloudfoundry.client.lib.domain.CloudEvent;
-import org.cloudfoundry.client.lib.domain.CloudOrganization;
-import org.cloudfoundry.client.lib.domain.CloudService;
-import org.cloudfoundry.client.lib.domain.CloudSpace;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,27 +20,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
@@ -122,11 +106,9 @@ public class CloudFoundryApiTest {
 
     @Test
     public void test_get_application_activity_succeeds() throws Exception {
-        final Date lastLogTime = new Date(Instant
-                .now().plusSeconds(-5).getEpochSecond() * 1000);
-        final Date lastEventTime = new Date(Instant
-                .now().plusSeconds(-60).getEpochSecond() * 1000);
-        final Date lastActionTime = lastEventTime.getTime() > lastLogTime.getTime() ? lastEventTime : lastLogTime;
+        final Instant lastLogTime = Instant.now().plusSeconds(-5);
+        final Instant lastEventTime = Instant.now().plusSeconds(-60);
+        final Instant lastActionTime = lastEventTime.isAfter(lastLogTime) ? lastEventTime : lastLogTime;
 
 
         //given application is found
@@ -134,16 +116,15 @@ public class CloudFoundryApiTest {
         //and both recentlog and application events return data
         when(cloudFoundryClient.getRecentLogs(sampleApplicationStarted.getName()))
                 .thenReturn(Arrays.asList(new ApplicationLog(sampleApplicationStarted.getName(), "",
-                                new Date(lastLogTime.getTime() - 10000),
-                                MessageType.STDERR, "sourceName", "sourceId"),
-                        new ApplicationLog(sampleApplicationStarted.getName(), "", lastLogTime,
-                                MessageType.STDERR, "sourceName", "sourceId")));
+                                Date.from(lastLogTime.minusSeconds(10)),
+                                ApplicationLog.MessageType.STDERR, "sourceName", "sourceId"),
+                        new ApplicationLog(sampleApplicationStarted.getName(), "",
+                                Date.from(lastLogTime),
+                                ApplicationLog.MessageType.STDERR, "sourceName", "sourceId")));
         when(cloudFoundryClient.getApplicationEvents(sampleApplicationStarted.getName())).then(
                 invocationOnMock -> {
-                    CloudEvent event = new CloudEvent(new Meta(UUID.randomUUID(), lastEventTime,
-                            lastEventTime),
-                            "someEvent");
-                    event.setTimestamp(lastEventTime);
+                    CloudEvent event = new CloudEvent(null,"totoevent");
+                    event.setTimestamp(Date.from(lastEventTime));
                     return Collections.singletonList(event);
                 });
         //when get application activity is invoked
@@ -154,12 +135,15 @@ public class CloudFoundryApiTest {
         assertThat(applicationActivity, notNullValue());
         assertThat(applicationActivity.getState(), is(equalTo(AppState.STARTED)));
 
-        assertThat(applicationActivity.getLastLog(), is(equalTo(lastLogTime.toInstant())));
+        assertThat(applicationActivity.getLastLog().getTimestamp(),
+                is(equalTo(lastLogTime)));
 
-        assertThat(applicationActivity.getLastEvent(), is(equalTo(lastEventTime.toInstant())));
+        assertThat(applicationActivity.getLastEvent().getTimestamp(),
+                is(equalTo(lastEventTime)));
 
-        assertThat(LastDateComputer.computeLastDate(applicationActivity.getLastLog(),
-                applicationActivity.getLastEvent()), is(equalTo(lastActionTime.toInstant())));
+        assertThat(LastDateComputer.computeLastDate(applicationActivity.getLastLog().getTimestamp(),
+                        applicationActivity.getLastEvent().getTimestamp()),
+                is(equalTo(lastActionTime)));
     }
 
     @Test

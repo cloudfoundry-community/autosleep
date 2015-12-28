@@ -86,6 +86,7 @@ dependencies {
     compile "org.springframework.data:spring-data-jpa:$springDataJpaVersion"
     // MySQL Persistence
     runtime "mysql:mysql-connector-java:$mysqlConnectorVersion"
+    runtime "com.h2database:h2"
     compile "commons-dbcp:commons-dbcp:1.4"
     compile "org.hibernate:hibernate-entitymanager:4.3.11.Final"
     // Spring Cloud

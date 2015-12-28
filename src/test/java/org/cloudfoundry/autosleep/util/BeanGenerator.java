@@ -63,18 +63,48 @@ public class BeanGenerator {
             appUuid = UUID.randomUUID().toString();
         }
         ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
-        if (serviceId != null ) {
+        if (serviceId != null) {
             applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
         }
         return applicationInfo;
     }
 
-    public static ApplicationInfo createAppInfoWithDiagnostic(String appUuid, String name, Instant lastLog, Instant
-            lastEvent,
-                                                              CloudApplication.AppState state) {
+    public static ApplicationInfo createAppInfoWithDiagnostic(String appUuid, String name, CloudApplication.AppState
+            state) {
+        return createAppInfoWithDiagnostic(appUuid, name, state, null, null);
+    }
+
+    public static ApplicationInfo createAppInfoWithDiagnostic(String appUuid, String name, CloudApplication.AppState
+            state, Instant lastLogDate, Instant lastEventDate) {
         ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
-        applicationInfo.updateDiagnosticInfo(state, lastLog, lastEvent, name);
+        applicationInfo.updateDiagnosticInfo(state,
+                createAppLog(lastLogDate),
+                createCloudEvent(lastEventDate),
+                name);
         return applicationInfo;
+    }
+
+    public static ApplicationInfo.DiagnosticInfo.ApplicationLog createAppLog(Instant instant) {
+        return new ApplicationInfo.DiagnosticInfo.ApplicationLog("fakelog",
+                instant != null ? instant : Instant.now(),
+                "STDOUT",
+                "sourceName",
+                "sourceId");
+    }
+
+    public static ApplicationInfo.DiagnosticInfo.ApplicationLog createAppLog() {
+        return createAppLog(null);
+    }
+
+    public static ApplicationInfo.DiagnosticInfo.ApplicationEvent createCloudEvent(Instant instant) {
+        ApplicationInfo.DiagnosticInfo.ApplicationEvent event =
+                new ApplicationInfo.DiagnosticInfo.ApplicationEvent("fakeEvent");
+        event.setTimestamp(instant != null ? instant : Instant.now());
+        return event;
+    }
+
+    public static ApplicationInfo.DiagnosticInfo.ApplicationEvent createCloudEvent() {
+        return createCloudEvent(null);
     }
 
     public static ApplicationIdentity createAppIdentity(String appUuid) {
