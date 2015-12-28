@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.worker.remote;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException.EntityType;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
@@ -15,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,21 +37,13 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             log.debug("Getting application info for app {}", app.getName());
             List<ApplicationLog> lastLogs = client.getRecentLogs(app.getName());
             List<CloudEvent> events = client.getApplicationEvents(app.getName());
-            Date lastLogTime = null;
-            Date lastEventTime = null;
+            log.debug("Building ApplicationInfo(state)", app.getState());
 
-            if (lastLogs.size() > 0) {
-                lastLogTime = lastLogs.get(lastLogs.size() - 1).getTimestamp();
-            }
-            if (events.size() > 0) {
-                lastEventTime = events.get(events.size() - 1).getTimestamp();
-            }
-            log.debug("Building ApplicationInfo(lastEventTime={}, lastLogTime={}, state)",
-                    lastEventTime, lastLogTime);
-            return new ApplicationActivity(new ApplicationIdentity(app.getMeta().getGuid().toString(), app.getName()),
+            return new ApplicationActivity(new ApplicationIdentity(app.getMeta().getGuid().toString(),
+                    app.getName()),
                     app.getState(),
-                    lastEventTime == null ? null : lastEventTime.toInstant(),
-                    lastLogTime == null ? null : lastLogTime.toInstant());
+                    events.size() == 0 ? null : buildAppEvent(events.get(events.size() - 1)),
+                    lastLogs.size() == 0  ? null : buildAppLog(lastLogs.get(lastLogs.size() - 1)));
 
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
@@ -171,5 +163,24 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
+    }
+
+    private ApplicationInfo.DiagnosticInfo.ApplicationEvent buildAppEvent(CloudEvent cfEvent) {
+        ApplicationInfo.DiagnosticInfo.ApplicationEvent applicationEvent =
+                new ApplicationInfo.DiagnosticInfo.ApplicationEvent(cfEvent.getName());
+        applicationEvent.setActor(cfEvent.getActor());
+        applicationEvent.setActee(cfEvent.getActee());
+        applicationEvent.setTimestamp(cfEvent.getTimestamp().toInstant());
+        applicationEvent.setType(cfEvent.getType());
+        return applicationEvent;
+    }
+
+    private ApplicationInfo.DiagnosticInfo.ApplicationLog buildAppLog(ApplicationLog cfLog) {
+        return new ApplicationInfo.DiagnosticInfo.ApplicationLog(
+                cfLog.getMessage(),
+                cfLog.getTimestamp().toInstant(),
+                cfLog.getMessageType().toString(),
+                cfLog.getSourceName(),
+                cfLog.getSourceId());
     }
 }

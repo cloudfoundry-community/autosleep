@@ -1,15 +1,17 @@
 package org.cloudfoundry.autosleep.worker;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.util.ApplicationLocker;
+import org.cloudfoundry.autosleep.util.BeanGenerator;
+import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
+import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException;
+import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException.EntityType;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
-import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.worker.remote.*;
-import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException.EntityType;
-import org.cloudfoundry.autosleep.util.ApplicationLocker;
-import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.junit.Before;
@@ -76,8 +78,8 @@ public class ApplicationStopperTest {
         when(applicationActivity.getApplication()).thenReturn(application);
 
 
-        applicationInfo = spy(BeanGenerator.createAppInfoWithDiagnostic(APP_UID.toString(),
-                APPLICATION_NAME, Instant.now(), Instant.now(), AppState.STARTED));
+        applicationInfo = spy(BeanGenerator.createAppInfoWithDiagnostic(APP_UID.toString(), APPLICATION_NAME,
+                AppState.STARTED));
         applicationInfo.getEnrollmentState().addEnrollmentState(INSTANCE_ID);
 
 
@@ -124,8 +126,8 @@ public class ApplicationStopperTest {
     public void application_is_not_stopped_when_active() throws Exception {
         //given the application is started and active
         when(applicationActivity.getState()).thenReturn(AppState.STARTED);
-        when(applicationActivity.getLastEvent()).thenReturn(Instant.now());
-        when(applicationActivity.getLastLog()).thenReturn(Instant.now());
+        when(applicationActivity.getLastEvent()).thenReturn(BeanGenerator.createCloudEvent());
+        when(applicationActivity.getLastLog()).thenReturn(BeanGenerator.createAppLog());
         //when task is run
         spyChecker.run();
 
@@ -145,8 +147,10 @@ public class ApplicationStopperTest {
     public void application_is_stopped_when_inactive() throws Exception {
         //given the application is started but not active
         when(applicationActivity.getState()).thenReturn(AppState.STARTED);
-        when(applicationActivity.getLastEvent()).thenReturn(Instant.now().minus(INTERVAL.multipliedBy(2)));
-        when(applicationActivity.getLastLog()).thenReturn(Instant.now().minus(INTERVAL.multipliedBy(2)));
+        when(applicationActivity.getLastEvent()).thenReturn(BeanGenerator.createCloudEvent(Instant.now().minus(
+                INTERVAL.multipliedBy(2))));
+        when(applicationActivity.getLastLog()).thenReturn(BeanGenerator.createAppLog( Instant.now()
+                .minus(INTERVAL.multipliedBy(2))));
         //when task is run
         spyChecker.run();
         //then it see the application as monitored
