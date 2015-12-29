@@ -4,6 +4,7 @@ layout 'layouts/main.tpl',
         pageTitle: 'Applications',
         noNavigation: true,
         additionalScripts: contents {
+            script(src: '/javascript/bootbox.min.js',"")
             script(src: '/javascript/dashboard.js', "")
 
 
