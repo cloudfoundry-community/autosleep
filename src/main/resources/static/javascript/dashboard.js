@@ -24,13 +24,13 @@ function listApplications (id){
                 row.append($("<div>").addClass("col-xs-4 text-center").html(application.uuid));
                 row.append($("<div>").addClass("col-xs-2 text-center").html(application.name));
                 if (application.watched) {
-                    row.append($("<div>").addClass("col-xs-2 text-center").html(application.appState));
+                    row.append($("<div>").addClass("col-xs-2 text-center").html(application.diagnosticInfo.appState));
                 } else
                     row.append($("<div>").addClass("col-xs-2 text-center").html("-"));
 
-                if(application.nextCheck != null){
+                if(application.diagnosticInfo.nextCheck != null){
                     row.append($("<div>")
-                        .attr("data-countdown",application.nextCheck + diffWithServer, "id","countdown"+idx)
+                        .attr("data-countdown",application.diagnosticInfo.nextCheck + diffWithServer, "id","countdown"+idx)
                         .addClass("col-xs-2 text-center"));
                 }else
                     row.append($("<div>").addClass("col-xs-2 text-center").html("-"));
