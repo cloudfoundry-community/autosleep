@@ -2,31 +2,34 @@ package org.cloudfoundry.autosleep.util;
 
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.model.AutosleepServiceInstance;
-import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
+import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
+import org.cloudfoundry.client.lib.domain.CloudApplication;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class BeanGenerator {
+
     public static final UUID ORG_TEST = UUID.randomUUID();
     public static final UUID SPACE_TEST = UUID.randomUUID();
     public static final UUID SERVICE_DEFINITION_ID = UUID.randomUUID();
     public static final UUID PLAN_ID = UUID.randomUUID();
 
 
-    public static AutosleepServiceInstance createServiceInstance(String serviceId) {
-        if (serviceId == null) {
-            serviceId = UUID.randomUUID().toString();
-        }
+    public static SpaceEnrollerConfig createServiceInstance() {
+        return createServiceInstance(UUID.randomUUID().toString());
+    }
 
-        return AutosleepServiceInstance.builder()
+    public static SpaceEnrollerConfig createServiceInstance(String serviceId) {
+        return SpaceEnrollerConfig.builder()
                 .serviceDefinitionId(SERVICE_DEFINITION_ID.toString())
                 .planId(PLAN_ID.toString())
                 .organizationId(ORG_TEST.toString())
                 .spaceId(SPACE_TEST.toString())
-                .serviceInstanceId(serviceId).build();
+                .id(serviceId).build();
     }
 
     public static ApplicationBinding createBinding(String serviceId, String bindingId, String appId) {
@@ -43,25 +46,65 @@ public class BeanGenerator {
                 .serviceInstanceId(serviceId).applicationId(appId).build();
     }
 
-    public static ApplicationBinding createBinding(String bindingId) {
-        return createBinding(null, bindingId, null);
-    }
-
     public static ApplicationBinding createBinding() {
         return createBinding(null, null, null);
     }
 
-    public static ApplicationInfo createAppInfo(String serviceId) {
-        return createAppInfo(null, serviceId);
+    public static ApplicationInfo createAppInfo() {
+        return createAppInfoLinkedToService(null, null);
     }
 
-    public static ApplicationInfo createAppInfo(String appUuid, String serviceId) {
+    public static ApplicationInfo createAppInfoLinkedToService(String serviceId) {
+        return createAppInfoLinkedToService(null, serviceId);
+    }
+
+    public static ApplicationInfo createAppInfoLinkedToService(String appUuid, String serviceId) {
         if (appUuid == null) {
             appUuid = UUID.randomUUID().toString();
         }
         ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
-        applicationInfo.addBoundService(serviceId);
+        if (serviceId != null) {
+            applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
+        }
         return applicationInfo;
+    }
+
+    public static ApplicationInfo createAppInfoWithDiagnostic(String appUuid, String name, CloudApplication.AppState
+            state) {
+        return createAppInfoWithDiagnostic(appUuid, name, state, null, null);
+    }
+
+    public static ApplicationInfo createAppInfoWithDiagnostic(String appUuid, String name, CloudApplication.AppState
+            state, Instant lastLogDate, Instant lastEventDate) {
+        ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
+        applicationInfo.updateDiagnosticInfo(state,
+                createAppLog(lastLogDate),
+                createCloudEvent(lastEventDate),
+                name);
+        return applicationInfo;
+    }
+
+    public static ApplicationInfo.DiagnosticInfo.ApplicationLog createAppLog(Instant instant) {
+        return new ApplicationInfo.DiagnosticInfo.ApplicationLog("fakelog",
+                instant != null ? instant : Instant.now(),
+                "STDOUT",
+                "sourceName",
+                "sourceId");
+    }
+
+    public static ApplicationInfo.DiagnosticInfo.ApplicationLog createAppLog() {
+        return createAppLog(null);
+    }
+
+    public static ApplicationInfo.DiagnosticInfo.ApplicationEvent createCloudEvent(Instant instant) {
+        ApplicationInfo.DiagnosticInfo.ApplicationEvent event =
+                new ApplicationInfo.DiagnosticInfo.ApplicationEvent("fakeEvent");
+        event.setTimestamp(instant != null ? instant : Instant.now());
+        return event;
+    }
+
+    public static ApplicationInfo.DiagnosticInfo.ApplicationEvent createCloudEvent() {
+        return createCloudEvent(null);
     }
 
     public static ApplicationIdentity createAppIdentity(String appUuid) {

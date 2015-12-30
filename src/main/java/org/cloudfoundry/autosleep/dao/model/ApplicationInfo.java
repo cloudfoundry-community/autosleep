@@ -1,160 +1,233 @@
 package org.cloudfoundry.autosleep.dao.model;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.remote.ApplicationActivity;
 import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.Objects;
 
 @Getter
 @Slf4j
-@JsonAutoDetect()
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-@JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
+@EqualsAndHashCode
 public class ApplicationInfo {
 
-    @Id
-    @Column(length = 40)
-    @JsonSerialize
-    private String uuid;
+    @Getter
+    @Slf4j
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    @Embeddable
+    @EqualsAndHashCode
+    public static class DiagnosticInfo {
 
-    @JsonSerialize
-    private String name;
+        @Embedded
+        @JsonSerialize
+        private ApplicationEvent lastEvent;
 
-    @JsonSerialize
-    private CloudApplication.AppState appState;
+        @Embedded
+        @JsonSerialize
+        private ApplicationLog lastLog;
 
-    @JsonSerialize(using = InstantSerializer.class)
-    @JsonDeserialize(using = InstantDeserializer.class)
-    private Instant lastEvent;
+        @JsonSerialize
+        private CloudApplication.AppState appState;
 
-    @JsonSerialize(using = InstantSerializer.class)
-    @JsonDeserialize(using = InstantDeserializer.class)
-    private Instant lastLog;
+        @JsonSerialize(using = InstantSerializer.class)
+        @JsonDeserialize(using = InstantDeserializer.class)
+        private Instant nextCheck;
 
-    @JsonSerialize(using = InstantSerializer.class)
-    @JsonDeserialize(using = InstantDeserializer.class)
-    private Instant nextCheck;
+        @JsonSerialize(using = InstantSerializer.class)
+        @JsonDeserialize(using = InstantDeserializer.class)
+        private Instant lastCheck;
 
-    @JsonSerialize(using = InstantSerializer.class)
-    @JsonDeserialize(using = InstantDeserializer.class)
-    private Instant lastCheck;
+        //see https://issues.jboss.org/browse/HIBERNATE-50
+        @JsonIgnore
+        private int hibernateWorkaround = 1;
 
-    @JsonSerialize
-    private final HashMap<String /**serviceId.**/,ServiceInstanceState> serviceInstances = new HashMap<>();
+        @Getter
+        @Slf4j
+        @NoArgsConstructor(access = AccessLevel.PRIVATE)
+        @AllArgsConstructor
+        @Embeddable
+        @EqualsAndHashCode
+        public static class ApplicationLog {
 
+            @JsonSerialize
+            @Column(name = "log_message")
+            private String message;
 
-    public enum ServiceInstanceState {
-        /** service instance is bound to the application. */
-        BOUND ,
-        /** service (with AUTO_ENROLLMENT set to false) was manually unbound,
-         * it won't be automatically bound again.*/
-        BLACKLISTED
-    }
+            @JsonSerialize(using = InstantSerializer.class)
+            @JsonDeserialize(using = InstantDeserializer.class)
+            @Column(name = "log_time")
+            private Instant timestamp;
 
-    public ApplicationInfo(String uuid) {
-        this.uuid = uuid;
-    }
+            @JsonSerialize
+            @Column(name = "log_message_type")
+            private String messageType;
 
-    public ApplicationInfo withRemoteInfo(ApplicationActivity activity) {
-        updateRemoteInfo(activity);
-        return this;
-    }
+            @JsonSerialize
+            @Column(name = "log_source_name")
+            private String sourceName;
 
-    public void addBoundService(String serviceId) {
-        serviceInstances.put(serviceId, ServiceInstanceState.BOUND);
-    }
+            @JsonSerialize
+            @Column(name = "log_source_id")
+            private String sourceId;
 
-    public void removeBoundService(String serviceId, boolean addToBlackList) {
-        if (addToBlackList) {
-            serviceInstances.put(serviceId, ServiceInstanceState.BLACKLISTED);
-        } else {
-            serviceInstances.remove(serviceId);
+        }
+
+        @Getter
+        @Setter
+        @Slf4j
+        @NoArgsConstructor(access = AccessLevel.PRIVATE)
+        @Embeddable
+        @EqualsAndHashCode
+        public static class ApplicationEvent {
+
+            @JsonSerialize
+            @Column(name = "event_name")
+            private String name;
+
+            @JsonSerialize
+            @Column(name = "event_type")
+            private String type;
+
+            @JsonSerialize
+            @Column(name = "event_actor")
+            private String actor;
+
+            @JsonSerialize
+            @Column(name = "event_actee")
+            private String actee;
+
+            @JsonSerialize(using = InstantSerializer.class)
+            @JsonDeserialize(using = InstantDeserializer.class)
+            @Column(name = "event_time")
+            private Instant timestamp;
+
+            public ApplicationEvent(String name) {
+                this.name = name;
+            }
         }
     }
 
-    public boolean isWatched() {
-        return serviceInstances.values().stream().filter(
-                serviceInstanceState -> serviceInstanceState == ServiceInstanceState.BOUND
-        ).findAny().isPresent();
+
+    @Getter
+    @Slf4j
+    @Embeddable
+    @EqualsAndHashCode
+    public static class EnrollmentState {
+
+        public enum State {
+            /**
+             * service instance is bound to the application.
+             */
+            ENROLLED,
+            /**
+             * service (with AUTO_ENROLLMENT set to false) was manually unbound,
+             * it won't be automatically bound again.
+             */
+            BLACKLISTED
+        }
+
+        private HashMap<String /**serviceId.**/, EnrollmentState.State> states;
+
+        private EnrollmentState() {
+            states = new HashMap<>();
+        }
+
+        public void addEnrollmentState(String serviceId) {
+            states.put(serviceId, EnrollmentState.State.ENROLLED);
+        }
+
+        public void updateEnrollment(String serviceId, boolean addToBlackList) {
+            if (addToBlackList) {
+                states.put(serviceId, EnrollmentState.State.BLACKLISTED);
+            } else {
+                states.remove(serviceId);
+            }
+        }
+
+        public boolean isWatched() {
+            return states.values().stream().filter(
+                    serviceInstanceState -> serviceInstanceState == EnrollmentState.State.ENROLLED
+            ).findAny().isPresent();
+        }
+
+        public boolean isCandidate(String serviceInstanceId) {
+            return !states.containsKey(serviceInstanceId);
+        }
+
+        public boolean isEnrolledByService(String serviceInstanceId) {
+            return states.get(serviceInstanceId) == EnrollmentState.State.ENROLLED;
+        }
+
     }
 
-    public boolean isBoundToService(String serviceInstanceId) {
-        return serviceInstances.containsKey(serviceInstanceId);
+    @Id
+    @Column(length = 40)
+    private String uuid;
+
+    private String name;
+
+    @Embedded
+    @JsonSerialize
+    private DiagnosticInfo diagnosticInfo;
+
+
+    @Embedded
+    @JsonUnwrapped
+    private EnrollmentState enrollmentState;
+
+
+    private ApplicationInfo() {
+        diagnosticInfo = new DiagnosticInfo();
+        enrollmentState = new EnrollmentState();
     }
 
-    public boolean isWatchedByService(String serviceInstanceId) {
-        return serviceInstances.get(serviceInstanceId) == ServiceInstanceState.BOUND;
+    public ApplicationInfo(String uuid) {
+        this();
+        this.uuid = uuid;
     }
 
-    public void updateRemoteInfo(ApplicationActivity activity) {
-        this.appState = activity.getState();
-        this.lastEvent = activity.getLastEvent();
-        this.lastLog = activity.getLastLog();
-        this.name = activity.getApplication().getName();
+    public void updateDiagnosticInfo(AppState state, DiagnosticInfo.ApplicationLog lastLog, DiagnosticInfo
+            .ApplicationEvent lastEvent, String name) {
+        this.diagnosticInfo.appState = state;
+        this.diagnosticInfo.lastLog = lastLog;
+        this.diagnosticInfo.lastEvent = lastEvent;
+        this.name = name;
     }
 
     public void markAsChecked(Instant next) {
-        this.lastCheck = Instant.now();
-        this.nextCheck = next;
+        this.diagnosticInfo.lastCheck = Instant.now();
+        this.diagnosticInfo.nextCheck = next;
     }
 
     public void clearCheckInformation() {
-        this.lastCheck = Instant.now();
-        this.nextCheck = null;
-        this.appState = null;
+        this.diagnosticInfo.lastCheck = Instant.now();
+        this.diagnosticInfo.nextCheck = null;
+        this.diagnosticInfo.appState = null;
     }
 
     public void markAsPutToSleep() {
-        this.appState = AppState.STOPPED;
-        this.lastEvent = Instant.now();
+        this.diagnosticInfo.appState = AppState.STOPPED;
+        DiagnosticInfo.ApplicationEvent applicationEvent = new DiagnosticInfo.ApplicationEvent("Autosleep-stop");
+        applicationEvent.setActor("autosleep");
+        applicationEvent.setTimestamp(Instant.now());
+        this.diagnosticInfo.lastEvent = applicationEvent;
     }
 
 
     @Override
     public String toString() {
-        return "[ApplicationInfo:" + getName() + "/" + getUuid() + " lastEvent:"
-                + getLastEvent() + " lastLog:" + getLastLog() + "]";
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (object == this) {
-            return true;
-        }
-        if (!(object instanceof ApplicationInfo)) {
-            return false;
-        }
-        ApplicationInfo other = (ApplicationInfo) object;
-
-        return Objects.equals(this.getUuid(), other.getUuid())
-                && Objects.equals(this.getName(), other.getName())
-                && Objects.equals(this.getLastLog(), other.getLastLog())
-                && Objects.equals(this.getLastEvent(), other.getLastEvent())
-                && Objects.equals(this.getLastCheck(), other.getLastCheck())
-                && Objects.equals(this.getNextCheck(), other.getNextCheck())
-                && Objects.equals(this.getAppState(), other.getAppState());
-    }
-
-    @Override
-    public int hashCode() {
-        return getUuid().hashCode();
+        return "[ApplicationInfo:" + name + "/" + uuid + " lastEvent:"
+                + diagnosticInfo.lastEvent + " lastLog:" + diagnosticInfo.lastLog + "]";
     }
 
 

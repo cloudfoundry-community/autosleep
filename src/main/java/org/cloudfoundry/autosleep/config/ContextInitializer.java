@@ -28,13 +28,12 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
      * Will point to in-memory storage.
      */
     private static final String DEFAULT_PROFILE = "default";
-    private static final List<String> validLocalProfiles = Arrays.asList("mysql","redis");
+    private static final List<String> validLocalProfiles = Arrays.asList("mysql");
     private static final Map<Class<? extends ServiceInfo>, String> autorizedPersistenceProfiles =
             new HashMap<>();
 
     static {
         autorizedPersistenceProfiles.put(MysqlServiceInfo.class, "mysql");
-        autorizedPersistenceProfiles.put(RedisServiceInfo.class, "redis");
     }
 
 

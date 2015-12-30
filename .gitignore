@@ -19,3 +19,5 @@ report.html
 coverage-error.log
 *.pyc
 acceptance/acceptance.cfg
+
+dump.rdb

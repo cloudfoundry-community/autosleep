@@ -1,10 +1,8 @@
 package org.cloudfoundry.autosleep.dao.repositories;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.RepositoryConfig;
+import org.cloudfoundry.autosleep.dao.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.remote.ApplicationActivity;
-import org.cloudfoundry.autosleep.remote.ApplicationIdentity;
 import org.cloudfoundry.autosleep.util.ApplicationConfiguration;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
@@ -13,32 +11,24 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import static java.lang.Math.toIntExact;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {ApplicationConfiguration.class, RepositoryConfig.class})
 public abstract class AppRepositoryTest {
-
-
-    private final Instant yesterday = Instant.now().minus(Duration.ofDays(1));
-    private final Instant now = Instant.now();
 
     @Autowired
     private ApplicationRepository dao;
@@ -53,10 +43,13 @@ public abstract class AppRepositoryTest {
     }
 
     private ApplicationInfo buildAppInfo(String uuid) {
-        return BeanGenerator.createAppInfo(uuid, "APTestServiceId").withRemoteInfo(new ApplicationActivity(
-                new ApplicationIdentity(uuid, "appname"),
-                AppState.STARTED,
-                Instant.now(), Instant.now()));
+        ApplicationInfo result = BeanGenerator.createAppInfoLinkedToService(uuid, "APTestServiceId");
+        result.updateDiagnosticInfo(AppState.STARTED,
+                BeanGenerator.createAppLog(),
+                BeanGenerator.createCloudEvent(),
+                "appName");
+        result.getEnrollmentState().addEnrollmentState("serviceId");
+        return result;
     }
 
     @Test
@@ -100,8 +93,12 @@ public abstract class AppRepositoryTest {
         ApplicationInfo original = buildAppInfo(appId);
         dao.save(original);
         ApplicationInfo retrieved = dao.findOne(appId);
-        assertFalse("Service binding should have been found", retrieved == null);
+        assertThat(retrieved, is(notNullValue()));
         assertThat(retrieved.getUuid(), is(equalTo(appId)));
+        assertThat(retrieved.getEnrollmentState(), is(notNullValue()));
+        assertThat(retrieved.getEnrollmentState().getStates(), is(notNullValue()));
+        assertThat(retrieved.getEnrollmentState().getStates().size(), is(equalTo(original.getEnrollmentState()
+                .getStates().size())));
         assertThat(retrieved, is(equalTo(original)));
         assertTrue("Succeed in getting a binding that does not exist", dao.findOne("thisAppShouldNotExist") == null);
     }
@@ -152,5 +149,24 @@ public abstract class AppRepositoryTest {
 
     private int countTotal() {
         return toIntExact(dao.count());
+    }
+
+    /**
+     * test hibernate issue: storing an "empty" embedded object with every field null will result in a null object
+     * when retrieved from db.
+     */
+    @Test
+    public void empty_diagnostic_info_should_not_be_null_when_read_from_db() {
+        //
+
+        //create app with "empty" diagnostic
+        String uuid = UUID.randomUUID().toString();
+        ApplicationInfo info = new ApplicationInfo(uuid);
+        assertThat(info.getDiagnosticInfo(), is(notNullValue()));
+
+        dao.save(info);
+        ApplicationInfo retrievedInfo = dao.findOne(uuid);
+
+        assertThat(retrievedInfo.getDiagnosticInfo(), is(notNullValue()));
     }
 }
