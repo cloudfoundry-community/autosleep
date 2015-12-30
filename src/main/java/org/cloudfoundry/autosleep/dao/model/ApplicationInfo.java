@@ -1,5 +1,6 @@
 package org.cloudfoundry.autosleep.dao.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -28,11 +29,11 @@ public class ApplicationInfo {
     public static class DiagnosticInfo {
 
         @Embedded
-        @JsonUnwrapped
+        @JsonSerialize
         private ApplicationEvent lastEvent;
 
         @Embedded
-        @JsonUnwrapped
+        @JsonSerialize
         private ApplicationLog lastLog;
 
         @JsonSerialize
@@ -47,6 +48,7 @@ public class ApplicationInfo {
         private Instant lastCheck;
 
         //see https://issues.jboss.org/browse/HIBERNATE-50
+        @JsonIgnore
         private int hibernateWorkaround = 1;
 
         @Getter
@@ -78,9 +80,6 @@ public class ApplicationInfo {
             @Column(name = "log_source_id")
             private String sourceId;
 
-            //see https://issues.jboss.org/browse/HIBERNATE-50
-            //private int hibernateWorkaround = 2;
-
         }
 
         @Getter
@@ -111,9 +110,6 @@ public class ApplicationInfo {
             @JsonDeserialize(using = InstantDeserializer.class)
             @Column(name = "event_time")
             private Instant timestamp;
-
-            //see https://issues.jboss.org/browse/HIBERNATE-50
-            // private int hibernateWorkaround = 3;
 
             public ApplicationEvent(String name) {
                 this.name = name;
@@ -181,7 +177,7 @@ public class ApplicationInfo {
     private String name;
 
     @Embedded
-    @JsonUnwrapped
+    @JsonSerialize
     private DiagnosticInfo diagnosticInfo;
 
 

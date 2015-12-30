@@ -14,9 +14,11 @@ function listApplications (id){
                 row = $("<row>").addClass("row");
                 row.append($("<div>").addClass("col-xs-4 h5 text-center").html("Guid"));
                 row.append($("<div>").addClass("col-xs-2 h5 text-center").html("Name"));
-                row.append($("<div>").addClass("col-xs-2 h5 text-center").html("Last known status"));
+                row.append($("<div>").addClass("col-xs-1 h5 text-center").html("Last known status"));
                 row.append($("<div>").addClass("col-xs-2 h5 text-center").html("Next check"));
-                row.append($("<div>").addClass("col-xs-2 h5 text-center").html("State"));
+                row.append($("<div>").addClass("col-xs-1 h5 text-center").html("State"));
+                row.append($("<div>").addClass("col-xs-1"));//last log details
+                row.append($("<div>").addClass("col-xs-1"));//last event details
                 container.append(row);
             }
             $.each(serverResponse.body, function(idx, application){
@@ -24,28 +26,73 @@ function listApplications (id){
                 row.append($("<div>").addClass("col-xs-4 text-center").html(application.uuid));
                 row.append($("<div>").addClass("col-xs-2 text-center").html(application.name));
                 if (application.watched) {
-                    row.append($("<div>").addClass("col-xs-2 text-center").html(application.appState));
+                    row.append($("<div>").addClass("col-xs-1 text-center").html(application.diagnosticInfo.appState));
                 } else
-                    row.append($("<div>").addClass("col-xs-2 text-center").html("-"));
+                    row.append($("<div>").addClass("col-xs-1 text-center").html("-"));
 
-                if(application.nextCheck != null){
+                if(application.diagnosticInfo.nextCheck != null){
                     row.append($("<div>")
-                        .attr("data-countdown",application.nextCheck + diffWithServer, "id","countdown"+idx)
+                        .attr("data-countdown",application.diagnosticInfo.nextCheck + diffWithServer, "id","countdown"+idx)
                         .addClass("col-xs-2 text-center"));
                 }else
                     row.append($("<div>").addClass("col-xs-2 text-center").html("-"));
 
                 var stateElement = $("<span>").attr("data-toggle","tooltip")
                     .attr("title",application.watched?"WATCHED":"IGNORED")
-                    .addClass("col-xs-2 text-center glyphicon");
+                    .addClass("col-xs-1 text-center glyphicon");
 
                 if (!application.watched) {
                     stateElement.addClass("glyphicon-eye-close");
                 } else {
                     stateElement.addClass("glyphicon-eye-open");
                 }
-
                 row.append(stateElement);
+
+                var logElement = $("<a>").attr("data-toggle","tooltip")
+                    .attr("title", "Last log")
+                    .addClass("col-xs-1 text-center glyphicon glyphicon-list-alt");
+                var dialogContent = "No last log known...";
+                if(application.diagnosticInfo.lastLog != null) {
+                    var time = new Date(application.diagnosticInfo.lastLog.timestamp);
+                    dialogContent = '<dl class="dl-horizontal">' +
+                        '<dt>Timestamp: </dt><dd>'+time+'</dd>' +
+                        '<dt>Type: </dt><dd>'+application.diagnosticInfo.lastLog.messageType +'</dd>' +
+                        '<dt>Message: </dt><dd>'+application.diagnosticInfo.lastLog.message +'</dd>' +
+                        '<dt>Source: </dt><dd>'+application.diagnosticInfo.lastLog.sourceName +'</dd>' +
+                        '</dl>';
+                }
+                logElement.click(
+                    function(dialogContent){
+                        return function(){
+                            bootbox.dialog({
+                                title: "Last application log: ",
+                                message: dialogContent
+                            });
+                        }}(dialogContent));
+                row.append(logElement);
+
+                var eventElement = $("<a>").attr("data-toggle","tooltip")
+                    .attr("title", "Last cloud event")
+                    .addClass("col-xs-1 text-center glyphicon glyphicon-cloud");
+                dialogContent = "No cloud event known...";
+                if(application.diagnosticInfo.lastEvent != null) {
+                    var time = new Date(application.diagnosticInfo.lastEvent.timestamp);
+                    dialogContent = '<dl class="dl-horizontal">' +
+                        '<dt>Timestamp: </dt><dd>'+time+'</dd>' +
+                        '<dt>Name: </dt><dd>'+application.diagnosticInfo.lastEvent.name +'</dd>' +
+                        '<dt>Type: </dt><dd>'+application.diagnosticInfo.lastEvent.type +'</dd>' +
+                        '<dt>Actor: </dt><dd>'+application.diagnosticInfo.lastEvent.actor +'</dd>' +
+                    '</dl>';
+                }
+                eventElement.click(
+                    function(dialogContent){
+                        return function(){
+                            bootbox.dialog({
+                                title: "Last cloud event: ",
+                                message: dialogContent
+                            });
+                        }}(dialogContent));
+                row.append(eventElement);
                 container.append(row);
             });
 
