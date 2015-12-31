@@ -2,15 +2,20 @@ package org.cloudfoundry.autosleep.worker.remote.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.worker.remote.ClientHandler;
 import org.cloudfoundry.client.lib.CloudCredentials;
 import org.cloudfoundry.client.lib.CloudFoundryClient;
+import org.cloudfoundry.client.lib.util.RestUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -23,8 +28,12 @@ public class CloudfoundryClientBuilder {
     @Autowired
     private Environment env;
 
-    @Bean
-    public CloudFoundryClient buildClient() {
+    private RestTemplate restTemplate;
+
+    private ClientHandler clientHandler;
+
+    @PostConstruct
+    public void init() {
         final String targetEndpoint = env.getProperty(Config.EnvKey.CF_ENDPOINT);
         final boolean skipSslValidation = Boolean.parseBoolean(env.getProperty(Config.EnvKey.CF_SKIP_SSL_VALIDATION,
                 "false"));
@@ -45,16 +54,31 @@ public class CloudfoundryClientBuilder {
                 log.debug("buildClient - clientId/clientSecret provided.");
                 cloudCredentials = new CloudCredentials(username, password, clientId, clientSecret);
             }
-            CloudFoundryClient client = new CloudFoundryClient(cloudCredentials,
-                    new URL(targetEndpoint), skipSslValidation);
-            client.login();
-            return client;
+            CloudFoundryClient client = new CloudFoundryClient(cloudCredentials, new URL(targetEndpoint),
+                    skipSslValidation);
+            OAuth2AccessToken token = client.login();
+            ClientHandler clientHandler = ClientHandler.builder()
+                    .client(client)
+                    .token(token)
+                    .targetEndpoint(targetEndpoint)
+                    .build();
+            RestTemplate restTemplate = new RestUtil().createRestTemplate(null, skipSslValidation);
+            this.clientHandler = clientHandler;
+            this.restTemplate = restTemplate;
         } catch (MalformedURLException m) {
             log.error("CloudFoundryApi - malformed target endpoint url - {}", m.getMessage());
-            return null;
         } catch (RuntimeException r) {
             log.error("CloudFoundryApi - failure while login", r);
-            return null;
         }
+    }
+
+    @Bean
+    public ClientHandler getClientHandler() {
+        return clientHandler;
+    }
+
+    @Bean
+    public RestTemplate getRestTemplate() {
+        return restTemplate;
     }
 }

@@ -10,14 +10,18 @@ import org.cloudfoundry.client.lib.CloudFoundryClient;
 import org.cloudfoundry.client.lib.domain.*;
 import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.cloudfoundry.client.lib.domain.CloudEntity.Meta;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.util.*;
@@ -36,6 +40,8 @@ import static org.mockito.Mockito.*;
 @Slf4j
 public class CloudFoundryApiTest {
 
+    private static final String REMOTE_URL = "http://somewhere.org";
+
     private static final UUID appStartedUuid = UUID.randomUUID();
 
     private static final UUID appStoppedUuid = UUID.randomUUID();
@@ -52,6 +58,15 @@ public class CloudFoundryApiTest {
     @Mock
     private CloudFoundryClient cloudFoundryClient;
 
+    @Mock
+    private OAuth2AccessToken token;
+
+    @Mock
+    private ClientHandler clientHandler;
+
+    @Mock
+    private RestTemplate restTemplate;
+
     @InjectMocks
     private CloudFoundryApi cloudFoundryApi;
 
@@ -62,6 +77,11 @@ public class CloudFoundryApiTest {
 
     @Before
     public void setUp() {
+        when(clientHandler.getClient()).thenReturn(cloudFoundryClient);
+        when(clientHandler.getTargetEndpoint()).thenReturn(REMOTE_URL);
+        when(clientHandler.getToken()).thenReturn(token);
+        when(token.getTokenType()).thenReturn("Bearer");
+        when(token.getValue()).thenReturn("Value");
         sampleApplicationStarted = new CloudApplication(new Meta(appStartedUuid, null, null),
                 "sampleApplicationStarted");
         sampleApplicationStarted.setState(AppState.STARTED);
@@ -123,7 +143,7 @@ public class CloudFoundryApiTest {
                                 ApplicationLog.MessageType.STDERR, "sourceName", "sourceId")));
         when(cloudFoundryClient.getApplicationEvents(sampleApplicationStarted.getName())).then(
                 invocationOnMock -> {
-                    CloudEvent event = new CloudEvent(null,"totoevent");
+                    CloudEvent event = new CloudEvent(null, "totoevent");
                     event.setTimestamp(Date.from(lastEventTime));
                     return Collections.singletonList(event);
                 });
@@ -161,17 +181,19 @@ public class CloudFoundryApiTest {
         //given application is found
         when(cloudFoundryClient.getApplication(appStartedUuid)).thenReturn(sampleApplicationStarted);
         //and stop throws an error
-        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).stopApplication(any(String.class));
+        doThrow(new RuntimeException("call failed")).when(restTemplate).put(
+                eq(REMOTE_URL + "/v2/apps/{guid}"), any(HttpEntity.class), eq(appStartedUuid));
         //when stop or start is invoked then proper error is thrown
         verifyThrown(() -> cloudFoundryApi.stopApplication(appStartedUuid), CloudFoundryException.class);
     }
 
     @Test
-    public void test_sart_application_fails_on_runtime_exception_on_start_call() {
+    public void test_start_application_fails_on_runtime_exception_on_start_call() {
         //given application is found
         when(cloudFoundryClient.getApplication(appStoppedUuid)).thenReturn(sampleApplicationStopped);
         //and stop throws an error
-        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).startApplication(any(String.class));
+        doThrow(new RuntimeException("call failed")).when(restTemplate).put(
+                eq(REMOTE_URL + "/v2/apps/{guid}?stage_async=true"), any(HttpEntity.class), eq(appStoppedUuid));
         //when stop or start is invoked then proper error is thrown
         verifyThrown(() -> cloudFoundryApi.startApplication(appStoppedUuid), CloudFoundryException.class);
     }
@@ -216,7 +238,9 @@ public class CloudFoundryApiTest {
         //then client got application
         verify(cloudFoundryClient, times(1)).getApplication(appStartedUuid);
         //and did asked for stop
-        verify(cloudFoundryClient, times(1)).stopApplication(sampleApplicationStarted.getName());
+        verify(restTemplate, times(1)).put(eq(REMOTE_URL + "/v2/apps/{guid}"),
+                any(HttpEntity.class),
+                eq(appStartedUuid));
     }
 
 
@@ -229,7 +253,9 @@ public class CloudFoundryApiTest {
         //then client got application
         verify(cloudFoundryClient, times(1)).getApplication(appStoppedUuid);
         //and did asked for start
-        verify(cloudFoundryClient, times(1)).startApplication(sampleApplicationStopped.getName());
+        verify(restTemplate, times(1)).put(eq(REMOTE_URL + "/v2/apps/{guid}?stage_async=true"),
+                any(HttpEntity.class),
+                eq(appStoppedUuid));
     }
 
     @Test
@@ -343,6 +369,10 @@ public class CloudFoundryApiTest {
         only_one_remote_service(serviceInstanceUuid);
         //and bind service fails with a runtime error
         doThrow(new RuntimeException("runtime failed")).when(cloudFoundryClient).bindService(anyString(), anyString());
+        doThrow(new RuntimeException("call failed")).when(restTemplate).postForObject(
+                eq(REMOTE_URL + "/v2/service_bindings"),
+                any(HttpEntity.class),
+                eq(String.class));
         //when bind application (single or list) is invoked, proper error is thrown
         ApplicationIdentity sampleIdentity = BeanGenerator.createAppIdentity(appStartedUuid.toString());
         verifyThrown(() -> cloudFoundryApi.bindServiceInstance(sampleIdentity, serviceInstanceUuid.toString()),
@@ -377,7 +407,7 @@ public class CloudFoundryApiTest {
     @Test
     public void test_bind_succeeds() throws Exception {
         //given get service returns a service
-        CloudService service = only_one_remote_service(serviceInstanceUuid);
+        only_one_remote_service(serviceInstanceUuid);
         //when bind application (single or list) is invoked
         ApplicationIdentity sampleIdentity = BeanGenerator.createAppIdentity(appStartedUuid.toString());
         cloudFoundryApi.bindServiceInstance(sampleIdentity, serviceInstanceUuid.toString());
@@ -385,8 +415,11 @@ public class CloudFoundryApiTest {
                 BeanGenerator.createAppIdentity(appStoppedUuid.toString()));
         cloudFoundryApi.bindServiceInstance(applications, serviceInstanceUuid.toString());
         //then bind service is invoked on each application
-        verify(cloudFoundryClient, times(1 + applications.size()))
-                .bindService(any(String.class), eq(service.getName()));
+        verify(restTemplate, times(1 + applications.size()))
+                .postForObject(
+                        eq(REMOTE_URL + "/v2/service_bindings"),
+                        any(HttpEntity.class),
+                        eq(String.class));
 
 
     }
