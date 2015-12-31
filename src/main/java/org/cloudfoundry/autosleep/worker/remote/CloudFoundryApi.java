@@ -114,8 +114,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     public void bindServiceInstance(List<ApplicationIdentity> applications, String serviceInstanceId)
             throws EntityNotFoundException, CloudFoundryException {
         CloudService service = getService(serviceInstanceId);
-        log.debug("service {} - {} found", service.getMeta().getGuid(),
-                service.getName());
+        log.debug("service {} - {} found", service.getMeta().getGuid(), service.getName());
         for (ApplicationIdentity application : applications) {
             bindServiceInstanceToApplication(application, service);
         }
@@ -127,7 +126,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         try {
             log.debug("binding app {} - {} to service {}", application.getGuid(), application.getName(),
                     cloudService.getName());
-            client.bindService(application.getName(), cloudService.getName());
+            client.bindService(UUID.fromString(application.getGuid()), cloudService.getMeta().getGuid());
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }

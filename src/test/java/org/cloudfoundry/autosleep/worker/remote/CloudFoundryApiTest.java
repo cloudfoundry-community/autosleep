@@ -342,7 +342,8 @@ public class CloudFoundryApiTest {
         //given get service returns a service
         only_one_remote_service(serviceInstanceUuid);
         //and bind service fails with a runtime error
-        doThrow(new RuntimeException("runtime failed")).when(cloudFoundryClient).bindService(anyString(), anyString());
+        doThrow(new RuntimeException("runtime failed")).when(cloudFoundryClient).bindService(any(UUID.class),
+                any(UUID.class));
         //when bind application (single or list) is invoked, proper error is thrown
         ApplicationIdentity sampleIdentity = BeanGenerator.createAppIdentity(appStartedUuid.toString());
         verifyThrown(() -> cloudFoundryApi.bindServiceInstance(sampleIdentity, serviceInstanceUuid.toString()),
@@ -386,7 +387,7 @@ public class CloudFoundryApiTest {
         cloudFoundryApi.bindServiceInstance(applications, serviceInstanceUuid.toString());
         //then bind service is invoked on each application
         verify(cloudFoundryClient, times(1 + applications.size()))
-                .bindService(any(String.class), eq(service.getName()));
+                .bindService(any(UUID.class), eq(service.getMeta().getGuid()));
 
 
     }
