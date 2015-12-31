@@ -161,7 +161,7 @@ public class CloudFoundryApiTest {
         //given application is found
         when(cloudFoundryClient.getApplication(appStartedUuid)).thenReturn(sampleApplicationStarted);
         //and stop throws an error
-        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).stopApplication(any(String.class));
+        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).stopApplication(any(UUID.class));
         //when stop or start is invoked then proper error is thrown
         verifyThrown(() -> cloudFoundryApi.stopApplication(appStartedUuid), CloudFoundryException.class);
     }
@@ -171,7 +171,7 @@ public class CloudFoundryApiTest {
         //given application is found
         when(cloudFoundryClient.getApplication(appStoppedUuid)).thenReturn(sampleApplicationStopped);
         //and stop throws an error
-        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).startApplication(any(String.class));
+        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).startApplication(any(UUID.class));
         //when stop or start is invoked then proper error is thrown
         verifyThrown(() -> cloudFoundryApi.startApplication(appStoppedUuid), CloudFoundryException.class);
     }
@@ -216,7 +216,7 @@ public class CloudFoundryApiTest {
         //then client got application
         verify(cloudFoundryClient, times(1)).getApplication(appStartedUuid);
         //and did asked for stop
-        verify(cloudFoundryClient, times(1)).stopApplication(sampleApplicationStarted.getName());
+        verify(cloudFoundryClient, times(1)).stopApplication(sampleApplicationStarted.getMeta().getGuid());
     }
 
 
@@ -229,7 +229,7 @@ public class CloudFoundryApiTest {
         //then client got application
         verify(cloudFoundryClient, times(1)).getApplication(appStoppedUuid);
         //and did asked for start
-        verify(cloudFoundryClient, times(1)).startApplication(sampleApplicationStopped.getName());
+        verify(cloudFoundryClient, times(1)).startApplication(sampleApplicationStopped.getMeta().getGuid());
     }
 
     @Test

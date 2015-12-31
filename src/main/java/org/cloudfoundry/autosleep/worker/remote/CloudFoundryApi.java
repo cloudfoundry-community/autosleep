@@ -56,7 +56,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         try {
             CloudApplication app = getApplication(applicationUuid);
             if (app.getState() != AppState.STOPPED) {
-                client.stopApplication(app.getName());
+                client.stopApplication(applicationUuid);
             }
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
@@ -69,7 +69,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             CloudApplication app = getApplication(applicationUuid);
             if (app.getState() != AppState.STARTED) {
                 log.info("Starting app {} - {}", applicationUuid, app.getName());
-                client.startApplication(app.getName());
+                client.startApplication(applicationUuid);
             } else {
                 log.debug("App {} already started", app.getName());
             }
