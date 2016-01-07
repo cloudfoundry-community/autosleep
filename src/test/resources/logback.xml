@@ -20,6 +20,6 @@
     <root>
         <appender-ref ref="stdout" />
         <!--<level value="OFF" />-->
-        <level value="DEBUG" />
+        <level value="OFF" />
     </root>
 </configuration>
