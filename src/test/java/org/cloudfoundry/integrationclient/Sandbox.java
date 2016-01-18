@@ -27,6 +27,11 @@ import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
 import org.cloudfoundry.client.v2.applications.ListApplicationsResponse;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationResponse;
+import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
+import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingResponse;
+import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
+import org.cloudfoundry.client.v2.servicebindings.ListServiceBindingsRequest;
+import org.cloudfoundry.client.v2.servicebindings.ListServiceBindingsResponse;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.utils.test.TestSubscriber;
@@ -191,7 +196,8 @@ public class Sandbox {
 
     @Test
     public void get_last_logs() {
-        Publisher<LoggregatorMessage> recentPublisher = loggregatorClient.recent(RecentLogsRequest.builder().id(applicationId).build());
+        Publisher<LoggregatorMessage> recentPublisher = loggregatorClient.recent(RecentLogsRequest.builder().id
+                (applicationId).build());
         //What shall I do with it?
         throw new RuntimeException("Not yet implemented");
     }
@@ -216,8 +222,34 @@ public class Sandbox {
     }
 
     @Test
-    public void test_bind_application() {
-        throw new RuntimeException("Not yet implemented");
+    public void test_bind_unbind_application() {
+        Mono<CreateServiceBindingResponse> publisherBinding = client.serviceBindings().create
+                (CreateServiceBindingRequest
+                .builder()
+                .applicationId(applicationId)
+                .serviceInstanceId(serviceInstanceId).build());
+        CreateServiceBindingResponse responseBinding = publisherBinding.get();
+        assertThat(responseBinding, is(notNullValue()));
+        assertThat(responseBinding.getMetadata(), is(notNullValue()));
+        assertThat(responseBinding.getEntity(), is(notNullValue()));
+        assertThat(responseBinding.getEntity().getApplicationId(), is(equalTo(applicationId)));
+        assertThat(responseBinding.getEntity().getServiceInstanceId(), is(equalTo(serviceInstanceId)));
+
+        Mono<Void> response = client.serviceBindings().delete(DeleteServiceBindingRequest.builder().id
+                (responseBinding.getMetadata().getId()).build());
+        //will block until response ?
+        response.get();
+
+        //List to check that it works
+        Mono<ListServiceBindingsResponse> publisherList = client.serviceBindings().list(ListServiceBindingsRequest
+                .builder()
+                .applicationId(applicationId)
+                .serviceInstanceId(serviceInstanceId).build());
+        ListServiceBindingsResponse listBinding = publisherList.get();
+        assertThat(listBinding, is(notNullValue()));
+        assertThat(listBinding.getResources(), is(notNullValue()));
+        assertThat(listBinding.getResources().size(), is(equalTo(0)));
+
     }
 
     @PropertySource("classpath:test.properties")
