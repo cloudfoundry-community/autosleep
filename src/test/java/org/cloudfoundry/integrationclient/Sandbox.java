@@ -17,7 +17,11 @@ package org.cloudfoundry.integrationclient;/*
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.LoggregatorClient;
+import org.cloudfoundry.client.loggregator.LoggregatorMessage;
+import org.cloudfoundry.client.loggregator.RecentLogsRequest;
 import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
+import org.cloudfoundry.client.spring.SpringLoggregatorClient;
 import org.cloudfoundry.client.v2.applications.GetApplicationRequest;
 import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
 import org.cloudfoundry.client.v2.applications.ListApplicationsResponse;
@@ -36,18 +40,14 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import reactor.rx.Stream;
-import reactor.rx.Streams;
+import reactor.Mono;
 
-import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * Created by buce8373 on 08/12/2015.
@@ -77,20 +77,24 @@ public class Sandbox {
     private String spaceId;
     @Value("${test.service.instance.id}")
     private String serviceInstanceId;
+
     private CloudFoundryClient client;
+
+    private LoggregatorClient loggregatorClient;
 
     @Before
     public void buildClient() {
         if (client == null) {
             log.debug("Building to {}", cfUrl);
-            client = SpringCloudFoundryClient.builder()
+            SpringCloudFoundryClient client = SpringCloudFoundryClient.builder()
                     .host(cfUrl)
                     .clientId(cfClientId)
                     .clientSecret(cfClientSecret)
                     .skipSslValidation(skipVerification)
                     .username(cfUsername)
                     .password(cfPassword).build();
-
+            loggregatorClient = SpringLoggregatorClient.builder().cloudFoundryClient(client).build();
+            this.client = client;
         }
     }
 
@@ -98,11 +102,10 @@ public class Sandbox {
     @Test
     public void get_application_poll() {
         log.debug("get_application_get");
-        Publisher<GetApplicationResponse> publisher = this.client
+        Mono<GetApplicationResponse> publisher = this.client
                 .applicationsV2().get(GetApplicationRequest.builder().id(applicationId).build());
-        Stream<GetApplicationResponse> stream = Streams.wrap(publisher);
         //wait for 30s by default
-        GetApplicationResponse response = stream.next().poll();
+        GetApplicationResponse response = publisher.get();
         assertThat(response, is(notNullValue()));
         assertThat(response.getMetadata(), is(notNullValue()));
         assertThat(response.getEntity(), is(notNullValue()));
@@ -124,9 +127,9 @@ public class Sandbox {
             assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
             log.debug("get_application_subscribe - {} found", response.getEntity().getName());
         });
-        Publisher<GetApplicationResponse> publisher = this.client
+        Mono<GetApplicationResponse> publisher = this.client
                 .applicationsV2().get(GetApplicationRequest.builder().id(applicationId).build());
-        Streams.wrap(publisher).subscribe(subscriber);
+        publisher.subscribe(subscriber);
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
 
     }
@@ -143,9 +146,9 @@ public class Sandbox {
             log.debug("application stopped - {}", response.getEntity().getName());
             log.debug("test_stop - end");
         });
-        Publisher<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
+        Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
                 (UpdateApplicationRequest.builder().id(applicationId).state("STOPPED").build());
-        Streams.wrap(publisherStart).subscribe(subscriber);
+        publisherStart.subscribe(subscriber);
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
     }
 
@@ -161,9 +164,9 @@ public class Sandbox {
             log.debug("application started - {}", response.getEntity().getName());
             log.debug("test_stop - end");
         });
-        Publisher<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
+        Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
                 (UpdateApplicationRequest.builder().id(applicationId).state("STARTED").build());
-        Streams.wrap(publisherStart).subscribe(subscriber);
+        publisherStart.subscribe(subscriber);
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
     }
 
@@ -178,16 +181,18 @@ public class Sandbox {
                     .forEach(log::debug);
         });
 
-        Publisher<ListApplicationsResponse> publisher = this.client
+        Mono<ListApplicationsResponse> publisher = this.client
                 .applicationsV2()
                 .list(org.cloudfoundry.client.v2.applications.ListApplicationsRequest.builder()
                         .spaceId(spaceId).build());
-        Streams.wrap(publisher).subscribe(subscriber);
+        publisher.subscribe(subscriber);
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
     }
 
     @Test
     public void get_last_logs() {
+        Publisher<LoggregatorMessage> recentPublisher = loggregatorClient.recent(RecentLogsRequest.builder().id(applicationId).build());
+        //What shall I do with it?
         throw new RuntimeException("Not yet implemented");
     }
 
@@ -203,9 +208,9 @@ public class Sandbox {
             assertThat(response, is(notNullValue()));
             assertThat(response.getMetadata().getId(), is(equalTo(serviceInstanceId)));
         });
-        Publisher<GetServiceInstanceResponse> publisher = this.client.serviceInstances()
+        Mono<GetServiceInstanceResponse> publisher = this.client.serviceInstances()
                 .get(GetServiceInstanceRequest.builder().id(serviceInstanceId).build());
-        Streams.wrap(publisher).subscribe(subscriber);
+        publisher.subscribe(subscriber);
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
 
     }
