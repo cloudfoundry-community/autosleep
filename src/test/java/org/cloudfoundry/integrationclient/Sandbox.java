@@ -27,6 +27,8 @@ import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
 import org.cloudfoundry.client.v2.applications.ListApplicationsResponse;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationResponse;
+import org.cloudfoundry.client.v2.events.ListEventsRequest;
+import org.cloudfoundry.client.v2.events.ListEventsResponse;
 import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
 import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingResponse;
 import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
@@ -203,8 +205,21 @@ public class Sandbox {
     }
 
     @Test
-    public void get_last_events() {
-        throw new RuntimeException("Not yet implemented");
+    public void get_last_events() throws InterruptedException {
+        //throw new RuntimeException("Not yet implemented");
+        TestSubscriber<ListEventsResponse> subscriber = new TestSubscriber<>();
+        subscriber.assertThat(response -> {
+            assertThat(response, is(notNullValue()));
+            assertThat(response.getResources(), is(notNullValue()));
+            response.getResources().stream()
+                    .map(eventResource -> eventResource.getEntity().getType())
+                    .forEach(log::debug);
+        });
+
+        Mono<ListEventsResponse> publisher = this.client
+                .events().list(ListEventsRequest.builder().actee(applicationId).build());
+        publisher.subscribe(subscriber);
+        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
     }
 
     @Test
