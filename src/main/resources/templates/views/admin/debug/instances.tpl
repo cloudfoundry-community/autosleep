@@ -37,14 +37,14 @@ layout 'layouts/main.tpl',
                     input(type:"text", id:"createServiceInstanceId")
                 }
                 div(class: "col-xs-2"){
-                    label("Inactivity : ")
+                    label("Idle Duration : ")
                     br()
-                    input(type:"text", id:"createServiceInstanceInactivity")
+                    input(type:"text", id:"createServiceInstanceIdleDuration")
                 }
                 div(class: "col-xs-2"){
-                    label("Exclude names : ")
+                    label("Exclusion : ")
                     br()
-                    input(type:"text", id:"createServiceInstanceExclusion")
+                    input(type:"text", id:"createServiceInstanceExcludeFromAutoEnrollment")
                 }
                 div(class: "col-xs-2"){
                     label("")
