@@ -19,3 +19,5 @@ branches:
     - develop
     - /^feature-.*$/
     - /^fix-.*$/
+after_success:
+  - ./gradlew jacocoTestReport coveralls 

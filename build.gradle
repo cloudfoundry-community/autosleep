@@ -3,6 +3,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
 buildscript {
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
+        classpath("org.kt3k.gradle.plugin:coveralls-gradle-plugin:$gradleCoverallsVersion")
     }
     repositories {
         mavenLocal()
@@ -22,6 +23,7 @@ apply plugin: 'java'
 apply plugin: 'spring-boot'
 apply plugin: 'war'
 apply from: 'test.gradle'
+apply from: 'coverage.gradle'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
