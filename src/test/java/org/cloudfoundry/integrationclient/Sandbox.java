@@ -198,10 +198,16 @@ public class Sandbox {
 
     @Test
     public void get_last_logs() {
-        Publisher<LoggregatorMessage> recentPublisher = loggregatorClient.recent(RecentLogsRequest.builder().id
+        TestSubscriber<LoggregatorMessage> subscriber = new TestSubscriber<>();
+        subscriber.assertThat(response -> {
+            assertThat(response, is(notNullValue()));
+            assertThat(response.getMessage(), is(notNullValue()));
+            log.debug("Message %s",response.getMessage());
+        });
+
+        Publisher<LoggregatorMessage> publisher = loggregatorClient.recent(RecentLogsRequest.builder().id
                 (applicationId).build());
-        //What shall I do with it?
-        throw new RuntimeException("Not yet implemented");
+        publisher.subscribe(subscriber);
     }
 
     @Test
