@@ -181,7 +181,8 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
         if (spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId) != null) {
             spaceEnrollerConfigRepository.delete(spaceEnrollerConfigId);
         } else {
-            log.error("Received delete on unknown id %s - This should not happen.", spaceEnrollerConfigId);
+            log.warn("Received delete on unknown id %s - This can be the result of CloudFoundry automatically trying "
+                    + "to clean services that failed during their creation", spaceEnrollerConfigId);
         }
 
         //clean stored app linked to the service (already unbound)
