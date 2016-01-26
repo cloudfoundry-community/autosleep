@@ -136,7 +136,7 @@ public class ApplicationInfo {
             BLACKLISTED
         }
 
-        @Column(length=300) //to force BLOB type and not TINYBLOB
+        @Column(length = 300) //to force BLOB type and not TINYBLOB
         private HashMap<String /**serviceId.**/, EnrollmentState.State> states;
 
         private EnrollmentState() {
