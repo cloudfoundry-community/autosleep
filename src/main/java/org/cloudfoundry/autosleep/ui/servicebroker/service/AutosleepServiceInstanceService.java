@@ -178,7 +178,12 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             DeleteServiceInstanceRequest request) throws ServiceBrokerException {
         final String spaceEnrollerConfigId = request.getServiceInstanceId();
         log.debug("deleteServiceInstance - {}", spaceEnrollerConfigId);
-        spaceEnrollerConfigRepository.delete(spaceEnrollerConfigId);
+        if (spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId) != null) {
+            spaceEnrollerConfigRepository.delete(spaceEnrollerConfigId);
+        } else {
+            log.warn("Received delete on unknown id %s - This can be the result of CloudFoundry automatically trying "
+                    + "to clean services that failed during their creation", spaceEnrollerConfigId);
+        }
 
         //clean stored app linked to the service (already unbound)
         appRepository.findAll().forEach(

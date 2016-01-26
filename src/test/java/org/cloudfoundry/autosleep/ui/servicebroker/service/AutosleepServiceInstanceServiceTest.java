@@ -420,8 +420,11 @@ public class AutosleepServiceInstanceServiceTest {
 
     @Test
     public void test_delete_service_instance() throws Exception {
-        //given no application in repository
+        //given no application in app repository, and one spaceEnrollerConfig
         when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
+        when(spaceEnrollerConfigRepository.findOne(anyString()))
+                .thenReturn(BeanGenerator.createServiceInstance(SERVICE_INSTANCE_ID));
+
         //when service is asked to delete
         ServiceInstance si = instanceService.deleteServiceInstance(deleteRequest);
 
@@ -447,6 +450,8 @@ public class AutosleepServiceInstanceServiceTest {
 
         when(applicationRepository.findOne(anyString()))
                 .then(invocationOnMock -> applicationInfos.get((String) invocationOnMock.getArguments()[0]));
+
+        when(spaceEnrollerConfigRepository.findOne(anyString())).thenReturn(BeanGenerator.createServiceInstance());
 
         //when delete is asked
         instanceService.deleteServiceInstance(deleteRequest);

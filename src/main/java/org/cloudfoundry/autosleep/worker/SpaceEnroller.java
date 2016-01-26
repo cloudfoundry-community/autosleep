@@ -78,6 +78,9 @@ class SpaceEnroller extends AbstractPeriodicTask {
             } catch (EntityNotFoundException n) {
                 log.error("service not found. should not appear cause should not be in repository anymore", n);
             } catch (CloudFoundryException c) {
+                /*a 409 "conflict" error is possible (if someone tries to delete a service at the same time
+                but without consequences
+                 */
                 log.error("remote error", c);
             }
             rescheduleWithDefaultPeriod();
