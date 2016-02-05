@@ -30,6 +30,7 @@ public interface Config {
         String CF_ENCODING_SECRET = "cf.security.password.encodingSecret";
 
         String CF_SERVICE_BROKER_ID = "cf.service.broker.id";
+        String CF_SERVICE_PLAN_ID = "cf.service.plan.id";
 
 
         String APPLICATION_DESCRIPTION_ENVIRONMENT_KEY = "VCAP_APPLICATION";

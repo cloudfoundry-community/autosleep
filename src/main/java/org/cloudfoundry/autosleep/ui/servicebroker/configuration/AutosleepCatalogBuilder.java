@@ -18,9 +18,9 @@ import java.util.Map;
 @Configuration
 public class AutosleepCatalogBuilder {
 
-    private static final String DEFAULT_PLAN_UNIQUE_ID = "78C0A1DB-ACC9-4B6D-AF22-A1EF63C2CE06";
-
     private static final String DEFAULT_SERVICE_BROKER_ID = "autosleep";
+
+    private static final String DEFAULT_SERVICE_PLAN_ID = "default";
 
     @Autowired
     private Environment environment;
@@ -28,6 +28,7 @@ public class AutosleepCatalogBuilder {
     @Bean
     public Catalog buildCatalog() {
         String serviceBrokerId = environment.getProperty(Config.EnvKey.CF_SERVICE_BROKER_ID, DEFAULT_SERVICE_BROKER_ID);
+        String servicePlanId = environment.getProperty(Config.EnvKey.CF_SERVICE_PLAN_ID, DEFAULT_SERVICE_PLAN_ID);
         return new Catalog(Collections.singletonList(new ServiceDefinition(
                 serviceBrokerId,
                 serviceBrokerId,
@@ -35,7 +36,7 @@ public class AutosleepCatalogBuilder {
                 true,
                 false,
                 Collections.singletonList(
-                        new Plan(DEFAULT_PLAN_UNIQUE_ID,
+                        new Plan(servicePlanId,
                                 "default",
                                 "Autosleep default plan",
                                 null,

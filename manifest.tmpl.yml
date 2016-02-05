@@ -20,4 +20,4 @@ applications:
       -Dcf.client.clientSecret=<client_secret>
       -Dcf.security.password.encodingSecret=<password_encoding_secret>
       -Dcf.service.broker.id=<service_broker_id>
-    
+      -Dcf.service.plan.id=<service_plan_id>

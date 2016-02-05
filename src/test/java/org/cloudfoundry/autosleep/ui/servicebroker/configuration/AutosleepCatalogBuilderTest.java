@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.ui.servicebroker.configuration;
 
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.EnvKey;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.Plan;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
@@ -27,20 +28,24 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 @ContextConfiguration(classes = AutosleepCatalogBuilder.class)
 public class AutosleepCatalogBuilderTest {
+
     private static final String SERVICE_BROKER_ID = UUID.randomUUID().toString();
 
-    @Mock
-    private Environment environment;
-
+    private static final String SERVICE_PLAN_ID = UUID.randomUUID().toString();
 
     @InjectMocks
     private AutosleepCatalogBuilder catalogBuilder;
 
+    @Mock
+    private Environment environment;
 
     @Test
     public void testBuildCatalog() {
         when(environment.getProperty(eq(Config.EnvKey.CF_SERVICE_BROKER_ID), anyString()))
                 .thenReturn(SERVICE_BROKER_ID);
+        when(environment.getProperty(eq(EnvKey.CF_SERVICE_PLAN_ID), anyString()))
+                .thenReturn(SERVICE_PLAN_ID);
+
         Catalog catalog = catalogBuilder.buildCatalog();
         assertThat(catalog.getServiceDefinitions().size(), is(equalTo(1)));
         ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
@@ -49,10 +54,9 @@ public class AutosleepCatalogBuilderTest {
         assertTrue(serviceDefinition.isBindable());
         assertFalse(serviceDefinition.isPlanUpdateable());
         Plan plan = serviceDefinition.getPlans().get(0);
-        UUID.fromString(plan.getId());
+        assertThat(plan.getId(), is(equalTo(SERVICE_PLAN_ID)));
         assertTrue(plan.isFree());
         assertThat(serviceDefinition.getDashboardClient(), is(nullValue()));
     }
-
 
 }
