@@ -118,8 +118,9 @@ DebugHelper.prototype.addServiceInstance = function(){
         organization_guid : $("#createServiceInstanceOrgGuid").val(),
         space_guid : $("#createServiceInstanceSpaceGuid").val(),
         parameters : {
-            inactivity : $("#createServiceInstanceInactivity").val(),
-            excludeAppNameRegExp : $("#createServiceInstanceExclusion").val()
+            "idle-duration" : $("#createServiceInstanceIdleDuration").val(),
+            "exclude-from-auto-enrollment" : $("#createServiceInstanceExcludeFromAutoEnrollment").val(),
+            "auto-enrollment" : "standard"
         }
     };
     $.ajax({
@@ -152,8 +153,8 @@ DebugHelper.prototype.listServiceInstances = function(){
                 row = $("<row>").addClass("row");
                 row.append($("<div>").addClass("col-xs-4 h5 text-center").html("Instance Id"));
                 row.append($("<div>").addClass("col-xs-2 h5 text-center").html("Plan Id"));
-                row.append($("<div>").addClass("col-xs-1 h5 text-center").html("Interval"));
-                row.append($("<div>").addClass("col-xs-1 h5 text-center").html("Exclude"));
+                row.append($("<div>").addClass("col-xs-1 h5 text-center").html("Idle duration"));
+                row.append($("<div>").addClass("col-xs-1 h5 text-center").html("Exclusion"));
                 row.append($("<div>").addClass("col-xs-1 h5 text-center").html("Forced auto enrollment"));
                 row.append($("<div>").addClass("col-xs-1"));//binding links
                 row.append($("<div>").addClass("col-xs-1"));//dashboard links
