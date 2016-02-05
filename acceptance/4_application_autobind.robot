@@ -13,6 +13,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
 1) Automatically bind application by service instance
     [Documentation]     Check that app is automatically bound by service instance
     Clean all service data
+    Create service broker
 	${regex}					Catenate   SEPARATOR=      ^(?:(?!    ${TESTED_APP_NAME}   ).)*$
     ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${regex}
     Create service instance      ${parameters}
@@ -22,6 +23,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
 2) Service does not bind ignored applications
     [Documentation]        Check that no application is bound by the service instance
     Clean all service data
+    Create service broker
     ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}
     Create service instance      ${parameters}
     ${halfPeriod}=      Evaluate  ${INACTIVITY_IN_S}/2

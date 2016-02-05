@@ -10,7 +10,6 @@ cfg.read(path)
 ORGANIZATION_NAME = cfg.get("information", "organization_name")
 SPACE_NAME = cfg.get("information", "space_name")
 SERVICE_NAME = cfg.get("information", "service_name")
-PLAN_NAME = cfg.get("information", "plan_name")
 TESTED_APP_NAME = cfg.get("information", "application_name")
 SERVICE_INSTANCE_NAME = cfg.get("information", "service_instance_name")
 
