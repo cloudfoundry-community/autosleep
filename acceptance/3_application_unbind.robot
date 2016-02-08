@@ -2,7 +2,7 @@
 Resource        Keywords.robot
 Documentation   Test if application unbinded is not stopped
 Force Tags      Service broker
-Test Teardown   Run Keywords  DClean all service data
+Test Teardown   Run Keywords  Clean all service data
 
 *** Variables ***
 ${INACTIVITY_IN_S}  30
