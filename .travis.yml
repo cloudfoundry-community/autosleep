@@ -21,3 +21,5 @@ branches:
     - /^fix-.*$/
 after_success:
   - ./gradlew jacocoTestReport coveralls 
+notifications:
+  slack: autosleep:eY0VgmPawVzYa7tWKhmnBdES
