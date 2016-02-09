@@ -191,24 +191,7 @@ public class Sandbox {
     }
 
     @Test
-    public void get_last_logs() {
-        TestSubscriber<LoggregatorMessage> subscriber = new TestSubscriber<>();
-        //TODO this test looks like it works... but actually it does not
-
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getMessage(), is(notNullValue()));
-            log.debug("Message %s", response.getMessage());
-        });
-
-        Publisher<LoggregatorMessage> publisher = loggregatorClient.recent(RecentLogsRequest.builder().applicationId
-                (applicationId).build());
-        publisher.subscribe(subscriber);
-    }
-
-
-    @Test
-    public void recent_publisher() throws Throwable {
+    public void get_last_logs() throws Throwable {
         final AtomicInteger count = new AtomicInteger();
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Throwable> error = new AtomicReference<>(null);
