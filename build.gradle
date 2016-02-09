@@ -45,8 +45,8 @@ dependencies {
     compile "ch.qos.logback:logback-classic:$logbakVersion"
 
     //stream
-    compile "io.projectreactor:reactor-core:$reactorVersion"
-    compile "io.projectreactor:reactor-stream:$reactorVersion"
+    compile "io.projectreactor:reactor-core:$reactorCoreVersion"
+    compile "io.projectreactor:reactor-stream:$reactorStreamVersion"
 
     testCompile "junit:junit:$junitVersion"
     testCompile "org.springframework:spring-test:$springTestVersion"

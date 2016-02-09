@@ -14,7 +14,6 @@ package org.cloudfoundry.integrationclient;/*
  * limitations under the License.
  */
 
-
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.LoggregatorClient;
@@ -22,18 +21,10 @@ import org.cloudfoundry.client.loggregator.LoggregatorMessage;
 import org.cloudfoundry.client.loggregator.RecentLogsRequest;
 import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
 import org.cloudfoundry.client.spring.SpringLoggregatorClient;
-import org.cloudfoundry.client.v2.applications.GetApplicationRequest;
-import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
-import org.cloudfoundry.client.v2.applications.ListApplicationsResponse;
-import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
-import org.cloudfoundry.client.v2.applications.UpdateApplicationResponse;
+import org.cloudfoundry.client.v2.applications.*;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
-import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
-import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingResponse;
-import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
-import org.cloudfoundry.client.v2.servicebindings.ListServiceBindingsRequest;
-import org.cloudfoundry.client.v2.servicebindings.ListServiceBindingsResponse;
+import org.cloudfoundry.client.v2.servicebindings.*;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.utils.test.TestSubscriber;
@@ -41,19 +32,24 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import reactor.Mono;
+import reactor.core.publisher.Mono;
 
+import java.util.Date;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -105,12 +101,11 @@ public class Sandbox {
         }
     }
 
-
     @Test
     public void get_application_poll() {
         log.debug("get_application_get");
         Mono<GetApplicationResponse> publisher = this.client
-                .applicationsV2().get(GetApplicationRequest.builder().id(applicationId).build());
+                .applicationsV2().get(GetApplicationRequest.builder().applicationId(applicationId).build());
         //wait for 30s by default
         GetApplicationResponse response = publisher.get();
         assertThat(response, is(notNullValue()));
@@ -118,7 +113,6 @@ public class Sandbox {
         assertThat(response.getEntity(), is(notNullValue()));
         assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
         log.debug("get_application_get - {} found", response.getEntity().getName());
-
 
     }
 
@@ -135,7 +129,7 @@ public class Sandbox {
             log.debug("get_application_subscribe - {} found", response.getEntity().getName());
         });
         Mono<GetApplicationResponse> publisher = this.client
-                .applicationsV2().get(GetApplicationRequest.builder().id(applicationId).build());
+                .applicationsV2().get(GetApplicationRequest.builder().applicationId(applicationId).build());
         publisher.subscribe(subscriber);
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
 
@@ -154,7 +148,7 @@ public class Sandbox {
             log.debug("test_stop - end");
         });
         Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
-                (UpdateApplicationRequest.builder().id(applicationId).state("STOPPED").build());
+                (UpdateApplicationRequest.builder().applicationId(applicationId).state("STOPPED").build());
         publisherStart.subscribe(subscriber);
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
     }
@@ -172,7 +166,7 @@ public class Sandbox {
             log.debug("test_stop - end");
         });
         Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
-                (UpdateApplicationRequest.builder().id(applicationId).state("STARTED").build());
+                (UpdateApplicationRequest.builder().applicationId(applicationId).state("STARTED").build());
         publisherStart.subscribe(subscriber);
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
     }
@@ -199,20 +193,67 @@ public class Sandbox {
     @Test
     public void get_last_logs() {
         TestSubscriber<LoggregatorMessage> subscriber = new TestSubscriber<>();
+        //TODO this test looks like it works... but actually it does not
+
         subscriber.assertThat(response -> {
             assertThat(response, is(notNullValue()));
             assertThat(response.getMessage(), is(notNullValue()));
-            log.debug("Message %s",response.getMessage());
+            log.debug("Message %s", response.getMessage());
         });
 
-        Publisher<LoggregatorMessage> publisher = loggregatorClient.recent(RecentLogsRequest.builder().id
+        Publisher<LoggregatorMessage> publisher = loggregatorClient.recent(RecentLogsRequest.builder().applicationId
                 (applicationId).build());
         publisher.subscribe(subscriber);
     }
 
+
+    @Test
+    public void recent_publisher() throws Throwable {
+        final AtomicInteger count = new AtomicInteger();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<Throwable> error = new AtomicReference<>(null);
+        final AtomicLong newestTimestamp = new AtomicLong();
+        Subscriber<LoggregatorMessage> subscriber = new Subscriber<LoggregatorMessage>() {
+            @Override
+            public void onComplete() {
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                error.set(t);
+                latch.countDown();
+            }
+
+            @Override
+            public void onNext(LoggregatorMessage message) {
+                long messageTimestamp = message.getTimestamp().getTime();
+                if (newestTimestamp.get() < messageTimestamp) {
+                    newestTimestamp.set(messageTimestamp);
+                }
+                count.incrementAndGet();
+            }
+
+            @Override
+            public void onSubscribe(Subscription s) {
+                s.request(Long.MAX_VALUE);
+            }
+        };
+        Publisher<LoggregatorMessage> publisher = loggregatorClient.recent(RecentLogsRequest.builder()
+                .applicationId(applicationId)
+                .build());
+        publisher.subscribe(subscriber);
+        if (!latch.await(10, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Subscriber timed out");
+        } else if (error.get() != null) {
+            throw error.get();
+        } else {
+            log.error("Last timestamp=%{} - got {} message", new Date(newestTimestamp.get()), count.get());
+        }
+    }
+
     @Test
     public void get_last_events() throws InterruptedException {
-        //throw new RuntimeException("Not yet implemented");
         TestSubscriber<ListEventsResponse> subscriber = new TestSubscriber<>();
         subscriber.assertThat(response -> {
             assertThat(response, is(notNullValue()));
@@ -236,19 +277,18 @@ public class Sandbox {
             assertThat(response.getMetadata().getId(), is(equalTo(serviceInstanceId)));
         });
         Mono<GetServiceInstanceResponse> publisher = this.client.serviceInstances()
-                .get(GetServiceInstanceRequest.builder().id(serviceInstanceId).build());
+                .get(GetServiceInstanceRequest.builder().serviceInstanceId(serviceInstanceId).build());
         publisher.subscribe(subscriber);
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-
     }
 
     @Test
     public void test_bind_unbind_application() {
         Mono<CreateServiceBindingResponse> publisherBinding = client.serviceBindings().create
                 (CreateServiceBindingRequest
-                .builder()
-                .applicationId(applicationId)
-                .serviceInstanceId(serviceInstanceId).build());
+                        .builder()
+                        .applicationId(applicationId)
+                        .serviceInstanceId(serviceInstanceId).build());
         CreateServiceBindingResponse responseBinding = publisherBinding.get();
         assertThat(responseBinding, is(notNullValue()));
         assertThat(responseBinding.getMetadata(), is(notNullValue()));
@@ -256,7 +296,7 @@ public class Sandbox {
         assertThat(responseBinding.getEntity().getApplicationId(), is(equalTo(applicationId)));
         assertThat(responseBinding.getEntity().getServiceInstanceId(), is(equalTo(serviceInstanceId)));
 
-        Mono<Void> response = client.serviceBindings().delete(DeleteServiceBindingRequest.builder().id
+        Mono<Void> response = client.serviceBindings().delete(DeleteServiceBindingRequest.builder().serviceBindingId
                 (responseBinding.getMetadata().getId()).build());
         //will block until response ?
         response.get();
@@ -280,6 +320,5 @@ public class Sandbox {
             return new PropertySourcesPlaceholderConfigurer();
         }
     }
-
 
 }
