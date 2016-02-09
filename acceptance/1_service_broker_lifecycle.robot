@@ -10,22 +10,30 @@ Force Tags      Service broker
     [Documentation]     Clean service bindings and instance if exist
     Clean all service data
 
-1) create service
+1) create service broker
+    [Documentation]     Create a service broker
+    Create service broker
+
+2) create service instance
     [Documentation]     Create a service instance
     Create service instance
 
-
-2) bind
+3) bind
     [Documentation]    Bind ${TESTED_APP_NAME} to base service instance
     Bind application
 
-3) unbind
+4) unbind
     [Documentation]     Unbind application
     Unbind application
 
-4) delete service
+5) delete service instance
     [Documentation]     Delete service instance
     Delete service instance
     ${maxToWait}=      Evaluate  2*${DEFAULT_INACTIVITY_IN_S}
     Wait Until Keyword Succeeds     ${maxToWait}  3s  Should not be known by service
+
+6) delete service broker
+    [Documentation]     Delete service broker
+    Delete service broker
+
 

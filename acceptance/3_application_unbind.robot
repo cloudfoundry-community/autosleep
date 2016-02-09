@@ -2,7 +2,7 @@
 Resource        Keywords.robot
 Documentation   Test if application unbinded is not stopped
 Force Tags      Service broker
-Test Teardown   Run Keywords  Delete service instance
+Test Teardown   Run Keywords  Clean all service data
 
 *** Variables ***
 ${INACTIVITY_IN_S}  30
@@ -15,6 +15,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
     [Documentation]     Check that app are still started ${DEFAULT_INACTIVITY} after their last http activity
 
 	Clean all service data
+	Create service broker
 	Create service instance      ${INSTANCE_PARAMETERS}
 
 	Stop application

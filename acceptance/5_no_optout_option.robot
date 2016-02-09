@@ -2,7 +2,7 @@
 Resource        Keywords.robot
 Documentation   Test no-optout option, and secret parameter
 Force Tags      Service broker
-Test Setup      Run Keywords  Clean all service data
+Test Setup      Run Keywords  Clean all service data  Create service broker
 Test Teardown   Run Keywords  Clean all service data
 
 *** Variables ***
