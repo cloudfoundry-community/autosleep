@@ -48,6 +48,9 @@ dependencies {
     compile "io.projectreactor:reactor-core:$reactorCoreVersion"
     compile "io.projectreactor:reactor-stream:$reactorStreamVersion"
 
+    //protobuf
+    compile "com.google.protobuf:protobuf-java:$protobufVersion"
+
     testCompile "junit:junit:$junitVersion"
     testCompile "org.springframework:spring-test:$springTestVersion"
 
