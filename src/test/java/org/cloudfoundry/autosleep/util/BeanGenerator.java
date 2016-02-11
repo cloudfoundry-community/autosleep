@@ -4,7 +4,6 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
-import org.cloudfoundry.client.lib.domain.CloudApplication;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -14,40 +13,15 @@ import java.util.stream.Collectors;
 public class BeanGenerator {
 
     public static final UUID ORG_TEST = UUID.randomUUID();
-    public static final UUID SPACE_TEST = UUID.randomUUID();
-    public static final UUID SERVICE_DEFINITION_ID = UUID.randomUUID();
+
     public static final UUID PLAN_ID = UUID.randomUUID();
 
+    public static final UUID SERVICE_DEFINITION_ID = UUID.randomUUID();
 
-    public static SpaceEnrollerConfig createServiceInstance() {
-        return createServiceInstance(UUID.randomUUID().toString());
-    }
+    public static final UUID SPACE_TEST = UUID.randomUUID();
 
-    public static SpaceEnrollerConfig createServiceInstance(String serviceId) {
-        return SpaceEnrollerConfig.builder()
-                .serviceDefinitionId(SERVICE_DEFINITION_ID.toString())
-                .planId(PLAN_ID.toString())
-                .organizationId(ORG_TEST.toString())
-                .spaceId(SPACE_TEST.toString())
-                .id(serviceId).build();
-    }
-
-    public static ApplicationBinding createBinding(String serviceId, String bindingId, String appId) {
-        if (serviceId == null) {
-            serviceId = UUID.randomUUID().toString();
-        }
-        if (bindingId == null) {
-            bindingId = UUID.randomUUID().toString();
-        }
-        if (appId == null) {
-            appId = UUID.randomUUID().toString();
-        }
-        return ApplicationBinding.builder().serviceBindingId(bindingId)
-                .serviceInstanceId(serviceId).applicationId(appId).build();
-    }
-
-    public static ApplicationBinding createBinding() {
-        return createBinding(null, null, null);
+    public static ApplicationIdentity createAppIdentity(String appUuid) {
+        return new ApplicationIdentity(appUuid, appUuid + "-name");
     }
 
     public static ApplicationInfo createAppInfo() {
@@ -69,13 +43,12 @@ public class BeanGenerator {
         return applicationInfo;
     }
 
-    public static ApplicationInfo createAppInfoWithDiagnostic(String appUuid, String name, CloudApplication.AppState
-            state) {
+    public static ApplicationInfo createAppInfoWithDiagnostic(String appUuid, String name, String state) {
         return createAppInfoWithDiagnostic(appUuid, name, state, null, null);
     }
 
-    public static ApplicationInfo createAppInfoWithDiagnostic(String appUuid, String name, CloudApplication.AppState
-            state, Instant lastLogDate, Instant lastEventDate) {
+    public static ApplicationInfo createAppInfoWithDiagnostic(String appUuid, String name, String state, Instant
+            lastLogDate, Instant lastEventDate) {
         ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
         applicationInfo.updateDiagnosticInfo(state,
                 createAppLog(lastLogDate),
@@ -96,6 +69,24 @@ public class BeanGenerator {
         return createAppLog(null);
     }
 
+    public static ApplicationBinding createBinding(String serviceId, String bindingId, String appId) {
+        if (serviceId == null) {
+            serviceId = UUID.randomUUID().toString();
+        }
+        if (bindingId == null) {
+            bindingId = UUID.randomUUID().toString();
+        }
+        if (appId == null) {
+            appId = UUID.randomUUID().toString();
+        }
+        return ApplicationBinding.builder().serviceBindingId(bindingId)
+                .serviceInstanceId(serviceId).applicationId(appId).build();
+    }
+
+    public static ApplicationBinding createBinding() {
+        return createBinding(null, null, null);
+    }
+
     public static ApplicationInfo.DiagnosticInfo.ApplicationEvent createCloudEvent(Instant instant) {
         ApplicationInfo.DiagnosticInfo.ApplicationEvent event =
                 new ApplicationInfo.DiagnosticInfo.ApplicationEvent("fakeEvent");
@@ -107,10 +98,18 @@ public class BeanGenerator {
         return createCloudEvent(null);
     }
 
-    public static ApplicationIdentity createAppIdentity(String appUuid) {
-        return new ApplicationIdentity(appUuid, appUuid + "-name");
+    public static SpaceEnrollerConfig createServiceInstance() {
+        return createServiceInstance(UUID.randomUUID().toString());
     }
 
+    public static SpaceEnrollerConfig createServiceInstance(String serviceId) {
+        return SpaceEnrollerConfig.builder()
+                .serviceDefinitionId(SERVICE_DEFINITION_ID.toString())
+                .planId(PLAN_ID.toString())
+                .organizationId(ORG_TEST.toString())
+                .spaceId(SPACE_TEST.toString())
+                .id(serviceId).build();
+    }
 
     public static String getSampleVcapApplication(UUID applicationId, String applicationName, String... uris) {
         return "{\"limits\":{\"mem\":1024,\"disk\":1024,\"fds\":16384},"

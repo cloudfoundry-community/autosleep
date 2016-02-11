@@ -2,20 +2,19 @@ package org.cloudfoundry.autosleep.worker;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
+import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.time.Duration;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -65,7 +64,7 @@ public class WorkerManager implements WorkerManagerService {
         ApplicationStopper checker = ApplicationStopper.builder()
                 .clock(clock)
                 .period(interval)
-                .appUid(UUID.fromString(applicationId))
+                .appUid(applicationId)
                 .cloudFoundryApi(cloudFoundryApi)
                 .spaceEnrollerConfigId(config.getId())
                 .taskId(config.getId() + "-" + applicationId)

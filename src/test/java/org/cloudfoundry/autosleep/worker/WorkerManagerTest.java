@@ -106,7 +106,7 @@ public class WorkerManagerTest {
                 .collect(Collectors.toList());
         when(mockServiceRepo.findAll()).thenReturn(fakeServices);
 
-        when(cloudFoundryApi.listApplications(any(UUID.class), any(Pattern.class)))
+        when(cloudFoundryApi.listApplications(any(String.class), any(Pattern.class)))
                 .thenReturn(remoteApplications.stream()
                         .map(id -> new ApplicationIdentity(id.toString(), id.toString()))
                         .collect(Collectors.toList()));

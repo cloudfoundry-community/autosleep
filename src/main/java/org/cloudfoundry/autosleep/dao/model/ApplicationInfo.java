@@ -4,14 +4,22 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
-import org.cloudfoundry.client.lib.domain.CloudApplication;
-import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.time.Instant;
 import java.util.HashMap;
 
@@ -37,7 +45,7 @@ public class ApplicationInfo {
         private ApplicationLog lastLog;
 
         @JsonSerialize
-        private CloudApplication.AppState appState;
+        private String appState;
 
         @JsonSerialize(using = InstantSerializer.class)
         @JsonDeserialize(using = InstantDeserializer.class)
@@ -197,7 +205,7 @@ public class ApplicationInfo {
         this.uuid = uuid;
     }
 
-    public void updateDiagnosticInfo(AppState state, DiagnosticInfo.ApplicationLog lastLog, DiagnosticInfo
+    public void updateDiagnosticInfo(String state, DiagnosticInfo.ApplicationLog lastLog, DiagnosticInfo
             .ApplicationEvent lastEvent, String name) {
         this.diagnosticInfo.appState = state;
         this.diagnosticInfo.lastLog = lastLog;
@@ -217,7 +225,7 @@ public class ApplicationInfo {
     }
 
     public void markAsPutToSleep() {
-        this.diagnosticInfo.appState = AppState.STOPPED;
+        this.diagnosticInfo.appState = CloudFoundryAppState.STOPPED;
         DiagnosticInfo.ApplicationEvent applicationEvent = new DiagnosticInfo.ApplicationEvent("Autosleep-stop");
         applicationEvent.setActor("autosleep");
         applicationEvent.setTimestamp(Instant.now());

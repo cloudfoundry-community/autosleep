@@ -3,6 +3,7 @@ package org.cloudfoundry.autosleep.ui.web.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
@@ -12,7 +13,6 @@ import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository
 import org.cloudfoundry.autosleep.ui.web.model.ServerResponse;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
-import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.Plan;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
@@ -171,7 +171,7 @@ public class ApiControllerTest {
     public void testListApplications() throws Exception {
 
         ApplicationInfo applicationInfo = BeanGenerator.createAppInfoWithDiagnostic(applicationId, "applicationName",
-                AppState.STARTED);
+                CloudFoundryAppState.STARTED);
 
         applicationInfo.getEnrollmentState().addEnrollmentState("serviceId");
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
@@ -209,7 +209,7 @@ public class ApiControllerTest {
     public void testListApplicationById() throws Exception {
         String serviceId = "serviceIdListById";
         ApplicationInfo applicationInfo = BeanGenerator.createAppInfoWithDiagnostic(applicationId.toString(),
-                "appName", AppState.STARTED);
+                "appName", CloudFoundryAppState.STARTED);
         applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
