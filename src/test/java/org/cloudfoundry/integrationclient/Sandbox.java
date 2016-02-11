@@ -16,11 +16,10 @@ package org.cloudfoundry.integrationclient;/*
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.LoggregatorClient;
-import org.cloudfoundry.client.loggregator.LoggregatorMessage;
-import org.cloudfoundry.client.loggregator.RecentLogsRequest;
+import org.cloudfoundry.client.logging.LogMessage;
+import org.cloudfoundry.client.logging.RecentLogsRequest;
 import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
-import org.cloudfoundry.client.spring.SpringLoggregatorClient;
+import org.cloudfoundry.client.spring.SpringLoggingClient;
 import org.cloudfoundry.client.v2.applications.*;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
@@ -42,6 +41,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -83,7 +83,7 @@ public class Sandbox {
 
     private CloudFoundryClient client;
 
-    private LoggregatorClient loggregatorClient;
+    private SpringLoggingClient loggregatorClient;
 
     @Before
     public void buildClient() {
@@ -96,7 +96,7 @@ public class Sandbox {
                     .skipSslValidation(skipVerification)
                     .username(cfUsername)
                     .password(cfPassword).build();
-            loggregatorClient = SpringLoggregatorClient.builder().cloudFoundryClient(client).build();
+            loggregatorClient = SpringLoggingClient.builder().cloudFoundryClient(client).build();
             this.client = client;
         }
     }
@@ -112,7 +112,9 @@ public class Sandbox {
         assertThat(response.getMetadata(), is(notNullValue()));
         assertThat(response.getEntity(), is(notNullValue()));
         assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
-        log.debug("get_application_get - {} found", response.getEntity().getName());
+        assertThat(response.getEntity().getState(), is(notNullValue()));
+
+        log.debug("get_application_get - {} found (state = {})", response.getEntity().getName(),response.getEntity().getState());
 
     }
 
@@ -173,6 +175,7 @@ public class Sandbox {
 
     @Test
     public void test_list_by_space() throws InterruptedException {
+
         TestSubscriber<ListApplicationsResponse> subscriber = new TestSubscriber<>();
         subscriber.assertThat(response -> {
             assertThat(response, is(notNullValue()));
@@ -188,15 +191,17 @@ public class Sandbox {
                         .spaceId(spaceId).build());
         publisher.subscribe(subscriber);
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+
     }
 
     @Test
     public void get_last_logs() throws Throwable {
+
         final AtomicInteger count = new AtomicInteger();
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Throwable> error = new AtomicReference<>(null);
         final AtomicLong newestTimestamp = new AtomicLong();
-        Subscriber<LoggregatorMessage> subscriber = new Subscriber<LoggregatorMessage>() {
+        Subscriber<LogMessage> subscriber = new Subscriber<LogMessage>() {
             @Override
             public void onComplete() {
                 latch.countDown();
@@ -209,7 +214,7 @@ public class Sandbox {
             }
 
             @Override
-            public void onNext(LoggregatorMessage message) {
+            public void onNext(LogMessage message) {
                 long messageTimestamp = message.getTimestamp().getTime();
                 if (newestTimestamp.get() < messageTimestamp) {
                     newestTimestamp.set(messageTimestamp);
@@ -222,7 +227,7 @@ public class Sandbox {
                 s.request(Long.MAX_VALUE);
             }
         };
-        Publisher<LoggregatorMessage> publisher = loggregatorClient.recent(RecentLogsRequest.builder()
+        Publisher<LogMessage> publisher = loggregatorClient.recent(RecentLogsRequest.builder()
                 .applicationId(applicationId)
                 .build());
         publisher.subscribe(subscriber);
@@ -242,8 +247,10 @@ public class Sandbox {
             assertThat(response, is(notNullValue()));
             assertThat(response.getResources(), is(notNullValue()));
             response.getResources().stream()
-                    .map(eventResource -> eventResource.getEntity().getType())
+                    .map(eventResource -> eventResource.getEntity().getTimestamp())
                     .forEach(log::debug);
+            Instant time  = Instant.parse(response.getResources().get(response.getResources().size()-1).getEntity().getTimestamp());
+            log.debug("This is my timestamp {}",time);
         });
 
         Mono<ListEventsResponse> publisher = this.client
@@ -295,6 +302,8 @@ public class Sandbox {
         assertThat(listBinding.getResources().size(), is(equalTo(0)));
 
     }
+
+
 
     @PropertySource("classpath:test.properties")
     public static class SandboxConfiguration {
