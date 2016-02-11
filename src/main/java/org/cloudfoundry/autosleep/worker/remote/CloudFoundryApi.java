@@ -56,7 +56,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         try {
             CloudApplication app = getApplication(applicationUuid);
             if (app.getState() != AppState.STOPPED) {
-                client.stopApplication(app.getName());
+                client.stopApplication(applicationUuid);
             }
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
@@ -69,7 +69,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             CloudApplication app = getApplication(applicationUuid);
             if (app.getState() != AppState.STARTED) {
                 log.info("Starting app {} - {}", applicationUuid, app.getName());
-                client.startApplication(app.getName());
+                client.startApplication(applicationUuid);
             } else {
                 log.debug("App {} already started", app.getName());
             }
@@ -114,8 +114,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     public void bindServiceInstance(List<ApplicationIdentity> applications, String serviceInstanceId)
             throws EntityNotFoundException, CloudFoundryException {
         CloudService service = getService(serviceInstanceId);
-        log.debug("service {} - {} found", service.getMeta().getGuid(),
-                service.getName());
+        log.debug("service {} - {} found", service.getMeta().getGuid(), service.getName());
         for (ApplicationIdentity application : applications) {
             bindServiceInstanceToApplication(application, service);
         }
@@ -127,7 +126,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         try {
             log.debug("binding app {} - {} to service {}", application.getGuid(), application.getName(),
                     cloudService.getName());
-            client.bindService(application.getName(), cloudService.getName());
+            client.bindService(UUID.fromString(application.getGuid()), cloudService.getMeta().getGuid());
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }

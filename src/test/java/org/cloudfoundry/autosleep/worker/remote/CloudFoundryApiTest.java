@@ -161,7 +161,7 @@ public class CloudFoundryApiTest {
         //given application is found
         when(cloudFoundryClient.getApplication(appStartedUuid)).thenReturn(sampleApplicationStarted);
         //and stop throws an error
-        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).stopApplication(any(String.class));
+        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).stopApplication(any(UUID.class));
         //when stop or start is invoked then proper error is thrown
         verifyThrown(() -> cloudFoundryApi.stopApplication(appStartedUuid), CloudFoundryException.class);
     }
@@ -171,7 +171,7 @@ public class CloudFoundryApiTest {
         //given application is found
         when(cloudFoundryClient.getApplication(appStoppedUuid)).thenReturn(sampleApplicationStopped);
         //and stop throws an error
-        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).startApplication(any(String.class));
+        doThrow(new RuntimeException("call failed")).when(cloudFoundryClient).startApplication(any(UUID.class));
         //when stop or start is invoked then proper error is thrown
         verifyThrown(() -> cloudFoundryApi.startApplication(appStoppedUuid), CloudFoundryException.class);
     }
@@ -216,7 +216,7 @@ public class CloudFoundryApiTest {
         //then client got application
         verify(cloudFoundryClient, times(1)).getApplication(appStartedUuid);
         //and did asked for stop
-        verify(cloudFoundryClient, times(1)).stopApplication(sampleApplicationStarted.getName());
+        verify(cloudFoundryClient, times(1)).stopApplication(sampleApplicationStarted.getMeta().getGuid());
     }
 
 
@@ -229,7 +229,7 @@ public class CloudFoundryApiTest {
         //then client got application
         verify(cloudFoundryClient, times(1)).getApplication(appStoppedUuid);
         //and did asked for start
-        verify(cloudFoundryClient, times(1)).startApplication(sampleApplicationStopped.getName());
+        verify(cloudFoundryClient, times(1)).startApplication(sampleApplicationStopped.getMeta().getGuid());
     }
 
     @Test
@@ -342,7 +342,8 @@ public class CloudFoundryApiTest {
         //given get service returns a service
         only_one_remote_service(serviceInstanceUuid);
         //and bind service fails with a runtime error
-        doThrow(new RuntimeException("runtime failed")).when(cloudFoundryClient).bindService(anyString(), anyString());
+        doThrow(new RuntimeException("runtime failed")).when(cloudFoundryClient).bindService(any(UUID.class),
+                any(UUID.class));
         //when bind application (single or list) is invoked, proper error is thrown
         ApplicationIdentity sampleIdentity = BeanGenerator.createAppIdentity(appStartedUuid.toString());
         verifyThrown(() -> cloudFoundryApi.bindServiceInstance(sampleIdentity, serviceInstanceUuid.toString()),
@@ -386,7 +387,7 @@ public class CloudFoundryApiTest {
         cloudFoundryApi.bindServiceInstance(applications, serviceInstanceUuid.toString());
         //then bind service is invoked on each application
         verify(cloudFoundryClient, times(1 + applications.size()))
-                .bindService(any(String.class), eq(service.getName()));
+                .bindService(any(UUID.class), eq(service.getMeta().getGuid()));
 
 
     }

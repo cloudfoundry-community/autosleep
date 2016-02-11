@@ -79,8 +79,19 @@ dependencies {
     //API Service broker
     //compile("org.cloudfoundry:spring-boot-cf-service-broker:$cfServiceBrokerVersion")
     compile("com.github.cloudfoundry-community:spring-boot-cf-service-broker:$cfServiceBrokerCommitId")
+
+
     //Client library
-    compile "org.cloudfoundry:cloudfoundry-client-lib:$cfClientLibVersion"
+   //TEMPORARY WORKAROUND (waiting for client v2)
+    compile files('libs/cloudfoundry-client-lib-1.1.4.BUILD-SNAPSHOT.jar')
+    compile("org.springframework.security.oauth:spring-security-oauth2:2.0.4.RELEASE")
+    compile("org.apache.httpcomponents:httpclient:4.3.6")
+    compile("commons-io:commons-io:2.1")
+    compile("com.esotericsoftware.yamlbeans:yamlbeans:1.06")
+    compile("com.google.protobuf:protobuf-java:2.6.1")
+    //compile "org.cloudfoundry:cloudfoundry-client-lib:$cfClientLibVersion"
+
+
     //Logs
     compile "org.slf4j:slf4j-api:$slf4jVersion"
     compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
