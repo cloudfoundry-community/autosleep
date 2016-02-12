@@ -1,5 +1,6 @@
 package org.cloudfoundry.autosleep.worker.remote;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
@@ -43,7 +44,8 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     @Autowired
     private SpringCloudFoundryClient cfClient;
 
-    private SpringLoggingClient loggregatorClient;
+    @Autowired
+    private SpringLoggingClient logClient;
 
     @Override
     public void bindServiceInstance(ApplicationIdentity application, String serviceInstanceId) throws
@@ -71,14 +73,19 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         }
     }
 
-    private ApplicationInfo.DiagnosticInfo.ApplicationEvent buildAppEvent(EventEntity cfEvent) {
-        ApplicationInfo.DiagnosticInfo.ApplicationEvent applicationEvent =
-                new ApplicationInfo.DiagnosticInfo.ApplicationEvent(cfEvent.getType());
-        applicationEvent.setActor(cfEvent.getActor());
-        applicationEvent.setActee(cfEvent.getActee());
-        applicationEvent.setTimestamp(Instant.parse(cfEvent.getTimestamp()));
-        applicationEvent.setType(cfEvent.getType());
-        return applicationEvent;
+    private ApplicationInfo.DiagnosticInfo.ApplicationEvent buildAppEvent(EventResource event) {
+        if (event == null) {
+            return null;
+        } else {
+            EventEntity cfEvent = event.getEntity();
+            ApplicationInfo.DiagnosticInfo.ApplicationEvent applicationEvent =
+                    new ApplicationInfo.DiagnosticInfo.ApplicationEvent(cfEvent.getType());
+            applicationEvent.setActor(cfEvent.getActor());
+            applicationEvent.setActee(cfEvent.getActee());
+            applicationEvent.setTimestamp(Instant.parse(cfEvent.getTimestamp()));
+            applicationEvent.setType(cfEvent.getType());
+            return applicationEvent;
+        }
     }
 
     private ApplicationInfo.DiagnosticInfo.ApplicationLog buildAppLog(LogMessage cfLog) {
@@ -91,16 +98,16 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     }
 
     private void changeApplicationState(String applicationUuid, String targetState) throws CloudFoundryException {
-        log.debug("changeApplicationState to {}",targetState);
+        log.debug("changeApplicationState to {}", targetState);
         try {
             Mono<GetApplicationResponse> publisher = this.cfClient
                     .applicationsV2().get(GetApplicationRequest.builder().applicationId(applicationUuid).build());
-            GetApplicationResponse response = publisher.get(Config.CF_API_TIMEOUT_IN_S,TimeUnit.SECONDS);
+            GetApplicationResponse response = publisher.get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
 
             if (!targetState.equals(response.getEntity().getState())) {
                 cfClient.applicationsV2().update(
                         UpdateApplicationRequest.builder().applicationId(applicationUuid)
-                                .state(targetState).build()).get(Config.CF_API_TIMEOUT_IN_S,TimeUnit.SECONDS);
+                                .state(targetState).build()).get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
             } else {
                 log.warn("application {} already in state {}, nothing to do", applicationUuid, targetState);
             }
@@ -112,97 +119,84 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     @Override
     public ApplicationActivity getApplicationActivity(String appUid) throws CloudFoundryException {
         log.debug("Getting applicationActivity {}", appUid);
-        try {
-            ApplicationEntity app = this.cfClient.applicationsV2().get(GetApplicationRequest.builder()
-                    .applicationId(appUid).build()).get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS).getEntity();
-            log.debug("Getting application info for app {}", app.getName());
-            log.debug("Building ApplicationInfo(state) {}", app.getState());
 
-            // get most recent app event
-            Mono<ListEventsResponse> listEventsResponse = this.cfClient.events().list(
-                    ListEventsRequest.builder()
-                            .actee(appUid).build());
-            List<EventResource> events = listEventsResponse.get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS)
-                    .getResources();
+       /* if (logClient == null) {
+            logClient = SpringLoggingClient.builder().cloudFoundryClient(this.cfClient).build();
+        }*/
 
-            //get most recent log
-            if (loggregatorClient == null) {
-                loggregatorClient = SpringLoggingClient.builder().cloudFoundryClient(this.cfClient).build();
-            }
-
-            Publisher<LogMessage> logPublisher = loggregatorClient.recent(RecentLogsRequest.builder()
-                    .applicationId(appUid)
-                    .build());
-
-            LogMessage mostRecentMessageLog;
-            try {
-                mostRecentMessageLog = getMostRecentLog(logPublisher);
-            } catch (Throwable throwable) {
-                throw new CloudFoundryException(throwable);
-            }
-
-            return new ApplicationActivity(
-                    new ApplicationIdentity(
-                            appUid,
-                            app.getName()),
-                    app.getState(),
-                    events.size() == 0 ? null : buildAppEvent(events.get(events.size() - 1).getEntity()),
-                    buildAppLog(mostRecentMessageLog));
-        } catch (RuntimeException r) {
-            throw new CloudFoundryException(r);
-        }
-
-    }
-
-    private LogMessage getMostRecentLog(Publisher<LogMessage> publisher) throws
-            CloudFoundryException {
-
-        final CountDownLatch latch = new CountDownLatch(1);
+        //We need to call for appState, lastlogs and lastEvents
+        final CountDownLatch latch = new CountDownLatch(3);
         final AtomicReference<Throwable> error = new AtomicReference<>(null);
-        final AtomicReference<LogMessage> mostRecentMessageLog = new AtomicReference<>(null);
+        final AtomicReference<LogMessage> lastLogReference = new AtomicReference<>(null);
+        final AtomicReference<EventResource> lastEventReference = new AtomicReference<>(null);
+        final AtomicReference<GetApplicationResponse> appReference = new AtomicReference<>(null);
 
-        Subscriber<LogMessage> recentLogFinderSubscriber = new Subscriber<LogMessage>() {
+        Mono<GetApplicationResponse> getAppPublisher =
+                cfClient.applicationsV2().get(GetApplicationRequest.builder().applicationId(appUid).build());
+
+        Subscriber<GetApplicationResponse> getAppSubscriber = new BaseSubscriber<GetApplicationResponse>(latch, error) {
+
+            @Override
+            public void onNext(GetApplicationResponse getApplicationResponse) {
+                appReference.set(getApplicationResponse);
+            }
+
+        };
+
+        Mono<ListEventsResponse> listEventPublisher = this.cfClient.events().list(ListEventsRequest.builder()
+                .actee(appUid).build());
+        Subscriber<ListEventsResponse> listEventSubscriber = new BaseSubscriber<ListEventsResponse>(latch, error) {
+
+            @Override
+            public void onNext(ListEventsResponse listEventsResponse) {
+                lastEventReference.set(listEventsResponse.getResources().get(0));
+            }
+
+        };
+
+        Publisher<LogMessage> lastLogPublisher = logClient.recent(RecentLogsRequest.builder()
+                .applicationId(appUid)
+                .build());
+
+        Subscriber<LogMessage> lastLogSubscriber = new BaseSubscriber<LogMessage>(latch, error) {
 
             Instant mostRecentInstant;
 
             @Override
-            public void onComplete() {
-                latch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                error.set(throwable);
-                latch.countDown();
-            }
-
-            @Override
-            public void onNext(LogMessage message) {
-                Instant msgInstant = message.getTimestamp().toInstant();
+            public void onNext(LogMessage logMessage) {
+                //logs are not ordered, must find the most recent
+                Instant msgInstant = logMessage.getTimestamp().toInstant();
                 if (mostRecentInstant == null || mostRecentInstant.isBefore(msgInstant)) {
                     mostRecentInstant = msgInstant;
-                    mostRecentMessageLog.set(message);
+                    lastLogReference.set(logMessage);
                 }
-            }
-
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                subscription.request(Long.MAX_VALUE);
             }
         };
 
-        publisher.subscribe(recentLogFinderSubscriber);
+        lastLogPublisher.subscribe(lastLogSubscriber);
+        getAppPublisher.subscribe(getAppSubscriber);
+        listEventPublisher.subscribe(listEventSubscriber);
+
         try {
             if (!latch.await(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS)) {
                 throw new IllegalStateException("Subscriber timed out");
             } else if (error.get() != null) {
                 throw new CloudFoundryException(error.get());
             } else {
-                return mostRecentMessageLog.get();
+                ApplicationEntity app = appReference.get().getEntity();
+                return new ApplicationActivity(
+                        new ApplicationIdentity(
+                                appUid,
+                                app.getName()),
+                        app.getState(),
+                        buildAppEvent(lastEventReference.get()),
+                        buildAppLog(lastLogReference.get()));
+
             }
         } catch (InterruptedException e) {
             log.error(e.getMessage());
         }
+
         return null;
     }
 
@@ -243,4 +237,34 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         log.debug("stopApplication");
         changeApplicationState(applicationUuid, CloudFoundryAppState.STOPPED);
     }
+
+    @Getter
+    public abstract class BaseSubscriber<T> implements Subscriber<T> {
+
+        final AtomicReference<Throwable> error;
+
+        final CountDownLatch latch;
+
+        public BaseSubscriber(CountDownLatch latch, AtomicReference<Throwable> error) {
+            this.latch = latch;
+            this.error = error;
+        }
+
+        @Override
+        public void onComplete() {
+            latch.countDown();
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            error.set(throwable);
+            latch.countDown();
+        }
+
+        @Override
+        public void onSubscribe(Subscription subscription) {
+            subscription.request(Long.MAX_VALUE);
+        }
+    }
+
 }

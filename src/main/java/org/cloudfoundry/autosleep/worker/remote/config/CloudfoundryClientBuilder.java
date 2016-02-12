@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
+import org.cloudfoundry.client.spring.SpringLoggingClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -19,20 +20,20 @@ import javax.annotation.PostConstruct;
 @Slf4j
 public class CloudfoundryClientBuilder {
 
+    @Getter(onMethod = @__(@Bean))
+    private SpringCloudFoundryClient cfClient;
+
     @Autowired
     private Environment env;
 
     @Getter(onMethod = @__(@Bean))
-    private SpringCloudFoundryClient cfClient;
-
-   /* @Getter(onMethod = @__(@Bean))
-    private SpringLoggregatorClient loggregatorClient;*/
+    private SpringLoggingClient logClient;
 
     @PostConstruct
     public void initClients() {
         final String targetEndpoint = env.getProperty(Config.EnvKey.CF_ENDPOINT);
         final boolean skipSslValidation = Boolean.parseBoolean(env.getProperty(Config.EnvKey.CF_SKIP_SSL_VALIDATION,
-                        "false"));
+                "false"));
         final String username = env.getProperty(Config.EnvKey.CF_USERNAME);
         final String password = env.getProperty(Config.EnvKey.CF_PASSWORD);
         final String clientId = env.getProperty(Config.EnvKey.CF_CLIENT_ID, "cf");
@@ -50,7 +51,7 @@ public class CloudfoundryClientBuilder {
                     .username(username)
                     .password(password).build();
 
-          //  loggregatorClient = SpringLoggregatorClient.builder().cloudFoundryClient(cfClient).build();
+              logClient = SpringLoggingClient.builder().cloudFoundryClient(cfClient).build();
         } catch (RuntimeException r) {
             log.error("CloudFoundryApi - failure while login", r);
         }
