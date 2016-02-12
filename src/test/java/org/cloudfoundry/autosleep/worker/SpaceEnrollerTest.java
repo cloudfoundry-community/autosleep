@@ -39,9 +39,9 @@ public class SpaceEnrollerTest {
 
     private static final String SERVICE_ID = "serviceId";
 
-    private static final UUID SPACE_ID = UUID.randomUUID();
+    private static final String SPACE_ID = UUID.randomUUID().toString();
 
-    private static final UUID APP_ID = UUID.randomUUID();
+    private static final String APP_ID = UUID.randomUUID().toString();
 
     @Mock
     private Clock clock;
@@ -64,23 +64,25 @@ public class SpaceEnrollerTest {
 
     private SpaceEnroller spaceEnroller;
 
-    private List<UUID> remoteApplicationIds = Arrays.asList(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+    private List<String> remoteApplicationIds = Arrays.asList(UUID.randomUUID().toString(),
+            UUID.randomUUID().toString(),
+            UUID.randomUUID().toString(),
             APP_ID);
 
 
     @Before
     public void buildMocks() throws CloudFoundryException {
         //default
-        when(spaceEnrollerConfig.getSpaceId()).thenReturn(SPACE_ID.toString());
+        when(spaceEnrollerConfig.getSpaceId()).thenReturn(SPACE_ID);
         when(spaceEnrollerConfig.getId()).thenReturn(SERVICE_ID);
         when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenReturn(remoteApplicationIds.stream()
-                        .map(applicationId -> new ApplicationIdentity(applicationId.toString(),
-                                applicationId.toString()))
+                        .map(applicationId -> new ApplicationIdentity(applicationId,
+                                applicationId))
                         .collect(Collectors.toList()));
 
-        when(deployment.getApplicationId()).thenReturn(APP_ID.toString());
+        when(deployment.getApplicationId()).thenReturn(APP_ID);
 
         spaceEnroller = spy(SpaceEnroller.builder()
                 .clock(clock)
@@ -101,8 +103,8 @@ public class SpaceEnrollerTest {
         //it will return every ids
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 //do not return app id
-                .filter(remoteApplicationId -> !remoteApplicationIds.equals(APP_ID))
-                .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId.toString(),
+                .filter(remoteApplicationId -> !remoteApplicationId.equals(APP_ID))
+                .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId,
                         "another_service_id"))
                 .collect(Collectors.toList()));
         spaceEnroller.run();
@@ -111,7 +113,7 @@ public class SpaceEnrollerTest {
         verify(cloudFoundryApi, times(1)).listApplications(eq(SPACE_ID), eq(null));
         //Normally remote app has not be bound
         verify(cloudFoundryApi, times(1))
-                .bindServiceInstance(argThat(anyListOfSize(remoteApplicationIds.size() - 1, ApplicationIdentity.class)),
+                .bindServiceInstance(argThat(anyListOfSize(remoteApplicationIds.size() - 1)),
                         anyString());
 
         Pattern pattern = Pattern.compile(".*");
@@ -128,8 +130,8 @@ public class SpaceEnrollerTest {
         //it will return every ids except final one
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 //do not return app id
-                .filter(remoteApplicationId -> !remoteApplicationIds.equals(APP_ID))
-                .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId.toString(),
+                .filter(remoteApplicationId -> !remoteApplicationId.equals(APP_ID))
+                .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId,
                         SERVICE_ID))
                 .collect(Collectors.toList()));
         spaceEnroller.run();
@@ -156,10 +158,12 @@ public class SpaceEnrollerTest {
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenThrow(new CloudFoundryException(null))
                 .thenReturn(remoteApplicationIds.stream()
-                        .map(applicationId -> new ApplicationIdentity(applicationId.toString(),
-                                applicationId.toString()))
+                        .map(applicationId -> new ApplicationIdentity(applicationId,
+                                applicationId))
                         .collect(Collectors.toList()));
-        doThrow(new EntityNotFoundException(EntityType.service, SERVICE_ID)).when(cloudFoundryApi)
+        doThrow(new CloudFoundryException(
+                        new EntityNotFoundException(EntityType.service, SERVICE_ID)))
+                .when(cloudFoundryApi)
                 .bindServiceInstance(anyListOf(ApplicationIdentity.class), eq(SERVICE_ID));
         //First list call fails
         spaceEnroller.run();
@@ -172,7 +176,7 @@ public class SpaceEnrollerTest {
     }
 
 
-    private <T> ArgumentMatcher<List<T>> anyListOfSize(final int expectedSize, Class<T> objectClass) {
+    private <T> ArgumentMatcher<List<T>> anyListOfSize(final int expectedSize) {
         return new ArgumentMatcher<List<T>>() {
             @Override
             public boolean matches(Object object) {

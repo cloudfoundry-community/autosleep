@@ -2,22 +2,20 @@ package org.cloudfoundry.autosleep.worker;
 
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.worker.scheduling.AbstractPeriodicTask;
-import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
-import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
+import org.cloudfoundry.autosleep.worker.scheduling.AbstractPeriodicTask;
+import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -62,7 +60,7 @@ class SpaceEnroller extends AbstractPeriodicTask {
                 log.debug("{} known applications (already enrolled, or blacklisted)",
                         watchedOrIgnoredApplications.size());
                 List<ApplicationIdentity> applicationIdentities = cloudFoundryApi
-                        .listApplications(UUID.fromString(serviceInstance.getSpaceId()),
+                        .listApplications(serviceInstance.getSpaceId(),
                                 serviceInstance.getExcludeFromAutoEnrollment());
                 List<ApplicationIdentity> newApplications = applicationIdentities.stream()
                         .filter(application ->
@@ -75,8 +73,6 @@ class SpaceEnroller extends AbstractPeriodicTask {
                 } else {
                     log.debug("No new app to bind (all already enrolled or filtered by regexp)");
                 }
-            } catch (EntityNotFoundException n) {
-                log.error("service not found. should not appear cause should not be in repository anymore", n);
             } catch (CloudFoundryException c) {
                 /*a 409 "conflict" error is possible (if someone tries to delete a service at the same time
                 but without consequences

@@ -4,24 +4,20 @@ import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 public interface CloudFoundryApiService {
 
-    ApplicationActivity getApplicationActivity(UUID appUid) throws EntityNotFoundException, CloudFoundryException;
+    void bindServiceInstance(ApplicationIdentity application, String serviceInstanceId) throws CloudFoundryException;
 
+    void bindServiceInstance(List<ApplicationIdentity> application, String serviceInstanceId) throws
+            CloudFoundryException;
 
-    void stopApplication(UUID applicationUuid) throws EntityNotFoundException, CloudFoundryException;
+    ApplicationActivity getApplicationActivity(String appUid) throws CloudFoundryException;
 
-    void startApplication(UUID applicationUuid) throws EntityNotFoundException, CloudFoundryException;
+    List<ApplicationIdentity> listApplications(String spaceUuid, Pattern excludeNames) throws CloudFoundryException;
 
-    List<ApplicationIdentity> listApplications(UUID spaceUuid, Pattern excludeNames)
-            throws CloudFoundryException;
+    void startApplication(String applicationUuid) throws CloudFoundryException;
 
-    void bindServiceInstance(ApplicationIdentity application, String serviceInstanceId)
-            throws EntityNotFoundException, CloudFoundryException;
-
-    void bindServiceInstance(List<ApplicationIdentity> application, String serviceInstanceId)
-            throws EntityNotFoundException, CloudFoundryException;
+    void stopApplication(String applicationUuid) throws CloudFoundryException;
 }

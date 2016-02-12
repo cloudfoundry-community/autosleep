@@ -1,11 +1,11 @@
 package org.cloudfoundry.autosleep.dao.repositories;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.dao.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.util.ApplicationConfiguration;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
-import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,7 +20,9 @@ import java.util.List;
 import java.util.UUID;
 
 import static java.lang.Math.toIntExact;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -44,7 +46,7 @@ public abstract class AppRepositoryTest {
 
     private ApplicationInfo buildAppInfo(String uuid) {
         ApplicationInfo result = BeanGenerator.createAppInfoLinkedToService(uuid, "APTestServiceId");
-        result.updateDiagnosticInfo(AppState.STARTED,
+        result.updateDiagnosticInfo(CloudFoundryAppState.STARTED,
                 BeanGenerator.createAppLog(),
                 BeanGenerator.createCloudEvent(),
                 "appName");

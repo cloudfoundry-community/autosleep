@@ -13,10 +13,9 @@ buildscript {
 repositories {
     mavenLocal()
     jcenter()
-    //Forced to use it for org.cloudfoundry:spring-boot-cf-service-broker,
-    // maven { url "http://repo.spring.io/libs-snapshot" }
     //URL repo to get the desired compiled version
     maven { url "https://jitpack.io" }
+    maven { url 'http://repo.spring.io/libs-snapshot' }
 }
 
 apply plugin: 'java'
@@ -79,8 +78,15 @@ dependencies {
     //API Service broker
     //compile("org.cloudfoundry:spring-boot-cf-service-broker:$cfServiceBrokerVersion")
     compile("com.github.cloudfoundry-community:spring-boot-cf-service-broker:$cfServiceBrokerCommitId")
+
     //Client library
-    compile "org.cloudfoundry:cloudfoundry-client-lib:$cfClientLibVersion"
+    compile("com.github.cloudfoundry:cf-java-client:$cfClientLibCommitId")
+    //reactor
+    compile "io.projectreactor:reactor-core:$reactorCoreVersion"
+    compile "io.projectreactor:reactor-stream:$reactorStreamVersion"
+    //protobuf
+    compile "com.google.protobuf:protobuf-java:$protobufVersion"
+
     //Logs
     compile "org.slf4j:slf4j-api:$slf4jVersion"
     compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"

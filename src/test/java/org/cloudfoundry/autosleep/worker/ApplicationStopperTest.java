@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.worker;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
@@ -12,8 +13,6 @@ import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException.EntityTy
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
-import org.cloudfoundry.client.lib.domain.CloudApplication;
-import org.cloudfoundry.client.lib.domain.CloudApplication.AppState;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,17 +21,24 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.UUID;
 
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationStopperTest {
 
-    private static final UUID APP_UID = UUID.fromString("9AF63B10-9D25-4162-9AD2-5AA8173FFC3B");
+    private static final String APP_UID = "9AF63B10-9D25-4162-9AD2-5AA8173FFC3B";
 
     private static final String APPLICATION_NAME = "applicationName";
 
@@ -73,19 +79,19 @@ public class ApplicationStopperTest {
     public void buildMocks() throws EntityNotFoundException, CloudFoundryException {
         //default
 
-        when(application.getGuid()).thenReturn(APP_UID.toString());
+        when(application.getGuid()).thenReturn(APP_UID);
         when(application.getName()).thenReturn(APPLICATION_NAME);
         when(applicationActivity.getApplication()).thenReturn(application);
 
 
-        applicationInfo = spy(BeanGenerator.createAppInfoWithDiagnostic(APP_UID.toString(), APPLICATION_NAME,
-                AppState.STARTED));
+        applicationInfo = spy(BeanGenerator.createAppInfoWithDiagnostic(APP_UID, APPLICATION_NAME,
+                CloudFoundryAppState.STARTED));
         applicationInfo.getEnrollmentState().addEnrollmentState(INSTANCE_ID);
 
 
         when(cloudFoundryApi.getApplicationActivity(APP_UID)).thenReturn(applicationActivity);
 
-        when(applicationRepository.findOne(APP_UID.toString())).thenReturn(
+        when(applicationRepository.findOne(APP_UID)).thenReturn(
                 applicationInfo
         );
 
@@ -125,7 +131,7 @@ public class ApplicationStopperTest {
     @Test
     public void application_is_not_stopped_when_active() throws Exception {
         //given the application is started and active
-        when(applicationActivity.getState()).thenReturn(AppState.STARTED);
+        when(applicationActivity.getState()).thenReturn(CloudFoundryAppState.STARTED);
         when(applicationActivity.getLastEvent()).thenReturn(BeanGenerator.createCloudEvent());
         when(applicationActivity.getLastLog()).thenReturn(BeanGenerator.createAppLog());
         //when task is run
@@ -146,7 +152,7 @@ public class ApplicationStopperTest {
     @Test
     public void application_is_stopped_when_inactive() throws Exception {
         //given the application is started but not active
-        when(applicationActivity.getState()).thenReturn(AppState.STARTED);
+        when(applicationActivity.getState()).thenReturn(CloudFoundryAppState.STARTED);
         when(applicationActivity.getLastEvent()).thenReturn(BeanGenerator.createCloudEvent(Instant.now().minus(
                 INTERVAL.multipliedBy(2))));
         when(applicationActivity.getLastLog()).thenReturn(BeanGenerator.createAppLog( Instant.now()
@@ -167,7 +173,7 @@ public class ApplicationStopperTest {
     @Test
     public void application_is_not_stopped_if_already_stopped() throws Exception {
         //given the application is stopped
-        when(applicationActivity.getState()).thenReturn(CloudApplication.AppState.STOPPED);
+        when(applicationActivity.getState()).thenReturn(CloudFoundryAppState.STOPPED);
         //when task is run
         spyChecker.run();
         //then it see the application as monitored
@@ -199,7 +205,9 @@ public class ApplicationStopperTest {
     public void task_is_reschedule_even_when_not_found_remotely() throws Exception {
         //given remote application is not found
         when(cloudFoundryApi.getApplicationActivity(APP_UID))
-                .thenThrow(new EntityNotFoundException(EntityType.application, APP_UID.toString()));
+                .thenThrow(
+                        new CloudFoundryException(
+                                new EntityNotFoundException(EntityType.application, APP_UID)));
         //when task is run
         spyChecker.run();
         //then it never stopped application
@@ -251,7 +259,7 @@ public class ApplicationStopperTest {
     @Test
     public void task_is_removed_when_not_found_localy() throws Exception {
         //given application is not found locally
-        when(applicationRepository.findOne(APP_UID.toString()))
+        when(applicationRepository.findOne(APP_UID))
                 .thenReturn(null);
         //when task is run
         spyChecker.run();
