@@ -9,7 +9,7 @@ public interface Config {
 
     Duration DELAY_BEFORE_FIRST_SERVICE_CHECK = Duration.ofSeconds(10);
 
-    int CF_API_TIMEOUT_IN_S = 5;
+    int CF_API_TIMEOUT_IN_S = 8;
 
     interface CloudFoundryAppState {
         String STARTED = "STARTED";

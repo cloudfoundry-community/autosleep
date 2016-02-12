@@ -35,7 +35,7 @@ public class CloudfoundryClientBuilder {
                         "false"));
         final String username = env.getProperty(Config.EnvKey.CF_USERNAME);
         final String password = env.getProperty(Config.EnvKey.CF_PASSWORD);
-        final String clientId = env.getProperty(Config.EnvKey.CF_CLIENT_ID, "");
+        final String clientId = env.getProperty(Config.EnvKey.CF_CLIENT_ID, "cf");
         final String clientSecret = env.getProperty(Config.EnvKey.CF_CLIENT_SECRET, "");
         try {
 
