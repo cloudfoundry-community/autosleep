@@ -9,6 +9,12 @@ jacocoTestReport {
         html.enabled = true
     }
 
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: '**/CloudFoundryApi*')
+        })
+    }
+
     doLast {
         def report = file("${jacoco.reportsDir}/test/jacocoTestReport.xml")
         logger.lifecycle("Checking coverage results: ${report}")
