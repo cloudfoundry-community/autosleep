@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
-import org.cloudfoundry.community.servicebroker.controller.ServiceInstanceController;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
@@ -53,7 +52,7 @@ public class DashboardController {
 
             Map<String, Object> parameters = new HashMap<>();
             ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
-            parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
+            parameters.put("pathServiceInstances", Config.Path.SERVICE_BROKER_SERVICE_CONTROLLER_BASE_PATH);
             parameters.put("serviceDefinitionId", serviceDefinition.getId());
             parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
             parameters.put("serviceInstance", serviceInstanceId);

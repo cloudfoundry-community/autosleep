@@ -21,6 +21,9 @@ public interface Config {
         String SERVICES_SUB_PATH = "/services/";
         String APPLICATIONS_SUB_PATH = "/applications/";
         String DASHBOARD_CONTEXT = "/dashboard";
+        String PROXY_CONTEXT = "/proxy";
+
+        String SERVICE_BROKER_SERVICE_CONTROLLER_BASE_PATH = "/v2/service_instances";
     }
 
 
@@ -57,5 +60,10 @@ public interface Config {
         enum Enrollment {
             standard , forced
         }
+    }
+
+    interface ServiceCatalog {
+        String DEFAULT_SERVICE_BROKER_ID = "autosleep";
+        String DEFAULT_SERVICE_PLAN_ID = "default";
     }
 }

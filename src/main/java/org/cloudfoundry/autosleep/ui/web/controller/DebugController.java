@@ -1,6 +1,7 @@
 package org.cloudfoundry.autosleep.ui.web.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.community.servicebroker.controller.ServiceInstanceController;
 import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
@@ -26,7 +27,7 @@ public class DebugController {
         log.debug("serviceInstances - rendering view");
         Map<String, Object> parameters = new HashMap<>();
         ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
-        parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
+        parameters.put("pathServiceInstances", Config.Path.SERVICE_BROKER_SERVICE_CONTROLLER_BASE_PATH);
         parameters.put("serviceDefinitionId", serviceDefinition.getId());
         parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
         return new ModelAndView("views/admin/debug/instances", parameters);
@@ -37,7 +38,7 @@ public class DebugController {
         log.debug("serviceInstances - rendering view - ", serviceInstanceId);
         Map<String, Object> parameters = new HashMap<>();
         ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
-        parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
+        parameters.put("pathServiceInstances", Config.Path.SERVICE_BROKER_SERVICE_CONTROLLER_BASE_PATH);
         parameters.put("serviceDefinitionId", serviceDefinition.getId());
         parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
         parameters.put("serviceInstance", serviceInstanceId);
@@ -50,7 +51,7 @@ public class DebugController {
         log.debug("applications - rendering view");
         Map<String, Object> parameters = new HashMap<>();
         ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
-        parameters.put("pathServiceInstances", ServiceInstanceController.BASE_PATH);
+        parameters.put("pathServiceInstances", Config.Path.SERVICE_BROKER_SERVICE_CONTROLLER_BASE_PATH);
         parameters.put("serviceDefinitionId", serviceDefinition.getId());
         parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
         return new ModelAndView("views/admin/debug/applications", parameters);

@@ -15,9 +15,13 @@ import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNot
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
+import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceResponse;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceRequest;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
+import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceResponse;
+import org.cloudfoundry.community.servicebroker.model.GetLastServiceOperationRequest;
+import org.cloudfoundry.community.servicebroker.model.GetLastServiceOperationResponse;
 import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
+import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceResponse;
 import org.cloudfoundry.community.servicebroker.service.ServiceInstanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -73,13 +77,16 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     private ParameterReader<String> secretReader;
 
 
+
     @Override
-    public ServiceInstance createServiceInstance(CreateServiceInstanceRequest request) throws
+    public CreateServiceInstanceResponse createServiceInstance(CreateServiceInstanceRequest request) throws
             ServiceInstanceExistsException, ServiceBrokerException {
         String serviceId = request.getServiceInstanceId();
         log.debug("createServiceInstance - {}", serviceId);
         if (spaceEnrollerConfigRepository.exists(serviceId)) {
-            throw new ServiceInstanceExistsException(new ServiceInstance(request));
+            String serviceBrokerId = environment.getProperty(Config.EnvKey.CF_SERVICE_BROKER_ID,
+                    Config.ServiceCatalog.DEFAULT_SERVICE_BROKER_ID);
+            throw new ServiceInstanceExistsException(serviceId, serviceBrokerId);
         } else {
             Map<String, Object> createParameters = Optional.ofNullable(request.getParameters())
                     .orElse(Collections.emptyMap());
@@ -112,30 +119,29 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             // fail retrieving the service
             spaceEnrollerConfigRepository.save(spaceEnrollerConfig);
             workerManager.registerSpaceEnroller(spaceEnrollerConfig);
-            ServiceInstance result = new ServiceInstance(request);
-            if (deployment != null) {
-                result.withDashboardUrl(deployment.getFirstUri() + Config.Path.DASHBOARD_CONTEXT + "/"
-                        + serviceId);
+
+
+            String firstUri = deployment.getFirstUri();
+            if ( firstUri == null ) {
+                firstUri = "local-deployment";
             }
-            return result;
+
+            //TODO check async flag (no javadoc for now)
+            CreateServiceInstanceResponse response = new CreateServiceInstanceResponse(firstUri + Config.Path.DASHBOARD_CONTEXT + "/" + serviceId,false);
+            return response;
         }
     }
 
     @Override
-    public ServiceInstance getServiceInstance(String serviceInstanceId) {
-        log.debug("getServiceInstance - {}", serviceInstanceId);
-        SpaceEnrollerConfig spaceEnrollerConfig = spaceEnrollerConfigRepository.findOne(serviceInstanceId);
-        if (spaceEnrollerConfig == null) {
-            return null;
-        } else {
-            return new ServiceInstance(new CreateServiceInstanceRequest(spaceEnrollerConfig.getServiceDefinitionId(),
-                    spaceEnrollerConfig.getPlanId(), spaceEnrollerConfig.getOrganizationId(),
-                    spaceEnrollerConfig.getSpaceId()).withServiceInstanceId(serviceInstanceId));
-        }
+    public GetLastServiceOperationResponse getLastOperation(GetLastServiceOperationRequest
+                                                                        getLastServiceOperationRequest) {
+        //TODO what are we supposed to return?
+        return null;
     }
 
+
     @Override
-    public ServiceInstance updateServiceInstance(
+    public UpdateServiceInstanceResponse updateServiceInstance(
             UpdateServiceInstanceRequest request) throws
             ServiceInstanceUpdateNotSupportedException, ServiceBrokerException, ServiceInstanceDoesNotExistException {
         String spaceEnrollerConfigId = request.getServiceInstanceId();
@@ -173,13 +179,14 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                         autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced);
                 spaceEnrollerConfigRepository.save(spaceEnrollerConfig);
             }
-            return new ServiceInstance(request);
+            //TODO check async flag
+            return new UpdateServiceInstanceResponse(false);
         }
 
     }
 
     @Override
-    public ServiceInstance deleteServiceInstance(
+    public DeleteServiceInstanceResponse deleteServiceInstance(
             DeleteServiceInstanceRequest request) throws ServiceBrokerException {
         final String spaceEnrollerConfigId = request.getServiceInstanceId();
         log.debug("deleteServiceInstance - {}", spaceEnrollerConfigId);
@@ -204,7 +211,8 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                     }
                 })
         );
-        return new ServiceInstance(request);
+        //TODO check async flag
+        return new DeleteServiceInstanceResponse(false);
     }
 
     private void checkSecuredParameter(String parameterName, String secret) {

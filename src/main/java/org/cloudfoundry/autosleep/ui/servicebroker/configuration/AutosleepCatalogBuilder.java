@@ -14,21 +14,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-
 @Configuration
 public class AutosleepCatalogBuilder {
-
-    private static final String DEFAULT_SERVICE_BROKER_ID = "autosleep";
-
-    private static final String DEFAULT_SERVICE_PLAN_ID = "default";
 
     @Autowired
     private Environment environment;
 
     @Bean
     public Catalog buildCatalog() {
-        String serviceBrokerId = environment.getProperty(Config.EnvKey.CF_SERVICE_BROKER_ID, DEFAULT_SERVICE_BROKER_ID);
-        String servicePlanId = environment.getProperty(Config.EnvKey.CF_SERVICE_PLAN_ID, DEFAULT_SERVICE_PLAN_ID);
+        String serviceBrokerId = environment.getProperty(Config.EnvKey.CF_SERVICE_BROKER_ID, Config.ServiceCatalog
+                .DEFAULT_SERVICE_BROKER_ID);
+        String servicePlanId = environment.getProperty(Config.EnvKey.CF_SERVICE_PLAN_ID, Config.ServiceCatalog
+                .DEFAULT_SERVICE_PLAN_ID);
         return new Catalog(Collections.singletonList(new ServiceDefinition(
                 serviceBrokerId,
                 serviceBrokerId,
@@ -43,7 +40,7 @@ public class AutosleepCatalogBuilder {
                                 true)),
                 Arrays.asList("autosleep", "document"),
                 getServiceDefinitionMetadata(),
-                null,
+                Collections.singletonList("route_forwarding"),
                 null)));
     }
 

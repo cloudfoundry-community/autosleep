@@ -59,7 +59,9 @@ class ApplicationStopper extends AbstractPeriodicTask {
                 log.info("Stopping app [{} / {}], last event: {}, last log: {}",
                         applicationActivity.getApplication().getName(), appUid,
                         applicationActivity.getLastEvent(), applicationActivity.getLastLog());
+                /*TODO ROUTE SERVICE: create route, bind app route to service.*/
                 cloudFoundryApi.stopApplication(appUid);
+
                 applicationInfo.markAsPutToSleep();
             } else {
                 //rescheduled itself

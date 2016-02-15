@@ -120,10 +120,6 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     public ApplicationActivity getApplicationActivity(String appUid) throws CloudFoundryException {
         log.debug("Getting applicationActivity {}", appUid);
 
-       /* if (logClient == null) {
-            logClient = SpringLoggingClient.builder().cloudFoundryClient(this.cfClient).build();
-        }*/
-
         //We need to call for appState, lastlogs and lastEvents
         final CountDownLatch latch = new CountDownLatch(3);
         final AtomicReference<Throwable> error = new AtomicReference<>(null);

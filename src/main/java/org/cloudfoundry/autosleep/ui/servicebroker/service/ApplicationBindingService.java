@@ -13,14 +13,14 @@ import org.cloudfoundry.autosleep.worker.WorkerManagerService;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
+import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingResponse;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
+import org.cloudfoundry.community.servicebroker.model.ServiceBindingResource;
 import org.cloudfoundry.community.servicebroker.service.ServiceInstanceBindingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
-
 
 @Service
 @Slf4j
@@ -43,48 +43,75 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
 
 
     @Override
-    public ServiceInstanceBinding createServiceInstanceBinding(CreateServiceInstanceBindingRequest request) throws
+    public CreateServiceInstanceBindingResponse createServiceInstanceBinding(CreateServiceInstanceBindingRequest request) throws
             ServiceInstanceBindingExistsException, ServiceBrokerException {
-        final String appId = request.getAppGuid();
+
         final String bindingId = request.getBindingId();
         final String configId = request.getServiceInstanceId();
+
         log.debug("createServiceInstanceBinding - {}", bindingId);
         SpaceEnrollerConfig spaceEnrollerConfig = spaceEnrollerConfigRepository.findOne(configId);
 
-        ApplicationBinding binding = ApplicationBinding.builder().serviceInstanceId(configId)
-                .serviceBindingId(bindingId)
-                .applicationId(appId).build();
-        applicationLocker.executeThreadSafe(appId, () -> {
-            ApplicationInfo appInfo = appRepository.findOne(appId);
-            if (appInfo == null) {
-                appInfo = new ApplicationInfo(appId);
-            }
+        String targetAppId = (String) request.getBindResource().get(ServiceBindingResource.BIND_RESOURCE_KEY_APP.toString());
+        String routeId  = (String) request.getBindResource().get(ServiceBindingResource.BIND_RESOURCE_KEY_ROUTE.toString());
+        if (targetAppId != null) {
+            log.debug("creating binding {} for app {}", bindingId, targetAppId);
+            ApplicationBinding binding = ApplicationBinding.builder().serviceInstanceId(configId)
+                    .serviceBindingId(bindingId)
+                    .applicationId(targetAppId).build();
+            applicationLocker.executeThreadSafe(targetAppId, () -> {
+                ApplicationInfo appInfo = appRepository.findOne(targetAppId);
+                if (appInfo == null) {
+                    appInfo = new ApplicationInfo(targetAppId);
+                }
 
-            appInfo.getEnrollmentState().addEnrollmentState(configId);
+                appInfo.getEnrollmentState().addEnrollmentState(configId);
 
-            //retrieve service to return its params as credentials
+                //retrieve service to return its params as credentials
 
-            bindingRepository.save(binding);
-            appRepository.save(appInfo);
-            workerManager.registerApplicationStopper(spaceEnrollerConfig, appId);
-        });
+                bindingRepository.save(binding);
+                appRepository.save(appInfo);
+                workerManager.registerApplicationStopper(spaceEnrollerConfig, targetAppId);
+            });
+            return new CreateServiceInstanceBindingResponse(Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION,
+                    spaceEnrollerConfig.getIdleDuration().toString()));
+        } else if (routeId != null) {
+            log.debug("creating binding {} for route {}", bindingId, routeId);
+            String proxyRoute="";
+            //TODO ROUTESERVICE get extra parameter appId and appBindingId(else exception)
+            /*TODO check app know :
+            ApplicationInfo applicationInfo = appRepo.findapp()
+            if(applicationInfo == null) {
+                throw new ServiceBrokerException("Only Autosleep is allowed to bind route to itself");
+            }*/
+            //TODO ROUTE SERVICE create proxy route?
+            /*TODO store binding RouteBinding binding = new RouteBinding(bindingId,
+                    configId,
+                    routeId,
+                    appId,
+                    appBindingId, proxyRoute);*/
 
-        return new ServiceInstanceBinding(bindingId, configId,
-                Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION,
-                        spaceEnrollerConfig.getIdleDuration().toString()), null, appId);
+
+            return new CreateServiceInstanceBindingResponse(Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION,
+                    spaceEnrollerConfig.getIdleDuration().toString()), proxyRoute);
+        } else {
+            throw new ServiceBrokerException("Unknown bind ressource");
+        }
+
     }
 
     @Override
-    public ServiceInstanceBinding deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest request)
+    public void deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest request)
             throws ServiceBrokerException {
         final String bindingId = request.getBindingId();
         log.debug("deleteServiceInstanceBinding - {}", bindingId);
 
+        //TODO ROUTE SERVICE if unroute app, check if need to unroute routes and call ourself
+
         final ApplicationBinding binding = bindingRepository.findOne(bindingId);
         final String appId = binding.getApplicationId();
 
-        SpaceEnrollerConfig serviceInstance = spaceEnrollerConfigRepository
-                .findOne(request.getInstance().getServiceInstanceId());
+        SpaceEnrollerConfig serviceInstance = spaceEnrollerConfigRepository.findOne(request.getServiceInstanceId());
 
         applicationLocker.executeThreadSafe(appId, () -> {
             log.debug("deleteServiceInstanceBinding on app ", appId);
@@ -105,8 +132,5 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
 
             //task launched will cancel by itself
         });
-        return new ServiceInstanceBinding(binding.getServiceBindingId(), binding.getServiceInstanceId(),
-                Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION,
-                        serviceInstance.getIdleDuration().toString()), null, appId);
     }
 }
