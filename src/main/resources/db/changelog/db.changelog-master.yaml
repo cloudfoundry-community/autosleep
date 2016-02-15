@@ -1,0 +1,116 @@
+databaseChangeLog:
+- changeSet:
+    id: 1
+    author: Arnaud Ruffin
+    changes:
+    - createTable:
+        tableName: ApplicationBinding
+        columns:
+        - column:
+            name: serviceBindingId
+            type: VARCHAR(255)
+            constraints:
+                primaryKey: true
+                nullable: false
+        - column:
+            name: applicationId
+            type: VARCHAR(255)
+        - column:
+            name: serviceInstanceId
+            type: VARCHAR(255)
+    - createTable:
+        tableName: ApplicationInfo
+        columns:
+        - column:
+          name: uuid
+          type: VARCHAR(40)
+          constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: appState
+            type: VARCHAR(255)
+        - column:
+            name: hibernateWorkaround
+            type: INT
+            constraints:
+                nullable: false
+        - column:
+            name: lastCheck
+            type: TINYBLOB
+        - column:
+            name: event_actee
+            type: VARCHAR(255)
+        - column:
+            name: event_actor
+            type: VARCHAR(255)
+        - column:
+            name: event_name
+            type: VARCHAR(255)
+        - column:
+            name: event_time
+            type: TINYBLOB
+        - column:
+            name: event_type
+            type: VARCHAR(255)
+        - column:
+            name: log_message
+            type: VARCHAR(255)
+        - column:
+            name: log_message_type
+            type: VARCHAR(255)
+        - column:
+            name: log_source_id
+            type: VARCHAR(255)
+        - column:
+            name: log_source_name
+            type: VARCHAR(255)
+        - column:
+            name: log_time
+            type: TINYBLOB
+        - column:
+            name: nextCheck
+            type: TINYBLOB
+        - column:
+            name: states
+            type: BLOB
+        - column:
+            name: name
+            type: VARCHAR(255)
+    changes:
+    - createTable:
+        tableName: SpaceEnrollerConfig
+        columns:
+        - column:
+            name: id
+            type: VARCHAR(255)
+            constraints:
+                primaryKey: true
+                nullable: false
+        - column:
+            name: excludeFromAutoEnrollment
+            type: TINYBLOB
+        - column:
+            name: forcedAutoEnrollment
+            type: BIT(1)
+            constraints:
+                primaryKey: true
+                nullable: false
+        - column:
+            name: idleDuration
+            type: TINYBLOB
+        - column:
+            name: organizationId
+            type: VARCHAR(255)
+        - column:
+            name: planId
+            type: VARCHAR(255)
+        - column:
+            name: secret
+            type: VARCHAR(255)
+        - column:
+            name: serviceDefinitionId
+            type: VARCHAR(255)
+        - column:
+            name: spaceId
+            type: VARCHAR(255)
