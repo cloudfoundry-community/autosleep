@@ -11,7 +11,13 @@ jacocoTestReport {
 
     afterEvaluate {
         classDirectories = files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: '**/CloudFoundryApi*')
+            fileTree(dir: it,
+                    exclude: ['org/cloudfoundry/autosleep/worker/remote/CloudFoundryApi*', //won't test cf-java-client
+                              'org.cloudfoundry.autosleep.worker.remote.model/**', //won't test pojo
+                              'org.cloudfoundry.autosleep.dao.model/**',  //won't test pojo
+                              'org.cloudfoundry.autosleep.config/ContextInitializer*', //won't test cloud context init
+                              'org/cloudfoundry/autosleep/Application*']) //
+
         })
     }
 
