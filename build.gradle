@@ -101,6 +101,9 @@ dependencies {
     compile "org.springframework.cloud:spring-cloud-spring-service-connector:$springCloudServiceConnectorVersion"
     compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector:$springCloudCFConnectorVersion"
 
+    //liquibase
+    compile "org.liquibase:liquibase-core:$liquibaseVersion"
+
 }
 
 sourceSets.main.compileClasspath += configurations.providedCompile
