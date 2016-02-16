@@ -11,7 +11,7 @@ How to run the acceptance tests.
 
 ### What you need in your cloudfoundry environment
 - A test application (a [static website](https://github.com/cloudfoundry/staticfile-buildpack) for instance)
-- Autosleep registered as a service broker (see [how to publish on the market place](publish.md)).
+- Autosleep deployed as an application in a space where you are allowed to deploy private service brokers.
 
 ## Run the tests
 1. First copy `{ACCEPTANCE_TEST_DIRECTORY}/acceptance.tmpl.cfg` under `{ACCEPTANCE_TEST_DIRECTORY}/acceptance.cfg`

@@ -10,17 +10,17 @@ Make a *manifest.yml* file according to the manifest.tmpl.yml template.
 
 Autosleep service needs properties to work . The properties that are used are:
 
-- __security.user.name__: the basic auth username for the service
-- __security.user.password__: the basic auth password for the service
-- __cf.client.target.endpoint__: the api endpoint of the cloudfoundry instance
+- __security.user.name__: the basic auth username for the service.
+- __security.user.password__: the basic auth password for the service.
+- __cf.client.target.endpoint__: the api endpoint of the cloudfoundry instance.
 - __cf.client.skip.ssl.validation__: set this property to _true_ if the current cloudfoundry instance use self-signed certificates.
-- __cf.client.username__: the username that will be used in by the autosleep service
-- __cf.client.password__: the password that will be used in by the autosleep service
-- __cf.client.clientId__: the client id of the application (optional)
-- __cf.client.clientSecret__: the client secret of the application (optional)
-- __cf.security.password.encodingSecret__: the secret used to hash password (optional). If none provided, it will use "".
-- __cf.service.broker.id__: the service broker id. If none provided, it will use "autosleep".
-- __cf.service.plan.id__: the service plan id. If none provided, it will use "default".
+- __cf.client.username__: the username that will be used in by the autosleep service.
+- __cf.client.password__: the password that will be used in by the autosleep service.
+- __cf.client.clientId__: the client id of the application (optional). If none provided, it will used ```"cf"```.
+- __cf.client.clientSecret__: the client secret of the application (optional). If none provided, it will used ```""```.
+- __cf.security.password.encodingSecret__: the secret used to hash password (optional). If none provided, it will use ```""```.
+- __cf.service.broker.id__: the service broker id. If none provided, it will use ```"autosleep"```.
+- __cf.service.plan.id__: the service plan id. If none provided, it will use ```"default"```.
 
 There are two ways of providing these properties to autosleep.
 
@@ -37,5 +37,20 @@ cf push -f manifest.yml -p org.cloudfoundry.autosleep.war
 Check that the autosleep application is running and retrieve its url (`cf app autosleep-app`). 
 
 Then run the following command:
-```cf create-service-broker autosleep LOGIN PASSWORD http://your-autsleep-route```
-where ___LOGIN___ and ___PASSWORD___ are the values you provided in the _manifest.yml_ file for environment properties ___security.user.name___ and ___security.user.password___
+
+```cf create-service-broker <name> <login <password> <url>```
+
+where:
+
+- ```login``` and ```password``` are the values you provided in the _manifest.yml_ file for environment properties ___security.user.name___ and ___security.user.password___.
+- ```name``` the name of the service as it will appear in the marketplace.
+- ```url```: the URL of your servicde broker.
+
+
+## Publish as a private broker
+Currently cf does not support private service broker creation.But you may use ```cf curl``` command.
+With the same parameters as above:
+
+```cf curl /v2/service_brokers -X POST -d '{"name":"<name>","broker_url":"<url>","auth_username":"<login>","auth_password":"<password>","space_guid":"<space_id>"}'```
+
+where ```space_id``` is the space guid where the application is deployed.

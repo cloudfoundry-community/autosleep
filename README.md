@@ -26,13 +26,13 @@ We suppose that the autosleep service broker is already available in your market
 
 ### Basics
 
-Create an autosleep service instance to get applications in the space automatically put to sleep after an inactivity period:
+Create an autosleep service instance to watch all applications in the space and automatically put them to sleep after default idle duration:
 
 ```
 cf cs autosleep default my-autosleep
 ```
 
-Autosleep **will periodically automatically bind every applications in the space** to this service instance (if you want to fine tune which apps gets auto-bound, please use the [excludeAppNameRegExp](#excludeappnameregexp) parameter to exclude some apps). 
+Autosleep **will periodically automatically bind every applications in the space** to this service instance (if you want to fine tune which apps gets auto-bound, please use the [exclude-from-auto-enrollment](#exclude-from-auto-enrollment) parameter to exclude some apps). 
 
 Once bound, your application will be watched for inactivity, and automatically stopped by the autosleep service. If you wish to disable this watch, simply unbind your application from the autosleep service instance.
 
@@ -40,9 +40,9 @@ Once bound, your application will be watched for inactivity, and automatically s
 
 Optionally the autosleep service broker accepts the following parameters: 
 
-- [```inactivity```] (#inactivity)
-- [```excludeAppNameRegExp ```] (#excludeappnameregexp)
-- [```no_optout ```] (#lockno_optout)
+- [```idle-duration```] (#idle-duration)
+- [```exclude-from-auto-enrollment ```] (#exclude-from-auto-enrollment)
+- [```auto-enrollment ```] (#lockauto-enrollment)
 - [```secret ```] (#secret)
 
 These parameters can be provided on service creations as well as on service updates, eg.
@@ -51,14 +51,14 @@ These parameters can be provided on service creations as well as on service upda
 cf cs autosleep default my-autosleep -c '{"inactivity": "PT1H15M"}'
 ```
 
-#### *inactivity* 
+#### *idle-duration* 
 Duration after which bound applications will be considered as inactive. The time format used is [the ISO8601] (https://en.wikipedia.org/wiki/ISO_8601#Durations) duration format.
 
 - *Example:*```'{"inactivity": "PT1H15M"}'``` 
  would stop the application after *1 hour and 15 minutes* of inactivity.
 - *Default value :*  24H
 
-#### *excludeAppNameRegExp* 
+#### *exclude-from-auto-enrollment* 
 If you don't want all the application to be automatically bound, you can set this parameter with a regular expression to filter on application names.
 
 - *Example:*```'{"excludeAppNameRegExp": ".*"}'``` 
@@ -66,22 +66,23 @@ If you don't want all the application to be automatically bound, you can set thi
 - *Default value :*  none (every app in space will be bound).
 
 
-#### :lock:*no_optout* 
+#### :lock:*auto-enrollment* 
 
-If platform teams (admins, org managers, or specific members of the space) don't want all space members to be able to manually unbound apps from the autosleep service themselves, then a no_optout mode is supported. When set:
-* manually unbound apps, will automatically be re-bound again after the activity period
+By default this parameter is set as ```standard```. If platform teams (admins, org managers, or specific members of the space) don't want all space members to be able to manually unbound apps from the autosleep service themselves, then a forced mode is supported. When set to this:
+
+* manually unbound apps will automatically be re-bound again after the activity period
 * the autosleep service-instance won't be deletable by space members to disable auto-bindings
 
-To enable to "no_optout" mode, set this parameter to ``true``. As this is a protected parameter, you will have also have to provide a ['secret' parameter] (#secret). 
+To enable to "forced" mode, set the *auto-enrollment* parameter to ``forced``. As this is a protected parameter, you will have also have to provide a [```secret``` parameter] (#secret). 
 
-- *Example:*```'{"no_optout": "true"}'``` 
-- *Default value :* false
+- *Example:*```'{"auto-enrollment": "forced"}'``` 
+- *Default value :* ```standard```
 
 #### *secret*
-Provide a secret if you wish to set/change a protected parameter. Please save it carefully, has you will be asked to provide the same secret the next time you set/change a protected parameter
+Provide a secret if you wish to set/change a protected parameter. Please save it carefully, has you will be asked to provide the same secret the next time you set/change a protected parameter. As a fallback, you may also use the credential password set at deployment time (see  the ```security.user.password``` in [publish documentation] (doc/publish.md)).
 
 - *Example:*```'{"secret": "Th1s1zg00dP@$$w0rd"}'``` 
-- *Default value :* none
+- *Default value :* ```null```
 
 
 # Usage by platform teams
@@ -90,7 +91,7 @@ Provide a secret if you wish to set/change a protected parameter. Please save it
 If you wish to build the app yourself, go to [build documentation] (doc/build.md).
 
 ## How to deploy and publish
-Once you built the application or if you got it from [latest release] (https://github.com/Orange-OpenSource/autosleep/releases/), go to [build documentation] (doc/publish.md).
+Once you built the application or if you got it from [latest release] (https://github.com/Orange-OpenSource/autosleep/releases/), go to [publish documentation] (doc/publish.md).
 
 # How to test
 Acceptance tests are available in the source code, as robotframework tests. More information [here] (doc/test.md).
