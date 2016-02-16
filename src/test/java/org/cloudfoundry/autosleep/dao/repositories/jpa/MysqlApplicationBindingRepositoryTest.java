@@ -6,6 +6,6 @@ import org.springframework.test.context.ActiveProfiles;
 
 @IfProfileValue(name = "integration-test", value = "true")
 @ActiveProfiles({"mysql", "mysql-local"})
-public class MysqlBindingRepositoryTest extends BindingRepositoryTest {
+public class MysqlApplicationBindingRepositoryTest extends BindingRepositoryTest {
 
 }

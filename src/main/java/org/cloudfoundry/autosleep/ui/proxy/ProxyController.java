@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config.Path;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.ui.web.model.ServerResponse;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
@@ -25,7 +25,7 @@ public class ProxyController {
     private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Autowired
-    private BindingRepository bindingRepository;
+    private ApplicationBindingRepository applicationBindingRepository;
 
     @Autowired
     private ApplicationRepository applicationRepository;

@@ -30,7 +30,7 @@ public abstract class BindingRepositoryTest {
     private static final String APP_GUID = "2F5A0947-6468-401B-B12A-963405121937";
 
     @Autowired
-    private BindingRepository dao;
+    private ApplicationBindingRepository dao;
 
     /**
      * Init DAO with test data.

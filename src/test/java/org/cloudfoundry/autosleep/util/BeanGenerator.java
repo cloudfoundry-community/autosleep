@@ -2,6 +2,7 @@ package org.cloudfoundry.autosleep.util;
 
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.RouteBinding;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 
@@ -139,5 +140,22 @@ public class BeanGenerator {
                 + "\"start\":\"2015-11-18 15:49:06 +0000\","
                 + "\"state_timestamp\":1447861746"
                 + "}";
+    }
+
+    public static RouteBinding createRouteBinding(String bindingId,
+                                                  String serviceId,
+                                                  String linkedAppId,
+                                                  String linkedAppBindingId) {
+        return RouteBinding.builder()
+                .bindingId(bindingId)
+                .routeId("aRouteId")
+                .configurationId(serviceId)
+                .localRoute("alocalroute")
+                .linkedApplicationId(linkedAppId)
+                .linkedApplicationBindingId(linkedAppBindingId).build();
+    }
+
+    public static RouteBinding createRouteBinding(String bindingId) {
+        return createRouteBinding(bindingId,"","","");
     }
 }

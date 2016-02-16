@@ -8,7 +8,7 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.ui.web.model.ServerResponse;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
@@ -58,7 +58,7 @@ public class ApiControllerTest {
     private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Mock
-    private BindingRepository bindingRepository;
+    private ApplicationBindingRepository applicationBindingRepository;
 
     @Mock
     private ApplicationRepository applicationRepository;
@@ -129,7 +129,7 @@ public class ApiControllerTest {
         ApplicationBinding serviceBinding = ApplicationBinding.builder().serviceBindingId(serviceBindingId)
                 .serviceInstanceId(serviceInstanceId)
                 .applicationId(UUID.randomUUID().toString()).build();
-        when(bindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
+        when(applicationBindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
 
         mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "/bindings/")
                 .accept(MediaType.APPLICATION_JSON))
@@ -137,7 +137,7 @@ public class ApiControllerTest {
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
-                    verify(bindingRepository, times(1)).findAll();
+                    verify(applicationBindingRepository, times(1)).findAll();
                     ServerResponse<ApplicationBinding[]> serviceBindings = objectMapper
                             .readValue(mvcResult.getResponse().getContentAsString(),
                                     TypeFactory.defaultInstance()
@@ -156,7 +156,7 @@ public class ApiControllerTest {
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
-                    verify(bindingRepository, times(2)).findAll();
+                    verify(applicationBindingRepository, times(2)).findAll();
                     ServerResponse<ApplicationBinding[]> serviceBindings = objectMapper
                             .readValue(mvcResult.getResponse().getContentAsString(),
                                     TypeFactory.defaultInstance()

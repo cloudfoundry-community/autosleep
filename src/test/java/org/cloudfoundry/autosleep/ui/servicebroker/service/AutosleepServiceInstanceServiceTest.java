@@ -16,9 +16,11 @@ import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNot
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
+import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceResponse;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceRequest;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
+import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceResponse;
 import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
+import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,27 +48,23 @@ import static org.mockito.Mockito.*;
 @Slf4j
 public class AutosleepServiceInstanceServiceTest {
 
-    private static final UUID ORG_TEST = UUID.randomUUID();
-
-    private static final UUID SPACE_TEST = UUID.randomUUID();
-
-    private static final String SERVICE_DEFINITION_ID = "serviceDefinitionId";
+    private static final String ORG_TEST = UUID.randomUUID().toString();
 
     private static final String PLAN_ID = "planId";
 
+    private static final String SERVICE_DEFINITION_ID = "serviceDefinitionId";
+
     private static final String SERVICE_INSTANCE_ID = "id";
+
+    private static final String SPACE_TEST = UUID.randomUUID().toString();
+
+    @Mock
+    private ApplicationLocker applicationLocker;
 
     @Mock
     private ApplicationRepository applicationRepository;
 
-    @Mock
-    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
-
-    @Mock
-    private WorkerManagerService workerManager;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
+    private DeleteServiceInstanceRequest deleteRequest;
 
     @Mock
     private DeployedApplicationConfig.Deployment deployment;
@@ -74,8 +72,8 @@ public class AutosleepServiceInstanceServiceTest {
     @Mock
     private Environment environment;
 
-    @Mock
-    private ApplicationLocker applicationLocker;
+    @InjectMocks
+    private AutosleepServiceInstanceService instanceService;
 
     private ParameterReaderFactory parameterReaderFactory = new ParameterReaderFactory();
 
@@ -93,25 +91,59 @@ public class AutosleepServiceInstanceServiceTest {
     private ParameterReader<Pattern> excludeFromAutoEnrollmentReader
             = parameterReaderFactory.buildExcludeFromAutoEnrollmentReader();
 
+    private String passwordEncoded = "passwordEncoded";
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @Spy
     @Qualifier(Config.ServiceInstanceParameters.SECRET)
     private ParameterReader<String> secretReader = parameterReaderFactory.buildSecretReader();
 
-    @InjectMocks
-    private AutosleepServiceInstanceService instanceService;
+    private List<SpaceEnrollerConfig> serviceInstances = new ArrayList<>();
 
-    private CreateServiceInstanceRequest createRequest;
-
-    private UpdateServiceInstanceRequest updateRequest;
-
-    private DeleteServiceInstanceRequest deleteRequest;
-
-    private String passwordEncoded = "passwordEncoded";
+    @Mock
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     private String superPassword = "MEGAPASS";
 
+    @Mock
+    private WorkerManagerService workerManager;
 
-    private List<SpaceEnrollerConfig> serviceInstances = new ArrayList<>();
+    private CreateServiceInstanceRequest _getCreateRequestWithArbitraryParams(Map<String, Object> params) {
+        if (params == null) {
+            params = Collections.emptyMap();
+        }
+        return new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
+                ORG_TEST, SPACE_TEST, params, false).withServiceInstanceId(SERVICE_INSTANCE_ID);
+    }
+
+    private UpdateServiceInstanceRequest _getUpdateRequestWithArbitraryParams(Map<String, Object> params) {
+        if (params == null) {
+            params = Collections.emptyMap();
+        }
+        return new UpdateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
+                params,
+                false)
+                .withServiceInstanceId(SERVICE_INSTANCE_ID);
+    }
+
+    @Test
+    public void arbitrary_duration_is_stored() throws Exception {
+        //given the service does not exist
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+
+        //when user submit only the duration
+        Map<String, Object> params = singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PT10H");
+        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(params);
+        instanceService.createServiceInstance(createRequest);
+
+        //then  service is saved with good duration
+        verify(spaceEnrollerConfigRepository, times(1)).save(any(SpaceEnrollerConfig.class));
+        assertThat(serviceInstances.size(), is(equalTo(1)));
+        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
+        assertThat(serviceInstance.getIdleDuration(), is(equalTo(Duration.ofHours(10))));
+    }
 
     @Before
     public void initService() {
@@ -125,45 +157,62 @@ public class AutosleepServiceInstanceServiceTest {
         }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
         when(passwordEncoder.encode(any(CharSequence.class))).thenReturn(passwordEncoded);
 
+        deleteRequest = new DeleteServiceInstanceRequest(SERVICE_INSTANCE_ID, SERVICE_DEFINITION_ID, PLAN_ID, null,
+                false);
 
         createRequest = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
-                ORG_TEST.toString(), SPACE_TEST.toString(), null);
+                ORG_TEST.toString(), SPACE_TEST.toString(), Collections.emptyMap());
         createRequest.withServiceInstanceId(SERVICE_INSTANCE_ID);
-
-        updateRequest = new UpdateServiceInstanceRequest(PLAN_ID, Collections.emptyMap())
-                .withInstanceId(SERVICE_INSTANCE_ID);
-
-        deleteRequest = new DeleteServiceInstanceRequest(SERVICE_INSTANCE_ID, SERVICE_DEFINITION_ID, PLAN_ID);
-
+     
         when(environment.getProperty(Config.EnvKey.SECURITY_PASSWORD)).thenReturn(superPassword);
 
     }
 
+    private SpaceEnrollerConfig service_exist_in_database() {
+        SpaceEnrollerConfig existingServiceInstance = SpaceEnrollerConfig.builder()
+                .id(SERVICE_INSTANCE_ID)
+                .planId(PLAN_ID)
+                .secret("secret")
+                .forcedAutoEnrollment(true).build();
 
+        when(spaceEnrollerConfigRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(existingServiceInstance);
+        return existingServiceInstance;
+    }
 
-    @Test
-    public void test_no_creation_accepted_when_already_exists() {
-        //given the service already exists
-        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(true);
-        //when instance created then an error is thrown
-        verifyThrown(() -> instanceService.createServiceInstance(createRequest), ServiceInstanceExistsException.class);
+    private Map<String, Object> singletonMap(String key, String value) {
+        HashMap<String, Object> result = new HashMap<>();
+        result.put(key, value);
+        return result;
     }
 
 
+
     @Test
-    public void test_no_creation_accepted_when_unknown_parameter() {
-        //given the service does not exist
-        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+    public void test_applications_are_cleaned_when_service_deleted() throws Exception {
+        //given application repository contains some application that reference ONLY the service
+        Map<String, ApplicationInfo> applicationInfos = Arrays.asList(
+                BeanGenerator.createAppInfoLinkedToService(SERVICE_INSTANCE_ID),
+                BeanGenerator.createAppInfoLinkedToService(SERVICE_INSTANCE_ID),
+                BeanGenerator.createAppInfoLinkedToService(SERVICE_INSTANCE_ID),
+                BeanGenerator.createAppInfoLinkedToService("àç!àpoiu"),
+                BeanGenerator.createAppInfoLinkedToService("lkv nàç ")
+        ).stream().collect(Collectors.toMap(applicationInfo -> applicationInfo.getUuid(),
+                applicationInfo -> applicationInfo));
+        when(applicationRepository.findAll()).thenReturn(applicationInfos.values());
 
-        //when an unknwon parameter is submitted
-        String unknwonParameter = "unknownParameter";
-        createRequest.setParameters(Collections.singletonMap(unknwonParameter, "unknownParameterValue"));
+        when(applicationRepository.findOne(anyString()))
+                .then(invocationOnMock -> applicationInfos.get((String) invocationOnMock.getArguments()[0]));
 
-        //then an error is thrown
-        verifyThrown(() -> instanceService.createServiceInstance(createRequest), InvalidParameterException.class,
-                parameterChecked -> assertThat(parameterChecked.getParameterName(), is(equalTo(unknwonParameter))));
+        when(spaceEnrollerConfigRepository.findOne(anyString())).thenReturn(BeanGenerator.createServiceInstance());
+
+        //when delete is asked
+        instanceService.deleteServiceInstance(deleteRequest);
+
+        //then repository is invoked
+        verify(spaceEnrollerConfigRepository, times(1)).delete(SERVICE_INSTANCE_ID);
+        //and info on applications are removed
+        verify(applicationRepository, times(3)).delete(any(ApplicationInfo.class));
     }
-
 
     @Test
     public void test_creation_with_default() throws Exception {
@@ -171,7 +220,8 @@ public class AutosleepServiceInstanceServiceTest {
         when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when service is created
-        ServiceInstance si = instanceService.createServiceInstance(createRequest);
+        CreateServiceInstanceResponse si = instanceService.createServiceInstance(_getCreateRequestWithArbitraryParams
+                (null));
 
         //then global watcher is invoked
         verify(workerManager, times(1)).registerSpaceEnroller(any(SpaceEnrollerConfig.class));
@@ -190,22 +240,19 @@ public class AutosleepServiceInstanceServiceTest {
         assertThat(serviceInstance.getExcludeFromAutoEnrollment(), is(nullValue()));
     }
 
-
     @Test
-    public void arbitrary_duration_is_stored() throws Exception {
-        //given the service does not exist
-        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+    public void test_delete_service_instance() throws Exception {
+        //given no application in app repository, and one spaceEnrollerConfig
+        when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
+        when(spaceEnrollerConfigRepository.findOne(anyString()))
+                .thenReturn(BeanGenerator.createServiceInstance(SERVICE_INSTANCE_ID));
 
-        //when user submit only the duration
-        createRequest.setParameters(singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PT10H"));
-        instanceService.createServiceInstance(createRequest);
+        //when service is asked to delete
+        DeleteServiceInstanceResponse response = instanceService.deleteServiceInstance(deleteRequest);
 
-
-        //then  service is saved with good duration
-        verify(spaceEnrollerConfigRepository, times(1)).save(any(SpaceEnrollerConfig.class));
-        assertThat(serviceInstances.size(), is(equalTo(1)));
-        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
-        assertThat(serviceInstance.getIdleDuration(), is(equalTo(Duration.ofHours(10))));
+        //then the repository is invoked
+        verify(spaceEnrollerConfigRepository, times(1)).delete(SERVICE_INSTANCE_ID);
+        assertThat(response, is(notNullValue()));
     }
 
     @Test
@@ -214,8 +261,9 @@ public class AutosleepServiceInstanceServiceTest {
         when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when user submit only the exclusion
-        createRequest.setParameters(
-                singletonMap(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, ".*"));
+        Map<String, Object> params = singletonMap(
+                Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, ".*");
+        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(params);
         instanceService.createServiceInstance(createRequest);
 
         //then  service is saved with good exclusion
@@ -225,39 +273,20 @@ public class AutosleepServiceInstanceServiceTest {
     }
 
     @Test
-    public void test_secret_is_well_read() throws Exception {
-        //given the service does not exist
-        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
-
-        //when user submit only the secret
-        createRequest.setParameters(singletonMap(Config.ServiceInstanceParameters.SECRET, "password"));
-        ServiceInstance si = instanceService.createServiceInstance(createRequest);
-
-        //then password is read and encoded
-        verify(passwordEncoder, times(1)).encode(eq("password"));
-        assertThat(si, is(notNullValue()));
-
-        //and  service is saved with password encoded
-        assertThat(serviceInstances.size(), is(equalTo(1)));
-        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
-        assertThat(serviceInstance.getSecret(), is(equalTo(passwordEncoded)));
-    }
-
-    @Test
     public void test_forced_auto_enrollment_fails_without_secret() throws Exception {
         //given the service does not exist
         when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when user only gives forced auto enrollment
-        createRequest.setParameters(singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, Config
-                .ServiceInstanceParameters.Enrollment.forced.name()));
+        Map<String, Object> params = singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, Config
+                .ServiceInstanceParameters.Enrollment.forced.name());
+        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(params);
         //then it fails with good parameter in the error
         verifyThrown(() -> instanceService.createServiceInstance(createRequest), InvalidParameterException.class,
                 exceptionThrown ->
                         assertThat(exceptionThrown.getParameterName(),
                                 is(equalTo(Config.ServiceInstanceParameters.AUTO_ENROLLMENT))));
     }
-
 
     @Test
     public void test_forced_auto_enrollment_succeeds_with_secret() throws Exception {
@@ -269,8 +298,9 @@ public class AutosleepServiceInstanceServiceTest {
         parameters.put(Config.ServiceInstanceParameters.SECRET, "secret");
         parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
                 Config.ServiceInstanceParameters.Enrollment.forced.name());
-        createRequest.setParameters(parameters);
-        ServiceInstance si = instanceService.createServiceInstance(createRequest);
+
+        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(parameters);
+        CreateServiceInstanceResponse si = instanceService.createServiceInstance(createRequest);
 
         //then service is saved with forced auto enrollment
         assertThat(si, is(notNullValue()));
@@ -280,111 +310,48 @@ public class AutosleepServiceInstanceServiceTest {
     }
 
     @Test
-    public void test_get_service_instance_found() throws Exception {
-        //given the repository contains a service
-        service_exist_in_database();
-
-        //when the get service is invoked
-        ServiceInstance retrievedInstance = instanceService.getServiceInstance(SERVICE_INSTANCE_ID);
-
-        //then the service is found
-        assertThat(retrievedInstance, is(notNullValue()));
-        //and valued with good id
-        assertThat(retrievedInstance.getServiceInstanceId(), is(equalTo(SERVICE_INSTANCE_ID)));
+    public void test_no_creation_accepted_when_already_exists() {
+        //given the service already exists
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(true);
+        //when instance created then an error is thrown
+        verifyThrown(() -> instanceService.createServiceInstance(_getCreateRequestWithArbitraryParams(null)),
+                ServiceInstanceExistsException.class);
     }
 
     @Test
-    public void test_get_service_instance_not_found() {
-        //given the repository does not contain the service
-        when(spaceEnrollerConfigRepository.findOne(SERVICE_INSTANCE_ID))
-                .thenReturn(null);
-        ServiceInstance retrievedInstance = instanceService
-                .getServiceInstance(
-                        SERVICE_INSTANCE_ID);
-        assertThat(retrievedInstance, is(nullValue()));
-    }
+    public void test_no_creation_accepted_when_unknown_parameter() {
+        //given the service does not exist
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
-    @Test
-    public void test_update_on_non_existing() throws Exception {
-        //given the repository does not contain the service
-        when(spaceEnrollerConfigRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(null);
-        //when update is invoked the error is thrown
-        verifyThrown(() -> instanceService.updateServiceInstance(updateRequest),
-                ServiceInstanceDoesNotExistException.class);
-    }
-
-    private SpaceEnrollerConfig service_exist_in_database() {
-        SpaceEnrollerConfig existingServiceInstance = SpaceEnrollerConfig.builder()
-                .id(SERVICE_INSTANCE_ID)
-                .planId(PLAN_ID)
-                .secret("secret")
-                .forcedAutoEnrollment(true).build();
-
-        when(spaceEnrollerConfigRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(existingServiceInstance);
-        return existingServiceInstance;
-    }
-
-    @Test
-    public void test_update_fails_when_parameter_unknown() throws Exception {
-        //given service exists
-        service_exist_in_database();
-
-        //when user gives an unknown parameter
+        //when an unknwon parameter is submitted
         String unknwonParameter = "unknownParameter";
-        updateRequest.setParameters(Collections.singletonMap(unknwonParameter, "someValue"));
+        Map<String, Object> params = singletonMap(unknwonParameter, "unknownParameterValue");
+        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(params);
 
-        //then error is thrown
-        verifyThrown(() -> instanceService.updateServiceInstance(updateRequest), InvalidParameterException.class,
+        //then an error is thrown
+        verifyThrown(() -> instanceService.createServiceInstance(createRequest), InvalidParameterException.class,
                 parameterChecked -> assertThat(parameterChecked.getParameterName(), is(equalTo(unknwonParameter))));
     }
 
     @Test
-    public void test_update_fails_when_parameter_cannot_be_updated() throws Exception {
-        //given service exists
-        service_exist_in_database();
+    public void test_secret_is_well_read() throws Exception {
+        //given the service does not exist
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
-        //when user gives a parameter that cannot be updated
-        updateRequest.setParameters(Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PT12M"));
+        //when user submit only the secret
+        Map<String, Object> params = singletonMap(Config.ServiceInstanceParameters.SECRET, "password");
+        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(params);
 
-        //then error is thrown
-        verifyThrown(() -> instanceService.updateServiceInstance(updateRequest), InvalidParameterException.class,
-                parameterChecked -> assertThat(parameterChecked.getParameterName(),
-                        is(equalTo(Config.ServiceInstanceParameters.IDLE_DURATION))));
-    }
+        CreateServiceInstanceResponse si = instanceService.createServiceInstance(createRequest);
 
-    @Test
-    public void test_update_fails_when_autoenrollment_without_secret() throws Exception {
-        //given service exists
-        service_exist_in_database();
-
-        //when user gives auto enrollment without secret
-        updateRequest.setParameters(singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
-                Config.ServiceInstanceParameters.Enrollment.standard.name()));
-
-        //then error is thrown
-        verifyThrown(() -> instanceService.updateServiceInstance(updateRequest), InvalidParameterException.class,
-                parameterChecked -> assertThat(parameterChecked.getParameterName(),
-                        is(equalTo(Config.ServiceInstanceParameters.AUTO_ENROLLMENT))));
-    }
-
-    @Test
-    public void test_update_succeeds_when_autoenrollment_with_secret() throws Exception {
-        //given service exists and password matches
-        final SpaceEnrollerConfig existingServiceInstance = service_exist_in_database();
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-
-        //when user gives auto enrollment with secret
-        Map<String, Object> parameters = new HashMap<>();
-        updateRequest.setParameters(parameters);
-        parameters.put(Config.ServiceInstanceParameters.SECRET, "secret");
-        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
-                Config.ServiceInstanceParameters.Enrollment.standard.name());
-        ServiceInstance si = instanceService.updateServiceInstance(updateRequest);
-
-        //then service is updated
-        verify(spaceEnrollerConfigRepository, times(1)).save(any(SpaceEnrollerConfig.class));
+        //then password is read and encoded
+        verify(passwordEncoder, times(1)).encode(eq("password"));
         assertThat(si, is(notNullValue()));
-        assertFalse(existingServiceInstance.isForcedAutoEnrollment());
+
+        //and  service is saved with password encoded
+        assertThat(serviceInstances.size(), is(equalTo(1)));
+        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
+        assertThat(serviceInstance.getSecret(), is(equalTo(passwordEncoded)));
     }
 
     @Test
@@ -398,12 +365,28 @@ public class AutosleepServiceInstanceServiceTest {
         parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
                 Config.ServiceInstanceParameters.Enrollment.standard.name());
         parameters.put(Config.ServiceInstanceParameters.SECRET, superPassword);
-        updateRequest.setParameters(parameters);
+
+        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(parameters);
 
         //No exception should be raised, as the super-password was provided
         instanceService.updateServiceInstance(updateRequest);
     }
 
+    @Test
+    public void test_update_fails_when_autoenrollment_without_secret() throws Exception {
+        //given service exists
+        service_exist_in_database();
+
+        //when user gives auto enrollment without secret
+        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(
+                singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
+                        Config.ServiceInstanceParameters.Enrollment.standard.name()));
+
+        //then error is thrown
+        verifyThrown(() -> instanceService.updateServiceInstance(updateRequest), InvalidParameterException.class,
+                parameterChecked -> assertThat(parameterChecked.getParameterName(),
+                        is(equalTo(Config.ServiceInstanceParameters.AUTO_ENROLLMENT))));
+    }
 
     @Test
     public void test_update_fails_when_change_plan_requested() throws Exception {
@@ -412,64 +395,78 @@ public class AutosleepServiceInstanceServiceTest {
         service_exist_in_database();
 
         //No change plan supported
-        UpdateServiceInstanceRequest changePlanRequest = new UpdateServiceInstanceRequest(PLAN_ID + "_other",
-                Collections.emptyMap())
-                .withInstanceId(SERVICE_INSTANCE_ID);
+        UpdateServiceInstanceRequest changePlanRequest = new UpdateServiceInstanceRequest(SERVICE_DEFINITION_ID,
+                PLAN_ID + "_other",
+                Collections.emptyMap(),
+                false)
+                .withServiceInstanceId(SERVICE_INSTANCE_ID);
+
         verifyThrown(() -> instanceService.updateServiceInstance(changePlanRequest),
                 ServiceInstanceUpdateNotSupportedException.class);
 
     }
 
     @Test
-    public void test_delete_service_instance() throws Exception {
-        //given no application in app repository, and one spaceEnrollerConfig
-        when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
-        when(spaceEnrollerConfigRepository.findOne(anyString()))
-                .thenReturn(BeanGenerator.createServiceInstance(SERVICE_INSTANCE_ID));
+    public void test_update_fails_when_parameter_cannot_be_updated() throws Exception {
+        //given service exists
+        service_exist_in_database();
 
-        //when service is asked to delete
-        ServiceInstance si = instanceService.deleteServiceInstance(deleteRequest);
+        //when user gives a parameter that cannot be updated
+        //when user gives auto enrollment without secret
+        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(
+                singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PT12M"));
 
-        //then the repository is invoked
-        verify(spaceEnrollerConfigRepository, times(1)).delete(SERVICE_INSTANCE_ID);
-        assertThat(si, is(notNullValue()));
-        assertThat(si.getServiceInstanceId(), is(equalTo(SERVICE_INSTANCE_ID)));
-
+        //then error is thrown
+        verifyThrown(() -> instanceService.updateServiceInstance(updateRequest), InvalidParameterException.class,
+                parameterChecked -> assertThat(parameterChecked.getParameterName(),
+                        is(equalTo(Config.ServiceInstanceParameters.IDLE_DURATION))));
     }
 
     @Test
-    public void test_applications_are_cleaned_when_service_deleted() throws Exception {
-        //given application repository contains some application that reference ONLY the service
-        Map<String, ApplicationInfo> applicationInfos = Arrays.asList(
-                BeanGenerator.createAppInfoLinkedToService(SERVICE_INSTANCE_ID),
-                BeanGenerator.createAppInfoLinkedToService(SERVICE_INSTANCE_ID),
-                BeanGenerator.createAppInfoLinkedToService(SERVICE_INSTANCE_ID),
-                BeanGenerator.createAppInfoLinkedToService("àç!àpoiu"),
-                BeanGenerator.createAppInfoLinkedToService("lkv nàç ")
-        ).stream().collect(Collectors.toMap(applicationInfo -> applicationInfo.getUuid().toString(),
-                applicationInfo -> applicationInfo));
-        when(applicationRepository.findAll()).thenReturn(applicationInfos.values());
+    public void test_update_fails_when_parameter_unknown() throws Exception {
+        //given service exists
+        service_exist_in_database();
 
-        when(applicationRepository.findOne(anyString()))
-                .then(invocationOnMock -> applicationInfos.get((String) invocationOnMock.getArguments()[0]));
+        //when user gives an unknown parameter
+        String unknownParameter = "unknownParameter";
+        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(
+                singletonMap(unknownParameter, "someValue"));
 
-        when(spaceEnrollerConfigRepository.findOne(anyString())).thenReturn(BeanGenerator.createServiceInstance());
-
-        //when delete is asked
-        instanceService.deleteServiceInstance(deleteRequest);
-
-        //then repository is invoked
-        verify(spaceEnrollerConfigRepository, times(1)).delete(SERVICE_INSTANCE_ID);
-        //and info on applications are removed
-        verify(applicationRepository, times(3)).delete(any(ApplicationInfo.class));
+        //then error is thrown
+        verifyThrown(() -> instanceService.updateServiceInstance(updateRequest), InvalidParameterException.class,
+                parameterChecked -> assertThat(parameterChecked.getParameterName(), is(equalTo(unknownParameter))));
     }
 
+    @Test
+    public void test_update_on_non_existing() throws Exception {
+        //given the repository does not contain the service
+        when(spaceEnrollerConfigRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(null);
+        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(null);
 
-    private Map<String, Object> singletonMap(String key, String value) {
-        HashMap<String, Object> result = new HashMap<>();
-        result.put(key, value);
-        return result;
+        //when update is invoked the error is thrown
+        verifyThrown(() -> instanceService.updateServiceInstance(updateRequest),
+                ServiceInstanceDoesNotExistException.class);
     }
 
+    @Test
+    public void test_update_succeeds_when_autoenrollment_with_secret() throws Exception {
+        //given service exists and password matches
+        final SpaceEnrollerConfig existingServiceInstance = service_exist_in_database();
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+
+        //when user gives auto enrollment with secret
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put(Config.ServiceInstanceParameters.SECRET, "secret");
+        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
+                Config.ServiceInstanceParameters.Enrollment.standard.name());
+        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(parameters);
+
+        UpdateServiceInstanceResponse response = instanceService.updateServiceInstance(updateRequest);
+
+        //then service is updated
+        verify(spaceEnrollerConfigRepository, times(1)).save(any(SpaceEnrollerConfig.class));
+        assertThat(response, is(notNullValue()));
+        assertFalse(existingServiceInstance.isForcedAutoEnrollment());
+    }
 
 }

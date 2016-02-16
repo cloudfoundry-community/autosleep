@@ -4,5 +4,5 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.springframework.data.repository.CrudRepository;
 
 
-public interface BindingRepository extends CrudRepository<ApplicationBinding, String> {
+public interface ApplicationBindingRepository extends CrudRepository<ApplicationBinding, String> {
 }

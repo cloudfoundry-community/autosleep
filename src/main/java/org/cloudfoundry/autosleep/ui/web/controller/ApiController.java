@@ -6,7 +6,7 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.ui.web.model.ServerResponse;
@@ -33,7 +33,7 @@ public class ApiController {
     private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Autowired
-    private BindingRepository bindingRepository;
+    private ApplicationBindingRepository applicationBindingRepository;
 
     @Autowired
     private ApplicationRepository applicationRepository;
@@ -71,7 +71,7 @@ public class ApiController {
             throws ServiceInstanceDoesNotExistException {
         log.debug("listServiceBindings - {}", serviceInstanceId);
         List<ApplicationBinding> result = new ArrayList<>();
-        bindingRepository.findAll().forEach(serviceBinding -> {
+        applicationBindingRepository.findAll().forEach(serviceBinding -> {
                     if (serviceInstanceId.equals(serviceBinding.getServiceInstanceId())) {
                         result.add(serviceBinding);
                     }

@@ -6,7 +6,7 @@ import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
@@ -56,7 +56,7 @@ public class WorkerManagerTest {
     private SpaceEnrollerConfigRepository mockServiceRepo;
 
     @Mock
-    private BindingRepository mockBindingRepo;
+    private ApplicationBindingRepository mockBindingRepo;
 
     @Mock
     private ApplicationRepository mockAppRepo;

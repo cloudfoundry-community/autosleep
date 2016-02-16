@@ -62,6 +62,11 @@ public interface Config {
         }
     }
 
+    interface RouteBindingParameters {
+        String linkedApplicationId = "application-id";
+        String linkedApplicationBindingId = "application-binding-id";
+    }
+
     interface ServiceCatalog {
         String DEFAULT_SERVICE_BROKER_ID = "autosleep";
         String DEFAULT_SERVICE_PLAN_ID = "default";

@@ -5,7 +5,7 @@ import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
@@ -24,7 +24,7 @@ public class WorkerManager implements WorkerManagerService {
     private Clock clock;
 
     @Autowired
-    private BindingRepository bindingRepository;
+    private ApplicationBindingRepository applicationBindingRepository;
 
     @Autowired
     private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
@@ -46,7 +46,7 @@ public class WorkerManager implements WorkerManagerService {
     public void init() {
         log.debug("Initializer watchers for every app already enrolled (except if handle by another instance of "
                 + "autosleep)");
-        bindingRepository.findAll().forEach(applicationBinding -> {
+        applicationBindingRepository.findAll().forEach(applicationBinding -> {
             SpaceEnrollerConfig spaceEnrollerConfig =
                     spaceEnrollerConfigRepository.findOne(applicationBinding.getServiceInstanceId());
             if (spaceEnrollerConfig != null) {
