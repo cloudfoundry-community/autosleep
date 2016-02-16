@@ -43,40 +43,51 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     private ApplicationRepository appRepository;
 
     @Autowired
-    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
-
-    @Autowired
-    private WorkerManagerService workerManager;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private DeployedApplicationConfig.Deployment deployment;
-
-    @Autowired
     private ApplicationLocker applicationLocker;
-
-    @Autowired
-    private Environment environment;
-
-    @Autowired
-    @Qualifier(Config.ServiceInstanceParameters.IDLE_DURATION)
-    private ParameterReader<Duration> idleDurationReader;
 
     @Autowired
     @Qualifier(Config.ServiceInstanceParameters.AUTO_ENROLLMENT)
     private ParameterReader<Config.ServiceInstanceParameters.Enrollment> autoEnrollmentReader;
 
     @Autowired
+    private DeployedApplicationConfig.Deployment deployment;
+
+    @Autowired
+    private Environment environment;
+
+    @Autowired
     @Qualifier(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT)
     private ParameterReader<Pattern> excludeFromAutoEnrollmentReader;
+
+    @Autowired
+    @Qualifier(Config.ServiceInstanceParameters.IDLE_DURATION)
+    private ParameterReader<Duration> idleDurationReader;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     @Qualifier(Config.ServiceInstanceParameters.SECRET)
     private ParameterReader<String> secretReader;
 
+    @Autowired
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
+    @Autowired
+    private WorkerManagerService workerManager;
+
+    private void checkSecuredParameter(String parameterName, String secret) {
+        if (secret == null) {
+            throw new InvalidParameterException(parameterName,
+                    "Trying to set or change a protected parameter without providing the right '"
+                            + Config.ServiceInstanceParameters.SECRET + "'.");
+        }
+    }
+
+    private <T> T consumeParameter(Map<String, Object> parameters, boolean withDefault, ParameterReader<T> reader)
+            throws InvalidParameterException {
+        return reader.readParameter(parameters.remove(reader.getParameterName()), withDefault);
+    }
 
     @Override
     public CreateServiceInstanceResponse createServiceInstance(CreateServiceInstanceRequest request) throws
@@ -120,25 +131,50 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             spaceEnrollerConfigRepository.save(spaceEnrollerConfig);
             workerManager.registerSpaceEnroller(spaceEnrollerConfig);
 
-
             String firstUri = deployment.getFirstUri();
-            if ( firstUri == null ) {
+            if (firstUri == null) {
                 firstUri = "local-deployment";
             }
 
-            //TODO check async flag (no javadoc for now)
-            CreateServiceInstanceResponse response = new CreateServiceInstanceResponse(firstUri + Config.Path.DASHBOARD_CONTEXT + "/" + serviceId,false);
-            return response;
+            return new CreateServiceInstanceResponse(firstUri + Config.Path.DASHBOARD_CONTEXT + "/" + serviceId, false);
         }
     }
 
     @Override
+    public DeleteServiceInstanceResponse deleteServiceInstance(
+            DeleteServiceInstanceRequest request) throws ServiceBrokerException {
+        final String spaceEnrollerConfigId = request.getServiceInstanceId();
+        log.debug("deleteServiceInstance - {}", spaceEnrollerConfigId);
+        if (spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId) != null) {
+            spaceEnrollerConfigRepository.delete(spaceEnrollerConfigId);
+        } else {
+            log.warn("Received delete on unknown id %s - This can be the result of CloudFoundry automatically trying "
+                    + "to clean services that failed during their creation", spaceEnrollerConfigId);
+        }
+
+        //clean stored app linked to the service (already unbound)
+        appRepository.findAll().forEach(
+                aInfo -> applicationLocker.executeThreadSafe(aInfo.getUuid(), () -> {
+                    ApplicationInfo applicationInfoReloaded = appRepository.findOne(aInfo.getUuid());
+                    if (applicationInfoReloaded != null && !applicationInfoReloaded.getEnrollmentState()
+                            .isCandidate(spaceEnrollerConfigId)) {
+                        applicationInfoReloaded.getEnrollmentState().updateEnrollment(spaceEnrollerConfigId, false);
+                        if (applicationInfoReloaded.getEnrollmentState().getStates().isEmpty()) {
+                            appRepository.delete(applicationInfoReloaded);
+                            applicationLocker.removeApplication(applicationInfoReloaded.getUuid());
+                        }
+                    }
+                })
+        );
+        return new DeleteServiceInstanceResponse(false);
+    }
+
+    @Override
     public GetLastServiceOperationResponse getLastOperation(GetLastServiceOperationRequest
-                                                                        getLastServiceOperationRequest) {
+                                                                    getLastServiceOperationRequest) {
         //TODO what are we supposed to return?
         return null;
     }
-
 
     @Override
     public UpdateServiceInstanceResponse updateServiceInstance(
@@ -179,54 +215,9 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                         autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced);
                 spaceEnrollerConfigRepository.save(spaceEnrollerConfig);
             }
-            //TODO check async flag
             return new UpdateServiceInstanceResponse(false);
         }
 
     }
-
-    @Override
-    public DeleteServiceInstanceResponse deleteServiceInstance(
-            DeleteServiceInstanceRequest request) throws ServiceBrokerException {
-        final String spaceEnrollerConfigId = request.getServiceInstanceId();
-        log.debug("deleteServiceInstance - {}", spaceEnrollerConfigId);
-        if (spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId) != null) {
-            spaceEnrollerConfigRepository.delete(spaceEnrollerConfigId);
-        } else {
-            log.warn("Received delete on unknown id %s - This can be the result of CloudFoundry automatically trying "
-                    + "to clean services that failed during their creation", spaceEnrollerConfigId);
-        }
-
-        //clean stored app linked to the service (already unbound)
-        appRepository.findAll().forEach(
-                aInfo -> applicationLocker.executeThreadSafe(aInfo.getUuid(), () -> {
-                    ApplicationInfo applicationInfoReloaded = appRepository.findOne(aInfo.getUuid());
-                    if (applicationInfoReloaded != null && !applicationInfoReloaded.getEnrollmentState()
-                            .isCandidate(spaceEnrollerConfigId)) {
-                        applicationInfoReloaded.getEnrollmentState().updateEnrollment(spaceEnrollerConfigId, false);
-                        if (applicationInfoReloaded.getEnrollmentState().getStates().isEmpty()) {
-                            appRepository.delete(applicationInfoReloaded);
-                            applicationLocker.removeApplication(applicationInfoReloaded.getUuid());
-                        }
-                    }
-                })
-        );
-        //TODO check async flag
-        return new DeleteServiceInstanceResponse(false);
-    }
-
-    private void checkSecuredParameter(String parameterName, String secret) {
-        if (secret == null) {
-            throw new InvalidParameterException(parameterName,
-                    "Trying to set or change a protected parameter without providing the right '"
-                            + Config.ServiceInstanceParameters.SECRET + "'.");
-        }
-    }
-
-    private <T> T consumeParameter(Map<String, Object> parameters, boolean withDefault, ParameterReader<T> reader)
-            throws InvalidParameterException {
-        return reader.readParameter(parameters.remove(reader.getParameterName()), withDefault);
-    }
-
 
 }

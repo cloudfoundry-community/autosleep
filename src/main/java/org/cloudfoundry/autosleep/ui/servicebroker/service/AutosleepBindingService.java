@@ -35,24 +35,24 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
     private ApplicationRepository appRepository;
 
     @Autowired
-    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
+    private ApplicationBindingRepository applicationBindingRepository;
 
     @Autowired
-    private ApplicationBindingRepository applicationBindingRepository;
+    private ApplicationLocker applicationLocker;
 
     @Autowired
     private RouteBindingRepository routeBindingRepository;
 
     @Autowired
-    private WorkerManagerService workerManager;
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Autowired
-    private ApplicationLocker applicationLocker;
-
+    private WorkerManagerService workerManager;
 
     @Override
-    public CreateServiceInstanceBindingResponse createServiceInstanceBinding(CreateServiceInstanceBindingRequest request) throws
-            ServiceInstanceBindingExistsException, ServiceBrokerException {
+    public CreateServiceInstanceBindingResponse createServiceInstanceBinding(
+            CreateServiceInstanceBindingRequest request) throws ServiceInstanceBindingExistsException,
+            ServiceBrokerException {
 
         final String bindingId = request.getBindingId();
         final String configId = request.getServiceInstanceId();
@@ -60,8 +60,10 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
         log.debug("createServiceInstanceBinding - {}", bindingId);
         SpaceEnrollerConfig spaceEnrollerConfig = spaceEnrollerConfigRepository.findOne(configId);
 
-        String targetAppId = (String) request.getBindResource().get(ServiceBindingResource.BIND_RESOURCE_KEY_APP.toString());
-        String routeId  = (String) request.getBindResource().get(ServiceBindingResource.BIND_RESOURCE_KEY_ROUTE.toString());
+        String targetAppId = (String) request.getBindResource().get(ServiceBindingResource.BIND_RESOURCE_KEY_APP
+                .toString());
+        String routeId = (String) request.getBindResource().get(ServiceBindingResource.BIND_RESOURCE_KEY_ROUTE
+                .toString());
         if (targetAppId != null) {
             log.debug("creating binding {} for app {}", bindingId, targetAppId);
             ApplicationBinding binding = ApplicationBinding.builder().serviceInstanceId(configId)
@@ -81,28 +83,31 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                 appRepository.save(appInfo);
                 workerManager.registerApplicationStopper(spaceEnrollerConfig, targetAppId);
             });
-            return new CreateServiceInstanceBindingResponse(Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION,
+            return new CreateServiceInstanceBindingResponse(Collections.singletonMap(Config.ServiceInstanceParameters
+                            .IDLE_DURATION,
                     spaceEnrollerConfig.getIdleDuration().toString()));
         } else if (routeId != null) {
             log.debug("creating binding {} for route {}", bindingId, routeId);
-            String proxyRoute="";
+            String proxyRoute = "";
             //TODO ROUTESERVICE get extra parameter appId and appBindingId(else exception)
             String linkedAppId = (String) request.getParameters().get(RouteBindingParameters.linkedApplicationId);
-            String linkedAppBindingId = (String) request.getParameters().get(RouteBindingParameters.linkedApplicationBindingId);
+            String linkedAppBindingId = (String) request.getParameters().get(RouteBindingParameters
+                    .linkedApplicationBindingId);
             /*TODO check app known :*/
             ApplicationInfo applicationInfo = appRepository.findOne(linkedAppId);
             if (linkedAppId == null || linkedAppBindingId == null || applicationInfo == null) {
                 throw new ServiceBrokerException("Only Autosleep is allowed to bind route to itself");
             }
             //TODO ROUTE SERVICE create proxy route?
-            String localProxyRoute="/??";
+            String localProxyRoute = "/??";
             routeBindingRepository.save(RouteBinding.builder().bindingId(bindingId).routeId(routeId)
                     .configurationId(configId)
                     .localRoute(localProxyRoute)
                     .linkedApplicationId(linkedAppId)
                     .linkedApplicationBindingId(linkedAppBindingId).build());
 
-            return new CreateServiceInstanceBindingResponse(Collections.singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION,
+            return new CreateServiceInstanceBindingResponse(Collections.singletonMap(Config.ServiceInstanceParameters
+                            .IDLE_DURATION,
                     spaceEnrollerConfig.getIdleDuration().toString()), proxyRoute);
         } else {
             throw new ServiceBrokerException("Unknown bind ressource");
@@ -126,15 +131,17 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             //TODO add "findByLinkedApp" in repo?
             Iterable<RouteBinding> allBindings = routeBindingRepository.findAll();
             if (allBindings != null) {
-                Optional<RouteBinding> linkedRouteBinding = StreamSupport.stream(routeBindingRepository.findAll().spliterator(), true).filter(routeBinding -> routeBinding.getLinkedApplicationId().equals(appId)).findFirst();
+                Optional<RouteBinding> linkedRouteBinding = StreamSupport.stream(routeBindingRepository.findAll()
+                        .spliterator(), true).filter(routeBinding -> routeBinding.getLinkedApplicationId().equals(
+                        appId)).findFirst();
                 if (linkedRouteBinding.isPresent()
                         && linkedRouteBinding.get().getLinkedApplicationBindingId().equals(bindingId)) {
-                    log.debug("detected associated route binding {}, cleaning it", linkedRouteBinding.get().getBindingId());
+                    log.debug("detected associated route binding {}, cleaning it", linkedRouteBinding.get()
+                            .getBindingId());
                     //we add a proxy route binding for this app, clean it before remove app binding
                     //TODO cfapi.unbindRoute(linkedRouteBinding.get().getid())
                 }
             }
-
 
             applicationLocker.executeThreadSafe(appId, () -> {
                 log.debug("deleteServiceInstanceBinding on app ", appId);

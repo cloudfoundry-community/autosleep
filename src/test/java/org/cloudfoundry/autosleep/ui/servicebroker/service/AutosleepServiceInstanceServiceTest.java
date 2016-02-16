@@ -110,7 +110,7 @@ public class AutosleepServiceInstanceServiceTest {
     @Mock
     private WorkerManagerService workerManager;
 
-    private CreateServiceInstanceRequest _getCreateRequestWithArbitraryParams(Map<String, Object> params) {
+    private CreateServiceInstanceRequest getCreateRequestWithArbitraryParams(Map<String, Object> params) {
         if (params == null) {
             params = Collections.emptyMap();
         }
@@ -118,7 +118,7 @@ public class AutosleepServiceInstanceServiceTest {
                 ORG_TEST, SPACE_TEST, params, false).withServiceInstanceId(SERVICE_INSTANCE_ID);
     }
 
-    private UpdateServiceInstanceRequest _getUpdateRequestWithArbitraryParams(Map<String, Object> params) {
+    private UpdateServiceInstanceRequest getUpdateRequestWithArbitraryParams(Map<String, Object> params) {
         if (params == null) {
             params = Collections.emptyMap();
         }
@@ -135,7 +135,7 @@ public class AutosleepServiceInstanceServiceTest {
 
         //when user submit only the duration
         Map<String, Object> params = singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PT10H");
-        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(params);
+        CreateServiceInstanceRequest createRequest = getCreateRequestWithArbitraryParams(params);
         instanceService.createServiceInstance(createRequest);
 
         //then  service is saved with good duration
@@ -196,7 +196,7 @@ public class AutosleepServiceInstanceServiceTest {
                 BeanGenerator.createAppInfoLinkedToService(SERVICE_INSTANCE_ID),
                 BeanGenerator.createAppInfoLinkedToService("àç!àpoiu"),
                 BeanGenerator.createAppInfoLinkedToService("lkv nàç ")
-        ).stream().collect(Collectors.toMap(applicationInfo -> applicationInfo.getUuid(),
+        ).stream().collect(Collectors.toMap(ApplicationInfo::getUuid,
                 applicationInfo -> applicationInfo));
         when(applicationRepository.findAll()).thenReturn(applicationInfos.values());
 
@@ -220,8 +220,8 @@ public class AutosleepServiceInstanceServiceTest {
         when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when service is created
-        CreateServiceInstanceResponse si = instanceService.createServiceInstance(_getCreateRequestWithArbitraryParams
-                (null));
+        CreateServiceInstanceResponse si =
+                instanceService.createServiceInstance(getCreateRequestWithArbitraryParams(null));
 
         //then global watcher is invoked
         verify(workerManager, times(1)).registerSpaceEnroller(any(SpaceEnrollerConfig.class));
@@ -263,7 +263,7 @@ public class AutosleepServiceInstanceServiceTest {
         //when user submit only the exclusion
         Map<String, Object> params = singletonMap(
                 Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, ".*");
-        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(params);
+        CreateServiceInstanceRequest createRequest = getCreateRequestWithArbitraryParams(params);
         instanceService.createServiceInstance(createRequest);
 
         //then  service is saved with good exclusion
@@ -280,7 +280,7 @@ public class AutosleepServiceInstanceServiceTest {
         //when user only gives forced auto enrollment
         Map<String, Object> params = singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, Config
                 .ServiceInstanceParameters.Enrollment.forced.name());
-        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(params);
+        CreateServiceInstanceRequest createRequest = getCreateRequestWithArbitraryParams(params);
         //then it fails with good parameter in the error
         verifyThrown(() -> instanceService.createServiceInstance(createRequest), InvalidParameterException.class,
                 exceptionThrown ->
@@ -299,7 +299,7 @@ public class AutosleepServiceInstanceServiceTest {
         parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
                 Config.ServiceInstanceParameters.Enrollment.forced.name());
 
-        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(parameters);
+        CreateServiceInstanceRequest createRequest = getCreateRequestWithArbitraryParams(parameters);
         CreateServiceInstanceResponse si = instanceService.createServiceInstance(createRequest);
 
         //then service is saved with forced auto enrollment
@@ -314,7 +314,7 @@ public class AutosleepServiceInstanceServiceTest {
         //given the service already exists
         when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(true);
         //when instance created then an error is thrown
-        verifyThrown(() -> instanceService.createServiceInstance(_getCreateRequestWithArbitraryParams(null)),
+        verifyThrown(() -> instanceService.createServiceInstance(getCreateRequestWithArbitraryParams(null)),
                 ServiceInstanceExistsException.class);
     }
 
@@ -326,7 +326,7 @@ public class AutosleepServiceInstanceServiceTest {
         //when an unknwon parameter is submitted
         String unknwonParameter = "unknownParameter";
         Map<String, Object> params = singletonMap(unknwonParameter, "unknownParameterValue");
-        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(params);
+        CreateServiceInstanceRequest createRequest = getCreateRequestWithArbitraryParams(params);
 
         //then an error is thrown
         verifyThrown(() -> instanceService.createServiceInstance(createRequest), InvalidParameterException.class,
@@ -340,7 +340,7 @@ public class AutosleepServiceInstanceServiceTest {
 
         //when user submit only the secret
         Map<String, Object> params = singletonMap(Config.ServiceInstanceParameters.SECRET, "password");
-        CreateServiceInstanceRequest createRequest = _getCreateRequestWithArbitraryParams(params);
+        CreateServiceInstanceRequest createRequest = getCreateRequestWithArbitraryParams(params);
 
         CreateServiceInstanceResponse si = instanceService.createServiceInstance(createRequest);
 
@@ -366,7 +366,7 @@ public class AutosleepServiceInstanceServiceTest {
                 Config.ServiceInstanceParameters.Enrollment.standard.name());
         parameters.put(Config.ServiceInstanceParameters.SECRET, superPassword);
 
-        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(parameters);
+        UpdateServiceInstanceRequest updateRequest = getUpdateRequestWithArbitraryParams(parameters);
 
         //No exception should be raised, as the super-password was provided
         instanceService.updateServiceInstance(updateRequest);
@@ -378,7 +378,7 @@ public class AutosleepServiceInstanceServiceTest {
         service_exist_in_database();
 
         //when user gives auto enrollment without secret
-        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(
+        UpdateServiceInstanceRequest updateRequest = getUpdateRequestWithArbitraryParams(
                 singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
                         Config.ServiceInstanceParameters.Enrollment.standard.name()));
 
@@ -413,7 +413,7 @@ public class AutosleepServiceInstanceServiceTest {
 
         //when user gives a parameter that cannot be updated
         //when user gives auto enrollment without secret
-        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(
+        UpdateServiceInstanceRequest updateRequest = getUpdateRequestWithArbitraryParams(
                 singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PT12M"));
 
         //then error is thrown
@@ -429,7 +429,7 @@ public class AutosleepServiceInstanceServiceTest {
 
         //when user gives an unknown parameter
         String unknownParameter = "unknownParameter";
-        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(
+        UpdateServiceInstanceRequest updateRequest = getUpdateRequestWithArbitraryParams(
                 singletonMap(unknownParameter, "someValue"));
 
         //then error is thrown
@@ -441,7 +441,7 @@ public class AutosleepServiceInstanceServiceTest {
     public void test_update_on_non_existing() throws Exception {
         //given the repository does not contain the service
         when(spaceEnrollerConfigRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(null);
-        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(null);
+        UpdateServiceInstanceRequest updateRequest = getUpdateRequestWithArbitraryParams(null);
 
         //when update is invoked the error is thrown
         verifyThrown(() -> instanceService.updateServiceInstance(updateRequest),
@@ -459,7 +459,7 @@ public class AutosleepServiceInstanceServiceTest {
         parameters.put(Config.ServiceInstanceParameters.SECRET, "secret");
         parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
                 Config.ServiceInstanceParameters.Enrollment.standard.name());
-        UpdateServiceInstanceRequest updateRequest = _getUpdateRequestWithArbitraryParams(parameters);
+        UpdateServiceInstanceRequest updateRequest = getUpdateRequestWithArbitraryParams(parameters);
 
         UpdateServiceInstanceResponse response = instanceService.updateServiceInstance(updateRequest);
 

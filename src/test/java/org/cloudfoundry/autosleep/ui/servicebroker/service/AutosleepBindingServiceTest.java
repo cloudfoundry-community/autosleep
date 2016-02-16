@@ -199,8 +199,8 @@ public class AutosleepBindingServiceTest {
         DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteAppBindingTest(testId, testId);
 
         //given that a route binding is also registered
-        when(routeBindingRepo.findAll()).thenReturn(Collections.singletonList
-                (BeanGenerator.createRouteBinding(linkedRouteBindingId,testId,APP_UID,testId)));
+        when(routeBindingRepo.findAll()).thenReturn(Collections.singletonList(
+                BeanGenerator.createRouteBinding(linkedRouteBindingId,testId,APP_UID,testId)));
 
         //when unbinding the app
         bindingService.deleteServiceInstanceBinding(deleteRequest);
@@ -215,7 +215,6 @@ public class AutosleepBindingServiceTest {
     public void should_blacklist_app_on_app_binding_deletion_if_autoenrollment_is_standard() throws Exception {
         final String bindingId = "testDelBinding";
         final String serviceId = "testDelBinding";
-        DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteAppBindingTest(serviceId, bindingId);
 
         //given that autoEnrollment is standard
         when(spaceEnrollerConfig.isForcedAutoEnrollment()).thenReturn(false);
@@ -227,6 +226,7 @@ public class AutosleepBindingServiceTest {
         when(enrollmentState.getStates()).thenReturn(services);
 
         //when unbinding the app
+        DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteAppBindingTest(serviceId, bindingId);
         bindingService.deleteServiceInstanceBinding(deleteRequest);
 
         //then it should be blacklisted and kept in database

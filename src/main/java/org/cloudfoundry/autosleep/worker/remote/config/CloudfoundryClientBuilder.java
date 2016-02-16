@@ -51,7 +51,7 @@ public class CloudfoundryClientBuilder {
                     .username(username)
                     .password(password).build();
 
-              logClient = SpringLoggingClient.builder().cloudFoundryClient(cfClient).build();
+            logClient = SpringLoggingClient.builder().cloudFoundryClient(cfClient).build();
         } catch (RuntimeException r) {
             log.error("CloudFoundryApi - failure while login", r);
         }
