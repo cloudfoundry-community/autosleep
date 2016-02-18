@@ -49,7 +49,8 @@ class ApplicationStopper extends AbstractPeriodicTask {
             throws EntityNotFoundException, CloudFoundryException {
         //retrieve updated info
         Duration delta = null;
-        Instant lastEvent = LastDateComputer.computeLastDate(applicationActivity.getLastLog(),
+        Instant lastEvent = LastDateComputer.computeLastDate(
+                applicationActivity.getLastLog(),
                 applicationActivity.getLastEvent());
         if (lastEvent != null) {
             Instant nextIdleTime = lastEvent.plus(getPeriod());

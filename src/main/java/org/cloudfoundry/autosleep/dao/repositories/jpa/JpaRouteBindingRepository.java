@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface JpaRouteBindingRepository extends JpaRepository<RouteBinding, String>, RouteBindingRepository {
+
 }

@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface JpaApplicationRepository extends JpaRepository<ApplicationInfo, String>, ApplicationRepository {
+
 }

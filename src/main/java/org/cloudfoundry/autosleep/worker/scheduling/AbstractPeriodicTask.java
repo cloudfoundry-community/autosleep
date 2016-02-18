@@ -9,22 +9,15 @@ import java.time.Duration;
 import java.time.Instant;
 
 @Slf4j
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class AbstractPeriodicTask implements Runnable {
 
-    private Clock clock;
+    private final Clock clock;
 
     @Getter(value = AccessLevel.PROTECTED)
-    private Duration period;
+    private final Duration period;
 
-    public void start(Duration delay) {
-        log.debug("start - {}", delay);
-        clock.scheduleTask(getTaskId(), delay == null ? Duration.ofSeconds(0) : delay, this);
-    }
-
-    public void startNow() {
-        start(Duration.ofSeconds(0));
-    }
+    protected abstract String getTaskId();
 
     public Instant reschedule(Duration delta) {
         log.debug("Rescheduling in {}", delta.toString());
@@ -36,7 +29,14 @@ public abstract class AbstractPeriodicTask implements Runnable {
         return reschedule(period);
     }
 
-    protected abstract String getTaskId();
+    public void start(Duration delay) {
+        log.debug("start - {}", delay);
+        clock.scheduleTask(getTaskId(), delay == null ? Duration.ofSeconds(0) : delay, this);
+    }
+
+    public void startNow() {
+        start(Duration.ofSeconds(0));
+    }
 
     public void stopTask() {
         clock.removeTask(getTaskId());

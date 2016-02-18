@@ -20,4 +20,5 @@ public interface CloudFoundryApiService {
     void startApplication(String applicationUuid) throws CloudFoundryException;
 
     void stopApplication(String applicationUuid) throws CloudFoundryException;
+
 }

@@ -13,4 +13,5 @@ public class IntervalDeserializer extends JsonDeserializer<Duration> {
     public Duration deserialize(JsonParser parser, DeserializationContext ctx) throws IOException {
         return Duration.ofMillis(parser.getLongValue());
     }
+
 }

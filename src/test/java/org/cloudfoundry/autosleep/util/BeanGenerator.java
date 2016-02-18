@@ -22,7 +22,10 @@ public class BeanGenerator {
     public static final UUID SPACE_TEST = UUID.randomUUID();
 
     public static ApplicationIdentity createAppIdentity(String appUuid) {
-        return new ApplicationIdentity(appUuid, appUuid + "-name");
+        return ApplicationIdentity.builder()
+                .guid(appUuid)
+                .name(appUuid + "-name")
+                .build();
     }
 
     public static ApplicationInfo createAppInfo() {
@@ -59,11 +62,13 @@ public class BeanGenerator {
     }
 
     public static ApplicationInfo.DiagnosticInfo.ApplicationLog createAppLog(Instant instant) {
-        return new ApplicationInfo.DiagnosticInfo.ApplicationLog("fakelog",
-                instant != null ? instant : Instant.now(),
-                "STDOUT",
-                "sourceName",
-                "sourceId");
+        return ApplicationInfo.DiagnosticInfo.ApplicationLog.builder()
+                .message("fakelog")
+                .timestamp(instant != null ? instant : Instant.now())
+                .messageType("STDOUT")
+                .sourceName("sourceName")
+                .sourceId("sourceId")
+                .build();
     }
 
     public static ApplicationInfo.DiagnosticInfo.ApplicationLog createAppLog() {
@@ -97,6 +102,23 @@ public class BeanGenerator {
 
     public static ApplicationInfo.DiagnosticInfo.ApplicationEvent createCloudEvent() {
         return createCloudEvent(null);
+    }
+
+    public static RouteBinding createRouteBinding(String bindingId,
+                                                  String serviceId,
+                                                  String linkedAppId,
+                                                  String linkedAppBindingId) {
+        return RouteBinding.builder()
+                .bindingId(bindingId)
+                .routeId("aRouteId")
+                .configurationId(serviceId)
+                .localRoute("alocalroute")
+                .linkedApplicationId(linkedAppId)
+                .linkedApplicationBindingId(linkedAppBindingId).build();
+    }
+
+    public static RouteBinding createRouteBinding(String bindingId) {
+        return createRouteBinding(bindingId, "", "", "");
     }
 
     public static SpaceEnrollerConfig createServiceInstance() {
@@ -140,22 +162,5 @@ public class BeanGenerator {
                 + "\"start\":\"2015-11-18 15:49:06 +0000\","
                 + "\"state_timestamp\":1447861746"
                 + "}";
-    }
-
-    public static RouteBinding createRouteBinding(String bindingId,
-                                                  String serviceId,
-                                                  String linkedAppId,
-                                                  String linkedAppBindingId) {
-        return RouteBinding.builder()
-                .bindingId(bindingId)
-                .routeId("aRouteId")
-                .configurationId(serviceId)
-                .localRoute("alocalroute")
-                .linkedApplicationId(linkedAppId)
-                .linkedApplicationBindingId(linkedAppBindingId).build();
-    }
-
-    public static RouteBinding createRouteBinding(String bindingId) {
-        return createRouteBinding(bindingId,"","","");
     }
 }

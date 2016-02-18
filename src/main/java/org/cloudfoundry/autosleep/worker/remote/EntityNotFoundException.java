@@ -4,11 +4,12 @@ import lombok.Getter;
 
 @Getter
 public class EntityNotFoundException extends Exception {
+
     public enum EntityType {application, service}
 
-    private EntityType entityType;
-
     private String entityId;
+
+    private EntityType entityType;
 
     public EntityNotFoundException(EntityType entityType, String entityId) {
         this(entityType, entityId, null);
@@ -19,4 +20,5 @@ public class EntityNotFoundException extends Exception {
         this.entityType = entityType;
         this.entityId = entityId;
     }
+
 }

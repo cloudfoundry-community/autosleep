@@ -41,6 +41,35 @@ import java.util.stream.Collectors;
 @Service
 public class CloudFoundryApi implements CloudFoundryApiService {
 
+    @Getter
+    public abstract class BaseSubscriber<T> implements Subscriber<T> {
+
+        final AtomicReference<Throwable> error;
+
+        final CountDownLatch latch;
+
+        public BaseSubscriber(CountDownLatch latch, AtomicReference<Throwable> error) {
+            this.latch = latch;
+            this.error = error;
+        }
+
+        @Override
+        public void onComplete() {
+            latch.countDown();
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            error.set(throwable);
+            latch.countDown();
+        }
+
+        @Override
+        public void onSubscribe(Subscription subscription) {
+            subscription.request(Long.MAX_VALUE);
+        }
+    }
+
     @Autowired
     private SpringCloudFoundryClient cfClient;
 
@@ -52,13 +81,14 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             CloudFoundryException {
         log.debug("bindServiceInstance");
         try {
-            cfClient.serviceBindings().create(
-                    CreateServiceBindingRequest
-                            .builder()
-                            .applicationId(application.getGuid())
-                            .serviceInstanceId(serviceInstanceId).build()).get(
-                    Config.CF_API_TIMEOUT_IN_S, TimeUnit
-                            .SECONDS);
+            cfClient.serviceBindings()
+                    .create(
+                            CreateServiceBindingRequest
+                                    .builder()
+                                    .applicationId(application.getGuid())
+                                    .serviceInstanceId(serviceInstanceId)
+                                    .build())
+                    .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
@@ -89,19 +119,23 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     }
 
     private ApplicationInfo.DiagnosticInfo.ApplicationLog buildAppLog(LogMessage cfLog) {
-        return cfLog == null ? null : new ApplicationInfo.DiagnosticInfo.ApplicationLog(
-                cfLog.getMessage(),
-                cfLog.getTimestamp().toInstant(),
-                cfLog.getMessageType().toString(),
-                cfLog.getSourceName(),
-                cfLog.getSourceId());
+        return cfLog == null ? null : ApplicationInfo.DiagnosticInfo.ApplicationLog.builder()
+                .message(cfLog.getMessage())
+                .timestamp(cfLog.getTimestamp().toInstant())
+                .messageType(cfLog.getMessageType().toString())
+                .sourceId(cfLog.getSourceId())
+                .sourceName(cfLog.getSourceName())
+                .build();
     }
 
     private void changeApplicationState(String applicationUuid, String targetState) throws CloudFoundryException {
         log.debug("changeApplicationState to {}", targetState);
         try {
             Mono<GetApplicationResponse> publisher = this.cfClient
-                    .applicationsV2().get(GetApplicationRequest.builder().applicationId(applicationUuid).build());
+                    .applicationsV2()
+                    .get(GetApplicationRequest.builder()
+                            .applicationId(applicationUuid)
+                            .build());
             GetApplicationResponse response = publisher.get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
 
             if (!targetState.equals(response.getEntity().getState())) {
@@ -180,14 +214,15 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 throw new CloudFoundryException(error.get());
             } else {
                 ApplicationEntity app = appReference.get().getEntity();
-                return new ApplicationActivity(
-                        new ApplicationIdentity(
-                                appUid,
-                                app.getName()),
-                        app.getState(),
-                        buildAppEvent(lastEventReference.get()),
-                        buildAppLog(lastLogReference.get()));
-
+                return ApplicationActivity.builder()
+                        .application(ApplicationIdentity.builder()
+                                .guid(appUid)
+                                .name(app.getName())
+                                .build())
+                        .state(app.getState())
+                        .lastEvent(buildAppEvent(lastEventReference.get()))
+                        .lastLog(buildAppLog(lastLogReference.get()))
+                        .build();
             }
         } catch (InterruptedException e) {
             log.error(e.getMessage());
@@ -213,9 +248,11 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                             excludeNames == null
                                     || !excludeNames.matcher(cloudApplication.getEntity().getName()).matches()))
                     .map(
-                            cloudApplication -> new ApplicationIdentity(
-                                    cloudApplication.getMetadata().getId(),
-                                    cloudApplication.getEntity().getName()))
+                            cloudApplication ->
+                                    ApplicationIdentity.builder()
+                                            .guid(cloudApplication.getMetadata().getId())
+                                            .name(cloudApplication.getEntity().getName())
+                                            .build())
                     .collect(Collectors.toList());
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
@@ -232,35 +269,6 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     public void stopApplication(String applicationUuid) throws CloudFoundryException {
         log.debug("stopApplication");
         changeApplicationState(applicationUuid, CloudFoundryAppState.STOPPED);
-    }
-
-    @Getter
-    public abstract class BaseSubscriber<T> implements Subscriber<T> {
-
-        final AtomicReference<Throwable> error;
-
-        final CountDownLatch latch;
-
-        public BaseSubscriber(CountDownLatch latch, AtomicReference<Throwable> error) {
-            this.latch = latch;
-            this.error = error;
-        }
-
-        @Override
-        public void onComplete() {
-            latch.countDown();
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            error.set(throwable);
-            latch.countDown();
-        }
-
-        @Override
-        public void onSubscribe(Subscription subscription) {
-            subscription.request(Long.MAX_VALUE);
-        }
     }
 
 }

@@ -1,20 +1,19 @@
 package org.cloudfoundry.autosleep.worker.remote.model;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 
 @Getter
-@AllArgsConstructor
+@Builder
 public class ApplicationActivity {
 
     private ApplicationIdentity application;
-
-    private String state;
 
     private ApplicationInfo.DiagnosticInfo.ApplicationEvent lastEvent;
 
     private ApplicationInfo.DiagnosticInfo.ApplicationLog lastLog;
 
+    private String state;
 
 }

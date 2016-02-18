@@ -14,7 +14,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @EnableWebMvc
 @Slf4j
 public class Application {
-    
+
     public static void main(String[] args) {
         new SpringApplicationBuilder(Application.class)
                 .initializers(new ContextInitializer())

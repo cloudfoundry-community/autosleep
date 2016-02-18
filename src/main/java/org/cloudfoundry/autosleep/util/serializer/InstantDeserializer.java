@@ -8,8 +8,10 @@ import java.io.IOException;
 import java.time.Instant;
 
 public class InstantDeserializer extends JsonDeserializer<Instant> {
+
     @Override
     public Instant deserialize(JsonParser parser, DeserializationContext ctx) throws IOException {
         return Instant.ofEpochMilli(parser.getLongValue());
     }
+
 }

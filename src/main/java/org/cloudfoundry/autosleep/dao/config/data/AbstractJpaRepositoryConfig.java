@@ -11,18 +11,7 @@ import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class  AbstractJpaRepositoryConfig {
-
-    @Bean
-    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-        return createEntityManagerFactoryBean(dataSource,  getHibernateDialect());
-    }
-
-    @Bean
-    public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
-        return new JpaTransactionManager(entityManagerFactory);
-    }
-
+public abstract class AbstractJpaRepositoryConfig {
 
     protected LocalContainerEntityManagerFactoryBean createEntityManagerFactoryBean(DataSource dataSource,
                                                                                     String dialectClassName) {
@@ -40,7 +29,16 @@ public abstract class  AbstractJpaRepositoryConfig {
         return em;
     }
 
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+        return createEntityManagerFactoryBean(dataSource, getHibernateDialect());
+    }
+
     protected abstract String getHibernateDialect();
 
+    @Bean
+    public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+        return new JpaTransactionManager(entityManagerFactory);
+    }
 
 }

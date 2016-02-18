@@ -20,8 +20,6 @@ public class DeployedApplicationConfig {
     @Autowired
     private Environment environment;
 
-
-
     @Bean
     public Deployment loadCurrentDeployment() throws IOException {
         String deployment = environment.getProperty(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY);
@@ -53,7 +51,6 @@ public class DeployedApplicationConfig {
                 return applicationUris.get(0);
             }
         }
-
 
     }
 }

@@ -32,17 +32,6 @@ public class DashboardController {
     @Autowired
     private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
-    @ExceptionHandler({ServiceInstanceDoesNotExistException.class})
-    @ResponseBody
-    public String handleException(ServiceInstanceDoesNotExistException ex,
-                                                        HttpServletResponse response) {
-        response.setStatus(HttpStatus.NOT_FOUND.value());
-        response.setContentType(MediaType.TEXT_HTML.toString());
-        response.setCharacterEncoding("UTF-8");
-        return ex.getMessage();
-    }
-
-
     @RequestMapping("/{serviceInstanceId}")
     public ModelAndView appForService(@PathVariable("serviceInstanceId") String serviceInstanceId)
             throws ServiceInstanceDoesNotExistException {
@@ -71,4 +60,15 @@ public class DashboardController {
             throw new ServiceInstanceDoesNotExistException(serviceInstanceId);
         }
     }
+
+    @ExceptionHandler({ServiceInstanceDoesNotExistException.class})
+    @ResponseBody
+    public String handleException(ServiceInstanceDoesNotExistException ex,
+                                  HttpServletResponse response) {
+        response.setStatus(HttpStatus.NOT_FOUND.value());
+        response.setContentType(MediaType.TEXT_HTML.toString());
+        response.setCharacterEncoding("UTF-8");
+        return ex.getMessage();
+    }
+
 }

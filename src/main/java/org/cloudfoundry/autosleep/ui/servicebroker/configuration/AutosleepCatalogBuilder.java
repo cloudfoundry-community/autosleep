@@ -22,10 +22,12 @@ public class AutosleepCatalogBuilder {
 
     @Bean
     public Catalog buildCatalog() {
-        String serviceBrokerId = environment.getProperty(Config.EnvKey.CF_SERVICE_BROKER_ID, Config.ServiceCatalog
-                .DEFAULT_SERVICE_BROKER_ID);
-        String servicePlanId = environment.getProperty(Config.EnvKey.CF_SERVICE_PLAN_ID, Config.ServiceCatalog
-                .DEFAULT_SERVICE_PLAN_ID);
+        String serviceBrokerId = environment.getProperty(Config.EnvKey.CF_SERVICE_BROKER_ID,
+                Config.ServiceCatalog.DEFAULT_SERVICE_BROKER_ID);
+
+        String servicePlanId = environment.getProperty(Config.EnvKey.CF_SERVICE_PLAN_ID,
+                Config.ServiceCatalog.DEFAULT_SERVICE_PLAN_ID);
+
         return new Catalog(Collections.singletonList(new ServiceDefinition(
                 serviceBrokerId,
                 serviceBrokerId,

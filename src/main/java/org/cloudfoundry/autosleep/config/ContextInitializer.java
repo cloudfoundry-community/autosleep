@@ -28,79 +28,20 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
      * Will point to in-memory storage.
      */
     private static final String DEFAULT_PROFILE = "default";
-    private static final List<String> validLocalProfiles = Arrays.asList("mysql");
+
     private static final Map<Class<? extends ServiceInfo>, String> autorizedPersistenceProfiles =
             new HashMap<>();
+
+    private static final List<String> validLocalProfiles = Arrays.asList("mysql");
 
     static {
         autorizedPersistenceProfiles.put(MysqlServiceInfo.class, "mysql");
     }
 
-
-    @Override
-    public void initialize(GenericApplicationContext applicationContext) {
-        log.debug("----------------------- app context initialization , set persistence profile  --------------------");
-        ConfigurableEnvironment appEnvironment = applicationContext.getEnvironment();
-
-        String[] persistenceProfiles;
-
-        log.debug("Checking if cloud context");
-        Cloud cloud = getCloud();
-        if (cloud != null) {
-            log.debug("\t -> App in a cloud context, checking available services");
-            persistenceProfiles = getCloudProfile(cloud);
-        } else {
-            log.debug("\t -> App in a local context, checking if profile given in environment variable");
-            persistenceProfiles = getActiveProfile(appEnvironment);
-        }
-
-        if (persistenceProfiles == null) {
-            log.debug("\t -> No profile given or no available service -> setting default profile");
-            persistenceProfiles = new String[]{DEFAULT_PROFILE};
-        }
-
-        for (String persistenceProfile : persistenceProfiles) {
-            appEnvironment.addActiveProfile(persistenceProfile);
-        }
-    }
-
-
-    Cloud getCloud() {
-        try {
-            CloudFactory cloudFactory = new CloudFactory();
-            return cloudFactory.getCloud();
-        } catch (CloudException ce) {
-            return null;
-        }
-    }
-
-    /**
-     * Check if one of the authorized profile is available in the cloud configuration.
-     *
-     * @param cloud Contextual cloud
-     * @return the two profils to activate if available ( "profile" and "profile-cloud")
-     */
-    private String[] getCloudProfile(Cloud cloud) {
-        List<ServiceInfo> availableServices = cloud.getServiceInfos();
-        log.info("Found serviceInfos: " + StringUtils.collectionToCommaDelimitedString(availableServices));
-        List<String> availableProfiles = availableServices.stream()
-                .map(Object::getClass)
-                .filter(autorizedPersistenceProfiles::containsKey)
-                .map(autorizedPersistenceProfiles::get)
-                .collect(Collectors.toList());
-
-
-        if (availableProfiles.size() > 1) {
-            throw new IllegalStateException(
-                    "Only one service of the following types may be bound to this application: "
-                            + autorizedPersistenceProfiles.values().toString() + ". "
-                            + "These services are bound to the application: ["
-                            + StringUtils.collectionToCommaDelimitedString(availableProfiles) + "]");
-        } else if (availableProfiles.size() > 0) {
-            return createProfileNames(availableProfiles.get(0), "cloud");
-        } else {
-            return null;
-        }
+    private String[] createProfileNames(String baseName, String suffix) {
+        String[] profileNames = {baseName, baseName + "-" + suffix};
+        log.info("Setting profile names: " + StringUtils.arrayToCommaDelimitedString(profileNames));
+        return profileNames;
     }
 
     /**
@@ -127,9 +68,67 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
         }
     }
 
-    private String[] createProfileNames(String baseName, String suffix) {
-        String[] profileNames = {baseName, baseName + "-" + suffix};
-        log.info("Setting profile names: " + StringUtils.arrayToCommaDelimitedString(profileNames));
-        return profileNames;
+    Cloud getCloud() {
+        try {
+            CloudFactory cloudFactory = new CloudFactory();
+            return cloudFactory.getCloud();
+        } catch (CloudException ce) {
+            return null;
+        }
+    }
+
+    /**
+     * Check if one of the authorized profile is available in the cloud configuration.
+     *
+     * @param cloud Contextual cloud
+     * @return the two profils to activate if available ( "profile" and "profile-cloud")
+     */
+    private String[] getCloudProfile(Cloud cloud) {
+        List<ServiceInfo> availableServices = cloud.getServiceInfos();
+        log.info("Found serviceInfos: " + StringUtils.collectionToCommaDelimitedString(availableServices));
+        List<String> availableProfiles = availableServices.stream()
+                .map(Object::getClass)
+                .filter(autorizedPersistenceProfiles::containsKey)
+                .map(autorizedPersistenceProfiles::get)
+                .collect(Collectors.toList());
+
+        if (availableProfiles.size() > 1) {
+            throw new IllegalStateException(
+                    "Only one service of the following types may be bound to this application: "
+                            + autorizedPersistenceProfiles.values().toString() + ". "
+                            + "These services are bound to the application: ["
+                            + StringUtils.collectionToCommaDelimitedString(availableProfiles) + "]");
+        } else if (availableProfiles.size() > 0) {
+            return createProfileNames(availableProfiles.get(0), "cloud");
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void initialize(GenericApplicationContext applicationContext) {
+        log.debug("----------------------- app context initialization , set persistence profile  --------------------");
+        ConfigurableEnvironment appEnvironment = applicationContext.getEnvironment();
+
+        String[] persistenceProfiles;
+
+        log.debug("Checking if cloud context");
+        Cloud cloud = getCloud();
+        if (cloud != null) {
+            log.debug("\t -> App in a cloud context, checking available services");
+            persistenceProfiles = getCloudProfile(cloud);
+        } else {
+            log.debug("\t -> App in a local context, checking if profile given in environment variable");
+            persistenceProfiles = getActiveProfile(appEnvironment);
+        }
+
+        if (persistenceProfiles == null) {
+            log.debug("\t -> No profile given or no available service -> setting default profile");
+            persistenceProfiles = new String[]{DEFAULT_PROFILE};
+        }
+
+        for (String persistenceProfile : persistenceProfiles) {
+            appEnvironment.addActiveProfile(persistenceProfile);
+        }
     }
 }

@@ -21,14 +21,13 @@ import java.util.stream.Collectors;
 @Slf4j
 class SpaceEnroller extends AbstractPeriodicTask {
 
-
-    private final String spaceEnrollerConfigId;
+    private final ApplicationRepository applicationRepository;
 
     private final CloudFoundryApiService cloudFoundryApi;
 
-    private final SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
+    private final String spaceEnrollerConfigId;
 
-    private final ApplicationRepository applicationRepository;
+    private final SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     private DeployedApplicationConfig.Deployment deployment;
 
@@ -43,6 +42,11 @@ class SpaceEnroller extends AbstractPeriodicTask {
         this.spaceEnrollerConfigRepository = spaceEnrollerConfigRepository;
         this.applicationRepository = applicationRepository;
         this.deployment = deployment;
+    }
+
+    @Override
+    protected String getTaskId() {
+        return spaceEnrollerConfigId;
     }
 
     @Override
@@ -86,8 +90,4 @@ class SpaceEnroller extends AbstractPeriodicTask {
         }
     }
 
-    @Override
-    protected String getTaskId() {
-        return spaceEnrollerConfigId;
-    }
 }

@@ -14,4 +14,5 @@ public class PatternSerializer extends JsonSerializer<Pattern> {
             throws IOException {
         jsonGenerator.writeString(pattern.pattern());
     }
+
 }

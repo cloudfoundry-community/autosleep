@@ -1,6 +1,11 @@
 package org.cloudfoundry.autosleep.dao.model;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.persistence.Entity;
@@ -16,19 +21,12 @@ import java.util.Objects;
 @Entity
 public class ApplicationBinding {
 
+    private String applicationId;
+
     @Id
     private String serviceBindingId;
 
     private String serviceInstanceId;
-
-    private String applicationId;
-
-
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName() + " : [id:" + serviceBindingId + " serviceId:+" + serviceInstanceId
-                + " app:" + applicationId + "]";
-    }
 
     @Override
     public boolean equals(Object object) {
@@ -46,5 +44,11 @@ public class ApplicationBinding {
     @Override
     public int hashCode() {
         return serviceBindingId.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + " : [id:" + serviceBindingId + " serviceId:+" + serviceInstanceId
+                + " app:" + applicationId + "]";
     }
 }

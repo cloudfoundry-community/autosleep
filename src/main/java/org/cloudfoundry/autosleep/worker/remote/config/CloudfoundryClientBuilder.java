@@ -3,6 +3,7 @@ package org.cloudfoundry.autosleep.worker.remote.config;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.DefaultClientIdentification;
 import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
 import org.cloudfoundry.client.spring.SpringLoggingClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,12 +33,13 @@ public class CloudfoundryClientBuilder {
     @PostConstruct
     public void initClients() {
         final String targetEndpoint = env.getProperty(Config.EnvKey.CF_ENDPOINT);
-        final boolean skipSslValidation = Boolean.parseBoolean(env.getProperty(Config.EnvKey.CF_SKIP_SSL_VALIDATION,
-                "false"));
+        final boolean skipSslValidation = Boolean.parseBoolean(env.getProperty(
+                Config.EnvKey.CF_SKIP_SSL_VALIDATION,
+                Boolean.FALSE.toString()));
         final String username = env.getProperty(Config.EnvKey.CF_USERNAME);
         final String password = env.getProperty(Config.EnvKey.CF_PASSWORD);
-        final String clientId = env.getProperty(Config.EnvKey.CF_CLIENT_ID, "cf");
-        final String clientSecret = env.getProperty(Config.EnvKey.CF_CLIENT_SECRET, "");
+        final String clientId = env.getProperty(Config.EnvKey.CF_CLIENT_ID, DefaultClientIdentification.ID);
+        final String clientSecret = env.getProperty(Config.EnvKey.CF_CLIENT_SECRET, DefaultClientIdentification.SECRET);
         try {
 
             log.debug("buildClient - targetEndpoint={}", targetEndpoint);
@@ -49,7 +51,8 @@ public class CloudfoundryClientBuilder {
                     .clientSecret(clientSecret)
                     .skipSslValidation(skipSslValidation)
                     .username(username)
-                    .password(password).build();
+                    .password(password)
+                    .build();
 
             logClient = SpringLoggingClient.builder().cloudFoundryClient(cfClient).build();
         } catch (RuntimeException r) {

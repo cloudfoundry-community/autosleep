@@ -8,6 +8,7 @@ import org.springframework.web.filter.CommonsRequestLoggingFilter;
 @Configuration
 @Slf4j
 public class ApplicationLoggingConfig {
+
     private static int MAX_LOG_PAYLOAD_LENGTH = 1024;
 
     @Bean
@@ -19,4 +20,5 @@ public class ApplicationLoggingConfig {
         result.setMaxPayloadLength(MAX_LOG_PAYLOAD_LENGTH);
         return result;
     }
+
 }

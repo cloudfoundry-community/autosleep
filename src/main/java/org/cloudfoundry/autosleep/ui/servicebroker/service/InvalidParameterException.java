@@ -12,4 +12,5 @@ public class InvalidParameterException extends HttpMessageNotReadableException {
         super("'" + parameterName + "': " + error);
         this.parameterName = parameterName;
     }
+
 }

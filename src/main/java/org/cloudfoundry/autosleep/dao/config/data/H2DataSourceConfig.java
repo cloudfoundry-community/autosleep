@@ -21,4 +21,5 @@ public class H2DataSourceConfig {
                 .setType(EmbeddedDatabaseType.H2)
                 .build();
     }
+
 }

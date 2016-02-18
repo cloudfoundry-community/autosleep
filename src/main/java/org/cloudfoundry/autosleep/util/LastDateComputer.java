@@ -27,4 +27,5 @@ public class LastDateComputer {
                     ? lastEvent.getTimestamp() : lastLog.getTimestamp();
         }
     }
+
 }

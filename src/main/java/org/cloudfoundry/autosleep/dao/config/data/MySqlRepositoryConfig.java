@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @Configuration
 @Profile("mysql")
 @EnableJpaRepositories("org.cloudfoundry.autosleep.dao.repositories.jpa")
-public class MySqlRepositoryConfig extends AbstractJpaRepositoryConfig{
+public class MySqlRepositoryConfig extends AbstractJpaRepositoryConfig {
 
     protected String getHibernateDialect() {
         return MySQL5Dialect.class.getName();

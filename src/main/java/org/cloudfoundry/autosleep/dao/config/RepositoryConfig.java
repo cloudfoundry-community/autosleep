@@ -8,5 +8,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ComponentScan(basePackageClasses = {SpaceEnrollerConfigRepository.class, LocalJpaRepositoryConfig.class})
 public class RepositoryConfig {
+
 }
 

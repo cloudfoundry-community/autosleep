@@ -10,10 +10,10 @@ import javax.sql.DataSource;
 
 @Configuration
 @Profile("mysql-local")
-public class MySqlLocalDataSourceConfig  {
+public class MySqlLocalDataSourceConfig {
 
-    @Value("${mysql.username}")
-    private String username;
+    @Value("${mysql.driver}")
+    private String driver;
 
     @Value("${mysql.password}")
     private String password;
@@ -21,9 +21,8 @@ public class MySqlLocalDataSourceConfig  {
     @Value("${mysql.url}")
     private String url;
 
-    @Value("${mysql.driver}")
-    private String driver;
-
+    @Value("${mysql.username}")
+    private String username;
 
     @Bean
     public DataSource dataSource() {
@@ -34,7 +33,5 @@ public class MySqlLocalDataSourceConfig  {
         dataSource.setPassword(password);
         return dataSource;
     }
-
-
 
 }

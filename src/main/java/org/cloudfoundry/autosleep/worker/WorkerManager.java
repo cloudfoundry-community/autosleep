@@ -4,8 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
@@ -21,16 +21,16 @@ import java.time.Duration;
 public class WorkerManager implements WorkerManagerService {
 
     @Autowired
-    private Clock clock;
-
-    @Autowired
     private ApplicationBindingRepository applicationBindingRepository;
 
     @Autowired
-    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
+    private ApplicationLocker applicationLocker;
 
     @Autowired
     private ApplicationRepository applicationRepository;
+
+    @Autowired
+    private Clock clock;
 
     @Autowired
     private CloudFoundryApiService cloudFoundryApi;
@@ -39,8 +39,7 @@ public class WorkerManager implements WorkerManagerService {
     private DeployedApplicationConfig.Deployment deployment;
 
     @Autowired
-    private ApplicationLocker applicationLocker;
-
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @PostConstruct
     public void init() {
@@ -87,6 +86,5 @@ public class WorkerManager implements WorkerManagerService {
                 .build();
         spaceEnroller.start(Config.DELAY_BEFORE_FIRST_SERVICE_CHECK);
     }
-
 
 }

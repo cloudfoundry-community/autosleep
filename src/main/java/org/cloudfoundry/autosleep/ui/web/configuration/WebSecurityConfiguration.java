@@ -11,7 +11,6 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 @Configuration
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.antMatcher("/**").authorizeRequests().anyRequest().authenticated();
@@ -20,4 +19,5 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 "/css/**", "/fonts/**",
                 "/javascript/**").and().authorizeRequests().anyRequest().anonymous();
     }
+
 }

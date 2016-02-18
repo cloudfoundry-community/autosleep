@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.StandardPasswordEncoder;
 @Configuration
 @Slf4j
 public class PasswordEncoderConfig {
+
     @Autowired
     private Environment environment;
 
@@ -25,4 +26,5 @@ public class PasswordEncoderConfig {
             return new StandardPasswordEncoder(secret);
         }
     }
+
 }

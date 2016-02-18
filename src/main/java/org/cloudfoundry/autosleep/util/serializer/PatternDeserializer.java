@@ -18,4 +18,5 @@ public class PatternDeserializer extends JsonDeserializer<Pattern> {
             throw new IOException("Invalid regexp", p);
         }
     }
+
 }

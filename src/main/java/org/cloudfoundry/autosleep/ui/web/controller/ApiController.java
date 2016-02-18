@@ -5,11 +5,11 @@ import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
-import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.ui.web.model.ServerResponse;
+import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,17 +30,38 @@ import java.util.List;
 public class ApiController {
 
     @Autowired
-    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
+    private ApplicationBindingRepository applicationBindingRepository;
 
     @Autowired
-    private ApplicationBindingRepository applicationBindingRepository;
+    private ApplicationLocker applicationLocker;
 
     @Autowired
     private ApplicationRepository applicationRepository;
 
     @Autowired
-    private ApplicationLocker applicationLocker;
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
+    @RequestMapping(value = Config.Path.APPLICATIONS_SUB_PATH + "{applicationId}", method = RequestMethod.DELETE)
+    public ResponseEntity<String> deleteApplication(@PathVariable("applicationId") String applicationId) {
+        log.debug("deleteApplication - {}", applicationId);
+        applicationLocker.executeThreadSafe(applicationId, () ->
+        {
+            applicationRepository.delete(applicationId);
+            applicationLocker.removeApplication(applicationId);
+            log.debug("deleteApplication - deleted");
+        });
+
+        return new ResponseEntity<>("{}", HttpStatus.NO_CONTENT);
+    }
+
+    @RequestMapping(value = Config.Path.APPLICATIONS_SUB_PATH)
+    @ResponseBody
+    public ServerResponse<List<ApplicationInfo>> listApplications() {
+        log.debug("listApplications");
+        List<ApplicationInfo> result = new ArrayList<>();
+        applicationRepository.findAll().forEach(result::add);
+        return new ServerResponse<>(result, Instant.now());
+    }
 
     @RequestMapping(value = Config.Path.SERVICES_SUB_PATH + "{instanceId}/applications/")
     @ResponseBody
@@ -53,16 +74,7 @@ public class ApiController {
                 result.add(app);
             }
         });
-        return new ServerResponse<>(Instant.now(), result);
-    }
-
-    @RequestMapping(Config.Path.SERVICES_SUB_PATH)
-    @ResponseBody
-    public ServerResponse<List<SpaceEnrollerConfig>> listInstances() {
-        log.debug("listServiceInstances");
-        List<SpaceEnrollerConfig> result = new ArrayList<>();
-        spaceEnrollerConfigRepository.findAll().forEach(result::add);
-        return new ServerResponse<>(Instant.now(), result);
+        return new ServerResponse<>(result, Instant.now());
     }
 
     @RequestMapping(Config.Path.SERVICES_SUB_PATH + "{instanceId}/bindings/")
@@ -77,29 +89,16 @@ public class ApiController {
                     }
                 }
         );
-        return new ServerResponse<>(Instant.now(), result);
+        return new ServerResponse<>(result, Instant.now());
     }
 
-    @RequestMapping(value = Config.Path.APPLICATIONS_SUB_PATH)
+    @RequestMapping(Config.Path.SERVICES_SUB_PATH)
     @ResponseBody
-    public ServerResponse<List<ApplicationInfo>> listApplications() {
-        log.debug("listApplications");
-        List<ApplicationInfo> result = new ArrayList<>();
-        applicationRepository.findAll().forEach(result::add);
-        return new ServerResponse<>(Instant.now(), result);
-    }
-
-
-    @RequestMapping(value = Config.Path.APPLICATIONS_SUB_PATH + "{applicationId}", method = RequestMethod.DELETE)
-    public ResponseEntity<String> deleteApplication(@PathVariable("applicationId") String applicationId) {
-        log.debug("deleteApplication - {}", applicationId);
-        applicationLocker.executeThreadSafe(applicationId, () -> {
-            applicationRepository.delete(applicationId);
-            applicationLocker.removeApplication(applicationId);
-            log.debug("deleteApplication - deleted");
-        });
-
-        return new ResponseEntity<>("{}", HttpStatus.NO_CONTENT);
+    public ServerResponse<List<SpaceEnrollerConfig>> listInstances() {
+        log.debug("listServiceInstances");
+        List<SpaceEnrollerConfig> result = new ArrayList<>();
+        spaceEnrollerConfigRepository.findAll().forEach(result::add);
+        return new ServerResponse<>(result, Instant.now());
     }
 
 }

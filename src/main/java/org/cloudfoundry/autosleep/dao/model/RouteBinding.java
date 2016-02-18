@@ -26,19 +26,13 @@ public class RouteBinding {
 
     private String configurationId;
 
-    private String routeId;
+    private String linkedApplicationBindingId;
 
     private String linkedApplicationId;
 
-    private String linkedApplicationBindingId;
-
     private String localRoute;
 
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName() + " : [id:" + bindingId + " serviceId:+" + configurationId
-                + " app:" + linkedApplicationId +  " routeId:" + routeId + " localRoute " + localRoute + "]";
-    }
+    private String routeId;
 
     @Override
     public boolean equals(Object object) {
@@ -58,4 +52,11 @@ public class RouteBinding {
     public int hashCode() {
         return bindingId.hashCode();
     }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + " : [id:" + bindingId + " serviceId:+" + configurationId
+                + " app:" + linkedApplicationId + " routeId:" + routeId + " localRoute " + localRoute + "]";
+    }
+
 }

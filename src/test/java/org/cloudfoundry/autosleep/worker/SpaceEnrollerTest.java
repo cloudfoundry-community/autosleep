@@ -35,13 +35,17 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SpaceEnrollerTest {
+
+    private static final String APP_ID = UUID.randomUUID().toString();
+
     private static final Duration INTERVAL = Duration.ofMillis(300);
 
     private static final String SERVICE_ID = "serviceId";
 
     private static final String SPACE_ID = UUID.randomUUID().toString();
 
-    private static final String APP_ID = UUID.randomUUID().toString();
+    @Mock
+    private ApplicationRepository applicationRepository;
 
     @Mock
     private Clock clock;
@@ -50,25 +54,30 @@ public class SpaceEnrollerTest {
     private CloudFoundryApiService cloudFoundryApi;
 
     @Mock
-    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
-
-    @Mock
-    private ApplicationRepository applicationRepository;
-
-    @Mock
-    private SpaceEnrollerConfig spaceEnrollerConfig;
-
-    @Mock
     private DeployedApplicationConfig.Deployment deployment;
-
-
-    private SpaceEnroller spaceEnroller;
 
     private List<String> remoteApplicationIds = Arrays.asList(UUID.randomUUID().toString(),
             UUID.randomUUID().toString(),
             UUID.randomUUID().toString(),
             APP_ID);
 
+    private SpaceEnroller spaceEnroller;
+
+    @Mock
+    private SpaceEnrollerConfig spaceEnrollerConfig;
+
+    @Mock
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
+
+    private <T> ArgumentMatcher<List<T>> anyListOfSize(final int expectedSize) {
+        return new ArgumentMatcher<List<T>>() {
+
+            @Override
+            public boolean matches(Object object) {
+                return List.class.isInstance(object) && List.class.cast(object).size() == expectedSize;
+            }
+        };
+    }
 
     @Before
     public void buildMocks() throws CloudFoundryException {
@@ -78,8 +87,10 @@ public class SpaceEnrollerTest {
         when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenReturn(remoteApplicationIds.stream()
-                        .map(applicationId -> new ApplicationIdentity(applicationId,
-                                applicationId))
+                        .map(applicationId -> ApplicationIdentity.builder()
+                                .guid(applicationId)
+                                .name(applicationId)
+                                .build())
                         .collect(Collectors.toList()));
 
         when(deployment.getApplicationId()).thenReturn(APP_ID);
@@ -94,7 +105,6 @@ public class SpaceEnrollerTest {
                 .deployment(deployment)
                 .build());
     }
-
 
     @Test
     public void testNewAppeared() throws Exception {
@@ -142,27 +152,20 @@ public class SpaceEnrollerTest {
 
     }
 
-
     @Test
-    public void testRunServiceDeleted() {
-        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(null);
-        spaceEnroller.run();
-        verify(clock, times(1)).removeTask(eq(SERVICE_ID));
-        verify(spaceEnroller, never()).rescheduleWithDefaultPeriod();
-    }
-
-    @Test
-    public void testRunRemoteError() throws CloudFoundryException,  EntityNotFoundException {
+    public void testRunRemoteError() throws CloudFoundryException, EntityNotFoundException {
         when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
         when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenThrow(new CloudFoundryException(null))
                 .thenReturn(remoteApplicationIds.stream()
-                        .map(applicationId -> new ApplicationIdentity(applicationId,
-                                applicationId))
+                        .map(applicationId -> ApplicationIdentity.builder()
+                                .guid(applicationId)
+                                .name(applicationId)
+                                .build())
                         .collect(Collectors.toList()));
         doThrow(new CloudFoundryException(
-                        new EntityNotFoundException(EntityType.service, SERVICE_ID)))
+                new EntityNotFoundException(EntityType.service, SERVICE_ID)))
                 .when(cloudFoundryApi)
                 .bindServiceInstance(anyListOf(ApplicationIdentity.class), eq(SERVICE_ID));
         //First list call fails
@@ -172,18 +175,14 @@ public class SpaceEnrollerTest {
         spaceEnroller.run();
         verify(spaceEnroller, times(2)).rescheduleWithDefaultPeriod();
 
-
     }
 
-
-    private <T> ArgumentMatcher<List<T>> anyListOfSize(final int expectedSize) {
-        return new ArgumentMatcher<List<T>>() {
-            @Override
-            public boolean matches(Object object) {
-                return List.class.isInstance(object) && List.class.cast(object).size() == expectedSize;
-            }
-        };
+    @Test
+    public void testRunServiceDeleted() {
+        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(null);
+        spaceEnroller.run();
+        verify(clock, times(1)).removeTask(eq(SERVICE_ID));
+        verify(spaceEnroller, never()).rescheduleWithDefaultPeriod();
     }
-
 
 }

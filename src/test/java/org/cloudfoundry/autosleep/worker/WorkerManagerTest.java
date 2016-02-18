@@ -42,24 +42,15 @@ import static org.mockito.Mockito.when;
 @Slf4j
 public class WorkerManagerTest {
 
+    private static final String APPLICATION_ID = UUID.randomUUID().toString();
+
     private static final Duration INTERVAL = Duration.ofMillis(300);
 
-    private static final String APPLICATION_ID = UUID.randomUUID().toString();
+    @Mock
+    private ApplicationLocker applicationLocker;
 
     @Mock
     private Clock clock;
-
-    @Mock
-    private CloudFoundryApiService mockRemote;
-
-    @Mock
-    private SpaceEnrollerConfigRepository mockServiceRepo;
-
-    @Mock
-    private ApplicationBindingRepository mockBindingRepo;
-
-    @Mock
-    private ApplicationRepository mockAppRepo;
 
     @Mock
     private CloudFoundryApiService cloudFoundryApi;
@@ -68,19 +59,26 @@ public class WorkerManagerTest {
     private DeployedApplicationConfig.Deployment deployment;
 
     @Mock
-    private ApplicationLocker applicationLocker;
+    private ApplicationRepository mockAppRepo;
+
+    @Mock
+    private ApplicationBindingRepository mockBindingRepo;
+
+    @Mock
+    private CloudFoundryApiService mockRemote;
+
+    @Mock
+    private SpaceEnrollerConfigRepository mockServiceRepo;
+
+    private List<UUID> remoteApplications = Arrays.asList(UUID.randomUUID(), UUID.randomUUID());
+
+    private List<String> serviceIds = Arrays.asList("serviceId1", "serviceId2");
 
     @InjectMocks
     @Spy
     private WorkerManager spyWatcher;
 
-
     private List<String> unattachedBinding = Arrays.asList("unattached01", "unattached02");
-
-    private List<String> serviceIds = Arrays.asList("serviceId1", "serviceId2");
-
-    private List<UUID> remoteApplications = Arrays.asList(UUID.randomUUID(), UUID.randomUUID());
-
 
     @Before
     public void populateDb() throws CloudFoundryException {
@@ -108,7 +106,10 @@ public class WorkerManagerTest {
 
         when(cloudFoundryApi.listApplications(any(String.class), any(Pattern.class)))
                 .thenReturn(remoteApplications.stream()
-                        .map(id -> new ApplicationIdentity(id.toString(), id.toString()))
+                        .map(id -> ApplicationIdentity.builder()
+                                .guid(id.toString())
+                                .name(id.toString())
+                                .build())
                         .collect(Collectors.toList()));
 
     }
@@ -122,15 +123,6 @@ public class WorkerManagerTest {
     }
 
     @Test
-    public void test_task_of_stop_is_scheduled() {
-        SpaceEnrollerConfig config = BeanGenerator.createServiceInstance();
-        spyWatcher.registerApplicationStopper(config, APPLICATION_ID);
-        verify(clock).scheduleTask(anyString(), eq(Duration.ofSeconds(0)),
-                any(ApplicationStopper.class));
-    }
-
-
-    @Test
     public void test_enrollment_task_is_scheduled() throws Exception {
         String serviceId = "serviceId";
         spyWatcher.registerSpaceEnroller(BeanGenerator.createServiceInstance(serviceId));
@@ -138,5 +130,12 @@ public class WorkerManagerTest {
                 any(SpaceEnroller.class));
     }
 
+    @Test
+    public void test_task_of_stop_is_scheduled() {
+        SpaceEnrollerConfig config = BeanGenerator.createServiceInstance();
+        spyWatcher.registerApplicationStopper(config, APPLICATION_ID);
+        verify(clock).scheduleTask(anyString(), eq(Duration.ofSeconds(0)),
+                any(ApplicationStopper.class));
+    }
 
 }

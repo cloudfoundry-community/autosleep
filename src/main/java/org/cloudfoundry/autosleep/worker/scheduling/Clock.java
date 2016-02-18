@@ -20,23 +20,19 @@ import java.util.concurrent.TimeUnit;
 @Scope(value = "singleton")
 public class Clock {
 
-    //TODO redis that
-    private final Map<String/*taskId*/, ScheduledFuture<?>> tasks = new HashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Config.NB_THREAD_FOR_TASK);
 
-    /**
-     * Schedule a Runnable to be run after a certain delay.
-     *
-     * @param id       task id, will be used to remove it
-     * @param duration the time to wait before execution
-     * @param action   Runnable to call
-     */
-    public void scheduleTask(String id, Duration duration, Runnable action) {
-        log.debug("scheduleTask - task {}", id);
-        ScheduledFuture<?> handle = scheduler.schedule(action, duration.toMillis(), TimeUnit.MILLISECONDS);
-        tasks.put(id, handle);
-    }
+    //TODO redis that
+    private final Map<String/*taskId*/, ScheduledFuture<?>> tasks = new HashMap<>();
 
+    /**
+     * Access to the task ids.
+     *
+     * @return a read-only set containing the ids of the current tasks
+     */
+    public Set<String> listTaskIds() {
+        return Collections.unmodifiableSet(tasks.keySet());
+    }
 
     /**
      * Remove a task by its id.
@@ -49,12 +45,16 @@ public class Clock {
     }
 
     /**
-     * Access to the task ids.
+     * Schedule a Runnable to be run after a certain delay.
      *
-     * @return a read-only set containing the ids of the current tasks
+     * @param id       task id, will be used to remove it
+     * @param duration the time to wait before execution
+     * @param action   Runnable to call
      */
-    public Set<String> listTaskIds() {
-        return Collections.unmodifiableSet(tasks.keySet());
+    public void scheduleTask(String id, Duration duration, Runnable action) {
+        log.debug("scheduleTask - task {}", id);
+        ScheduledFuture<?> handle = scheduler.schedule(action, duration.toMillis(), TimeUnit.MILLISECONDS);
+        tasks.put(id, handle);
     }
 
 }

@@ -14,13 +14,14 @@ import javax.annotation.PostConstruct;
 @EnableJpaRepositories("org.cloudfoundry.autosleep.dao.repositories.jpa")
 public class LocalJpaRepositoryConfig extends AbstractJpaRepositoryConfig {
 
+    @Override
+    protected String getHibernateDialect() {
+        return H2Dialect.class.getName();
+    }
+
     @PostConstruct
     public void logProfile() {
         log.warn("<<<<<<<<<<<  Warning: loading IN MEMORY persistance profile >>>>>>>>>>>>>>>>>>");
     }
 
-    @Override
-    protected String getHibernateDialect() {
-        return H2Dialect.class.getName();
-    }
 }

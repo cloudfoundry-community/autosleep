@@ -51,8 +51,8 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
 
     @Override
     public CreateServiceInstanceBindingResponse createServiceInstanceBinding(
-            CreateServiceInstanceBindingRequest request) throws ServiceInstanceBindingExistsException,
-            ServiceBrokerException {
+            CreateServiceInstanceBindingRequest request)
+            throws ServiceInstanceBindingExistsException, ServiceBrokerException {
 
         final String bindingId = request.getBindingId();
         final String configId = request.getServiceInstanceId();
@@ -60,10 +60,10 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
         log.debug("createServiceInstanceBinding - {}", bindingId);
         SpaceEnrollerConfig spaceEnrollerConfig = spaceEnrollerConfigRepository.findOne(configId);
 
-        String targetAppId = (String) request.getBindResource().get(ServiceBindingResource.BIND_RESOURCE_KEY_APP
-                .toString());
-        String routeId = (String) request.getBindResource().get(ServiceBindingResource.BIND_RESOURCE_KEY_ROUTE
-                .toString());
+        String targetAppId = (String) request.getBindResource().get(
+                ServiceBindingResource.BIND_RESOURCE_KEY_APP.toString());
+        String routeId = (String) request.getBindResource().get(
+                ServiceBindingResource.BIND_RESOURCE_KEY_ROUTE.toString());
         if (targetAppId != null) {
             log.debug("creating binding {} for app {}", bindingId, targetAppId);
             ApplicationBinding binding = ApplicationBinding.builder().serviceInstanceId(configId)
@@ -83,9 +83,10 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                 appRepository.save(appInfo);
                 workerManager.registerApplicationStopper(spaceEnrollerConfig, targetAppId);
             });
-            return new CreateServiceInstanceBindingResponse(Collections.singletonMap(Config.ServiceInstanceParameters
-                            .IDLE_DURATION,
-                    spaceEnrollerConfig.getIdleDuration().toString()));
+            return new CreateServiceInstanceBindingResponse(
+                    Collections.singletonMap(
+                            Config.ServiceInstanceParameters.IDLE_DURATION,
+                            spaceEnrollerConfig.getIdleDuration().toString()));
         } else if (routeId != null) {
             log.debug("creating binding {} for route {}", bindingId, routeId);
             String proxyRoute = "";
@@ -100,15 +101,20 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             }
             //TODO ROUTE SERVICE create proxy route?
             String localProxyRoute = "/??";
-            routeBindingRepository.save(RouteBinding.builder().bindingId(bindingId).routeId(routeId)
+            routeBindingRepository.save(RouteBinding.builder()
+                    .bindingId(bindingId)
+                    .routeId(routeId)
                     .configurationId(configId)
                     .localRoute(localProxyRoute)
                     .linkedApplicationId(linkedAppId)
-                    .linkedApplicationBindingId(linkedAppBindingId).build());
+                    .linkedApplicationBindingId(linkedAppBindingId)
+                    .build());
 
-            return new CreateServiceInstanceBindingResponse(Collections.singletonMap(Config.ServiceInstanceParameters
-                            .IDLE_DURATION,
-                    spaceEnrollerConfig.getIdleDuration().toString()), proxyRoute);
+            return new CreateServiceInstanceBindingResponse(
+                    Collections.singletonMap(
+                            Config.ServiceInstanceParameters.IDLE_DURATION,
+                            spaceEnrollerConfig.getIdleDuration().toString()),
+                    proxyRoute);
         } else {
             throw new ServiceBrokerException("Unknown bind ressource");
         }
@@ -131,13 +137,14 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             //TODO add "findByLinkedApp" in repo?
             Iterable<RouteBinding> allBindings = routeBindingRepository.findAll();
             if (allBindings != null) {
-                Optional<RouteBinding> linkedRouteBinding = StreamSupport.stream(routeBindingRepository.findAll()
-                        .spliterator(), true).filter(routeBinding -> routeBinding.getLinkedApplicationId().equals(
-                        appId)).findFirst();
+                Optional<RouteBinding> linkedRouteBinding = StreamSupport
+                        .stream(routeBindingRepository.findAll().spliterator(), true)
+                        .filter(routeBinding -> routeBinding.getLinkedApplicationId().equals(appId))
+                        .findFirst();
                 if (linkedRouteBinding.isPresent()
                         && linkedRouteBinding.get().getLinkedApplicationBindingId().equals(bindingId)) {
-                    log.debug("detected associated route binding {}, cleaning it", linkedRouteBinding.get()
-                            .getBindingId());
+                    log.debug("detected associated route binding {}, cleaning it",
+                            linkedRouteBinding.get().getBindingId());
                     //we add a proxy route binding for this app, clean it before remove app binding
                     //TODO cfapi.unbindRoute(linkedRouteBinding.get().getid())
                 }
@@ -147,9 +154,9 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                 log.debug("deleteServiceInstanceBinding on app ", appId);
                 ApplicationInfo appInfo = appRepository.findOne(appId);
                 if (appInfo != null) {
-                    appInfo.getEnrollmentState().updateEnrollment(serviceInstance.getId(),
-                            !serviceInstance.isForcedAutoEnrollment());
-                    if (appInfo.getEnrollmentState().getStates().size() == 0) {
+                    appInfo.getEnrollmentState()
+                            .updateEnrollment(serviceInstance.getId(), !serviceInstance.isForcedAutoEnrollment());
+                    if (appInfo.getEnrollmentState().getStates().isEmpty()) {
                         appRepository.delete(appId);
                         applicationLocker.removeApplication(appId);
                     } else {
