@@ -16,17 +16,19 @@ package org.cloudfoundry.integrationclient;/*
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.logging.LogMessage;
-import org.cloudfoundry.client.logging.RecentLogsRequest;
-import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
-import org.cloudfoundry.client.spring.SpringLoggingClient;
 import org.cloudfoundry.client.v2.applications.*;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
 import org.cloudfoundry.client.v2.servicebindings.*;
+import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceToRouteRequest;
+import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceToRouteResponse;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
-import org.cloudfoundry.utils.test.TestSubscriber;
+import org.cloudfoundry.logging.LogMessage;
+import org.cloudfoundry.logging.RecentLogsRequest;
+import org.cloudfoundry.spring.client.SpringCloudFoundryClient;
+import org.cloudfoundry.spring.logging.SpringLoggingClient;
+import org.cloudfoundry.util.test.TestSubscriber;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,6 +82,8 @@ public class Sandbox {
     private String spaceId;
     @Value("${test.service.instance.id}")
     private String serviceInstanceId;
+    @Value("${test.route.id}")
+    private String routeId;
 
     private CloudFoundryClient client;
 
@@ -152,7 +156,9 @@ public class Sandbox {
         Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
                 (UpdateApplicationRequest.builder().applicationId(applicationId).state("STOPPED").build());
         publisherStart.subscribe(subscriber);
+
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+
     }
 
     @Test
@@ -165,7 +171,7 @@ public class Sandbox {
             assertThat(response.getMetadata(), is(notNullValue()));
             assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
             log.debug("application started - {}", response.getEntity().getName());
-            log.debug("test_stop - end");
+            log.debug("test_start - end");
         });
         Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
                 (UpdateApplicationRequest.builder().applicationId(applicationId).state("STARTED").build());
@@ -301,6 +307,54 @@ public class Sandbox {
         assertThat(listBinding.getResources(), is(notNullValue()));
         assertThat(listBinding.getResources().size(), is(equalTo(0)));
 
+    }
+
+    @Test
+    public void test_get_app_routes() throws InterruptedException {
+
+        TestSubscriber<ListApplicationRoutesResponse> subscriber = new TestSubscriber<>();
+        subscriber.assertThat(response -> {
+            assertThat(response, is(notNullValue()));
+            assertThat(response.getResources(), is(notNullValue()));
+            response.getResources().stream()
+                    .map(routeResource -> routeResource.getMetadata().getUrl())
+                    .forEach(log::debug);
+        });
+
+        Mono<ListApplicationRoutesResponse> publisher = this.client.applicationsV2().listRoutes(
+                ListApplicationRoutesRequest.builder().applicationId(applicationId).build());
+        publisher.subscribe(subscriber);
+        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+    }
+
+
+    @Test
+    public void test_bind_unbind_route() {
+        Mono<BindServiceInstanceToRouteResponse> publisherBinding = client.serviceInstances().bindToRoute(
+                BindServiceInstanceToRouteRequest
+                        .builder()
+                        .serviceInstanceId(serviceInstanceId)
+                        .routeId(routeId).build());
+        BindServiceInstanceToRouteResponse responseBinding = publisherBinding.get();
+        assertThat(responseBinding, is(notNullValue()));
+        assertThat(responseBinding.getMetadata(), is(notNullValue()));
+        assertThat(responseBinding.getMetadata().getId(), is(notNullValue()));
+        assertThat(responseBinding.getEntity(), is(notNullValue()));
+
+        Mono<Void> response = client.serviceBindings().delete(DeleteServiceBindingRequest.builder().serviceBindingId
+                (responseBinding.getMetadata().getId()).build());
+        //will block until response ?
+        response.get();
+
+        //List to check that it works
+        Mono<ListServiceBindingsResponse> publisherList = client.serviceBindings().list(ListServiceBindingsRequest
+                .builder()
+                .applicationId(applicationId)
+                .serviceInstanceId(serviceInstanceId).build());
+        ListServiceBindingsResponse listBinding = publisherList.get();
+        assertThat(listBinding, is(notNullValue()));
+        assertThat(listBinding.getResources(), is(notNullValue()));
+        assertThat(listBinding.getResources().size(), is(equalTo(0)));
     }
 
 
