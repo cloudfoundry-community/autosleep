@@ -10,6 +10,10 @@ buildscript {
         jcenter()
     }
 }
+plugins {
+    id "com.github.hierynomus.license" version "0.12.1"
+}
+
 repositories {
     mavenLocal()
     jcenter()
@@ -17,6 +21,7 @@ repositories {
     maven { url "https://jitpack.io" }
     maven { url 'http://repo.spring.io/libs-snapshot' }
 }
+
 
 apply plugin: 'java'
 apply plugin: 'spring-boot'
@@ -31,9 +36,17 @@ tasks.withType(JavaCompile) {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 
+license {
+    header rootProject.file('config/HEADER')
+    strictCheck true
+    excludes(["**/*.css", "**/boost*", "**/bootbox*", "**/jquery*", "**/banner.txt", "**/*png",
+              "**/*eot", "**/*ttf", "**/*woff*", "**/*gif", "**/*jpg", "**/*tpl", "**/*svg", "**/*map",
+              "**/*xml", "**/*yaml"])
+}
+
 processResources {
     from(sourceSets.main.resources.srcDirs) {
-        filesMatching( '**/*.properties' ) {
+        filesMatching('**/*.properties') {
             filter(ReplaceTokens, tokens: [version: project.version])
         }
     }
@@ -41,7 +54,7 @@ processResources {
 
 processTestResources {
     from(sourceSets.test.resources.srcDirs) {
-        filesMatching( '**/*.properties' ) {
+        filesMatching('**/*.properties') {
             filter(ReplaceTokens, tokens: [version: project.version])
         }
     }
@@ -49,7 +62,7 @@ processTestResources {
 
 war {
     baseName = "$domainName.$projectName"
-    version =  version
+    version = version
 }
 war.rootSpec.exclude "cloudfoundry_client.properties"
 
