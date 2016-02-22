@@ -157,8 +157,8 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
         appRepository.findAll().forEach(
                 aInfo -> applicationLocker.executeThreadSafe(aInfo.getUuid(), () -> {
                     ApplicationInfo applicationInfoReloaded = appRepository.findOne(aInfo.getUuid());
-                    if (applicationInfoReloaded != null &&
-                            !applicationInfoReloaded.getEnrollmentState().isCandidate(spaceEnrollerConfigId)) {
+                    if (applicationInfoReloaded != null
+                            && !applicationInfoReloaded.getEnrollmentState().isCandidate(spaceEnrollerConfigId)) {
                         applicationInfoReloaded.getEnrollmentState().updateEnrollment(spaceEnrollerConfigId, false);
                         if (applicationInfoReloaded.getEnrollmentState().getStates().isEmpty()) {
                             appRepository.delete(applicationInfoReloaded);
@@ -173,7 +173,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     @Override
     public GetLastServiceOperationResponse getLastOperation(GetLastServiceOperationRequest
                                                                     getLastServiceOperationRequest) {
-        //TODO what are we supposed to return?
+        //async operations not supported
         return null;
     }
 
@@ -204,8 +204,8 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             } else if (autoEnrollment != null) {
                 // only auto enrollment parameter can be updated
                 checkSecuredParameter(autoEnrollmentReader.getParameterName(), secret);
-                if (spaceEnrollerConfig.getSecret() != null &&
-                        !(
+                if (spaceEnrollerConfig.getSecret() != null
+                        && !(
                                 passwordEncoder.matches(secret, spaceEnrollerConfig.getSecret())
                                         ||
                                         secret.equals(environment.getProperty(Config.EnvKey.SECURITY_PASSWORD))

@@ -17,20 +17,6 @@ import java.util.List;
 @Slf4j
 public class DeployedApplicationConfig {
 
-    @Autowired
-    private Environment environment;
-
-    @Bean
-    public Deployment loadCurrentDeployment() throws IOException {
-        String deployment = environment.getProperty(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY);
-        if (deployment == null) {
-            return null;
-        } else {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.readValue(deployment, Deployment.class);
-        }
-    }
-
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Getter
     public static class Deployment {
@@ -52,5 +38,19 @@ public class DeployedApplicationConfig {
             }
         }
 
+    }
+
+    @Autowired
+    private Environment environment;
+
+    @Bean
+    public Deployment loadCurrentDeployment() throws IOException {
+        String deployment = environment.getProperty(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY);
+        if (deployment == null) {
+            return null;
+        } else {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(deployment, Deployment.class);
+        }
     }
 }

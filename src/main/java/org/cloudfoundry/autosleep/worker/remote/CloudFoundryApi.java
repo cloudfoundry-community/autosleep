@@ -7,10 +7,7 @@ import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
-import org.cloudfoundry.client.logging.LogMessage;
-import org.cloudfoundry.client.logging.RecentLogsRequest;
-import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
-import org.cloudfoundry.client.spring.SpringLoggingClient;
+
 import org.cloudfoundry.client.v2.applications.ApplicationEntity;
 import org.cloudfoundry.client.v2.applications.GetApplicationRequest;
 import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
@@ -22,6 +19,11 @@ import org.cloudfoundry.client.v2.events.EventResource;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
 import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
+
+import org.cloudfoundry.logging.LogMessage;
+import org.cloudfoundry.logging.RecentLogsRequest;
+import org.cloudfoundry.spring.client.SpringCloudFoundryClient;
+import org.cloudfoundry.spring.logging.SpringLoggingClient;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;

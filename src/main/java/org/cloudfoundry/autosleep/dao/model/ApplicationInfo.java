@@ -133,6 +133,18 @@ public class ApplicationInfo {
     @EqualsAndHashCode
     public static class EnrollmentState {
 
+        public enum State {
+            /**
+             * service instance is bound to the application.
+             */
+            ENROLLED,
+            /**
+             * service (with AUTO_ENROLLMENT set to false) was manually unbound,
+             * it won't be automatically bound again.
+             */
+            BLACKLISTED
+        }
+
         @Column(length = 300) //to force BLOB type and not TINYBLOB
         private HashMap<String /**serviceId.**/, EnrollmentState.State> states;
 
@@ -164,18 +176,6 @@ public class ApplicationInfo {
             } else {
                 states.remove(serviceId);
             }
-        }
-
-        public enum State {
-            /**
-             * service instance is bound to the application.
-             */
-            ENROLLED,
-            /**
-             * service (with AUTO_ENROLLMENT set to false) was manually unbound,
-             * it won't be automatically bound again.
-             */
-            BLACKLISTED
         }
 
     }

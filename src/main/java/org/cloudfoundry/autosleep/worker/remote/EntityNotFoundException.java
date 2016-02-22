@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public class EntityNotFoundException extends Exception {
 
-    public enum EntityType {application, service}
+    public enum EntityType { application, service }
 
     private String entityId;
 
