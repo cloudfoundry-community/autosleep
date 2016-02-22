@@ -28,4 +28,6 @@ public interface CloudFoundryApiService {
 
     void stopApplication(String applicationUuid) throws CloudFoundryException;
 
+    void unbind(String bindingId) throws CloudFoundryException;
+
 }

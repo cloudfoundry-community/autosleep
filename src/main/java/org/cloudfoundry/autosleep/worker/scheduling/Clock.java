@@ -22,7 +22,6 @@ public class Clock {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Config.NB_THREAD_FOR_TASK);
 
-    //TODO redis that
     private final Map<String/*taskId*/, ScheduledFuture<?>> tasks = new HashMap<>();
 
     /**

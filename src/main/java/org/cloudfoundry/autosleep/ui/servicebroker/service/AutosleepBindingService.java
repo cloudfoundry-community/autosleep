@@ -2,6 +2,7 @@ package org.cloudfoundry.autosleep.ui.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.Path;
 import org.cloudfoundry.autosleep.config.Config.RouteBindingParameters;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
@@ -13,6 +14,8 @@ import org.cloudfoundry.autosleep.dao.repositories.RouteBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
+import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
@@ -48,6 +51,9 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
 
     @Autowired
     private WorkerManagerService workerManager;
+
+    @Autowired
+    private CloudFoundryApiService cfApi;
 
     @Override
     public CreateServiceInstanceBindingResponse createServiceInstanceBinding(
@@ -90,17 +96,15 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
         } else if (routeId != null) {
             log.debug("creating binding {} for route {}", bindingId, routeId);
             String proxyRoute = "";
-            //TODO ROUTESERVICE get extra parameter appId and appBindingId(else exception)
             String linkedAppId = (String) request.getParameters().get(RouteBindingParameters.linkedApplicationId);
             String linkedAppBindingId = (String) request.getParameters().get(RouteBindingParameters
                     .linkedApplicationBindingId);
-            /*TODO check app known :*/
             ApplicationInfo applicationInfo = appRepository.findOne(linkedAppId);
             if (linkedAppId == null || linkedAppBindingId == null || applicationInfo == null) {
                 throw new ServiceBrokerException("Only Autosleep is allowed to bind route to itself");
             }
             //TODO ROUTE SERVICE create proxy route?
-            String localProxyRoute = "/??";
+            String localProxyRoute = Path.PROXY_CONTEXT+"/??";
             routeBindingRepository.save(RouteBinding.builder()
                     .bindingId(bindingId)
                     .routeId(routeId)
@@ -145,8 +149,13 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                         && linkedRouteBinding.get().getLinkedApplicationBindingId().equals(bindingId)) {
                     log.debug("detected associated route binding {}, cleaning it",
                             linkedRouteBinding.get().getBindingId());
-                    //we add a proxy route binding for this app, clean it before remove app binding
-                    //TODO cfapi.unbindRoute(linkedRouteBinding.get().getid())
+                    try {
+                        //we had a proxy route binding for this app, clean it before remove app binding
+                        cfApi.unbind(linkedRouteBinding.get().getBindingId());
+                    } catch (CloudFoundryException e) {
+                        log.error("Couldn't clean related route-binding!");
+                        e.printStackTrace();
+                    }
                 }
             }
 
