@@ -49,14 +49,15 @@ public class WorkerManager implements WorkerManagerService {
             SpaceEnrollerConfig spaceEnrollerConfig =
                     spaceEnrollerConfigRepository.findOne(applicationBinding.getServiceInstanceId());
             if (spaceEnrollerConfig != null) {
-                registerApplicationStopper(spaceEnrollerConfig, applicationBinding.getApplicationId());
+                registerApplicationStopper(spaceEnrollerConfig, applicationBinding.getApplicationId(),
+                        applicationBinding.getServiceBindingId());
             }
         });
         spaceEnrollerConfigRepository.findAll().forEach(this::registerSpaceEnroller);
     }
 
     @Override
-    public void registerApplicationStopper(SpaceEnrollerConfig config, String applicationId) {
+    public void registerApplicationStopper(SpaceEnrollerConfig config, String applicationId, String appBindingId) {
         Duration interval = spaceEnrollerConfigRepository.findOne(config.getId()).getIdleDuration();
         log.debug("Initializing a watch on app {}, for an idleDuration of {} ", applicationId,
                 interval.toString());
@@ -66,7 +67,7 @@ public class WorkerManager implements WorkerManagerService {
                 .appUid(applicationId)
                 .cloudFoundryApi(cloudFoundryApi)
                 .spaceEnrollerConfigId(config.getId())
-                .taskId(config.getId() + "-" + applicationId)
+                .bindingId(appBindingId)
                 .applicationRepository(applicationRepository)
                 .applicationLocker(applicationLocker)
                 .build();

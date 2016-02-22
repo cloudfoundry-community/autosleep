@@ -81,7 +81,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
 
                 applicationBindingRepository.save(binding);
                 appRepository.save(appInfo);
-                workerManager.registerApplicationStopper(spaceEnrollerConfig, targetAppId);
+                workerManager.registerApplicationStopper(spaceEnrollerConfig, targetAppId, bindingId);
             });
             return new CreateServiceInstanceBindingResponse(
                     Collections.singletonMap(

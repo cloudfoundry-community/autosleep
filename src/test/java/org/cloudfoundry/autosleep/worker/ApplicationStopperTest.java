@@ -104,7 +104,7 @@ public class ApplicationStopperTest {
         spyChecker = spy(ApplicationStopper.builder()
                 .appUid(APP_UID)
                 .spaceEnrollerConfigId(INSTANCE_ID)
-                .taskId(BINDING_ID)
+                .bindingId(BINDING_ID)
                 .period(INTERVAL)
                 .cloudFoundryApi(cloudFoundryApi)
                 .clock(clock)

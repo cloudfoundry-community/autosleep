@@ -118,7 +118,7 @@ public class WorkerManagerTest {
     public void testInit() {
         spyWatcher.init();
         verify(spyWatcher, times(unattachedBinding.size()))
-                .registerApplicationStopper(any(SpaceEnrollerConfig.class), anyString());
+                .registerApplicationStopper(any(SpaceEnrollerConfig.class), anyString(), anyString());
         verify(spyWatcher, times(serviceIds.size())).registerSpaceEnroller(any(SpaceEnrollerConfig.class));
     }
 
@@ -133,7 +133,7 @@ public class WorkerManagerTest {
     @Test
     public void test_task_of_stop_is_scheduled() {
         SpaceEnrollerConfig config = BeanGenerator.createServiceInstance();
-        spyWatcher.registerApplicationStopper(config, APPLICATION_ID);
+        spyWatcher.registerApplicationStopper(config, APPLICATION_ID, anyString());
         verify(clock).scheduleTask(anyString(), eq(Duration.ofSeconds(0)),
                 any(ApplicationStopper.class));
     }

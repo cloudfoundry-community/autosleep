@@ -3,19 +3,24 @@ package org.cloudfoundry.autosleep.worker;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
+import org.cloudfoundry.autosleep.config.Config.RouteBindingParameters;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.LastDateComputer;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
-import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.scheduling.AbstractPeriodicTask;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
+import org.cloudfoundry.client.v2.routes.RouteResource;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 class ApplicationStopper extends AbstractPeriodicTask {
@@ -26,27 +31,27 @@ class ApplicationStopper extends AbstractPeriodicTask {
 
     private final ApplicationRepository applicationRepository;
 
+    private final String bindingId;
+
     private final CloudFoundryApiService cloudFoundryApi;
 
     private final String spaceEnrollerConfigId;
 
-    private final String taskId;
-
     @Builder
-    ApplicationStopper(Clock clock, Duration period, String appUid, String spaceEnrollerConfigId, String taskId,
+    ApplicationStopper(Clock clock, Duration period, String appUid, String spaceEnrollerConfigId, String bindingId,
                        CloudFoundryApiService cloudFoundryApi, ApplicationRepository applicationRepository,
-                       ApplicationLocker applicationLocker) {
+                       ApplicationLocker applicationLocker, ApplicationBindingRepository appBindingRepository) {
         super(clock, period);
         this.appUid = appUid;
         this.spaceEnrollerConfigId = spaceEnrollerConfigId;
-        this.taskId = taskId;
+        this.bindingId = bindingId;
         this.cloudFoundryApi = cloudFoundryApi;
         this.applicationRepository = applicationRepository;
         this.applicationLocker = applicationLocker;
     }
 
     private Duration checkActiveApplication(ApplicationInfo applicationInfo, ApplicationActivity applicationActivity)
-            throws EntityNotFoundException, CloudFoundryException {
+            throws CloudFoundryException {
         //retrieve updated info
         Duration delta = null;
         Instant lastEvent = LastDateComputer.computeLastDate(
@@ -57,13 +62,7 @@ class ApplicationStopper extends AbstractPeriodicTask {
             log.debug("last event:  {}", lastEvent.toString());
 
             if (nextIdleTime.isBefore(Instant.now())) {
-                log.info("Stopping app [{} / {}], last event: {}, last log: {}",
-                        applicationActivity.getApplication().getName(), appUid,
-                        applicationActivity.getLastEvent(), applicationActivity.getLastLog());
-                /*TODO ROUTE SERVICE: create route, bind app route to service.*/
-                cloudFoundryApi.stopApplication(appUid);
-
-                applicationInfo.markAsPutToSleep();
+                putApplicationToSleep(applicationInfo, applicationActivity);
             } else {
                 //rescheduled itself
                 delta = Duration.between(Instant.now(), nextIdleTime);
@@ -76,7 +75,7 @@ class ApplicationStopper extends AbstractPeriodicTask {
 
     @Override
     protected String getTaskId() {
-        return taskId;
+        return bindingId;
     }
 
     protected void handleApplicationBlackListed(ApplicationInfo applicationInfo) {
@@ -99,8 +98,6 @@ class ApplicationStopper extends AbstractPeriodicTask {
             } else {
                 rescheduleDelta = checkActiveApplication(applicationInfo, applicationActivity);
             }
-        } catch (EntityNotFoundException c) {
-            log.error("application not found. should not appear cause should not be in repository anymore", c);
         } catch (CloudFoundryException c) {
             log.error("error while requesting remote api", c);
         } catch (Throwable t) {
@@ -121,6 +118,28 @@ class ApplicationStopper extends AbstractPeriodicTask {
     protected void handleApplicationNotFound() {
         log.debug("Application unknown (must have unbound). Cancelling task.");
         stopTask();
+    }
+
+    private void putApplicationToSleep(ApplicationInfo applicationInfo, ApplicationActivity applicationActivity) throws
+            CloudFoundryException {
+        log.info("Stopping app [{} / {}], last event: {}, last log: {}",
+                applicationActivity.getApplication().getName(), appUid,
+                applicationActivity.getLastEvent(), applicationActivity.getLastLog());
+
+        //retrieve all routes for this app
+        List<RouteResource> routes = cloudFoundryApi.listApplicationRoutes(appUid);
+        Map<String, Object> routeBindingParam = new HashMap<>();
+        routeBindingParam.put(RouteBindingParameters.linkedApplicationId, appUid);
+        routeBindingParam.put(RouteBindingParameters.linkedApplicationBindingId, bindingId);
+
+        for (RouteResource route : routes) {
+            String routeId = route.getMetadata().getId();
+            log.debug("Adding route binding between {} and {} before stopping {}",
+                    spaceEnrollerConfigId, routeId, appUid);
+            cloudFoundryApi.bindServiceToRoute(spaceEnrollerConfigId, routeId, routeBindingParam);
+        }
+        cloudFoundryApi.stopApplication(appUid);
+        applicationInfo.markAsPutToSleep();
     }
 
     @Override

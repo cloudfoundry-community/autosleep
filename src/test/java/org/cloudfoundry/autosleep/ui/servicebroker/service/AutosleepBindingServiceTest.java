@@ -134,7 +134,8 @@ public class AutosleepBindingServiceTest {
         //then create it and store it to repository
         verify(appRepo, times(1)).save(any(ApplicationInfo.class));
         verify(appBindingRepo, times(1)).save(any(ApplicationBinding.class));
-        verify(workerManager, times(1)).registerApplicationStopper(any(SpaceEnrollerConfig.class), anyString());
+        verify(workerManager, times(1)).registerApplicationStopper(any(SpaceEnrollerConfig.class), anyString(),
+                anyString());
     }
 
     /**
