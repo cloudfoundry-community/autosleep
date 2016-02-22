@@ -153,8 +153,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                         //we had a proxy route binding for this app, clean it before remove app binding
                         cfApi.unbind(linkedRouteBinding.get().getBindingId());
                     } catch (CloudFoundryException e) {
-                        log.error("Couldn't clean related route-binding!");
-                        e.printStackTrace();
+                        throw new ServiceBrokerException("Autosleep was unable to clear related route binding.");
                     }
                 }
             }

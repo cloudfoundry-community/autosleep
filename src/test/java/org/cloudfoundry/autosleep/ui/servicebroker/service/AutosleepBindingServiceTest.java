@@ -15,6 +15,7 @@ import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
@@ -24,6 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.time.Duration;
@@ -197,7 +199,7 @@ public class AutosleepBindingServiceTest {
     }
 
     @Test
-    public void should_also_remove_route_binding_when_removing_app_binding() throws Exception {
+    public void delete_app_binding_should_also_remove_route_binding() throws Exception {
         String testId = "testCascadeBindingDeletion";
         String linkedRouteBindingId = testId + "linkedRouteBinding";
 
@@ -217,7 +219,7 @@ public class AutosleepBindingServiceTest {
     }
 
     @Test
-    public void should_blacklist_app_on_app_binding_deletion_if_autoenrollment_is_standard() throws Exception {
+    public void delete_app_binding_should_blacklist_app_if_autoenrollment_is_standard() throws Exception {
         final String bindingId = "testDelBinding";
         final String serviceId = "testDelBinding";
 
@@ -243,7 +245,7 @@ public class AutosleepBindingServiceTest {
     }
 
     @Test
-    public void should_clear_app_on_app_binding_deletion_if_autoenrollment_is_forced() throws Exception {
+    public void delete_app_binding_should_clear_app_if_autoenrollment_is_forced() throws Exception {
         String bindingId = "testDelBindingForcedEnrollment";
         String serviceId = "testDelBindingForcedEnrollment";
         DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteAppBindingTest(serviceId, bindingId);
@@ -274,7 +276,28 @@ public class AutosleepBindingServiceTest {
 
         //then it should be cleared from database
         verify(routeBindingRepo, times(1)).delete(testId);
+    }
 
+    @Test
+    public void delete_app_binding_should_scream_if_enable_to_clear_route_bindings() throws Exception {
+        String testId = "testCascadeBindingDeletion";
+        String linkedRouteBindingId = testId + "linkedRouteBinding";
+
+        DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteAppBindingTest(testId, testId);
+
+        //given that a route binding is also registered
+        when(routeBindingRepo.findAll()).thenReturn(Collections.singletonList(
+                BeanGenerator.createRouteBinding(linkedRouteBindingId, testId, APP_UID, testId)));
+
+        Mockito.doThrow(
+                new CloudFoundryException(new Throwable("TestException"))
+        ).when(cfApi).unbind(anyString());
+
+        //when unbinding the app
+
+
+        //then an exception should be raised
+        verifyThrown(() -> bindingService.deleteServiceInstanceBinding(deleteRequest), ServiceBrokerException.class);
     }
 
 }
