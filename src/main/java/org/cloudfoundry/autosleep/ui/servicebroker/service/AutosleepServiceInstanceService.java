@@ -26,7 +26,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Service
@@ -76,18 +78,19 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             ServiceInstanceExistsException, ServiceBrokerException {
         String serviceId = request.getServiceInstanceId();
         log.debug("createServiceInstance - {}", serviceId);
-
         if (spaceEnrollerConfigRepository.exists(serviceId)) {
             throw new ServiceInstanceExistsException(new ServiceInstance(request));
         } else {
-            Config.ServiceInstanceParameters.Enrollment autoEnrollment = consumeParameter(request.getParameters(),
+            Map<String, Object> createParameters = Optional.ofNullable(request.getParameters())
+                    .orElse(Collections.emptyMap());
+            Config.ServiceInstanceParameters.Enrollment autoEnrollment = consumeParameter(createParameters,
                     true, autoEnrollmentReader);
-            String secret = consumeParameter(request.getParameters(), true, secretReader);
-            Duration idleDuration = consumeParameter(request.getParameters(), true, idleDurationReader);
-            Pattern excludeFromAutoEnrollment = consumeParameter(request.getParameters(), true,
+            String secret = consumeParameter(createParameters, true, secretReader);
+            Duration idleDuration = consumeParameter(createParameters, true, idleDurationReader);
+            Pattern excludeFromAutoEnrollment = consumeParameter(createParameters, true,
                     excludeFromAutoEnrollmentReader);
-            if (!request.getParameters().isEmpty()) {
-                String parameterNames = String.join(", ", request.getParameters().keySet().iterator().next());
+            if (!createParameters.isEmpty()) {
+                String parameterNames = String.join(", ", createParameters.keySet().iterator().next());
                 log.debug("createServiceInstance - extra parameters are not accepted: {}", parameterNames);
                 throw new InvalidParameterException(parameterNames, "Unknown parameters for creation");
             } else if (autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced) {
@@ -146,11 +149,13 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
              * handle real updates (secret params), we are not supporting plan updates for now.*/
             throw new ServiceInstanceUpdateNotSupportedException("Service plan updates not supported.");
         } else {
-            Config.ServiceInstanceParameters.Enrollment autoEnrollment = consumeParameter(request.getParameters(),
+            Map<String, Object> updateParameters = Optional.ofNullable(request.getParameters())
+                    .orElse(Collections.emptyMap());
+            Config.ServiceInstanceParameters.Enrollment autoEnrollment = consumeParameter(updateParameters,
                     false, autoEnrollmentReader);
-            String secret = consumeParameter(request.getParameters(), false, secretReader);
-            if (!request.getParameters().isEmpty()) {
-                String parameterNames = String.join(", ", request.getParameters().keySet().iterator().next());
+            String secret = consumeParameter(updateParameters, false, secretReader);
+            if (!updateParameters.isEmpty()) {
+                String parameterNames = String.join(", ", updateParameters.keySet().iterator().next());
                 log.debug("updateServiceInstance - extra parameters are not accepted: {}", parameterNames);
                 throw new InvalidParameterException(parameterNames, "Unknown parameters for update");
             } else if (autoEnrollment != null) {

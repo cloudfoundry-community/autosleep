@@ -127,7 +127,7 @@ public class AutosleepServiceInstanceServiceTest {
 
 
         createRequest = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
-                ORG_TEST.toString(), SPACE_TEST.toString(), Collections.emptyMap());
+                ORG_TEST.toString(), SPACE_TEST.toString(), null);
         createRequest.withServiceInstanceId(SERVICE_INSTANCE_ID);
 
         updateRequest = new UpdateServiceInstanceRequest(PLAN_ID, Collections.emptyMap())
@@ -138,6 +138,8 @@ public class AutosleepServiceInstanceServiceTest {
         when(environment.getProperty(Config.EnvKey.SECURITY_PASSWORD)).thenReturn(superPassword);
 
     }
+
+
 
     @Test
     public void test_no_creation_accepted_when_already_exists() {
