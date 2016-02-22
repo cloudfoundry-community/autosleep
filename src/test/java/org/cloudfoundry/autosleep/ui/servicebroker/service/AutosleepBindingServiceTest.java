@@ -14,6 +14,7 @@ import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
+import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
@@ -66,6 +67,9 @@ public class AutosleepBindingServiceTest {
 
     @InjectMocks
     private AutosleepBindingService bindingService;
+
+    @Mock
+    private CloudFoundryApiService cfApi;
 
     private CreateServiceInstanceBindingRequest createAppBindingTemplate;
 
@@ -201,14 +205,14 @@ public class AutosleepBindingServiceTest {
 
         //given that a route binding is also registered
         when(routeBindingRepo.findAll()).thenReturn(Collections.singletonList(
-                BeanGenerator.createRouteBinding(linkedRouteBindingId,testId,APP_UID,testId)));
+                BeanGenerator.createRouteBinding(linkedRouteBindingId, testId, APP_UID, testId)));
 
         //when unbinding the app
         bindingService.deleteServiceInstanceBinding(deleteRequest);
 
         //then app binding should be cleared from database, and CF API should be called to unbind route
         verify(appRepo, times(1)).delete(applicationInfo.getUuid());
-        //TODO uncomment when ready verify(cfApi,times(1)).unbind(linkedRouteBindingId)
+        verify(cfApi,times(1)).unbind(linkedRouteBindingId);
 
     }
 
