@@ -65,6 +65,7 @@ public class AutosleepServiceInstanceServiceTest {
     private ApplicationRepository applicationRepository;
 
     private DeleteServiceInstanceRequest deleteRequest;
+    private CreateServiceInstanceRequest createRequest;
 
     @Mock
     private DeployedApplicationConfig.Deployment deployment;
@@ -161,7 +162,7 @@ public class AutosleepServiceInstanceServiceTest {
                 false);
 
         createRequest = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
-                ORG_TEST.toString(), SPACE_TEST.toString(), Collections.emptyMap());
+                ORG_TEST, SPACE_TEST, null, false);
         createRequest.withServiceInstanceId(SERVICE_INSTANCE_ID);
      
         when(environment.getProperty(Config.EnvKey.SECURITY_PASSWORD)).thenReturn(superPassword);

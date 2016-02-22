@@ -104,7 +104,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                 throw new ServiceBrokerException("Only Autosleep is allowed to bind route to itself");
             }
             //TODO ROUTE SERVICE create proxy route?
-            String localProxyRoute = Path.PROXY_CONTEXT+"/??";
+            String localProxyRoute = Path.PROXY_CONTEXT + "/??";
             routeBindingRepository.save(RouteBinding.builder()
                     .bindingId(bindingId)
                     .routeId(routeId)
