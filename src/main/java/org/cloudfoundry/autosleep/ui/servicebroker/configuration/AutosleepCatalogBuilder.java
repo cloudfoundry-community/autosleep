@@ -1,3 +1,22 @@
+/**
+ * Autosleep
+ * Copyright (C) 2016 Orange
+ * Authors: Benjamin Einaudi   benjamin.einaudi@orange.com
+ *          Arnaud Ruffin      arnaud.ruffin@orange.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.cloudfoundry.autosleep.ui.servicebroker.configuration;
 
 import org.cloudfoundry.autosleep.config.Config;
@@ -14,21 +33,20 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-
 @Configuration
 public class AutosleepCatalogBuilder {
-
-    private static final String DEFAULT_SERVICE_BROKER_ID = "autosleep";
-
-    private static final String DEFAULT_SERVICE_PLAN_ID = "default";
 
     @Autowired
     private Environment environment;
 
     @Bean
     public Catalog buildCatalog() {
-        String serviceBrokerId = environment.getProperty(Config.EnvKey.CF_SERVICE_BROKER_ID, DEFAULT_SERVICE_BROKER_ID);
-        String servicePlanId = environment.getProperty(Config.EnvKey.CF_SERVICE_PLAN_ID, DEFAULT_SERVICE_PLAN_ID);
+        String serviceBrokerId = environment.getProperty(Config.EnvKey.CF_SERVICE_BROKER_ID,
+                Config.ServiceCatalog.DEFAULT_SERVICE_BROKER_ID);
+
+        String servicePlanId = environment.getProperty(Config.EnvKey.CF_SERVICE_PLAN_ID,
+                Config.ServiceCatalog.DEFAULT_SERVICE_PLAN_ID);
+
         return new Catalog(Collections.singletonList(new ServiceDefinition(
                 serviceBrokerId,
                 serviceBrokerId,
@@ -43,7 +61,7 @@ public class AutosleepCatalogBuilder {
                                 true)),
                 Arrays.asList("autosleep", "document"),
                 getServiceDefinitionMetadata(),
-                null,
+                Collections.singletonList("route_forwarding"),
                 null)));
     }
 

@@ -1,3 +1,22 @@
+/**
+ * Autosleep
+ * Copyright (C) 2016 Orange
+ * Authors: Benjamin Einaudi   benjamin.einaudi@orange.com
+ *          Arnaud Ruffin      arnaud.ruffin@orange.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.cloudfoundry.autosleep.worker.remote;
 
 import lombok.Getter;
@@ -7,13 +26,11 @@ import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
-import org.cloudfoundry.client.logging.LogMessage;
-import org.cloudfoundry.client.logging.RecentLogsRequest;
-import org.cloudfoundry.client.spring.SpringCloudFoundryClient;
-import org.cloudfoundry.client.spring.SpringLoggingClient;
 import org.cloudfoundry.client.v2.applications.ApplicationEntity;
 import org.cloudfoundry.client.v2.applications.GetApplicationRequest;
 import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
+import org.cloudfoundry.client.v2.applications.ListApplicationRoutesRequest;
+import org.cloudfoundry.client.v2.applications.ListApplicationRoutesResponse;
 import org.cloudfoundry.client.v2.applications.ListApplicationsRequest;
 import org.cloudfoundry.client.v2.applications.ListApplicationsResponse;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
@@ -21,7 +38,14 @@ import org.cloudfoundry.client.v2.events.EventEntity;
 import org.cloudfoundry.client.v2.events.EventResource;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
+import org.cloudfoundry.client.v2.routes.RouteResource;
 import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
+import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
+import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceToRouteRequest;
+import org.cloudfoundry.logging.LogMessage;
+import org.cloudfoundry.logging.RecentLogsRequest;
+import org.cloudfoundry.spring.client.SpringCloudFoundryClient;
+import org.cloudfoundry.spring.logging.SpringLoggingClient;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -31,6 +55,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -40,6 +65,35 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class CloudFoundryApi implements CloudFoundryApiService {
+
+    @Getter
+    public abstract class BaseSubscriber<T> implements Subscriber<T> {
+
+        final AtomicReference<Throwable> error;
+
+        final CountDownLatch latch;
+
+        public BaseSubscriber(CountDownLatch latch, AtomicReference<Throwable> error) {
+            this.latch = latch;
+            this.error = error;
+        }
+
+        @Override
+        public void onComplete() {
+            latch.countDown();
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            error.set(throwable);
+            latch.countDown();
+        }
+
+        @Override
+        public void onSubscribe(Subscription subscription) {
+            subscription.request(Long.MAX_VALUE);
+        }
+    }
 
     @Autowired
     private SpringCloudFoundryClient cfClient;
@@ -52,13 +106,14 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             CloudFoundryException {
         log.debug("bindServiceInstance");
         try {
-            cfClient.serviceBindings().create(
-                    CreateServiceBindingRequest
-                            .builder()
-                            .applicationId(application.getGuid())
-                            .serviceInstanceId(serviceInstanceId).build()).get(
-                    Config.CF_API_TIMEOUT_IN_S, TimeUnit
-                            .SECONDS);
+            cfClient.serviceBindings()
+                    .create(
+                            CreateServiceBindingRequest
+                                    .builder()
+                                    .applicationId(application.getGuid())
+                                    .serviceInstanceId(serviceInstanceId)
+                                    .build())
+                    .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
@@ -70,6 +125,22 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         log.debug("bindServiceInstance list");
         for (ApplicationIdentity application : applications) {
             bindServiceInstance(application, serviceInstanceId);
+        }
+    }
+
+    @Override
+    public void bindServiceToRoute(String serviceInstanceId, String routeId, Map<String, Object> params)
+            throws CloudFoundryException {
+        log.debug("bindRouteToService");
+        try {
+            cfClient.serviceInstances()
+                    .bindToRoute(BindServiceInstanceToRouteRequest.builder()
+                            .serviceInstanceId(serviceInstanceId)
+                            .routeId(routeId)
+                            .parameters(params).build())
+                    .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException(r);
         }
     }
 
@@ -89,19 +160,23 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     }
 
     private ApplicationInfo.DiagnosticInfo.ApplicationLog buildAppLog(LogMessage cfLog) {
-        return cfLog == null ? null : new ApplicationInfo.DiagnosticInfo.ApplicationLog(
-                cfLog.getMessage(),
-                cfLog.getTimestamp().toInstant(),
-                cfLog.getMessageType().toString(),
-                cfLog.getSourceName(),
-                cfLog.getSourceId());
+        return cfLog == null ? null : ApplicationInfo.DiagnosticInfo.ApplicationLog.builder()
+                .message(cfLog.getMessage())
+                .timestamp(cfLog.getTimestamp().toInstant())
+                .messageType(cfLog.getMessageType().toString())
+                .sourceId(cfLog.getSourceId())
+                .sourceName(cfLog.getSourceName())
+                .build();
     }
 
     private void changeApplicationState(String applicationUuid, String targetState) throws CloudFoundryException {
         log.debug("changeApplicationState to {}", targetState);
         try {
             Mono<GetApplicationResponse> publisher = this.cfClient
-                    .applicationsV2().get(GetApplicationRequest.builder().applicationId(applicationUuid).build());
+                    .applicationsV2()
+                    .get(GetApplicationRequest.builder()
+                            .applicationId(applicationUuid)
+                            .build());
             GetApplicationResponse response = publisher.get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
 
             if (!targetState.equals(response.getEntity().getState())) {
@@ -119,10 +194,6 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     @Override
     public ApplicationActivity getApplicationActivity(String appUid) throws CloudFoundryException {
         log.debug("Getting applicationActivity {}", appUid);
-
-       /* if (logClient == null) {
-            logClient = SpringLoggingClient.builder().cloudFoundryClient(this.cfClient).build();
-        }*/
 
         //We need to call for appState, lastlogs and lastEvents
         final CountDownLatch latch = new CountDownLatch(3);
@@ -184,20 +255,34 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 throw new CloudFoundryException(error.get());
             } else {
                 ApplicationEntity app = appReference.get().getEntity();
-                return new ApplicationActivity(
-                        new ApplicationIdentity(
-                                appUid,
-                                app.getName()),
-                        app.getState(),
-                        buildAppEvent(lastEventReference.get()),
-                        buildAppLog(lastLogReference.get()));
-
+                return ApplicationActivity.builder()
+                        .application(ApplicationIdentity.builder()
+                                .guid(appUid)
+                                .name(app.getName())
+                                .build())
+                        .state(app.getState())
+                        .lastEvent(buildAppEvent(lastEventReference.get()))
+                        .lastLog(buildAppLog(lastLogReference.get()))
+                        .build();
             }
         } catch (InterruptedException e) {
             log.error(e.getMessage());
         }
 
         return null;
+    }
+
+    @Override
+    public List<RouteResource> listApplicationRoutes(String applicationUuid) throws CloudFoundryException {
+        log.debug("listApplicationRoutes");
+        try {
+            ListApplicationRoutesResponse response = cfClient.applicationsV2().listRoutes(
+                    ListApplicationRoutesRequest.builder().applicationId(applicationUuid).build())
+                    .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
+            return response.getResources();
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException(r);
+        }
     }
 
     @Override
@@ -217,9 +302,11 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                             excludeNames == null
                                     || !excludeNames.matcher(cloudApplication.getEntity().getName()).matches()))
                     .map(
-                            cloudApplication -> new ApplicationIdentity(
-                                    cloudApplication.getMetadata().getId(),
-                                    cloudApplication.getEntity().getName()))
+                            cloudApplication ->
+                                    ApplicationIdentity.builder()
+                                            .guid(cloudApplication.getMetadata().getId())
+                                            .name(cloudApplication.getEntity().getName())
+                                            .build())
                     .collect(Collectors.toList());
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
@@ -238,33 +325,10 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         changeApplicationState(applicationUuid, CloudFoundryAppState.STOPPED);
     }
 
-    @Getter
-    public abstract class BaseSubscriber<T> implements Subscriber<T> {
+    @Override
+    public void unbind(String bindingId) throws CloudFoundryException {
+        cfClient.serviceBindings().delete(DeleteServiceBindingRequest.builder().serviceBindingId(bindingId).build())
+                .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
 
-        final AtomicReference<Throwable> error;
-
-        final CountDownLatch latch;
-
-        public BaseSubscriber(CountDownLatch latch, AtomicReference<Throwable> error) {
-            this.latch = latch;
-            this.error = error;
-        }
-
-        @Override
-        public void onComplete() {
-            latch.countDown();
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            error.set(throwable);
-            latch.countDown();
-        }
-
-        @Override
-        public void onSubscribe(Subscription subscription) {
-            subscription.request(Long.MAX_VALUE);
-        }
     }
-
 }

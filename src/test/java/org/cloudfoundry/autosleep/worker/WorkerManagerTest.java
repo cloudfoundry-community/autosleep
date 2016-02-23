@@ -1,3 +1,22 @@
+/**
+ * Autosleep
+ * Copyright (C) 2016 Orange
+ * Authors: Benjamin Einaudi   benjamin.einaudi@orange.com
+ *          Arnaud Ruffin      arnaud.ruffin@orange.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.cloudfoundry.autosleep.worker;
 
 import lombok.extern.slf4j.Slf4j;
@@ -6,7 +25,7 @@ import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
@@ -42,24 +61,15 @@ import static org.mockito.Mockito.when;
 @Slf4j
 public class WorkerManagerTest {
 
+    private static final String APPLICATION_ID = UUID.randomUUID().toString();
+
     private static final Duration INTERVAL = Duration.ofMillis(300);
 
-    private static final String APPLICATION_ID = UUID.randomUUID().toString();
+    @Mock
+    private ApplicationLocker applicationLocker;
 
     @Mock
     private Clock clock;
-
-    @Mock
-    private CloudFoundryApiService mockRemote;
-
-    @Mock
-    private SpaceEnrollerConfigRepository mockServiceRepo;
-
-    @Mock
-    private BindingRepository mockBindingRepo;
-
-    @Mock
-    private ApplicationRepository mockAppRepo;
 
     @Mock
     private CloudFoundryApiService cloudFoundryApi;
@@ -68,19 +78,26 @@ public class WorkerManagerTest {
     private DeployedApplicationConfig.Deployment deployment;
 
     @Mock
-    private ApplicationLocker applicationLocker;
+    private ApplicationRepository mockAppRepo;
+
+    @Mock
+    private ApplicationBindingRepository mockBindingRepo;
+
+    @Mock
+    private CloudFoundryApiService mockRemote;
+
+    @Mock
+    private SpaceEnrollerConfigRepository mockServiceRepo;
+
+    private List<UUID> remoteApplications = Arrays.asList(UUID.randomUUID(), UUID.randomUUID());
+
+    private List<String> serviceIds = Arrays.asList("serviceId1", "serviceId2");
 
     @InjectMocks
     @Spy
     private WorkerManager spyWatcher;
 
-
     private List<String> unattachedBinding = Arrays.asList("unattached01", "unattached02");
-
-    private List<String> serviceIds = Arrays.asList("serviceId1", "serviceId2");
-
-    private List<UUID> remoteApplications = Arrays.asList(UUID.randomUUID(), UUID.randomUUID());
-
 
     @Before
     public void populateDb() throws CloudFoundryException {
@@ -108,7 +125,10 @@ public class WorkerManagerTest {
 
         when(cloudFoundryApi.listApplications(any(String.class), any(Pattern.class)))
                 .thenReturn(remoteApplications.stream()
-                        .map(id -> new ApplicationIdentity(id.toString(), id.toString()))
+                        .map(id -> ApplicationIdentity.builder()
+                                .guid(id.toString())
+                                .name(id.toString())
+                                .build())
                         .collect(Collectors.toList()));
 
     }
@@ -117,18 +137,9 @@ public class WorkerManagerTest {
     public void testInit() {
         spyWatcher.init();
         verify(spyWatcher, times(unattachedBinding.size()))
-                .registerApplicationStopper(any(SpaceEnrollerConfig.class), anyString());
+                .registerApplicationStopper(any(SpaceEnrollerConfig.class), anyString(), anyString());
         verify(spyWatcher, times(serviceIds.size())).registerSpaceEnroller(any(SpaceEnrollerConfig.class));
     }
-
-    @Test
-    public void test_task_of_stop_is_scheduled() {
-        SpaceEnrollerConfig config = BeanGenerator.createServiceInstance();
-        spyWatcher.registerApplicationStopper(config, APPLICATION_ID);
-        verify(clock).scheduleTask(anyString(), eq(Duration.ofSeconds(0)),
-                any(ApplicationStopper.class));
-    }
-
 
     @Test
     public void test_enrollment_task_is_scheduled() throws Exception {
@@ -138,5 +149,12 @@ public class WorkerManagerTest {
                 any(SpaceEnroller.class));
     }
 
+    @Test
+    public void test_task_of_stop_is_scheduled() {
+        SpaceEnrollerConfig config = BeanGenerator.createServiceInstance();
+        spyWatcher.registerApplicationStopper(config, APPLICATION_ID, "bindingid");
+        verify(clock).scheduleTask(anyString(), eq(Duration.ofSeconds(0)),
+                any(ApplicationStopper.class));
+    }
 
 }

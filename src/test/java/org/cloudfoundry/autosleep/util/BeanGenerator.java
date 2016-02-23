@@ -1,7 +1,27 @@
+/**
+ * Autosleep
+ * Copyright (C) 2016 Orange
+ * Authors: Benjamin Einaudi   benjamin.einaudi@orange.com
+ *          Arnaud Ruffin      arnaud.ruffin@orange.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.cloudfoundry.autosleep.util;
 
 import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.RouteBinding;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 
@@ -21,7 +41,10 @@ public class BeanGenerator {
     public static final UUID SPACE_TEST = UUID.randomUUID();
 
     public static ApplicationIdentity createAppIdentity(String appUuid) {
-        return new ApplicationIdentity(appUuid, appUuid + "-name");
+        return ApplicationIdentity.builder()
+                .guid(appUuid)
+                .name(appUuid + "-name")
+                .build();
     }
 
     public static ApplicationInfo createAppInfo() {
@@ -58,11 +81,13 @@ public class BeanGenerator {
     }
 
     public static ApplicationInfo.DiagnosticInfo.ApplicationLog createAppLog(Instant instant) {
-        return new ApplicationInfo.DiagnosticInfo.ApplicationLog("fakelog",
-                instant != null ? instant : Instant.now(),
-                "STDOUT",
-                "sourceName",
-                "sourceId");
+        return ApplicationInfo.DiagnosticInfo.ApplicationLog.builder()
+                .message("fakelog")
+                .timestamp(instant != null ? instant : Instant.now())
+                .messageType("STDOUT")
+                .sourceName("sourceName")
+                .sourceId("sourceId")
+                .build();
     }
 
     public static ApplicationInfo.DiagnosticInfo.ApplicationLog createAppLog() {
@@ -96,6 +121,23 @@ public class BeanGenerator {
 
     public static ApplicationInfo.DiagnosticInfo.ApplicationEvent createCloudEvent() {
         return createCloudEvent(null);
+    }
+
+    public static RouteBinding createRouteBinding(String bindingId,
+                                                  String serviceId,
+                                                  String linkedAppId,
+                                                  String linkedAppBindingId) {
+        return RouteBinding.builder()
+                .bindingId(bindingId)
+                .routeId("aRouteId")
+                .configurationId(serviceId)
+                .localRoute("alocalroute")
+                .linkedApplicationId(linkedAppId)
+                .linkedApplicationBindingId(linkedAppBindingId).build();
+    }
+
+    public static RouteBinding createRouteBinding(String bindingId) {
+        return createRouteBinding(bindingId, "", "", "");
     }
 
     public static SpaceEnrollerConfig createServiceInstance() {
