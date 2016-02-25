@@ -1,8 +1,9 @@
 package org.cloudfoundry.autosleep.ui.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
@@ -33,7 +34,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
-public class ApplicationBindingServiceTest {
+public class BindingServiceTest {
 
     private static final UUID APP_UID = UUID.randomUUID();
 
@@ -104,7 +105,7 @@ public class ApplicationBindingServiceTest {
         bindingService.createServiceInstanceBinding(createRequestTemplate.withServiceInstanceId("Sid").withBindingId(
                 "Bid"));
         verify(appRepo, times(1)).save(any(ApplicationInfo.class));
-        verify(bindingRepo, times(1)).save(any(ApplicationBinding.class));
+        verify(bindingRepo, times(1)).save(any(Binding.class));
         verify(workerManager, times(1)).registerApplicationStopper(any(SpaceEnrollerConfig.class), anyString());
 
         when(appRepo.findOne(APP_UID.toString())).thenReturn(applicationInfo);
@@ -116,9 +117,12 @@ public class ApplicationBindingServiceTest {
 
         when(appRepo.findOne(APP_UID.toString())).thenReturn(applicationInfo);
         when(bindingRepo.findOne(bindingId))
-                .thenReturn(ApplicationBinding.builder().serviceBindingId(bindingId)
+                .thenReturn(Binding.builder()
+                        .serviceBindingId(bindingId)
                         .serviceInstanceId(serviceId)
-                        .applicationId(APP_UID.toString()).build());
+                        .resourceId(APP_UID.toString())
+                        .resourceType(ResourceType.Application)
+                        .build());
 
         return new DeleteServiceInstanceBindingRequest(bindingId,
                 serviceInstance,

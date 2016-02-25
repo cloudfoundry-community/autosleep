@@ -2,8 +2,9 @@ package org.cloudfoundry.autosleep.ui.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
@@ -51,9 +52,12 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
         log.debug("createServiceInstanceBinding - {}", bindingId);
         SpaceEnrollerConfig spaceEnrollerConfig = spaceEnrollerConfigRepository.findOne(configId);
 
-        ApplicationBinding binding = ApplicationBinding.builder().serviceInstanceId(configId)
+        Binding binding = Binding.builder()
+                .serviceInstanceId(configId)
                 .serviceBindingId(bindingId)
-                .applicationId(appId).build();
+                .resourceId(appId)
+                .resourceType(ResourceType.Application)
+                .build();
         applicationLocker.executeThreadSafe(appId, () -> {
             ApplicationInfo appInfo = appRepository.findOne(appId);
             if (appInfo == null) {
@@ -80,8 +84,8 @@ public class ApplicationBindingService implements ServiceInstanceBindingService 
         final String bindingId = request.getBindingId();
         log.debug("deleteServiceInstanceBinding - {}", bindingId);
 
-        final ApplicationBinding binding = bindingRepository.findOne(bindingId);
-        final String appId = binding.getApplicationId();
+        final Binding binding = bindingRepository.findOne(bindingId);
+        final String appId = binding.getResourceId();
 
         SpaceEnrollerConfig serviceInstance = spaceEnrollerConfigRepository
                 .findOne(request.getInstance().getServiceInstanceId());

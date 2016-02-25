@@ -4,8 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
-import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
@@ -126,9 +127,12 @@ public class ApiControllerTest {
 
     @Test
     public void testListBindings() throws Exception {
-        ApplicationBinding serviceBinding = ApplicationBinding.builder().serviceBindingId(serviceBindingId)
+        Binding serviceBinding = Binding.builder()
+                .serviceBindingId(serviceBindingId)
                 .serviceInstanceId(serviceInstanceId)
-                .applicationId(UUID.randomUUID().toString()).build();
+                .resourceId(UUID.randomUUID().toString())
+                .resourceType(ResourceType.Application)
+                .build();
         when(bindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
 
         mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "/bindings/")
@@ -138,11 +142,11 @@ public class ApiControllerTest {
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
                     verify(bindingRepository, times(1)).findAll();
-                    ServerResponse<ApplicationBinding[]> serviceBindings = objectMapper
+                    ServerResponse<Binding[]> serviceBindings = objectMapper
                             .readValue(mvcResult.getResponse().getContentAsString(),
                                     TypeFactory.defaultInstance()
                                             .constructParametricType(ServerResponse.class,
-                                                    ApplicationBinding[].class));
+                                                    Binding[].class));
                     assertThat(serviceBindings.getBody(), is(notNullValue()));
                     assertThat(serviceBindings.getBody().length, is(equalTo(1)));
                     assertThat(serviceBindings.getBody()[0].getServiceBindingId(), is(equalTo(serviceBindingId)));
@@ -157,11 +161,11 @@ public class ApiControllerTest {
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
                     verify(bindingRepository, times(2)).findAll();
-                    ServerResponse<ApplicationBinding[]> serviceBindings = objectMapper
+                    ServerResponse<Binding[]> serviceBindings = objectMapper
                             .readValue(mvcResult.getResponse().getContentAsString(),
                                     TypeFactory.defaultInstance()
                                             .constructParametricType(ServerResponse.class,
-                                                    ApplicationBinding[].class));
+                                                    Binding[].class));
                     assertThat(serviceBindings.getBody(), is(notNullValue()));
                     assertThat(serviceBindings.getBody().length, is(equalTo(0)));
                 });

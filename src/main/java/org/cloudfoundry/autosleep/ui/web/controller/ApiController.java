@@ -2,7 +2,7 @@ package org.cloudfoundry.autosleep.ui.web.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
@@ -67,10 +67,10 @@ public class ApiController {
 
     @RequestMapping(Config.Path.SERVICES_SUB_PATH + "{instanceId}/bindings/")
     @ResponseBody
-    public ServerResponse<List<ApplicationBinding>> listBindings(@PathVariable("instanceId") String serviceInstanceId)
+    public ServerResponse<List<Binding>> listBindings(@PathVariable("instanceId") String serviceInstanceId)
             throws ServiceInstanceDoesNotExistException {
         log.debug("listServiceBindings - {}", serviceInstanceId);
-        List<ApplicationBinding> result = new ArrayList<>();
+        List<Binding> result = new ArrayList<>();
         bindingRepository.findAll().forEach(serviceBinding -> {
                     if (serviceInstanceId.equals(serviceBinding.getServiceInstanceId())) {
                         result.add(serviceBinding);

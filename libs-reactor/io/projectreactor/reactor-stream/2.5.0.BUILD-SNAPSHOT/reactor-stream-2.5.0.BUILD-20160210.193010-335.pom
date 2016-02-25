@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.projectreactor</groupId>
+  <artifactId>reactor-stream</artifactId>
+  <version>2.5.0.BUILD-SNAPSHOT</version>
+  <name>Reactive Streams implementation for Reactive Extensions and more</name>
+  <description>Reactive Streams implementation for Reactive Extensions and more</description>
+  <url>https://github.com/reactor/reactor</url>
+  <organization>
+    <name>reactor</name>
+    <url>http://github.com/reactor</url>
+  </organization>
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>smaldini</id>
+      <name>Stephane Maldini</name>
+      <email>smaldini@pivotal.io</email>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:git://github.com/reactor/reactor-core</connection>
+    <developerConnection>scm:git:git://github.com/reactor/reactor-core</developerConnection>
+    <url>https://github.com/reactor/reactor-core</url>
+  </scm>
+  <issueManagement>
+    <system>GitHub Issues</system>
+    <url>https://github.com/reactor/reactor/issues</url>
+  </issueManagement>
+  <dependencies>
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-core</artifactId>
+      <version>2.5.0.BUILD-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
+</project>

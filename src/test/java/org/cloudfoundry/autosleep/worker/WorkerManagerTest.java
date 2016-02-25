@@ -3,7 +3,7 @@ package org.cloudfoundry.autosleep.worker;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
-import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
@@ -90,7 +90,7 @@ public class WorkerManagerTest {
         }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
 
         //init mock binding repository with unattached binding
-        List<ApplicationBinding> storedBindings = unattachedBinding.stream()
+        List<Binding> storedBindings = unattachedBinding.stream()
                 .map(id -> BeanGenerator.createBinding())
                 .collect(Collectors.toList());
 
