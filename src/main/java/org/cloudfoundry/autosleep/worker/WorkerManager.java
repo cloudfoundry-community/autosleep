@@ -66,7 +66,7 @@ public class WorkerManager implements WorkerManagerService {
         log.debug("Initializer watchers for every app already enrolled (except if handle by another instance of "
                 + "autosleep)");
         bindingRepository.findAll().forEach(applicationBinding -> {
-            if( applicationBinding.getResourceType() == ResourceType.Application){
+            if (applicationBinding.getResourceType() == ResourceType.Application) {
                 SpaceEnrollerConfig spaceEnrollerConfig =
                         spaceEnrollerConfigRepository.findOne(applicationBinding.getServiceInstanceId());
                 if (spaceEnrollerConfig != null) {

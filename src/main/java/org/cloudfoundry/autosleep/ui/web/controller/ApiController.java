@@ -24,7 +24,6 @@ import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;

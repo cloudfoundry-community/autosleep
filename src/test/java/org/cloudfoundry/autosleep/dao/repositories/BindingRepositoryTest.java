@@ -23,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
-import org.cloudfoundry.autosleep.dao.model.RouteBinding;
 import org.cloudfoundry.autosleep.util.ApplicationConfiguration;
 import org.junit.After;
 import org.junit.Before;
@@ -40,7 +39,9 @@ import java.util.List;
 import static java.lang.Math.toIntExact;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 
 @Slf4j

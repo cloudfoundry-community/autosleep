@@ -39,7 +39,7 @@ public class ProxyController {
     @ResponseBody
     public ServerResponse<List<ApplicationInfo>> listApplicationsById(@PathVariable("routeBindingId") String
                                                                               routeBindingId) {
-        //TODO ROUTE SERVICE: start matching app, wait, unqueue traffic.
+        //TODO ROUTE SERVICE: get matching apps with cf api, start  apps, wait, unqueue traffic.
         log.debug("route binding {}", routeBindingId);
         return null;
     }

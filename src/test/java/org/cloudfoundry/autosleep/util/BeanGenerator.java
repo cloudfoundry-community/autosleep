@@ -19,10 +19,9 @@
 
 package org.cloudfoundry.autosleep.util;
 
-import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
-import org.cloudfoundry.autosleep.dao.model.RouteBinding;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 
@@ -30,6 +29,8 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Route;
 
 public class BeanGenerator {
 
@@ -128,21 +129,17 @@ public class BeanGenerator {
         return createCloudEvent(null);
     }
 
-    public static RouteBinding createRouteBinding(String bindingId,
-                                                  String serviceId,
-                                                  String linkedAppId,
-                                                  String linkedAppBindingId) {
-        return RouteBinding.builder()
-                .bindingId(bindingId)
-                .routeId("aRouteId")
-                .configurationId(serviceId)
-                .localRoute("alocalroute")
-                .linkedApplicationId(linkedAppId)
-                .linkedApplicationBindingId(linkedAppBindingId).build();
+    public static Binding createRouteBinding(String bindingId,
+                                                  String serviceId, String routeId) {
+        return Binding.builder()
+                .resourceType(Route)
+                .serviceBindingId(bindingId)
+                .resourceId(routeId)
+                .serviceInstanceId(serviceId).build();
     }
 
-    public static RouteBinding createRouteBinding(String bindingId) {
-        return createRouteBinding(bindingId, "", "", "");
+    public static Binding createRouteBinding(String bindingId) {
+        return createRouteBinding(bindingId, "","arouteId");
     }
 
     public static SpaceEnrollerConfig createServiceInstance() {

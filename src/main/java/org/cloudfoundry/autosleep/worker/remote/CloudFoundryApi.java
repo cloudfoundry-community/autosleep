@@ -27,6 +27,7 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 import org.cloudfoundry.client.v2.applications.ApplicationEntity;
+import org.cloudfoundry.client.v2.applications.ApplicationResource;
 import org.cloudfoundry.client.v2.applications.GetApplicationRequest;
 import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
 import org.cloudfoundry.client.v2.applications.ListApplicationRoutesRequest;
@@ -38,6 +39,8 @@ import org.cloudfoundry.client.v2.events.EventEntity;
 import org.cloudfoundry.client.v2.events.EventResource;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
+import org.cloudfoundry.client.v2.routes.ListRouteApplicationsRequest;
+import org.cloudfoundry.client.v2.routes.ListRouteApplicationsResponse;
 import org.cloudfoundry.client.v2.routes.RouteResource;
 import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
 import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
@@ -129,15 +132,14 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     }
 
     @Override
-    public void bindServiceToRoute(String serviceInstanceId, String routeId, Map<String, Object> params)
-            throws CloudFoundryException {
+    public void bindServiceToRoute(String serviceInstanceId, String routeId) throws CloudFoundryException {
         log.debug("bindRouteToService");
         try {
             cfClient.serviceInstances()
                     .bindToRoute(BindServiceInstanceToRouteRequest.builder()
                             .serviceInstanceId(serviceInstanceId)
                             .routeId(routeId)
-                            .parameters(params).build())
+                            .parameters(null).build())
                     .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
@@ -284,6 +286,20 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             throw new CloudFoundryException(r);
         }
     }
+
+    @Override
+    public List<ApplicationResource> listRouteApplications(String routeUuid) throws CloudFoundryException {
+        log.debug("listRouteApplications");
+        try {
+            ListRouteApplicationsResponse response = cfClient.routes().listApplications(
+                    ListRouteApplicationsRequest.builder().routeId(routeUuid).build())
+                    .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
+            return response.getResources();
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException(r);
+        }
+    }
+
 
     @Override
     public List<ApplicationIdentity> listApplications(String spaceUuid, Pattern excludeNames) throws

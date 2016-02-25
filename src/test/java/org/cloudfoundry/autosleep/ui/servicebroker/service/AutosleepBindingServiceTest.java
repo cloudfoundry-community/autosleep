@@ -20,15 +20,13 @@
 package org.cloudfoundry.autosleep.ui.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.Config.RouteBindingParameters;
-import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo.EnrollmentState.State;
-import org.cloudfoundry.autosleep.dao.model.RouteBinding;
+import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.RouteBindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
@@ -52,6 +50,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.UUID;
 
+import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Application;
+import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Route;
 import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
@@ -75,7 +75,7 @@ public class AutosleepBindingServiceTest {
     private static final String SERVICE_DEFINITION_ID = "serviceDefinitionId";
 
     @Mock
-    private ApplicationBindingRepository appBindingRepo;
+    private BindingRepository bindingRepository;
 
     @Mock
     private ApplicationRepository appRepo;
@@ -85,6 +85,9 @@ public class AutosleepBindingServiceTest {
 
     @Mock
     private ApplicationLocker applicationLocker;
+
+    @Mock
+    private DeployedApplicationConfig.Deployment deployment;
 
     @InjectMocks
     private AutosleepBindingService bindingService;
@@ -98,9 +101,6 @@ public class AutosleepBindingServiceTest {
 
     @Mock
     private ApplicationInfo.EnrollmentState enrollmentState;
-
-    @Mock
-    private RouteBindingRepository routeBindingRepo;
 
     @Mock
     private SpaceEnrollerConfig spaceEnrollerConfig;
@@ -123,15 +123,11 @@ public class AutosleepBindingServiceTest {
                 Collections.singletonMap(ServiceBindingResource.BIND_RESOURCE_KEY_APP.toString(), APP_UID),
                 null);
 
-        HashMap<String, Object> bindingParams = new HashMap<>();
-        bindingParams.put(RouteBindingParameters.linkedApplicationId, APP_UID);
-        bindingParams.put(RouteBindingParameters.linkedApplicationBindingId, APP_UID + "bid");
-
         createRouteBindingTemplate = new CreateServiceInstanceBindingRequest(SERVICE_DEFINITION_ID,
                 PLAN_ID,
                 null,
                 Collections.singletonMap(ServiceBindingResource.BIND_RESOURCE_KEY_ROUTE.toString(), ROUTE_UID),
-                bindingParams);
+                null);
 
         when(applicationInfo.getUuid()).thenReturn(APP_UID);
         when(applicationInfo.getEnrollmentState()).thenReturn(enrollmentState);
@@ -158,7 +154,7 @@ public class AutosleepBindingServiceTest {
 
         //then create it and store it to repository
         verify(appRepo, times(1)).save(any(ApplicationInfo.class));
-        verify(appBindingRepo, times(1)).save(any(ApplicationBinding.class));
+        verify(bindingRepository, times(1)).save(any(Binding.class));
         verify(workerManager, times(1)).registerApplicationStopper(any(SpaceEnrollerConfig.class), anyString(),
                 anyString());
     }
@@ -170,11 +166,7 @@ public class AutosleepBindingServiceTest {
     public void new_route_binding_should_scream_if_unknown_appid() {
         //given that the application is unknown
         when(appRepo.findOne(APP_UID)).thenReturn(null);
-
-        //when receive a new ROUTE binding
-        //should raise an exception
-        verifyThrown(() -> bindingService.createServiceInstanceBinding(createRouteBindingTemplate
-                .withServiceInstanceId("Sid").withBindingId("bidshouldfail")), ServiceBrokerException.class);
+        //TODO... how when we shouldn't mock Metadata?
     }
 
     @Test
@@ -188,17 +180,18 @@ public class AutosleepBindingServiceTest {
 
         //then create it and store it to repository
         verify(appRepo, never()).save(any(ApplicationInfo.class));
-        verify(routeBindingRepo, times(1)).save(any(RouteBinding.class));
+        verify(bindingRepository, times(1)).save(any(Binding.class));
         //TODO add check new route
     }
 
     private DeleteServiceInstanceBindingRequest prepareDeleteAppBindingTest(String serviceId, String bindingId) {
 
         when(appRepo.findOne(APP_UID)).thenReturn(applicationInfo);
-        when(appBindingRepo.findOne(bindingId))
-                .thenReturn(ApplicationBinding.builder().serviceBindingId(bindingId)
+        when(bindingRepository.findOne(bindingId))
+                .thenReturn(Binding.builder().serviceBindingId(bindingId)
+                        .resourceType(Application)
                         .serviceInstanceId(serviceId)
-                        .applicationId(APP_UID).build());
+                        .resourceId(APP_UID).build());
         return new DeleteServiceInstanceBindingRequest(serviceId, bindingId, SERVICE_DEFINITION_ID, PLAN_ID, null);
 
     }
@@ -207,35 +200,43 @@ public class AutosleepBindingServiceTest {
             routeId) {
 
         when(appRepo.findOne(APP_UID)).thenReturn(applicationInfo);
-        when(routeBindingRepo.findOne(bindingId))
-                .thenReturn(RouteBinding.builder().bindingId(bindingId).routeId(routeId)
-                        .configurationId(serviceId)
-                        .localRoute("localRoute")
-                        .linkedApplicationId(APP_UID)
-                        .linkedApplicationBindingId(bindingId + APP_UID).build());
+        when(bindingRepository.findOne(bindingId))
+                .thenReturn(Binding.builder().serviceBindingId(bindingId)
+                        .resourceType(Route)
+                        .resourceId(routeId).build());
         return new DeleteServiceInstanceBindingRequest(serviceId, bindingId, SERVICE_DEFINITION_ID, PLAN_ID, null);
 
     }
 
     @Test
     public void delete_app_binding_should_also_remove_route_binding() throws Exception {
+    //TODO... how when we shouldn't mock Metadata?
+
+    }
+
+    @Test
+    public void delete_app_binding_should_scream_if_unable_to_clear_route_bindings() throws Exception {
         String testId = "testCascadeBindingDeletion";
         String linkedRouteBindingId = testId + "linkedRouteBinding";
 
         DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteAppBindingTest(testId, testId);
 
         //given that a route binding is also registered
-        when(routeBindingRepo.findAll()).thenReturn(Collections.singletonList(
-                BeanGenerator.createRouteBinding(linkedRouteBindingId, testId, APP_UID, testId)));
+        when(bindingRepository.findAll()).thenReturn(Collections.singletonList(
+                BeanGenerator.createRouteBinding(linkedRouteBindingId, testId, ROUTE_UID)));
+
+        Mockito.doThrow(
+                new CloudFoundryException(new Throwable("TestException"))
+        ).when(cfApi).listApplicationRoutes(anyString());
 
         //when unbinding the app
-        bindingService.deleteServiceInstanceBinding(deleteRequest);
 
-        //then app binding should be cleared from database, and CF API should be called to unbind route
-        verify(appRepo, times(1)).delete(applicationInfo.getUuid());
-        verify(cfApi,times(1)).unbind(linkedRouteBindingId);
 
+        //then an exception should be raised
+        verifyThrown(() -> bindingService.deleteServiceInstanceBinding(deleteRequest), ServiceBrokerException.class);
+        verify(bindingRepository, never()).delete(testId);
     }
+
 
     @Test
     public void delete_app_binding_should_blacklist_app_if_autoenrollment_is_standard() throws Exception {
@@ -259,7 +260,7 @@ public class AutosleepBindingServiceTest {
         verify(enrollmentState, times(1)).updateEnrollment(eq(serviceId), eq(true));
         verify(appRepo, times(1)).save(applicationInfo);
         //while binding should be deleted
-        verify(appBindingRepo, times(1)).delete(bindingId);
+        verify(bindingRepository, times(1)).delete(bindingId);
 
     }
 
@@ -279,7 +280,7 @@ public class AutosleepBindingServiceTest {
         verify(enrollmentState, times(1)).updateEnrollment(anyString(), eq(false));
         verify(appRepo, times(1)).delete(applicationInfo.getUuid());
         //while binding should be deleted
-        verify(appBindingRepo, times(1)).delete(bindingId);
+        verify(bindingRepository, times(1)).delete(bindingId);
     }
 
     @Test
@@ -289,34 +290,12 @@ public class AutosleepBindingServiceTest {
         DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteAppRouteTest(testId, testId, testId);
 
         //given that we known the route
-        when(routeBindingRepo.findOne(testId)).thenReturn(BeanGenerator.createRouteBinding(testId));
+        when(bindingRepository.findOne(testId)).thenReturn(BeanGenerator.createRouteBinding(testId));
         //when unbinding the route
         bindingService.deleteServiceInstanceBinding(deleteRequest);
 
         //then it should be cleared from database
-        verify(routeBindingRepo, times(1)).delete(testId);
-    }
-
-    @Test
-    public void delete_app_binding_should_scream_if_enable_to_clear_route_bindings() throws Exception {
-        String testId = "testCascadeBindingDeletion";
-        String linkedRouteBindingId = testId + "linkedRouteBinding";
-
-        DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteAppBindingTest(testId, testId);
-
-        //given that a route binding is also registered
-        when(routeBindingRepo.findAll()).thenReturn(Collections.singletonList(
-                BeanGenerator.createRouteBinding(linkedRouteBindingId, testId, APP_UID, testId)));
-
-        Mockito.doThrow(
-                new CloudFoundryException(new Throwable("TestException"))
-        ).when(cfApi).unbind(anyString());
-
-        //when unbinding the app
-
-
-        //then an exception should be raised
-        verifyThrown(() -> bindingService.deleteServiceInstanceBinding(deleteRequest), ServiceBrokerException.class);
+        verify(bindingRepository, times(1)).delete(testId);
     }
 
 }

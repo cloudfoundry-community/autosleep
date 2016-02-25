@@ -22,7 +22,6 @@ package org.cloudfoundry.autosleep.worker;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
-import org.cloudfoundry.autosleep.config.Config.RouteBindingParameters;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
@@ -36,9 +35,7 @@ import org.cloudfoundry.client.v2.routes.RouteResource;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 class ApplicationStopper extends AbstractPeriodicTask {
@@ -144,17 +141,15 @@ class ApplicationStopper extends AbstractPeriodicTask {
                 applicationActivity.getApplication().getName(), appUid,
                 applicationActivity.getLastEvent(), applicationActivity.getLastLog());
 
+        //TODO add temporary state? so that service broker knows we are calling?
         //retrieve all routes for this app
         List<RouteResource> routes = cloudFoundryApi.listApplicationRoutes(appUid);
-        Map<String, Object> routeBindingParam = new HashMap<>();
-        routeBindingParam.put(RouteBindingParameters.linkedApplicationId, appUid);
-        routeBindingParam.put(RouteBindingParameters.linkedApplicationBindingId, bindingId);
 
         for (RouteResource route : routes) {
             String routeId = route.getMetadata().getId();
             log.debug("Adding route binding between {} and {} before stopping {}",
                     spaceEnrollerConfigId, routeId, appUid);
-            cloudFoundryApi.bindServiceToRoute(spaceEnrollerConfigId, routeId, routeBindingParam);
+            cloudFoundryApi.bindServiceToRoute(spaceEnrollerConfigId, routeId);
         }
         cloudFoundryApi.stopApplication(appUid);
         applicationInfo.markAsPutToSleep();
