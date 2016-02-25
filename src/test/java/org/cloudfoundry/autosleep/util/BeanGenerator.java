@@ -1,7 +1,8 @@
 package org.cloudfoundry.autosleep.util;
 
-import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 
@@ -69,7 +70,7 @@ public class BeanGenerator {
         return createAppLog(null);
     }
 
-    public static ApplicationBinding createBinding(String serviceId, String bindingId, String appId) {
+    public static Binding createBinding(String serviceId, String bindingId, String appId) {
         if (serviceId == null) {
             serviceId = UUID.randomUUID().toString();
         }
@@ -79,11 +80,15 @@ public class BeanGenerator {
         if (appId == null) {
             appId = UUID.randomUUID().toString();
         }
-        return ApplicationBinding.builder().serviceBindingId(bindingId)
-                .serviceInstanceId(serviceId).applicationId(appId).build();
+        return Binding.builder()
+                .serviceBindingId(bindingId)
+                .serviceInstanceId(serviceId)
+                .resourceId(appId)
+                .resourceType(ResourceType.Application)
+                .build();
     }
 
-    public static ApplicationBinding createBinding() {
+    public static Binding createBinding() {
         return createBinding(null, null, null);
     }
 

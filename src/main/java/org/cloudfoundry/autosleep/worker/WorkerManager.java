@@ -50,7 +50,7 @@ public class WorkerManager implements WorkerManagerService {
             SpaceEnrollerConfig spaceEnrollerConfig =
                     spaceEnrollerConfigRepository.findOne(applicationBinding.getServiceInstanceId());
             if (spaceEnrollerConfig != null) {
-                registerApplicationStopper(spaceEnrollerConfig, applicationBinding.getApplicationId());
+                registerApplicationStopper(spaceEnrollerConfig, applicationBinding.getResourceId());
             }
         });
         spaceEnrollerConfigRepository.findAll().forEach(this::registerSpaceEnroller);

@@ -4,7 +4,7 @@ databaseChangeLog:
     author: Arnaud Ruffin
     changes:
     - createTable:
-        tableName: ApplicationBinding
+        tableName: Binding
         columns:
         - column:
             name: serviceBindingId
@@ -13,7 +13,10 @@ databaseChangeLog:
                 primaryKey: true
                 nullable: false
         - column:
-            name: applicationId
+            name: resourceId
+            type: VARCHAR(255)
+        - column:
+            name: resourceType
             type: VARCHAR(255)
         - column:
             name: serviceInstanceId

@@ -134,6 +134,25 @@
                 <rule>
                   <match>
                     <AND>
+                      <METHOD>true</METHOD>
+                      <STATIC>true</STATIC>
+                    </AND>
+                  </match>
+                  <order>BY_NAME</order>
+                </rule>
+              </section>
+              <section>
+                <rule>
+                  <match>
+                    <ENUM>true</ENUM>
+                  </match>
+                  <order>BY_NAME</order>
+                </rule>
+              </section>
+              <section>
+                <rule>
+                  <match>
+                    <AND>
                       <FIELD>true</FIELD>
                       <FINAL>true</FINAL>
                       <PUBLIC>true</PUBLIC>
@@ -247,26 +266,7 @@
               <section>
                 <rule>
                   <match>
-                    <AND>
-                      <METHOD>true</METHOD>
-                      <STATIC>true</STATIC>
-                    </AND>
-                  </match>
-                  <order>BY_NAME</order>
-                </rule>
-              </section>
-              <section>
-                <rule>
-                  <match>
                     <METHOD>true</METHOD>
-                  </match>
-                  <order>BY_NAME</order>
-                </rule>
-              </section>
-              <section>
-                <rule>
-                  <match>
-                    <ENUM>true</ENUM>
                   </match>
                   <order>BY_NAME</order>
                 </rule>
@@ -304,6 +304,5 @@
       </value>
     </option>
     <option name="USE_PER_PROJECT_SETTINGS" value="true" />
-    <option name="PREFERRED_PROJECT_CODE_STYLE" value="Default (1)" />
   </component>
 </project>
