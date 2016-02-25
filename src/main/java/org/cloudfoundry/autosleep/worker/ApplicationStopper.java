@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.config.Config.RouteBindingParameters;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.LastDateComputer;
@@ -59,7 +58,7 @@ class ApplicationStopper extends AbstractPeriodicTask {
     @Builder
     ApplicationStopper(Clock clock, Duration period, String appUid, String spaceEnrollerConfigId, String bindingId,
                        CloudFoundryApiService cloudFoundryApi, ApplicationRepository applicationRepository,
-                       ApplicationLocker applicationLocker, ApplicationBindingRepository appBindingRepository) {
+                       ApplicationLocker applicationLocker) {
         super(clock, period);
         this.appUid = appUid;
         this.spaceEnrollerConfigId = spaceEnrollerConfigId;

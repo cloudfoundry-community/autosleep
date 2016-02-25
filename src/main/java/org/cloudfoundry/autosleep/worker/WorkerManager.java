@@ -22,9 +22,10 @@ package org.cloudfoundry.autosleep.worker;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
+import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
@@ -40,7 +41,7 @@ import java.time.Duration;
 public class WorkerManager implements WorkerManagerService {
 
     @Autowired
-    private ApplicationBindingRepository applicationBindingRepository;
+    private BindingRepository bindingRepository;
 
     @Autowired
     private ApplicationLocker applicationLocker;
@@ -64,12 +65,14 @@ public class WorkerManager implements WorkerManagerService {
     public void init() {
         log.debug("Initializer watchers for every app already enrolled (except if handle by another instance of "
                 + "autosleep)");
-        applicationBindingRepository.findAll().forEach(applicationBinding -> {
-            SpaceEnrollerConfig spaceEnrollerConfig =
-                    spaceEnrollerConfigRepository.findOne(applicationBinding.getServiceInstanceId());
-            if (spaceEnrollerConfig != null) {
-                registerApplicationStopper(spaceEnrollerConfig, applicationBinding.getApplicationId(),
-                        applicationBinding.getServiceBindingId());
+        bindingRepository.findAll().forEach(applicationBinding -> {
+            if( applicationBinding.getResourceType() == ResourceType.Application){
+                SpaceEnrollerConfig spaceEnrollerConfig =
+                        spaceEnrollerConfigRepository.findOne(applicationBinding.getServiceInstanceId());
+                if (spaceEnrollerConfig != null) {
+                    registerApplicationStopper(spaceEnrollerConfig, applicationBinding.getResourceId(),
+                            applicationBinding.getServiceBindingId());
+                }
             }
         });
         spaceEnrollerConfigRepository.findAll().forEach(this::registerSpaceEnroller);

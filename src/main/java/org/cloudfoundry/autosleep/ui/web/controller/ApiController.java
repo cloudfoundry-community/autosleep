@@ -21,11 +21,12 @@ package org.cloudfoundry.autosleep.ui.web.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.ui.web.model.ServerResponse;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
@@ -49,7 +50,7 @@ import java.util.List;
 public class ApiController {
 
     @Autowired
-    private ApplicationBindingRepository applicationBindingRepository;
+    private BindingRepository applicationBindingRepository;
 
     @Autowired
     private ApplicationLocker applicationLocker;
@@ -98,10 +99,10 @@ public class ApiController {
 
     @RequestMapping(Config.Path.SERVICES_SUB_PATH + "{instanceId}/bindings/")
     @ResponseBody
-    public ServerResponse<List<ApplicationBinding>> listBindings(@PathVariable("instanceId") String serviceInstanceId)
+    public ServerResponse<List<Binding>> listBindings(@PathVariable("instanceId") String serviceInstanceId)
             throws ServiceInstanceDoesNotExistException {
         log.debug("listServiceBindings - {}", serviceInstanceId);
-        List<ApplicationBinding> result = new ArrayList<>();
+        List<Binding> result = new ArrayList<>();
         applicationBindingRepository.findAll().forEach(serviceBinding -> {
                     if (serviceInstanceId.equals(serviceBinding.getServiceInstanceId())) {
                         result.add(serviceBinding);

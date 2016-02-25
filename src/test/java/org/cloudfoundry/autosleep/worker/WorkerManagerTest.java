@@ -22,16 +22,16 @@ package org.cloudfoundry.autosleep.worker;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
-import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
+import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
-import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,7 +81,7 @@ public class WorkerManagerTest {
     private ApplicationRepository mockAppRepo;
 
     @Mock
-    private ApplicationBindingRepository mockBindingRepo;
+    private BindingRepository mockBindingRepo;
 
     @Mock
     private CloudFoundryApiService mockRemote;
@@ -107,7 +107,7 @@ public class WorkerManagerTest {
         }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
 
         //init mock binding repository with unattached binding
-        List<ApplicationBinding> storedBindings = unattachedBinding.stream()
+        List<Binding> storedBindings = unattachedBinding.stream()
                 .map(id -> BeanGenerator.createBinding())
                 .collect(Collectors.toList());
 

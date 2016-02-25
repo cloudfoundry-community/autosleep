@@ -23,11 +23,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
-import org.cloudfoundry.autosleep.dao.model.ApplicationBinding;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.dao.model.Binding;
+import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationBindingRepository;
+import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.ui.web.model.ServerResponse;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
@@ -54,11 +55,17 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -77,7 +84,7 @@ public class ApiControllerTest {
     private ApiController apiController;
 
     @Mock
-    private ApplicationBindingRepository applicationBindingRepository;
+    private BindingRepository bindingRepository;
 
     @Mock
     private ApplicationLocker applicationLocker;
@@ -174,10 +181,13 @@ public class ApiControllerTest {
 
     @Test
     public void testListBindings() throws Exception {
-        ApplicationBinding serviceBinding = ApplicationBinding.builder().serviceBindingId(serviceBindingId)
+        Binding serviceBinding = Binding.builder()
+                .serviceBindingId(serviceBindingId)
                 .serviceInstanceId(serviceInstanceId)
-                .applicationId(UUID.randomUUID().toString()).build();
-        when(applicationBindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
+                .resourceId(UUID.randomUUID().toString())
+                .resourceType(ResourceType.Application)
+                .build();
+        when(bindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
 
         mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "/bindings/")
                 .accept(MediaType.APPLICATION_JSON))
@@ -185,12 +195,12 @@ public class ApiControllerTest {
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
-                    verify(applicationBindingRepository, times(1)).findAll();
-                    ServerResponse<ApplicationBinding[]> serviceBindings = objectMapper
+                    verify(bindingRepository, times(1)).findAll();
+                    ServerResponse<Binding[]> serviceBindings = objectMapper
                             .readValue(mvcResult.getResponse().getContentAsString(),
                                     TypeFactory.defaultInstance()
                                             .constructParametrizedType(ServerResponse.class, ServerResponse.class,
-                                                    ApplicationBinding[].class));
+                                                    Binding[].class));
                     assertThat(serviceBindings.getBody(), is(notNullValue()));
                     assertThat(serviceBindings.getBody().length, is(equalTo(1)));
                     assertThat(serviceBindings.getBody()[0].getServiceBindingId(), is(equalTo(serviceBindingId)));
@@ -203,12 +213,12 @@ public class ApiControllerTest {
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
                         Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
                 .andDo(mvcResult -> {
-                    verify(applicationBindingRepository, times(2)).findAll();
-                    ServerResponse<ApplicationBinding[]> serviceBindings = objectMapper
+                    verify(bindingRepository, times(2)).findAll();
+                    ServerResponse<Binding[]> serviceBindings = objectMapper
                             .readValue(mvcResult.getResponse().getContentAsString(),
                                     TypeFactory.defaultInstance()
                                             .constructParametrizedType(ServerResponse.class, ServerResponse.class,
-                                                    ApplicationBinding[].class));
+                                                    Binding[].class));
                     assertThat(serviceBindings.getBody(), is(notNullValue()));
                     assertThat(serviceBindings.getBody().length, is(equalTo(0)));
                 });

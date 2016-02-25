@@ -15,14 +15,17 @@ plugins {
 }
 
 repositories {
+    maven {
+        url new File(rootProject.projectDir, "libs-reactor").toURI().toURL().toString()
+    }
     mavenLocal()
     jcenter()
     //URL repo to get the desired compiled version
     maven { url "https://jitpack.io" }
     maven { url 'http://repo.spring.io/libs-snapshot' }
+
 }
-
-
+println(new File(rootProject.projectDir, "libs-reactor").toURI().toURL().toString())
 apply plugin: 'java'
 apply plugin: 'spring-boot'
 apply plugin: 'war'
