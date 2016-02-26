@@ -145,7 +145,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                             spaceEnrollerConfig.getIdleDuration().toString()),
                     firstUri + Config.Path.PROXY_CONTEXT + "/" + bindingId);
         } else {
-            throw new ServiceBrokerException("Unknown bind resource");
+            throw new ServiceBrokerException("Unknown bind resource type");
         }
 
     }

@@ -251,19 +251,19 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 throw new IllegalStateException("Subscriber timed out");
             } else //noinspection ThrowableResultOfMethodCallIgnored
                 if (error.get() != null) {
-                throw new CloudFoundryException(error.get());
-            } else {
-                ApplicationEntity app = appReference.get().getEntity();
-                return ApplicationActivity.builder()
-                        .application(ApplicationIdentity.builder()
-                                .guid(appUid)
-                                .name(app.getName())
-                                .build())
-                        .state(app.getState())
-                        .lastEvent(buildAppEvent(lastEventReference.get()))
-                        .lastLog(buildAppLog(lastLogReference.get()))
-                        .build();
-            }
+                    throw new CloudFoundryException(error.get());
+                } else {
+                    ApplicationEntity app = appReference.get().getEntity();
+                    return ApplicationActivity.builder()
+                            .application(ApplicationIdentity.builder()
+                                    .guid(appUid)
+                                    .name(app.getName())
+                                    .build())
+                            .state(app.getState())
+                            .lastEvent(buildAppEvent(lastEventReference.get()))
+                            .lastLog(buildAppLog(lastLogReference.get()))
+                            .build();
+                }
         } catch (InterruptedException e) {
             log.error(e.getMessage());
         }

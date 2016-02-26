@@ -194,15 +194,13 @@ public abstract class AppRepositoryTest {
     }
 
     @Test
-    public void test_count_by_appIds(){
+    public void test_count_by_appIds() {
         String id1 = UUID.randomUUID().toString();
         String id2 = UUID.randomUUID().toString();
         String id3 = UUID.randomUUID().toString();
 
         List<String> allIds = Arrays.asList(id1,id2,id3);
-        allIds.forEach(id ->
-            dao.save(new ApplicationInfo(id))
-        );
+        allIds.forEach(id -> dao.save(new ApplicationInfo(id)));
 
         List<String> searchIds = Arrays.asList(id1,id2);
         long count = dao.countByAppid(searchIds);
