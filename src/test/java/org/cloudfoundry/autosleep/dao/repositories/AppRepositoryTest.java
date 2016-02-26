@@ -149,16 +149,16 @@ public abstract class AppRepositoryTest {
         assertThat(countTotal(), is(equalTo(nbServicesInit)));
 
         //delete a service by binding id
-        dao.delete(deleteByIdSuccess.toString());
+        dao.delete(deleteByIdSuccess);
         assertThat(countTotal(), is(equalTo(nbServicesInit - 1)));
 
         //delete a service by name
-        dao.delete(dao.findOne(deleteByInstanceSuccess.toString()));
+        dao.delete(dao.findOne(deleteByInstanceSuccess));
         assertThat(countTotal(), is(equalTo(nbServicesInit - 2)));
 
         //delete multiple services
-        Iterable<ApplicationInfo> apps = dao.findAll(Arrays.asList(deleteByMass1.toString(),
-                deleteByMass2.toString()));
+        Iterable<ApplicationInfo> apps = dao.findAll(Arrays.asList(deleteByMass1,
+                deleteByMass2));
         dao.delete(apps);
         assertThat(countTotal(), is(equalTo(nbServicesInit - 4)));
 
