@@ -20,8 +20,20 @@
 package org.cloudfoundry.autosleep.dao.repositories;
 
 import org.cloudfoundry.autosleep.dao.model.Binding;
+import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 
 public interface BindingRepository extends CrudRepository<Binding, String> {
+
+    Binding findByResourceId(String id);
+
+    List<Binding> findAllByResourceType(ResourceType resourceType);
+
+    @Query("select b from Binding b where b.resourceId in (:ids) and b.resourceType = :resType")
+    List<Binding> findByResourceIdAndType(@Param("ids") List<String> ids, @Param("resType") ResourceType resType);
+
 }

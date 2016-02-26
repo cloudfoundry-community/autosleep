@@ -48,6 +48,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Application;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -111,7 +112,7 @@ public class WorkerManagerTest {
                 .map(id -> BeanGenerator.createBinding())
                 .collect(Collectors.toList());
 
-        when(mockBindingRepo.findAll()).thenReturn(storedBindings);
+        when(mockBindingRepo.findAllByResourceType(Application)).thenReturn(storedBindings);
 
         //init mock serviceRepo
         SpaceEnrollerConfig mockService = mock(SpaceEnrollerConfig.class);

@@ -34,6 +34,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static java.lang.Math.toIntExact;
@@ -108,6 +109,14 @@ public abstract class BindingRepositoryTest {
         for (Binding object : storedElement) {
             assertTrue("Retrieved element should be the same as initial element", initialList.contains(object));
         }
+
+
+        count = dao.findByResourceIdAndType(Arrays.asList(APP_GUID,APP_GUID),ResourceType.Application).size();
+        assertTrue("Retrieving all elements should return the same quantity", count == initialList
+                .size());
+
+        count = dao.findByResourceIdAndType(Collections.singletonList(APP_GUID),ResourceType.Route).size();
+        assertTrue("No route binding should be found", count == 0);
 
     }
 

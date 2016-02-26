@@ -31,7 +31,6 @@ import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.scheduling.AbstractPeriodicTask;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
-import org.cloudfoundry.client.v2.routes.RouteResource;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -143,10 +142,9 @@ class ApplicationStopper extends AbstractPeriodicTask {
 
         //TODO add temporary state? so that service broker knows we are calling?
         //retrieve all routes for this app
-        List<RouteResource> routes = cloudFoundryApi.listApplicationRoutes(appUid);
+        List<String> routeIds = cloudFoundryApi.listApplicationRoutes(appUid);
 
-        for (RouteResource route : routes) {
-            String routeId = route.getMetadata().getId();
+        for (String routeId : routeIds) {
             log.debug("Adding route binding between {} and {} before stopping {}",
                     spaceEnrollerConfigId, routeId, appUid);
             cloudFoundryApi.bindServiceToRoute(spaceEnrollerConfigId, routeId);

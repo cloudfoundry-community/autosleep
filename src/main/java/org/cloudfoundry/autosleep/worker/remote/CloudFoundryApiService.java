@@ -21,8 +21,6 @@ package org.cloudfoundry.autosleep.worker.remote;
 
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
-import org.cloudfoundry.client.v2.applications.ApplicationResource;
-import org.cloudfoundry.client.v2.routes.RouteResource;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -38,9 +36,9 @@ public interface CloudFoundryApiService {
 
     ApplicationActivity getApplicationActivity(String appUid) throws CloudFoundryException;
 
-    List<RouteResource> listApplicationRoutes(String applicationUuid) throws CloudFoundryException;
+    List<String/**ids**/> listApplicationRoutes(String applicationUuid) throws CloudFoundryException;
 
-    List<ApplicationResource> listRouteApplications(String routeUuid) throws CloudFoundryException;
+    List<String/**ids**/> listRouteApplications(String routeUuid) throws CloudFoundryException;
 
     List<ApplicationIdentity> listApplications(String spaceUuid, Pattern excludeNames) throws CloudFoundryException;
 

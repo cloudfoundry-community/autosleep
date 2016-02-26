@@ -22,7 +22,6 @@ package org.cloudfoundry.autosleep.worker;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
-import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
@@ -35,6 +34,8 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.time.Duration;
+
+import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Application;
 
 @Slf4j
 @Service
@@ -65,14 +66,12 @@ public class WorkerManager implements WorkerManagerService {
     public void init() {
         log.debug("Initializer watchers for every app already enrolled (except if handle by another instance of "
                 + "autosleep)");
-        bindingRepository.findAll().forEach(applicationBinding -> {
-            if (applicationBinding.getResourceType() == ResourceType.Application) {
-                SpaceEnrollerConfig spaceEnrollerConfig =
-                        spaceEnrollerConfigRepository.findOne(applicationBinding.getServiceInstanceId());
-                if (spaceEnrollerConfig != null) {
-                    registerApplicationStopper(spaceEnrollerConfig, applicationBinding.getResourceId(),
-                            applicationBinding.getServiceBindingId());
-                }
+        bindingRepository.findAllByResourceType(Application).forEach(applicationBinding -> {
+            SpaceEnrollerConfig spaceEnrollerConfig =
+                    spaceEnrollerConfigRepository.findOne(applicationBinding.getServiceInstanceId());
+            if (spaceEnrollerConfig != null) {
+                registerApplicationStopper(spaceEnrollerConfig, applicationBinding.getResourceId(),
+                        applicationBinding.getServiceBindingId());
             }
         });
         spaceEnrollerConfigRepository.findAll().forEach(this::registerSpaceEnroller);

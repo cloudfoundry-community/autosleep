@@ -32,7 +32,6 @@ import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
-import org.cloudfoundry.client.v2.applications.ApplicationResource;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
@@ -45,8 +44,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Application;
 import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Route;
@@ -121,11 +118,11 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
 
             //TODO check how to check that only autosleep can bind a route to itself.
             //check we know at least one app or all?
-            List<ApplicationResource> apps = null;
             try {
-                apps = cfApi.listRouteApplications(routeId);
-                if (!apps.stream().allMatch(applicationResource -> appRepository.findOne(applicationResource
-                        .getMetadata().getId()) != null)) {
+                List<String> appIds = cfApi.listRouteApplications(routeId);
+                log.debug("CF knows {} apps, amoung which autosleep knows {}",appIds.size(),
+                        appRepository.countByAppid(appIds));
+                if (appRepository.countByAppid(appIds) != appIds.size()) {
                     throw new ServiceBrokerException("Only Autosleep is allowed to bind route to itself");
                 }
             } catch (CloudFoundryException e) {
@@ -157,35 +154,26 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
     public void deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest request)
             throws ServiceBrokerException {
         final String bindingId = request.getBindingId();
-        log.debug("deleteServiceInstanceBinding - {}", bindingId);
+        final String serviceId = request.getServiceInstanceId();
+        log.debug("deleteServiceInstanceBinding - {} on service {}", bindingId, serviceId);
 
         final Binding binding = bindingRepository.findOne(bindingId);
         if (binding.getResourceType() == Application) {
+            log.debug("app binding{}",binding);
             final String appId = binding.getResourceId();
 
             SpaceEnrollerConfig serviceInstance = spaceEnrollerConfigRepository.findOne(request.getServiceInstanceId());
-
+            log.debug(" serviceInstance{}",serviceInstance);
             //TODO check if need to add in lock
-
             try {
                 //call CFAPI to get routes associated to app
-                List<String> mappedRouteIds = cfApi.listApplicationRoutes(appId)
-                        .stream().map(
-                                routeResource -> routeResource.getMetadata().getId()
-                        ).collect(Collectors.toList());
-
+                List<String> mappedRouteIds = cfApi.listApplicationRoutes(appId);
                 //retrieve saved route bindings and compare
-                if (bindingRepository.count() > 0) {
-                    List<Binding> linkedRouteBindings = StreamSupport
-                            .stream(bindingRepository.findAll().spliterator(), true)
-                            .filter(routeBinding -> routeBinding.getResourceType() == Route)
-                            .filter(routeBinding -> mappedRouteIds.contains(routeBinding.getResourceId()))
-                            .collect(Collectors.toList());
-
+                List<Binding> linkedRouteBindings = bindingRepository.findByResourceIdAndType(mappedRouteIds,Route);
+                if (linkedRouteBindings.size() > 0) {
                     //clean all bindings in common set, provided they are related to the same service instance
                     linkedRouteBindings.stream()
-                            .filter(linkedRouteBinding -> linkedRouteBinding.getServiceInstanceId().equals(
-                                    serviceInstance.getId()))
+                            .filter(linkedRouteBinding -> linkedRouteBinding.getServiceInstanceId().equals(serviceId))
                             .forEach(linkedRouteBinding -> {
                                 log.debug("detected associated route binding {}, cleaning it", linkedRouteBinding
                                         .getServiceBindingId());
@@ -198,7 +186,6 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                                 }
                             });
                 }
-
                 applicationLocker.executeThreadSafe(appId, () -> {
                     log.debug("deleteServiceInstanceBinding on app ", appId);
                     ApplicationInfo appInfo = appRepository.findOne(appId);

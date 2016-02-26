@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.UUID;
 
+import static java.util.Collections.singletonList;
 import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Application;
 import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Route;
 import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
@@ -163,16 +164,26 @@ public class AutosleepBindingServiceTest {
      * Test that only autosleep can call itself on a route binding (no manual route binding).
      */
     @Test
-    public void new_route_binding_should_scream_if_unknown_appid() {
-        //given that the application is unknown
+    public void new_route_binding_should_scream_if_unknown_appid() throws Exception {
+        //given that the app is linked to the route in CF
+        when(cfApi.listRouteApplications(ROUTE_UID)).thenReturn(singletonList(APP_UID));
+        //given that the application is unknown from autosleep
         when(appRepo.findOne(APP_UID)).thenReturn(null);
-        //TODO... how when we shouldn't mock Metadata?
+
+        //when receive a new ROUTE binding
+
+        //then it should scream, and not save anything
+        verifyThrown(() -> bindingService.createServiceInstanceBinding(createRouteBindingTemplate.withServiceInstanceId("Sid")
+                .withBindingId("Bidroute")), ServiceBrokerException.class);
+        verify(bindingRepository, never()).save(any(Binding.class));
     }
 
     @Test
-    public void new_route_binding_should_store_binding_and_create_a_proxy_route() {
-        //given that the application is known
-        when(appRepo.findOne(APP_UID)).thenReturn(applicationInfo);
+    public void new_route_binding_should_store_binding() throws Exception {
+        //given that the app is linked to the route in CF
+        when(cfApi.listRouteApplications(ROUTE_UID)).thenReturn(singletonList(APP_UID));
+        //given that the application is known from autosleep
+        when(appRepo.countByAppid(singletonList(APP_UID))).thenReturn(1L);
 
         //when receive a new ROUTE binding
         bindingService.createServiceInstanceBinding(createRouteBindingTemplate.withServiceInstanceId("Sid")
@@ -181,7 +192,7 @@ public class AutosleepBindingServiceTest {
         //then create it and store it to repository
         verify(appRepo, never()).save(any(ApplicationInfo.class));
         verify(bindingRepository, times(1)).save(any(Binding.class));
-        //TODO add check new route
+
     }
 
     private DeleteServiceInstanceBindingRequest prepareDeleteAppBindingTest(String serviceId, String bindingId) {
@@ -210,7 +221,24 @@ public class AutosleepBindingServiceTest {
 
     @Test
     public void delete_app_binding_should_also_remove_route_binding() throws Exception {
-    //TODO... how when we shouldn't mock Metadata?
+        String testId = "testCascadeBindingDeletion";
+        String linkedRouteBindingId = testId + "linkedRouteBinding";
+
+        DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteAppBindingTest(testId, testId);
+
+        //given that a route is mapped to this application in CF
+        when(cfApi.listApplicationRoutes(APP_UID)).thenReturn(singletonList(ROUTE_UID));
+        //given that a route binding is also registered in autosleep
+        when(bindingRepository.findByResourceIdAndType(singletonList(ROUTE_UID),Route))
+                .thenReturn(singletonList(
+                BeanGenerator.createRouteBinding(linkedRouteBindingId, testId, ROUTE_UID)));
+
+        //when unbinding the app
+        bindingService.deleteServiceInstanceBinding(deleteRequest);
+
+        //then app binding should be cleared from database, and CF API should be called to unbind route
+        verify(appRepo, times(1)).delete(applicationInfo.getUuid());
+        verify(cfApi,times(1)).unbind(linkedRouteBindingId);
 
     }
 
@@ -222,8 +250,7 @@ public class AutosleepBindingServiceTest {
         DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteAppBindingTest(testId, testId);
 
         //given that a route binding is also registered
-        when(bindingRepository.findAll()).thenReturn(Collections.singletonList(
-                BeanGenerator.createRouteBinding(linkedRouteBindingId, testId, ROUTE_UID)));
+      //TODOtest remove  when(bindingRepository.findAllByResourceIdAndResourceType(any(),Route)).thenReturn(singletonList(BeanGenerator.createRouteBinding(linkedRouteBindingId, testId, ROUTE_UID)));
 
         Mockito.doThrow(
                 new CloudFoundryException(new Throwable("TestException"))
