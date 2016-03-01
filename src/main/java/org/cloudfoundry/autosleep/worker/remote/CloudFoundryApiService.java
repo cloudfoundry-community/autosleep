@@ -36,6 +36,8 @@ public interface CloudFoundryApiService {
 
     ApplicationActivity getApplicationActivity(String appUid) throws CloudFoundryException;
 
+    String getApplicationState(String applicationUuid) throws CloudFoundryException;
+
     List<String/**ids**/> listApplicationRoutes(String applicationUuid) throws CloudFoundryException;
 
     List<String/**ids**/> listRouteApplications(String routeUuid) throws CloudFoundryException;
@@ -47,5 +49,6 @@ public interface CloudFoundryApiService {
     void stopApplication(String applicationUuid) throws CloudFoundryException;
 
     void unbind(String bindingId) throws CloudFoundryException;
+
 
 }

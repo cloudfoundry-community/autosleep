@@ -167,17 +167,26 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 .build();
     }
 
-    private void changeApplicationState(String applicationUuid, String targetState) throws CloudFoundryException {
-        log.debug("changeApplicationState to {}", targetState);
+    @Override
+    public String getApplicationState(String applicationUuid) throws CloudFoundryException {
+        log.debug("getApplicationState");
         try {
             Mono<GetApplicationResponse> publisher = this.cfClient
                     .applicationsV2()
                     .get(GetApplicationRequest.builder()
                             .applicationId(applicationUuid)
                             .build());
-            GetApplicationResponse response = publisher.get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
+            return publisher.get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS).getEntity().getState();
 
-            if (!targetState.equals(response.getEntity().getState())) {
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException(r);
+        }
+    }
+
+    private void changeApplicationState(String applicationUuid, String targetState) throws CloudFoundryException {
+        log.debug("changeApplicationState to {}", targetState);
+        try {
+            if (!targetState.equals(getApplicationState(applicationUuid))) {
                 cfClient.applicationsV2().update(
                         UpdateApplicationRequest.builder().applicationId(applicationUuid)
                                 .state(targetState).build()).get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
