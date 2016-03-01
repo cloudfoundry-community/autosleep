@@ -23,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.dao.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
-import org.cloudfoundry.autosleep.dao.model.RouteBinding;
 import org.cloudfoundry.autosleep.util.ApplicationConfiguration;
 import org.junit.After;
 import org.junit.Before;
@@ -35,12 +34,15 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static java.lang.Math.toIntExact;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 
 @Slf4j
@@ -107,6 +109,14 @@ public abstract class BindingRepositoryTest {
         for (Binding object : storedElement) {
             assertTrue("Retrieved element should be the same as initial element", initialList.contains(object));
         }
+
+
+        count = dao.findByResourceIdAndType(Arrays.asList(APP_GUID,APP_GUID),ResourceType.Application).size();
+        assertTrue("Retrieving all elements should return the same quantity", count == initialList
+                .size());
+
+        count = dao.findByResourceIdAndType(Collections.singletonList(APP_GUID),ResourceType.Route).size();
+        assertTrue("No route binding should be found", count == 0);
 
     }
 

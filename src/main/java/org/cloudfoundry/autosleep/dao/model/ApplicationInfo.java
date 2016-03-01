@@ -30,6 +30,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
@@ -47,6 +48,7 @@ import java.util.HashMap;
 @Slf4j
 @Entity
 @EqualsAndHashCode
+@ToString
 public class ApplicationInfo {
 
     @Getter
@@ -240,12 +242,6 @@ public class ApplicationInfo {
         applicationEvent.setActor("autosleep");
         applicationEvent.setTimestamp(Instant.now());
         this.diagnosticInfo.lastEvent = applicationEvent;
-    }
-
-    @Override
-    public String toString() {
-        return "[ApplicationInfo:" + name + "/" + uuid + " lastEvent:"
-                + diagnosticInfo.lastEvent + " lastLog:" + diagnosticInfo.lastLog + "]";
     }
 
     public void updateDiagnosticInfo(String state, DiagnosticInfo.ApplicationLog lastLog, DiagnosticInfo

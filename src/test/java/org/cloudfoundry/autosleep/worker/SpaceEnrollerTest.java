@@ -19,17 +19,17 @@
 
 package org.cloudfoundry.autosleep.worker;
 
-import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
-import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
+import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
 import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException;
 import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException.EntityType;
-import org.cloudfoundry.autosleep.util.BeanGenerator;
+import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
+import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,7 +50,12 @@ import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SpaceEnrollerTest {

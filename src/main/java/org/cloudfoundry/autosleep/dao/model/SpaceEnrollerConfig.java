@@ -25,9 +25,11 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.util.serializer.IntervalDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.IntervalSerializer;
@@ -37,7 +39,6 @@ import org.cloudfoundry.autosleep.util.serializer.PatternSerializer;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 @Getter
@@ -46,6 +47,8 @@ import java.util.regex.Pattern;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
+@ToString
+@EqualsAndHashCode(of = "id")
 @Entity
 public class SpaceEnrollerConfig {
 
@@ -79,31 +82,5 @@ public class SpaceEnrollerConfig {
     @JsonProperty
     private String spaceId;
 
-    @Override
-    public boolean equals(Object object) {
-        if (object == this) {
-            return true;
-        } else if (!(object instanceof SpaceEnrollerConfig)) {
-            return false;
-        } else {
-            SpaceEnrollerConfig other = SpaceEnrollerConfig.class.cast(object);
-            return Objects.equals(this.getId(), other.getId());
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        return this.getId().hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName() + " : [id:" + getId()
-                + " idleDuration:+" + idleDuration.toString()
-                + " excludeFromAutoEnrollment:"
-                + (excludeFromAutoEnrollment != null ? excludeFromAutoEnrollment.toString() : "")
-                + " forcedAutoEnrollment:" + forcedAutoEnrollment
-                + " space:" + spaceId + "]";
-    }
 
 }

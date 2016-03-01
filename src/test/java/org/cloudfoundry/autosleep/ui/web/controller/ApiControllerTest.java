@@ -127,7 +127,7 @@ public class ApiControllerTest {
     @Test
     public void testListApplicationById() throws Exception {
         String serviceId = "serviceIdListById";
-        ApplicationInfo applicationInfo = BeanGenerator.createAppInfoWithDiagnostic(applicationId.toString(),
+        ApplicationInfo applicationInfo = BeanGenerator.createAppInfoWithDiagnostic(applicationId,
                 "appName", CloudFoundryAppState.STARTED);
         applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
@@ -147,7 +147,7 @@ public class ApiControllerTest {
                                                     ApplicationInfo[].class));
                     assertThat(applicationInfos.getBody(), is(notNullValue()));
                     assertThat(applicationInfos.getBody().length, is(equalTo(1)));
-                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId.toString())));
+                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId)));
                 });
     }
 
@@ -175,7 +175,7 @@ public class ApiControllerTest {
                                                     ApplicationInfo[].class));
                     assertThat(applicationInfos.getBody(), is(notNullValue()));
                     assertThat(applicationInfos.getBody().length, is(equalTo(1)));
-                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId.toString())));
+                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId)));
                 });
     }
 

@@ -24,14 +24,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.junit.Test;
 
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
