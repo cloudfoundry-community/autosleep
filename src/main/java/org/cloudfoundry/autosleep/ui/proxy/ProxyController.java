@@ -94,6 +94,7 @@ public class ProxyController {
                 }
             }
             //TODO REMOVE LOCK
+            bindingRepository.delete(bindingId);
         }
         //unqueue traffic
         log.debug("forwarding traffic to {}",headers.get(HEADER_FORWARD_URL));

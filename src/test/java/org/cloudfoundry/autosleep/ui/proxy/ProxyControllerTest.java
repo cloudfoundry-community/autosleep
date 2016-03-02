@@ -23,7 +23,6 @@ import org.cloudfoundry.autosleep.config.Config.Path;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApi;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,6 +41,7 @@ import java.util.List;
 import static java.util.UUID.randomUUID;
 import static org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState.STARTED;
 import static org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState.STOPPED;
+import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.times;
@@ -76,14 +76,11 @@ public class ProxyControllerTest {
 
     @Test
     public void request_without_forward_url_should_fail() throws Exception {
-        try{
-            mockMvc.perform(get(Path.PROXY_CONTEXT+"/"+BINDING_ID).accept(MediaType.ALL))
-                    .andExpect(status().is5xxServerError());
-            //TODO check why exception
-            Assert.fail("Shouldn't work");
-        } catch (Exception e){
-            Assert.assertNotNull(e);
-        }
+        verifyThrown( () -> mockMvc.perform(get(Path.PROXY_CONTEXT+"/"+BINDING_ID)
+                .accept(MediaType.ALL))
+                .andExpect(status().is5xxServerError()),
+                Exception.class);
+
     }
 
     @Test
@@ -93,7 +90,7 @@ public class ProxyControllerTest {
 
         //WHEN calling proxy path THEN traffic should be forwarded without any error
         mockMvc.perform(get(Path.PROXY_CONTEXT+"/"+BINDING_ID)
-                .header(ProxyController.HEADER_FORWARD_URL,"www.google.fr")
+                .header(ProxyController.HEADER_FORWARD_URL,"www.cloudfoundry.org")
                 .accept(MediaType.ALL))
                 .andExpect(status().is(HttpStatus.MOVED_TEMPORARILY.value()));
         //TODO test Spring ResultMatcher.redirectedUrlPattern
@@ -106,7 +103,8 @@ public class ProxyControllerTest {
                 randomUUID().toString());
 
         //GIVEN that the binding is known
-        when(bindingRepo.findOne(BINDING_ID)).thenReturn(BeanGenerator.createRouteBinding(BINDING_ID,"serviceid",ROUTE_ID));
+        when(bindingRepo.findOne(BINDING_ID)).thenReturn(BeanGenerator.createRouteBinding(BINDING_ID,
+                "serviceid",ROUTE_ID));
         //and that stored route is linked to a list of application
         when(cfApi.listRouteApplications(ROUTE_ID)).thenReturn(appList);
         //
@@ -114,7 +112,7 @@ public class ProxyControllerTest {
 
         //WHEN calling proxy path THEN traffic should be forwarded without any error
         mockMvc.perform(get(Path.PROXY_CONTEXT+"/"+BINDING_ID)
-                .header(ProxyController.HEADER_FORWARD_URL,"www.google.fr")
+                .header(ProxyController.HEADER_FORWARD_URL,"www.cloudfoundry.org")
                 .accept(MediaType.ALL))
                 .andExpect(status().is(HttpStatus.MOVED_TEMPORARILY.value()));
 
