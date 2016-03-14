@@ -53,8 +53,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(MockitoJUnitRunner.class)
 public class ProxyControllerTest {
 
-    @InjectMocks
-    private ProxyController proxyController;
+    static final String BINDING_ID = "someid";
+
+    static final String ROUTE_ID = "routeid";
 
     @Mock
     private BindingRepository bindingRepo;
@@ -64,36 +65,14 @@ public class ProxyControllerTest {
 
     private MockMvc mockMvc;
 
-    static final String BINDING_ID = "someid";
-    static final String ROUTE_ID = "routeid";
+    @InjectMocks
+    private ProxyController proxyController;
 
     @Before
     public void init() {
         MockitoAnnotations.initMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(proxyController).build();
 
-    }
-
-    @Test
-    public void request_without_forward_url_should_fail() throws Exception {
-        verifyThrown( () -> mockMvc.perform(get(Path.PROXY_CONTEXT+"/"+BINDING_ID)
-                .accept(MediaType.ALL))
-                .andExpect(status().is5xxServerError()),
-                Exception.class);
-
-    }
-
-    @Test
-    public void request_with_unknown_binding_only_forward_traffic() throws Exception {
-        //GIVEN that the binding isn't known
-        when(bindingRepo.findOne(BINDING_ID)).thenReturn(null);
-
-        //WHEN calling proxy path THEN traffic should be forwarded without any error
-        mockMvc.perform(get(Path.PROXY_CONTEXT+"/"+BINDING_ID)
-                .header(ProxyController.HEADER_FORWARD_URL,"www.cloudfoundry.org")
-                .accept(MediaType.ALL))
-                .andExpect(status().is(HttpStatus.MOVED_TEMPORARILY.value()));
-        //TODO test Spring ResultMatcher.redirectedUrlPattern
     }
 
     @Test
@@ -104,20 +83,42 @@ public class ProxyControllerTest {
 
         //GIVEN that the binding is known
         when(bindingRepo.findOne(BINDING_ID)).thenReturn(BeanGenerator.createRouteBinding(BINDING_ID,
-                "serviceid",ROUTE_ID));
+                "serviceid", ROUTE_ID));
         //and that stored route is linked to a list of application
         when(cfApi.listRouteApplications(ROUTE_ID)).thenReturn(appList);
         //
-        when(cfApi.getApplicationState(anyString())).thenReturn(STOPPED,STOPPED,STOPPED,STOPPED,STOPPED,STARTED);
+        when(cfApi.getApplicationState(anyString())).thenReturn(STOPPED, STOPPED, STOPPED, STOPPED, STOPPED, STARTED);
 
         //WHEN calling proxy path THEN traffic should be forwarded without any error
-        mockMvc.perform(get(Path.PROXY_CONTEXT+"/"+BINDING_ID)
-                .header(ProxyController.HEADER_FORWARD_URL,"www.cloudfoundry.org")
+        mockMvc.perform(get(Path.PROXY_CONTEXT + "/" + BINDING_ID)
+                .header(ProxyController.HEADER_FORWARD_URL, "www.cloudfoundry.org")
                 .accept(MediaType.ALL))
-                .andExpect(status().is(HttpStatus.MOVED_TEMPORARILY.value()));
+                .andExpect(status().is(HttpStatus.FOUND.value()));
 
         //and all apps should be started
-        verify(cfApi,times(appList.size())).startApplication(anyString());
-        verify(cfApi,atLeast(6)).getApplicationState(anyString());
+        verify(cfApi, times(appList.size())).startApplication(anyString());
+        verify(cfApi, atLeast(6)).getApplicationState(anyString());
+    }
+
+    @Test
+    public void request_with_unknown_binding_only_forward_traffic() throws Exception {
+        //GIVEN that the binding isn't known
+        when(bindingRepo.findOne(BINDING_ID)).thenReturn(null);
+
+        //WHEN calling proxy path THEN traffic should be forwarded without any error
+        mockMvc.perform(get(Path.PROXY_CONTEXT + "/" + BINDING_ID)
+                .header(ProxyController.HEADER_FORWARD_URL, "www.cloudfoundry.org")
+                .accept(MediaType.ALL))
+                .andExpect(status().is(HttpStatus.FOUND.value()));
+        //TODO test Spring ResultMatcher.redirectedUrlPattern
+    }
+
+    @Test
+    public void request_without_forward_url_should_fail() throws Exception {
+        verifyThrown(() -> mockMvc.perform(get(Path.PROXY_CONTEXT + "/" + BINDING_ID)
+                        .accept(MediaType.ALL))
+                        .andExpect(status().is5xxServerError()),
+                Exception.class);
+
     }
 }

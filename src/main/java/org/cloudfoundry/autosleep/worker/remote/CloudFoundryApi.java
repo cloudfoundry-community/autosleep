@@ -47,13 +47,14 @@ import org.cloudfoundry.logging.LogMessage;
 import org.cloudfoundry.logging.RecentLogsRequest;
 import org.cloudfoundry.spring.client.SpringCloudFoundryClient;
 import org.cloudfoundry.spring.logging.SpringLoggingClient;
-import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -113,7 +114,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                                     .applicationId(application.getGuid())
                                     .serviceInstanceId(serviceInstanceId)
                                     .build())
-                    .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
+                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
@@ -135,8 +136,9 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             cfClient.serviceInstances()
                     .bindToRoute(BindServiceInstanceToRouteRequest.builder()
                             .serviceInstanceId(serviceInstanceId)
-                            .routeId(routeId).build())
-                    .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
+                            .routeId(routeId)
+                            .build())
+                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
@@ -167,29 +169,17 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 .build();
     }
 
-    @Override
-    public String getApplicationState(String applicationUuid) throws CloudFoundryException {
-        log.debug("getApplicationState");
-        try {
-            Mono<GetApplicationResponse> publisher = this.cfClient
-                    .applicationsV2()
-                    .get(GetApplicationRequest.builder()
-                            .applicationId(applicationUuid)
-                            .build());
-            return publisher.get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS).getEntity().getState();
-
-        } catch (RuntimeException r) {
-            throw new CloudFoundryException(r);
-        }
-    }
-
     private void changeApplicationState(String applicationUuid, String targetState) throws CloudFoundryException {
         log.debug("changeApplicationState to {}", targetState);
         try {
             if (!targetState.equals(getApplicationState(applicationUuid))) {
-                cfClient.applicationsV2().update(
-                        UpdateApplicationRequest.builder().applicationId(applicationUuid)
-                                .state(targetState).build()).get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
+                cfClient.applicationsV2()
+                        .update(
+                                UpdateApplicationRequest.builder()
+                                        .applicationId(applicationUuid)
+                                        .state(targetState)
+                                        .build())
+                        .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
             } else {
                 log.warn("application {} already in state {}, nothing to do", applicationUuid, targetState);
             }
@@ -210,7 +200,10 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         final AtomicReference<GetApplicationResponse> appReference = new AtomicReference<>(null);
 
         Mono<GetApplicationResponse> getAppPublisher =
-                cfClient.applicationsV2().get(GetApplicationRequest.builder().applicationId(appUid).build());
+                cfClient.applicationsV2()
+                        .get(GetApplicationRequest.builder()
+                                .applicationId(appUid)
+                                .build());
 
         Subscriber<GetApplicationResponse> getAppSubscriber = new BaseSubscriber<GetApplicationResponse>(latch, error) {
 
@@ -221,8 +214,10 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
         };
 
-        Mono<ListEventsResponse> listEventPublisher = this.cfClient.events().list(ListEventsRequest.builder()
-                .actee(appUid).build());
+        Mono<ListEventsResponse> listEventPublisher = this.cfClient.events()
+                .list(ListEventsRequest.builder()
+                        .actee(appUid)
+                        .build());
         Subscriber<ListEventsResponse> listEventSubscriber = new BaseSubscriber<ListEventsResponse>(latch, error) {
 
             @Override
@@ -232,7 +227,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
         };
 
-        Publisher<LogMessage> lastLogPublisher = logClient.recent(RecentLogsRequest.builder()
+        Flux<LogMessage> lastLogPublisher = logClient.recent(RecentLogsRequest.builder()
                 .applicationId(appUid)
                 .build());
 
@@ -281,29 +276,34 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     }
 
     @Override
-    public List<String> listApplicationRoutes(String applicationUuid) throws CloudFoundryException {
-        log.debug("listApplicationRoutes");
+    public String getApplicationState(String applicationUuid) throws CloudFoundryException {
+        log.debug("getApplicationState");
         try {
-            ListApplicationRoutesResponse response = cfClient.applicationsV2().listRoutes(
-                    ListApplicationRoutesRequest.builder().applicationId(applicationUuid).build())
-                    .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
-            return response.getResources().stream().map(
-                    routeResource -> routeResource.getMetadata().getId()
-            ).collect(Collectors.toList());
+            return this.cfClient
+                    .applicationsV2()
+                    .get(GetApplicationRequest.builder()
+                            .applicationId(applicationUuid)
+                            .build())
+                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S))
+                    .getEntity().getState();
+
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
     }
 
     @Override
-    public List<String> listRouteApplications(String routeUuid) throws CloudFoundryException {
-        log.debug("listRouteApplications");
+    public List<String> listApplicationRoutes(String applicationUuid) throws CloudFoundryException {
+        log.debug("listApplicationRoutes");
         try {
-            ListRouteApplicationsResponse response = cfClient.routes().listApplications(
-                    ListRouteApplicationsRequest.builder().routeId(routeUuid).build())
-                    .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
+            ListApplicationRoutesResponse response = cfClient.applicationsV2()
+                    .listRoutes(
+                            ListApplicationRoutesRequest.builder()
+                                    .applicationId(applicationUuid)
+                                    .build())
+                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
             return response.getResources().stream().map(
-                    appResource -> appResource.getMetadata().getId()
+                    routeResource -> routeResource.getMetadata().getId()
             ).collect(Collectors.toList());
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
@@ -317,8 +317,10 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         try {
             ListApplicationsResponse response = this.cfClient
                     .applicationsV2()
-                    .list(ListApplicationsRequest.builder().spaceId(spaceUuid).build()).get(Config
-                            .CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
+                    .list(ListApplicationsRequest.builder()
+                            .spaceId(spaceUuid)
+                            .build())
+                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
             return response.getResources().stream().filter(
                     cloudApplication -> (
                             spaceUuid == null
@@ -339,6 +341,24 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     }
 
     @Override
+    public List<String> listRouteApplications(String routeUuid) throws CloudFoundryException {
+        log.debug("listRouteApplications");
+        try {
+            ListRouteApplicationsResponse response = cfClient.routes()
+                    .listApplications(
+                            ListRouteApplicationsRequest.builder()
+                                    .routeId(routeUuid)
+                                    .build())
+                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
+            return response.getResources().stream()
+                    .map(appResource -> appResource.getMetadata().getId())
+                    .collect(Collectors.toList());
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException(r);
+        }
+    }
+
+    @Override
     public void startApplication(String applicationUuid) throws CloudFoundryException {
         log.debug("startApplication");
         changeApplicationState(applicationUuid, CloudFoundryAppState.STARTED);
@@ -352,8 +372,11 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
     @Override
     public void unbind(String bindingId) throws CloudFoundryException {
-        cfClient.serviceBindings().delete(DeleteServiceBindingRequest.builder().serviceBindingId(bindingId).build())
-                .get(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS);
+        cfClient.serviceBindings()
+                .delete(DeleteServiceBindingRequest.builder()
+                        .serviceBindingId(bindingId)
+                        .build())
+                .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
 
     }
 }
