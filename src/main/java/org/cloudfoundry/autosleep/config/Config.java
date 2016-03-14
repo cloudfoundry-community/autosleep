@@ -31,7 +31,7 @@ public interface Config {
 
     int NB_THREAD_FOR_TASK = 5;
 
-    Duration PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART= Duration.ofSeconds(3);
+    Duration PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART = Duration.ofSeconds(3);
 
     interface CloudFoundryAppState {
 

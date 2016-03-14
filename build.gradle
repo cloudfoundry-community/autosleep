@@ -96,10 +96,9 @@ dependencies {
     compile("com.github.cloudfoundry-community:spring-boot-cf-service-broker:$cfServiceBrokerCommitId")
 
     //Client library
-    compile("com.github.cloudfoundry:cf-java-client:$cfClientLibCommitId")
+    compile("org.cloudfoundry:cloudfoundry-client-spring:$cfClientLibVersion")
     //reactor
-    compile "io.projectreactor:reactor-core:$reactorCoreVersion"
-    compile "io.projectreactor:reactor-stream:$reactorStreamVersion"
+    compile("io.projectreactor:reactor-core:$reactorCoreVersion")
     //protobuf
     compile "com.google.protobuf:protobuf-java:$protobufVersion"
 

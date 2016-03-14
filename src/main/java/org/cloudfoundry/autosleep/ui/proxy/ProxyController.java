@@ -48,10 +48,10 @@ public class ProxyController {
     static final String HEADER_FORWARD_URL = "X-CF-Forwarded-Url";
 
     @Autowired
-    CloudFoundryApi cfApi;
+    BindingRepository bindingRepository;
 
     @Autowired
-    BindingRepository bindingRepository;
+    CloudFoundryApi cfApi;
 
     @RequestMapping(value = "/{routeBindingId}")
     @ResponseBody
@@ -59,37 +59,36 @@ public class ProxyController {
                                              @RequestHeader HttpHeaders headers)
             throws CloudFoundryException, InterruptedException {
 
-
         log.debug("proxy call on route binding {}", bindingId);
-        if(!headers.containsKey(HEADER_FORWARD_URL)) {
-            throw new CloudFoundryException(new Exception("Missing header "+HEADER_FORWARD_URL));
+        if (!headers.containsKey(HEADER_FORWARD_URL)) {
+            throw new CloudFoundryException(new Exception("Missing header " + HEADER_FORWARD_URL));
         }
 
         Binding routeBinding = bindingRepository.findOne(bindingId);
         if (routeBinding == null) {
             log.debug("Route binding already removed");
-          //another http request already started the app and removed the binding, just forward the traffic
-        }else{
+            //another http request already started the app and removed the binding, just forward the traffic
+        } else {
             //TODO ADD LOCK ON BINDING
             String routeId = routeBinding.getResourceId();
 
             Set<String> appToStart = new HashSet<>(cfApi.listRouteApplications(routeId));
 
             //launch start for each one
-            for( String appId : appToStart) {
+            for (String appId : appToStart) {
                 cfApi.startApplication(appId);
             }
 
             //wait for them to start
-            while(!appToStart.isEmpty()){
+            while (!appToStart.isEmpty()) {
                 Thread.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART.toMillis());
                 for (Iterator<String> iter = appToStart.iterator(); iter.hasNext(); ) {
                     String appId = iter.next();
-                    if(CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {
-                        log.debug("app {} started",appId);
+                    if (CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {
+                        log.debug("app {} started", appId);
                         iter.remove();
                     } else {
-                        log.debug("still waiting for app {}",appId);
+                        log.debug("still waiting for app {}", appId);
                     }
                 }
             }
@@ -97,7 +96,7 @@ public class ProxyController {
             bindingRepository.delete(bindingId);
         }
         //unqueue traffic
-        log.debug("forwarding traffic to {}",headers.get(HEADER_FORWARD_URL));
+        log.debug("forwarding traffic to {}", headers.get(HEADER_FORWARD_URL));
         return new ModelAndView("redirect:" + headers.get(HEADER_FORWARD_URL));
     }
 
