@@ -64,30 +64,39 @@ public class Sandbox {
 
     private static final long DEFAULT_TIMEOUT_IN_SECONDS = 2;
 
-    @Value("${cf.url}")
-    private String cfUrl;
-    @Value("${cf.client.id}")
-    private String cfClientId;
-    @Value("${cf.client.secret}")
-    private String cfClientSecret;
-    @Value("${cf.username}")
-    private String cfUsername;
-    @Value("${cf.password}")
-    private String cfPassword;
-    @Value("${cf.skip.verification}")
-    private boolean skipVerification;
     @Value("${test.application.id}")
     private String applicationId;
-    @Value("${test.space.id}")
-    private String spaceId;
-    @Value("${test.service.instance.id}")
-    private String serviceInstanceId;
-    @Value("${test.route.id}")
-    private String routeId;
+
+    @Value("${cf.client.id}")
+    private String cfClientId;
+
+    @Value("${cf.client.secret}")
+    private String cfClientSecret;
+
+    @Value("${cf.password}")
+    private String cfPassword;
+
+    @Value("${cf.url}")
+    private String cfUrl;
+
+    @Value("${cf.username}")
+    private String cfUsername;
 
     private CloudFoundryClient client;
 
     private SpringLoggingClient loggregatorClient;
+
+    @Value("${test.route.id}")
+    private String routeId;
+
+    @Value("${test.service.instance.id}")
+    private String serviceInstanceId;
+
+    @Value("${cf.skip.verification}")
+    private boolean skipVerification;
+
+    @Value("${test.space.id}")
+    private String spaceId;
 
     @Before
     public void buildClient() {
@@ -118,7 +127,8 @@ public class Sandbox {
         assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
         assertThat(response.getEntity().getState(), is(notNullValue()));
 
-        log.debug("get_application_get - {} found (state = {})", response.getEntity().getName(),response.getEntity().getState());
+        log.debug("get_application_get - {} found (state = {})", response.getEntity().getName(), response.getEntity()
+                .getState());
 
     }
 
@@ -142,62 +152,28 @@ public class Sandbox {
     }
 
     @Test
-    public void test_stop() throws InterruptedException {
-        log.debug("test_stop - start");
-        log.debug("Stopping application {}", applicationId);
-        TestSubscriber<UpdateApplicationResponse> subscriber = new TestSubscriber<>();
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getMetadata(), is(notNullValue()));
-            assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
-            log.debug("application stopped - {}", response.getEntity().getName());
-            log.debug("test_stop - end");
-        });
-        Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
-                (UpdateApplicationRequest.builder().applicationId(applicationId).state("STOPPED").build());
-        publisherStart.subscribe(subscriber);
-
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-
-    }
-
-    @Test
-    public void test_start() throws InterruptedException {
-        log.debug("test_start - start");
-        log.debug("Starting application {}", applicationId);
-        TestSubscriber<UpdateApplicationResponse> subscriber = new TestSubscriber<>();
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getMetadata(), is(notNullValue()));
-            assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
-            log.debug("application started - {}", response.getEntity().getName());
-            log.debug("test_start - end");
-        });
-        Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
-                (UpdateApplicationRequest.builder().applicationId(applicationId).state("STARTED").build());
-        publisherStart.subscribe(subscriber);
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-    }
-
-    @Test
-    public void test_list_by_space() throws InterruptedException {
-
-        TestSubscriber<ListApplicationsResponse> subscriber = new TestSubscriber<>();
+    public void get_last_events() throws InterruptedException {
+        TestSubscriber<ListEventsResponse> subscriber = new TestSubscriber<>();
         subscriber.assertThat(response -> {
             assertThat(response, is(notNullValue()));
             assertThat(response.getResources(), is(notNullValue()));
             response.getResources().stream()
-                    .map(applicationResource -> applicationResource.getEntity().getName())
+                    .map(eventResource -> eventResource.getEntity().getTimestamp())
                     .forEach(log::debug);
+            if(!response.getResources().isEmpty()){
+                Instant time = Instant.parse(response.getResources().get(response.getResources().size() - 1).getEntity()
+                        .getTimestamp());
+                log.debug("This is my timestamp {}", time);
+            } else {
+                log.warn("No event found");
+            }
+
         });
 
-        Mono<ListApplicationsResponse> publisher = this.client
-                .applicationsV2()
-                .list(org.cloudfoundry.client.v2.applications.ListApplicationsRequest.builder()
-                        .spaceId(spaceId).build());
+        Mono<ListEventsResponse> publisher = this.client
+                .events().list(ListEventsRequest.builder().actee(applicationId).build());
         publisher.subscribe(subscriber);
         subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-
     }
 
     @Test
@@ -208,6 +184,7 @@ public class Sandbox {
         final AtomicReference<Throwable> error = new AtomicReference<>(null);
         final AtomicLong newestTimestamp = new AtomicLong();
         Subscriber<LogMessage> subscriber = new Subscriber<LogMessage>() {
+
             @Override
             public void onComplete() {
                 latch.countDown();
@@ -247,38 +224,6 @@ public class Sandbox {
     }
 
     @Test
-    public void get_last_events() throws InterruptedException {
-        TestSubscriber<ListEventsResponse> subscriber = new TestSubscriber<>();
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getResources(), is(notNullValue()));
-            response.getResources().stream()
-                    .map(eventResource -> eventResource.getEntity().getTimestamp())
-                    .forEach(log::debug);
-            Instant time  = Instant.parse(response.getResources().get(response.getResources().size()-1).getEntity().getTimestamp());
-            log.debug("This is my timestamp {}",time);
-        });
-
-        Mono<ListEventsResponse> publisher = this.client
-                .events().list(ListEventsRequest.builder().actee(applicationId).build());
-        publisher.subscribe(subscriber);
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-    }
-
-    @Test
-    public void test_get_service_instance() throws InterruptedException {
-        TestSubscriber<GetServiceInstanceResponse> subscriber = new TestSubscriber<>();
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getMetadata().getId(), is(equalTo(serviceInstanceId)));
-        });
-        Mono<GetServiceInstanceResponse> publisher = this.client.serviceInstances()
-                .get(GetServiceInstanceRequest.builder().serviceInstanceId(serviceInstanceId).build());
-        publisher.subscribe(subscriber);
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-    }
-
-    @Test
     public void test_bind_unbind_application() {
         Mono<CreateServiceBindingResponse> publisherBinding = client.serviceBindings().create
                 (CreateServiceBindingRequest
@@ -310,25 +255,6 @@ public class Sandbox {
     }
 
     @Test
-    public void test_get_app_routes() throws InterruptedException {
-
-        TestSubscriber<ListApplicationRoutesResponse> subscriber = new TestSubscriber<>();
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getResources(), is(notNullValue()));
-            response.getResources().stream()
-                    .map(routeResource -> routeResource.getMetadata().getUrl())
-                    .forEach(log::debug);
-        });
-
-        Mono<ListApplicationRoutesResponse> publisher = this.client.applicationsV2().listRoutes(
-                ListApplicationRoutesRequest.builder().applicationId(applicationId).build());
-        publisher.subscribe(subscriber);
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-    }
-
-
-    @Test
     public void test_bind_unbind_route() {
         Mono<BindServiceInstanceToRouteResponse> publisherBinding = client.serviceInstances().bindToRoute(
                 BindServiceInstanceToRouteRequest
@@ -357,10 +283,99 @@ public class Sandbox {
         assertThat(listBinding.getResources().size(), is(equalTo(0)));
     }
 
+    @Test
+    public void test_get_app_routes() throws InterruptedException {
 
+        TestSubscriber<ListApplicationRoutesResponse> subscriber = new TestSubscriber<>();
+        subscriber.assertThat(response -> {
+            assertThat(response, is(notNullValue()));
+            assertThat(response.getResources(), is(notNullValue()));
+            response.getResources().stream()
+                    .map(routeResource -> routeResource.getMetadata().getUrl())
+                    .forEach(log::debug);
+        });
+
+        Mono<ListApplicationRoutesResponse> publisher = this.client.applicationsV2().listRoutes(
+                ListApplicationRoutesRequest.builder().applicationId(applicationId).build());
+        publisher.subscribe(subscriber);
+        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void test_get_service_instance() throws InterruptedException {
+        TestSubscriber<GetServiceInstanceResponse> subscriber = new TestSubscriber<>();
+        subscriber.assertThat(response -> {
+            assertThat(response, is(notNullValue()));
+            assertThat(response.getMetadata().getId(), is(equalTo(serviceInstanceId)));
+        });
+        Mono<GetServiceInstanceResponse> publisher = this.client.serviceInstances()
+                .get(GetServiceInstanceRequest.builder().serviceInstanceId(serviceInstanceId).build());
+        publisher.subscribe(subscriber);
+        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void test_list_by_space() throws InterruptedException {
+
+        TestSubscriber<ListApplicationsResponse> subscriber = new TestSubscriber<>();
+        subscriber.assertThat(response -> {
+            assertThat(response, is(notNullValue()));
+            assertThat(response.getResources(), is(notNullValue()));
+            response.getResources().stream()
+                    .map(applicationResource -> applicationResource.getEntity().getName())
+                    .forEach(log::debug);
+        });
+
+        Mono<ListApplicationsResponse> publisher = this.client
+                .applicationsV2()
+                .list(org.cloudfoundry.client.v2.applications.ListApplicationsRequest.builder()
+                        .spaceId(spaceId).build());
+        publisher.subscribe(subscriber);
+        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+
+    }
+
+    @Test
+    public void test_start() throws InterruptedException {
+        log.debug("test_start - start");
+        log.debug("Starting application {}", applicationId);
+        TestSubscriber<UpdateApplicationResponse> subscriber = new TestSubscriber<>();
+        subscriber.assertThat(response -> {
+            assertThat(response, is(notNullValue()));
+            assertThat(response.getMetadata(), is(notNullValue()));
+            assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
+            log.debug("application started - {}", response.getEntity().getName());
+            log.debug("test_start - end");
+        });
+        Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
+                (UpdateApplicationRequest.builder().applicationId(applicationId).state("STARTED").build());
+        publisherStart.subscribe(subscriber);
+        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void test_stop() throws InterruptedException {
+        log.debug("test_stop - start");
+        log.debug("Stopping application {}", applicationId);
+        TestSubscriber<UpdateApplicationResponse> subscriber = new TestSubscriber<>();
+        subscriber.assertThat(response -> {
+            assertThat(response, is(notNullValue()));
+            assertThat(response.getMetadata(), is(notNullValue()));
+            assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
+            log.debug("application stopped - {}", response.getEntity().getName());
+            log.debug("test_stop - end");
+        });
+        Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
+                (UpdateApplicationRequest.builder().applicationId(applicationId).state("STOPPED").build());
+        publisherStart.subscribe(subscriber);
+
+        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+
+    }
 
     @PropertySource("classpath:test.properties")
     public static class SandboxConfiguration {
+
         @Bean
         public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
             return new PropertySourcesPlaceholderConfigurer();

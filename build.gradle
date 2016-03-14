@@ -36,20 +36,19 @@ task wrapper(type: Wrapper) {
 dependencies {
     // Lombok
     providedCompile "org.projectlombok:lombok:$lombokVersion"
-    //Client library
-    //compile "org.cloudfoundry:cloudfoundry-client-lib:$cfClientLibVersion"
-    compile("com.github.cloudfoundry:cf-java-client:$cfClientLibCommitId")
+
     //Logs
     compile "org.slf4j:slf4j-api:$slf4jVersion"
     compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     compile "ch.qos.logback:logback-classic:$logbakVersion"
 
-    //stream
-    compile "io.projectreactor:reactor-core:$reactorCoreVersion"
-    compile "io.projectreactor:reactor-stream:$reactorStreamVersion"
-
+    //Client library
+    compile("org.cloudfoundry:cloudfoundry-client-spring:$cfClientLibVersion")
+    //reactor
+    compile("io.projectreactor:reactor-core:$reactorCoreVersion")
     //protobuf
     compile "com.google.protobuf:protobuf-java:$protobufVersion"
+
 
     testCompile "junit:junit:$junitVersion"
     testCompile "org.springframework:spring-test:$springTestVersion"
