@@ -34,6 +34,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
@@ -47,29 +48,28 @@ public class DebugControllerTest {
 
     private static final String serviceInstanceId = "id";
 
-    @Mock
-    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
-
-    @Mock
-    private BindingRepository bindingRepo;
+    @InjectMocks
+    private ApiController apiController;
 
     @Mock
     private ApplicationRepository applicationRepository;
 
     @Mock
+    private BindingRepository bindingRepo;
+
+    @Mock
     private Catalog catalog;
-
-    @InjectMocks
-    private DebugController debugController;
-
-    @InjectMocks
-    private ApiController apiController;
 
     @InjectMocks
     private DashboardController dashboardController;
 
+    @InjectMocks
+    private DebugController debugController;
+
     private MockMvc mockMvc;
 
+    @Mock
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @Before
     public void init() {
@@ -82,22 +82,33 @@ public class DebugControllerTest {
     }
 
     @Test
-    public void testInstances() throws Exception {
-        mockMvc.perform(get("/admin/debug/")
-                .accept(MediaType.TEXT_HTML)).andExpect(status().isOk());
+    public void test_list_applications_page() throws Exception {
+        //Given nothing
+        //When a request is done on list applications page
+        ResultActions resultActions = mockMvc.perform(get("/admin/debug/applications/")
+                .accept(MediaType.TEXT_HTML));
+        //Then status is OK
+        resultActions.andExpect(status().isOk());
     }
 
     @Test
-    public void testBindings() throws Exception {
-        mockMvc.perform(get("/admin/debug/" + serviceInstanceId + "/bindings/")
-                .accept(MediaType.TEXT_HTML)).andExpect(status().isOk());
+    public void test_list_bindings_page() throws Exception {
+        //Given nothing
+        //When a request is done on list service bindings page
+        ResultActions resultActions = mockMvc.perform(get("/admin/debug/" + serviceInstanceId + "/bindings/")
+                .accept(MediaType.TEXT_HTML));
+        //Then status is OK
+        resultActions.andExpect(status().isOk());
     }
 
     @Test
-    public void testApplications() throws Exception {
-        mockMvc.perform(get("/admin/debug/applications/")
-                .accept(MediaType.TEXT_HTML)).andExpect(status().isOk());
+    public void test_list_instances_page() throws Exception {
+        //Given nothing
+        //When a request is done on list service instances page
+        ResultActions resultActions = mockMvc.perform(get("/admin/debug/")
+                .accept(MediaType.TEXT_HTML));
+        //Then status is OK
+        resultActions.andExpect(status().isOk());
     }
-
 
 }
