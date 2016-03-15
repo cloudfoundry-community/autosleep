@@ -23,6 +23,6 @@ import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-
 public interface JpaBindingRepository extends JpaRepository<Binding, String>, BindingRepository {
+
 }

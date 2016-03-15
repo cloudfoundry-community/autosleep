@@ -45,7 +45,6 @@ public class Clock {
 
     /**
      * Access to the task ids.
-     *
      * @return a read-only set containing the ids of the current tasks
      */
     public Set<String> listTaskIds() {
@@ -54,7 +53,6 @@ public class Clock {
 
     /**
      * Remove a task by its id.
-     *
      * @param id task id, will be used to cancel it
      */
     public void removeTask(String id) {
@@ -64,7 +62,6 @@ public class Clock {
 
     /**
      * Schedule a Runnable to be run after a certain delay.
-     *
      * @param id       task id, will be used to remove it
      * @param duration the time to wait before execution
      * @param action   Runnable to call

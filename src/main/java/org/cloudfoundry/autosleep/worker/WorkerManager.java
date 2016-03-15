@@ -42,13 +42,13 @@ import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Applicat
 public class WorkerManager implements WorkerManagerService {
 
     @Autowired
-    private BindingRepository bindingRepository;
-
-    @Autowired
     private ApplicationLocker applicationLocker;
 
     @Autowired
     private ApplicationRepository applicationRepository;
+
+    @Autowired
+    private BindingRepository bindingRepository;
 
     @Autowired
     private Clock clock;
@@ -70,7 +70,8 @@ public class WorkerManager implements WorkerManagerService {
             SpaceEnrollerConfig spaceEnrollerConfig =
                     spaceEnrollerConfigRepository.findOne(applicationBinding.getServiceInstanceId());
             if (spaceEnrollerConfig != null) {
-                registerApplicationStopper(spaceEnrollerConfig, applicationBinding.getResourceId(),
+                registerApplicationStopper(spaceEnrollerConfig,
+                        applicationBinding.getResourceId(),
                         applicationBinding.getServiceBindingId());
             }
         });

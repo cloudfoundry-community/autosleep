@@ -119,14 +119,17 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                     Config.ServiceCatalog.DEFAULT_SERVICE_BROKER_ID);
             throw new ServiceInstanceExistsException(serviceId, serviceBrokerId);
         } else {
-            Map<String, Object> createParameters = Optional.ofNullable(request.getParameters())
+            Map<String, Object> createParameters = Optional
+                    .ofNullable(request.getParameters())
                     .orElse(Collections.emptyMap());
+
             Config.ServiceInstanceParameters.Enrollment autoEnrollment = consumeParameter(createParameters,
                     true, autoEnrollmentReader);
             String secret = consumeParameter(createParameters, true, secretReader);
             Duration idleDuration = consumeParameter(createParameters, true, idleDurationReader);
             Pattern excludeFromAutoEnrollment = consumeParameter(createParameters, true,
                     excludeFromAutoEnrollmentReader);
+
             if (!createParameters.isEmpty()) {
                 String parameterNames = String.join(", ", createParameters.keySet().iterator().next());
                 log.debug("createServiceInstance - extra parameters are not accepted: {}", parameterNames);
@@ -134,6 +137,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             } else if (autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced) {
                 checkSecuredParameter(autoEnrollmentReader.getParameterName(), secret);
             }
+
             SpaceEnrollerConfig spaceEnrollerConfig = SpaceEnrollerConfig.builder()
                     .id(request.getServiceInstanceId())
                     .serviceDefinitionId(request.getServiceDefinitionId())
@@ -165,6 +169,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             DeleteServiceInstanceRequest request) throws ServiceBrokerException {
         final String spaceEnrollerConfigId = request.getServiceInstanceId();
         log.debug("deleteServiceInstance - {}", spaceEnrollerConfigId);
+
         if (spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId) != null) {
             spaceEnrollerConfigRepository.delete(spaceEnrollerConfigId);
         } else {
@@ -173,19 +178,22 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
         }
 
         //clean stored app linked to the service (already unbound)
-        appRepository.findAll().forEach(
-                aInfo -> applicationLocker.executeThreadSafe(aInfo.getUuid(), () -> {
-                    ApplicationInfo applicationInfoReloaded = appRepository.findOne(aInfo.getUuid());
-                    if (applicationInfoReloaded != null
-                            && !applicationInfoReloaded.getEnrollmentState().isCandidate(spaceEnrollerConfigId)) {
-                        applicationInfoReloaded.getEnrollmentState().updateEnrollment(spaceEnrollerConfigId, false);
-                        if (applicationInfoReloaded.getEnrollmentState().getStates().isEmpty()) {
-                            appRepository.delete(applicationInfoReloaded);
-                            applicationLocker.removeApplication(applicationInfoReloaded.getUuid());
-                        }
-                    }
-                })
-        );
+        appRepository.findAll()
+                .forEach(
+                        aInfo -> applicationLocker.executeThreadSafe(aInfo.getUuid(),
+                                () -> {
+                                    ApplicationInfo applicationInfoReloaded = appRepository.findOne(aInfo.getUuid());
+                                    if (applicationInfoReloaded != null
+                                            && !applicationInfoReloaded.getEnrollmentState()
+                                            .isCandidate(spaceEnrollerConfigId)) {
+                                        applicationInfoReloaded.getEnrollmentState()
+                                                .updateEnrollment(spaceEnrollerConfigId, false);
+                                        if (applicationInfoReloaded.getEnrollmentState().getStates().isEmpty()) {
+                                            appRepository.delete(applicationInfoReloaded);
+                                            applicationLocker.removeApplication(applicationInfoReloaded.getUuid());
+                                        }
+                                    }
+                                }));
         return new DeleteServiceInstanceResponse(false);
     }
 
@@ -203,6 +211,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
         String spaceEnrollerConfigId = request.getServiceInstanceId();
         log.debug("updateServiceInstance - {}", spaceEnrollerConfigId);
         SpaceEnrollerConfig spaceEnrollerConfig = spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId);
+
         if (spaceEnrollerConfig == null) {
             throw new ServiceInstanceDoesNotExistException(spaceEnrollerConfigId);
         } else if (!spaceEnrollerConfig.getPlanId().equals(request.getPlanId())) {
@@ -211,11 +220,14 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
              * handle real updates (secret params), we are not supporting plan updates for now.*/
             throw new ServiceInstanceUpdateNotSupportedException("Service plan updates not supported.");
         } else {
-            Map<String, Object> updateParameters = Optional.ofNullable(request.getParameters())
+            Map<String, Object> updateParameters = Optional
+                    .ofNullable(request.getParameters())
                     .orElse(Collections.emptyMap());
+
             Config.ServiceInstanceParameters.Enrollment autoEnrollment = consumeParameter(updateParameters,
                     false, autoEnrollmentReader);
             String secret = consumeParameter(updateParameters, false, secretReader);
+
             if (!updateParameters.isEmpty()) {
                 String parameterNames = String.join(", ", updateParameters.keySet().iterator().next());
                 log.debug("updateServiceInstance - extra parameters are not accepted: {}", parameterNames);
@@ -224,7 +236,8 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                 // only auto enrollment parameter can be updated
                 checkSecuredParameter(autoEnrollmentReader.getParameterName(), secret);
                 if (spaceEnrollerConfig.getSecret() != null
-                        && !(
+                        &&
+                        !(
                                 passwordEncoder.matches(secret, spaceEnrollerConfig.getSecret())
                                         ||
                                         secret.equals(environment.getProperty(Config.EnvKey.SECURITY_PASSWORD))
@@ -239,7 +252,6 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             }
             return new UpdateServiceInstanceResponse(false);
         }
-
     }
 
 }

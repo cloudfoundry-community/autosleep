@@ -63,12 +63,12 @@ public class ApiController {
     @RequestMapping(value = Config.Path.APPLICATIONS_SUB_PATH + "{applicationId}", method = RequestMethod.DELETE)
     public ResponseEntity<String> deleteApplication(@PathVariable("applicationId") String applicationId) {
         log.debug("deleteApplication - {}", applicationId);
-        applicationLocker.executeThreadSafe(applicationId, () ->
-        {
-            applicationRepository.delete(applicationId);
-            applicationLocker.removeApplication(applicationId);
-            log.debug("deleteApplication - deleted");
-        });
+        applicationLocker.executeThreadSafe(applicationId,
+                () -> {
+                    applicationRepository.delete(applicationId);
+                    applicationLocker.removeApplication(applicationId);
+                    log.debug("deleteApplication - deleted");
+                });
 
         return new ResponseEntity<>("{}", HttpStatus.NO_CONTENT);
     }
@@ -88,11 +88,12 @@ public class ApiController {
                                                                               serviceInstanceId) {
         log.debug("listApplications");
         List<ApplicationInfo> result = new ArrayList<>();
-        applicationRepository.findAll().forEach(app -> {
-            if (app.getEnrollmentState().getStates().keySet().contains(serviceInstanceId)) {
-                result.add(app);
-            }
-        });
+        applicationRepository.findAll()
+                .forEach(app -> {
+                    if (app.getEnrollmentState().getStates().keySet().contains(serviceInstanceId)) {
+                        result.add(app);
+                    }
+                });
         return new ServerResponse<>(result, Instant.now());
     }
 
@@ -102,12 +103,12 @@ public class ApiController {
             throws ServiceInstanceDoesNotExistException {
         log.debug("listServiceBindings - {}", serviceInstanceId);
         List<Binding> result = new ArrayList<>();
-        applicationBindingRepository.findAll().forEach(serviceBinding -> {
+        applicationBindingRepository.findAll()
+                .forEach(serviceBinding -> {
                     if (serviceInstanceId.equals(serviceBinding.getServiceInstanceId())) {
                         result.add(serviceBinding);
                     }
-                }
-        );
+                });
         return new ServerResponse<>(result, Instant.now());
     }
 

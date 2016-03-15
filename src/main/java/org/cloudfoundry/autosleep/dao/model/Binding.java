@@ -39,7 +39,7 @@ import javax.persistence.Id;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @ToString
-@EqualsAndHashCode(of = {"serviceBindingId","serviceInstanceId"})
+@EqualsAndHashCode(of = {"serviceBindingId", "serviceInstanceId"})
 @Entity
 public class Binding {
 

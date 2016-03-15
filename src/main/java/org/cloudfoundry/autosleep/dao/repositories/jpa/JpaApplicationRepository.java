@@ -23,7 +23,6 @@ import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-
 public interface JpaApplicationRepository extends JpaRepository<ApplicationInfo, String>, ApplicationRepository {
 
 }

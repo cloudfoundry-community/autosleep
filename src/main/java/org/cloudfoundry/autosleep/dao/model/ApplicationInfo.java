@@ -164,6 +164,7 @@ public class ApplicationInfo {
              * it won't be automatically bound again.
              */
             BLACKLISTED
+
         }
 
         @Column(length = 300) //to force BLOB type and not TINYBLOB

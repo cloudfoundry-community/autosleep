@@ -52,8 +52,13 @@ class ApplicationStopper extends AbstractPeriodicTask {
     private final String spaceEnrollerConfigId;
 
     @Builder
-    ApplicationStopper(Clock clock, Duration period, String appUid, String spaceEnrollerConfigId, String bindingId,
-                       CloudFoundryApiService cloudFoundryApi, ApplicationRepository applicationRepository,
+    ApplicationStopper(Clock clock,
+                       Duration period,
+                       String appUid,
+                       String spaceEnrollerConfigId,
+                       String bindingId,
+                       CloudFoundryApiService cloudFoundryApi,
+                       ApplicationRepository applicationRepository,
                        ApplicationLocker applicationLocker) {
         super(clock, period);
         this.appUid = appUid;
@@ -105,8 +110,10 @@ class ApplicationStopper extends AbstractPeriodicTask {
             ApplicationActivity applicationActivity = cloudFoundryApi.getApplicationActivity(appUid);
             log.debug("Checking on app {} state", appUid);
 
-            applicationInfo.updateDiagnosticInfo(applicationActivity.getState(), applicationActivity.getLastLog(),
-                    applicationActivity.getLastEvent(), applicationActivity.getApplication().getName());
+            applicationInfo.updateDiagnosticInfo(applicationActivity.getState(),
+                    applicationActivity.getLastLog(),
+                    applicationActivity.getLastEvent(),
+                    applicationActivity.getApplication().getName());
             if (CloudFoundryAppState.STOPPED.equals(applicationActivity.getState())) {
                 log.debug("App already stopped.");
             } else {
@@ -155,18 +162,19 @@ class ApplicationStopper extends AbstractPeriodicTask {
 
     @Override
     public void run() {
-        applicationLocker.executeThreadSafe(this.appUid, () -> {
-            ApplicationInfo applicationInfo = applicationRepository.findOne(appUid);
-            if (applicationInfo == null) {
-                handleApplicationNotFound();
-            } else {
-                if (applicationInfo.getEnrollmentState().isEnrolledByService(spaceEnrollerConfigId)) {
-                    handleApplicationEnrolled(applicationInfo);
-                } else {
-                    handleApplicationBlackListed(applicationInfo);
-                }
-            }
-        });
+        applicationLocker.executeThreadSafe(this.appUid,
+                () -> {
+                    ApplicationInfo applicationInfo = applicationRepository.findOne(appUid);
+                    if (applicationInfo == null) {
+                        handleApplicationNotFound();
+                    } else {
+                        if (applicationInfo.getEnrollmentState().isEnrolledByService(spaceEnrollerConfigId)) {
+                            handleApplicationEnrolled(applicationInfo);
+                        } else {
+                            handleApplicationBlackListed(applicationInfo);
+                        }
+                    }
+                });
     }
 
 }

@@ -56,22 +56,22 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
     private ApplicationRepository appRepository;
 
     @Autowired
-    private BindingRepository bindingRepository;
-
-    @Autowired
     private ApplicationLocker applicationLocker;
 
     @Autowired
-    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
-
-    @Autowired
-    private WorkerManagerService workerManager;
+    private BindingRepository bindingRepository;
 
     @Autowired
     private CloudFoundryApiService cfApi;
 
     @Autowired
     private DeployedApplicationConfig.Deployment deployment;
+
+    @Autowired
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
+
+    @Autowired
+    private WorkerManagerService workerManager;
 
     @Override
     public CreateServiceInstanceBindingResponse createServiceInstanceBinding(
@@ -84,12 +84,13 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
         log.debug("createServiceInstanceBinding - {}", bindingId);
         SpaceEnrollerConfig spaceEnrollerConfig = spaceEnrollerConfigRepository.findOne(configId);
 
-        String targetAppId = (String) request.getBindResource().get(
-                ServiceBindingResource.BIND_RESOURCE_KEY_APP.toString());
-        String routeId = (String) request.getBindResource().get(
-                ServiceBindingResource.BIND_RESOURCE_KEY_ROUTE.toString());
+        String targetAppId = (String) request.getBindResource()
+                .get(ServiceBindingResource.BIND_RESOURCE_KEY_APP.toString());
+        String routeId = (String) request.getBindResource()
+                .get(ServiceBindingResource.BIND_RESOURCE_KEY_ROUTE.toString());
 
-        Binding.BindingBuilder bindingBuilder = Binding.builder().serviceInstanceId(configId)
+        Binding.BindingBuilder bindingBuilder = Binding.builder()
+                .serviceInstanceId(configId)
                 .serviceBindingId(bindingId);
 
         if (targetAppId != null) {
@@ -120,7 +121,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             //check we know at least one app or all?
             try {
                 List<String> appIds = cfApi.listRouteApplications(routeId);
-                log.debug("CF knows {} apps, amoung which autosleep knows {}",appIds.size(),
+                log.debug("CF knows {} apps, amoung which autosleep knows {}", appIds.size(),
                         appRepository.countByAppid(appIds));
                 if (appRepository.countByAppid(appIds) != appIds.size()) {
                     throw new ServiceBrokerException("Only Autosleep is allowed to bind route to itself");
@@ -147,7 +148,6 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
         } else {
             throw new ServiceBrokerException("Unknown bind resource type");
         }
-
     }
 
     @Override
@@ -159,17 +159,17 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
 
         final Binding binding = bindingRepository.findOne(bindingId);
         if (binding.getResourceType() == Application) {
-            log.debug("app binding{}",binding);
+            log.debug("app binding{}", binding);
             final String appId = binding.getResourceId();
 
             SpaceEnrollerConfig serviceInstance = spaceEnrollerConfigRepository.findOne(request.getServiceInstanceId());
-            log.debug(" serviceInstance{}",serviceInstance);
+            log.debug(" serviceInstance{}", serviceInstance);
             //TODO check if need to add in lock
             try {
                 //call CFAPI to get routes associated to app
                 List<String> mappedRouteIds = cfApi.listApplicationRoutes(appId);
                 //retrieve saved route bindings and compare
-                List<Binding> linkedRouteBindings = bindingRepository.findByResourceIdAndType(mappedRouteIds,Route);
+                List<Binding> linkedRouteBindings = bindingRepository.findByResourceIdAndType(mappedRouteIds, Route);
                 if (linkedRouteBindings.size() > 0) {
                     //clean all bindings in common set, provided they are related to the same service instance
                     linkedRouteBindings.stream()
@@ -186,25 +186,28 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                                 }
                             });
                 }
-                applicationLocker.executeThreadSafe(appId, () -> {
-                    log.debug("deleteServiceInstanceBinding on app ", appId);
-                    ApplicationInfo appInfo = appRepository.findOne(appId);
-                    if (appInfo != null) {
-                        appInfo.getEnrollmentState()
-                                .updateEnrollment(serviceInstance.getId(), !serviceInstance.isForcedAutoEnrollment());
-                        if (appInfo.getEnrollmentState().getStates().isEmpty()) {
-                            appRepository.delete(appId);
-                            applicationLocker.removeApplication(appId);
-                        } else {
-                            appRepository.save(appInfo);
-                        }
-                    } else {
-                        log.error("Deleting a binding with no related application info. This should never happen.");
-                    }
-                    bindingRepository.delete(bindingId);
+                applicationLocker.executeThreadSafe(appId,
+                        () -> {
+                            log.debug("deleteServiceInstanceBinding on app ", appId);
+                            ApplicationInfo appInfo = appRepository.findOne(appId);
+                            if (appInfo != null) {
+                                appInfo.getEnrollmentState()
+                                        .updateEnrollment(serviceInstance.getId(),
+                                                !serviceInstance.isForcedAutoEnrollment());
+                                if (appInfo.getEnrollmentState().getStates().isEmpty()) {
+                                    appRepository.delete(appId);
+                                    applicationLocker.removeApplication(appId);
+                                } else {
+                                    appRepository.save(appInfo);
+                                }
+                            } else {
+                                log.error("Deleting a binding with no related application info. "
+                                        + "This should never happen.");
+                            }
+                            bindingRepository.delete(bindingId);
 
-                    //task launched will cancel by itself
-                });
+                            //task launched will cancel by itself
+                        });
             } catch (CloudFoundryException e) {
                 throw new ServiceBrokerException("Couldn't clean related app bindings", e);
             }
@@ -212,6 +215,6 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
         } else {
             bindingRepository.delete(bindingId);
         }
-
     }
+
 }
