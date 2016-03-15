@@ -148,20 +148,20 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             return null;
         } else {
             EventEntity cfEvent = event.getEntity();
-            ApplicationInfo.DiagnosticInfo.ApplicationEvent applicationEvent =
-                    new ApplicationInfo.DiagnosticInfo.ApplicationEvent(cfEvent.getType());
-            applicationEvent.setActor(cfEvent.getActor());
-            applicationEvent.setActee(cfEvent.getActee());
-            applicationEvent.setTimestamp(Instant.parse(cfEvent.getTimestamp()));
-            applicationEvent.setType(cfEvent.getType());
-            return applicationEvent;
+            return ApplicationInfo.DiagnosticInfo.ApplicationEvent.builder()
+                    .actee(cfEvent.getActee())
+                    .actor(cfEvent.getActor())
+                    .name(cfEvent.getType())
+                    .timestamp(Instant.parse(cfEvent.getTimestamp()).toEpochMilli())
+                    .type(cfEvent.getType())
+                    .build();
         }
     }
 
     private ApplicationInfo.DiagnosticInfo.ApplicationLog buildAppLog(LogMessage cfLog) {
         return cfLog == null ? null : ApplicationInfo.DiagnosticInfo.ApplicationLog.builder()
                 .message(cfLog.getMessage())
-                .timestamp(cfLog.getTimestamp().toInstant())
+                .timestamp(cfLog.getTimestamp().getTime())
                 .messageType(cfLog.getMessageType().toString())
                 .sourceId(cfLog.getSourceId())
                 .sourceName(cfLog.getSourceName())
@@ -378,5 +378,5 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 .get(Config.CF_API_TIMEOUT);
 
     }
-    
+
 }

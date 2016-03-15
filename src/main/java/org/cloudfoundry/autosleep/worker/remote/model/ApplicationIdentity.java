@@ -23,11 +23,17 @@ import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-@Builder
 public class ApplicationIdentity {
 
-    private String guid;
+    private final String guid;
 
-    private String name;
+    private final String name;
+
+    @Builder
+    ApplicationIdentity(String guid,
+                        String name) {
+        this.guid = guid;
+        this.name = name;
+    }
 
 }

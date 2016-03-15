@@ -45,7 +45,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {ApplicationConfiguration.class, RepositoryConfig.class})
@@ -53,15 +52,6 @@ public abstract class AppRepositoryTest {
 
     @Autowired
     private ApplicationRepository dao;
-
-    /**
-     * Clean db.
-     */
-    @Before
-    @After
-    public void clearDao() {
-        dao.deleteAll();
-    }
 
     private ApplicationInfo buildAppInfo(String uuid) {
         ApplicationInfo result = BeanGenerator.createAppInfoLinkedToService(uuid, "APTestServiceId");
@@ -73,63 +63,44 @@ public abstract class AppRepositoryTest {
         return result;
     }
 
-    @Test
-    public void testInsert() {
-        dao.save(buildAppInfo(UUID.randomUUID().toString()));
-        assertThat(countTotal(), is(equalTo(1)));
+    /**
+     * Clean db.
+     */
+    @Before
+    @After
+    public void clearDao() {
+        dao.deleteAll();
     }
 
-    @Test
-    public void testMultipleInsertsAndRetrieves() {
-        List<String> ids = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-
-        List<ApplicationInfo> initialList = new ArrayList<>();
-        ids.forEach(id -> initialList.add(buildAppInfo(id)));
-
-        //test save all
-        dao.save(initialList);
-        assertThat("Count should be equal to the amount inserted", countTotal(), is(equalTo(initialList.size())));
-
-        //test "exist"
-        ids.forEach(id -> assertThat("Each element should exist in DAO", dao.exists(id), is(true)));
-
-        //test that retrieving all elements give the same amount
-        Iterable<ApplicationInfo> storedElement = dao.findAll();
-        int count = 0;
-        for (ApplicationInfo object : storedElement) {
-            count++;
-        }
-        assertTrue("Retrieving all elements should return the same quantity", count == initialList.size());
-
-        //test find with all inserted ids
-        storedElement = dao.findAll(ids);
-        for (ApplicationInfo object : storedElement) {
-            assertTrue("Retrieved element should be the same as initial element", initialList.contains(object));
-        }
+    private int countTotal() {
+        return toIntExact(dao.count());
     }
 
+    /**
+     * test hibernate issue: storing an "empty" embedded object with every field null will result in a null object
+     * when retrieved from db.
+     */
     @Test
-    public void testFind() {
-        String appId = UUID.randomUUID().toString();
-        ApplicationInfo original = buildAppInfo(appId);
-        dao.save(original);
-        ApplicationInfo retrieved = dao.findOne(appId);
-        assertThat(retrieved, is(notNullValue()));
-        assertThat(retrieved.getUuid(), is(equalTo(appId)));
-        assertThat(retrieved.getEnrollmentState(), is(notNullValue()));
-        assertThat(retrieved.getEnrollmentState().getStates(), is(notNullValue()));
-        assertThat(retrieved.getEnrollmentState().getStates().size(), is(equalTo(original.getEnrollmentState()
-                .getStates().size())));
-        assertThat(retrieved, is(equalTo(original)));
-        assertTrue("Succeed in getting a binding that does not exist", dao.findOne("thisAppShouldNotExist") == null);
-    }
+    public void empty_diagnostic_info_should_not_be_null_when_read_from_db() {
+        //
 
+        //given that an app has an "empty" diagnostic is saved to database
+        String uuid = UUID.randomUUID().toString();
+        ApplicationInfo info = ApplicationInfo.builder().uuid(uuid).build();
+        assertThat(info.getDiagnosticInfo(), is(notNullValue()));
+        dao.save(info);
+
+        //when we retrieve it from db
+        ApplicationInfo retrievedInfo = dao.findOne(uuid);
+
+        //then the empty diagnosticInfo is not null
+        assertThat(retrievedInfo.getDiagnosticInfo(), is(notNullValue()));
+    }
 
     @Test
     public void testCount() {
         assertThat(countTotal(), is(equalTo(0)));
     }
-
 
     @Test
     public void testDelete() {
@@ -168,29 +139,55 @@ public abstract class AppRepositoryTest {
 
     }
 
-    private int countTotal() {
-        return toIntExact(dao.count());
+    @Test
+    public void testFind() {
+        String appId = UUID.randomUUID().toString();
+        ApplicationInfo original = buildAppInfo(appId);
+        dao.save(original);
+        ApplicationInfo retrieved = dao.findOne(appId);
+        assertThat(retrieved, is(notNullValue()));
+        assertThat(retrieved.getUuid(), is(equalTo(appId)));
+        assertThat(retrieved.getEnrollmentState(), is(notNullValue()));
+        assertThat(retrieved.getEnrollmentState().getStates(), is(notNullValue()));
+        assertThat(retrieved.getEnrollmentState().getStates().size(), is(equalTo(original.getEnrollmentState()
+                .getStates().size())));
+        assertThat(retrieved, is(equalTo(original)));
+        assertTrue("Succeed in getting a binding that does not exist", dao.findOne("thisAppShouldNotExist") == null);
     }
 
-    /**
-     * test hibernate issue: storing an "empty" embedded object with every field null will result in a null object
-     * when retrieved from db.
-     */
     @Test
-    public void empty_diagnostic_info_should_not_be_null_when_read_from_db() {
-        //
+    public void testInsert() {
+        dao.save(buildAppInfo(UUID.randomUUID().toString()));
+        assertThat(countTotal(), is(equalTo(1)));
+    }
 
-        //given that an app has an "empty" diagnostic is saved to database
-        String uuid = UUID.randomUUID().toString();
-        ApplicationInfo info = new ApplicationInfo(uuid);
-        assertThat(info.getDiagnosticInfo(), is(notNullValue()));
-        dao.save(info);
+    @Test
+    public void testMultipleInsertsAndRetrieves() {
+        List<String> ids = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
 
-        //when we retrieve it from db
-        ApplicationInfo retrievedInfo = dao.findOne(uuid);
+        List<ApplicationInfo> initialList = new ArrayList<>();
+        ids.forEach(id -> initialList.add(buildAppInfo(id)));
 
-        //then the empty diagnosticInfo is not null
-        assertThat(retrievedInfo.getDiagnosticInfo(), is(notNullValue()));
+        //test save all
+        dao.save(initialList);
+        assertThat("Count should be equal to the amount inserted", countTotal(), is(equalTo(initialList.size())));
+
+        //test "exist"
+        ids.forEach(id -> assertThat("Each element should exist in DAO", dao.exists(id), is(true)));
+
+        //test that retrieving all elements give the same amount
+        Iterable<ApplicationInfo> storedElement = dao.findAll();
+        int count = 0;
+        for (ApplicationInfo object : storedElement) {
+            count++;
+        }
+        assertTrue("Retrieving all elements should return the same quantity", count == initialList.size());
+
+        //test find with all inserted ids
+        storedElement = dao.findAll(ids);
+        for (ApplicationInfo object : storedElement) {
+            assertTrue("Retrieved element should be the same as initial element", initialList.contains(object));
+        }
     }
 
     @Test
@@ -199,12 +196,12 @@ public abstract class AppRepositoryTest {
         String id2 = UUID.randomUUID().toString();
         String id3 = UUID.randomUUID().toString();
 
-        List<String> allIds = Arrays.asList(id1,id2,id3);
-        allIds.forEach(id -> dao.save(new ApplicationInfo(id)));
+        List<String> allIds = Arrays.asList(id1, id2, id3);
+        allIds.forEach(id -> dao.save(ApplicationInfo.builder().uuid(id).build()));
 
-        List<String> searchIds = Arrays.asList(id1,id2);
+        List<String> searchIds = Arrays.asList(id1, id2);
         long count = dao.countByAppid(searchIds);
-        assertThat((int) count,is(equalTo(searchIds.size())));
+        assertThat((int) count, is(equalTo(searchIds.size())));
 
     }
 }

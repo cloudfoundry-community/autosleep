@@ -100,7 +100,9 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             applicationLocker.executeThreadSafe(targetAppId, () -> {
                 ApplicationInfo appInfo = appRepository.findOne(targetAppId);
                 if (appInfo == null) {
-                    appInfo = new ApplicationInfo(targetAppId);
+                    appInfo = ApplicationInfo.builder()
+                            .uuid(targetAppId)
+                            .build();
                 }
 
                 appInfo.getEnrollmentState().addEnrollmentState(configId);

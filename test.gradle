@@ -26,4 +26,6 @@ test {
 dependencies {
     //Starter tests: spring test, mockito, ...
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+    //Test for annotations
+    testCompile  "com.fasterxml.jackson.module:jackson-module-parameter-names:$jacksonParameterNames"
 }

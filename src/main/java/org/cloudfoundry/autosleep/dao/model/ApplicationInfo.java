@@ -19,7 +19,10 @@
 
 package org.cloudfoundry.autosleep.dao.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonCreator.Mode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -53,17 +56,17 @@ public class ApplicationInfo {
 
     @Getter
     @Slf4j
-    @NoArgsConstructor(access = AccessLevel.PRIVATE)
     @Embeddable
     @EqualsAndHashCode
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static class DiagnosticInfo {
 
         @Getter
         @Setter
         @Slf4j
-        @NoArgsConstructor(access = AccessLevel.PRIVATE)
         @Embeddable
         @EqualsAndHashCode
+        @NoArgsConstructor(access = AccessLevel.PRIVATE)
         public static class ApplicationEvent {
 
             @JsonSerialize
@@ -87,18 +90,26 @@ public class ApplicationInfo {
             @Column(name = "event_type")
             private String type;
 
-            public ApplicationEvent(String name) {
+            @Builder
+            ApplicationEvent(String actee,
+                             String actor,
+                             String name,
+                             long timestamp,
+                             String type) {
+                this.actee = actee;
+                this.actor = actor;
                 this.name = name;
+                this.timestamp = Instant.ofEpochMilli(timestamp);
+                this.type = type;
             }
+
         }
 
         @Getter
         @Slf4j
-        @NoArgsConstructor(access = AccessLevel.PRIVATE)
-        @AllArgsConstructor(access = AccessLevel.PRIVATE)
-        @Builder
         @Embeddable
         @EqualsAndHashCode
+        @NoArgsConstructor(access = AccessLevel.PRIVATE)
         public static class ApplicationLog {
 
             @JsonSerialize
@@ -121,6 +132,20 @@ public class ApplicationInfo {
             @JsonDeserialize(using = InstantDeserializer.class)
             @Column(name = "log_time")
             private Instant timestamp;
+
+
+            @Builder
+            ApplicationLog(String message,
+                           String messageType,
+                           String sourceId,
+                           String sourceName,
+                           long timestamp) {
+                this.message = message;
+                this.messageType = messageType;
+                this.sourceId = sourceId;
+                this.sourceName = sourceName;
+                this.timestamp = Instant.ofEpochMilli(timestamp);
+            }
 
         }
 
@@ -146,6 +171,19 @@ public class ApplicationInfo {
         @JsonSerialize(using = InstantSerializer.class)
         @JsonDeserialize(using = InstantDeserializer.class)
         private Instant nextCheck;
+
+        @Builder
+        DiagnosticInfo(String appState,
+                       long lastCheck,
+                       ApplicationEvent lastEvent,
+                       ApplicationLog lastLog,
+                       long nextCheck) {
+            this.appState = appState;
+            this.lastCheck = Instant.ofEpochMilli(lastCheck);
+            this.lastEvent = lastEvent;
+            this.lastLog = lastLog;
+            this.nextCheck = Instant.ofEpochMilli(nextCheck);
+        }
     }
 
     @Getter
@@ -217,12 +255,18 @@ public class ApplicationInfo {
     private String uuid;
 
     private ApplicationInfo() {
-        diagnosticInfo = new DiagnosticInfo();
-        enrollmentState = new EnrollmentState();
+        this.diagnosticInfo = new DiagnosticInfo();
+        this.enrollmentState = new EnrollmentState();
     }
 
-    public ApplicationInfo(String uuid) {
-        this();
+    @Builder
+    ApplicationInfo(DiagnosticInfo diagnosticInfo,
+                    EnrollmentState enrollmentState,
+                    String name,
+                    String uuid) {
+        this.diagnosticInfo = diagnosticInfo == null ? DiagnosticInfo.builder().build() : diagnosticInfo;
+        this.enrollmentState = enrollmentState == null ? new EnrollmentState() : enrollmentState;
+        this.name = name;
         this.uuid = uuid;
     }
 
@@ -239,10 +283,10 @@ public class ApplicationInfo {
 
     public void markAsPutToSleep() {
         this.diagnosticInfo.appState = CloudFoundryAppState.STOPPED;
-        DiagnosticInfo.ApplicationEvent applicationEvent = new DiagnosticInfo.ApplicationEvent("Autosleep-stop");
-        applicationEvent.setActor("autosleep");
-        applicationEvent.setTimestamp(Instant.now());
-        this.diagnosticInfo.lastEvent = applicationEvent;
+        this.diagnosticInfo.lastEvent = DiagnosticInfo.ApplicationEvent.builder()
+                .actor("autosleep")
+                .timestamp(Instant.now().toEpochMilli())
+                .build();
     }
 
     public void updateDiagnosticInfo(String state, DiagnosticInfo.ApplicationLog lastLog, DiagnosticInfo

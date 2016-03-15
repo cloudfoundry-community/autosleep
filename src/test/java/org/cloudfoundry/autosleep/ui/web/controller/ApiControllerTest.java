@@ -21,6 +21,7 @@ package org.cloudfoundry.autosleep.ui.web.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
@@ -105,6 +106,8 @@ public class ApiControllerTest {
     @Before
     public void init() {
         objectMapper = new ObjectMapper();
+        //use this to help jackson using @JsonCreator annotation with multiple parameters
+        objectMapper.registerModule(new ParameterNamesModule());
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArguments()[1]).run();
             return null;

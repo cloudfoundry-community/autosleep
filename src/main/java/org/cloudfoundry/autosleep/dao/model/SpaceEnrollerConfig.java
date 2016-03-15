@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString
 @EqualsAndHashCode(of = "id")
 @Entity
