@@ -1,4 +1,4 @@
-/**
+/*
  * Autosleep
  * Copyright (C) 2016 Orange
  * Authors: Benjamin Einaudi   benjamin.einaudi@orange.com

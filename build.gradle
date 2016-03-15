@@ -45,6 +45,9 @@ license {
     excludes(["**/*.css", "**/boost*", "**/bootbox*", "**/jquery*", "**/banner.txt", "**/*png",
               "**/*eot", "**/*ttf", "**/*woff*", "**/*gif", "**/*jpg", "**/*tpl", "**/*svg", "**/*map",
               "**/*xml", "**/*yaml"])
+    mapping {
+        java='PHP'
+    }
 }
 
 processResources {
