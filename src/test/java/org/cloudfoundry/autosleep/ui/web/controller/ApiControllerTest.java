@@ -46,15 +46,15 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.time.Duration;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -85,13 +85,13 @@ public class ApiControllerTest {
     private ApiController apiController;
 
     @Mock
-    private BindingRepository bindingRepository;
-
-    @Mock
     private ApplicationLocker applicationLocker;
 
     @Mock
     private ApplicationRepository applicationRepository;
+
+    @Mock
+    private BindingRepository bindingRepository;
 
     @Mock
     private Catalog catalog;
@@ -102,6 +102,18 @@ public class ApiControllerTest {
 
     @Mock
     private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
+
+    private void checkMvcResultsContainsASingleApplicationWithCorrectId(MvcResult mvcResult, String applicationId)
+            throws UnsupportedEncodingException, IOException {
+        ServerResponse<ApplicationInfo[]> applicationInfos = objectMapper
+                .readValue(mvcResult.getResponse().getContentAsString(),
+                        TypeFactory.defaultInstance()
+                                .constructParametrizedType(ServerResponse.class, ServerResponse.class,
+                                        ApplicationInfo[].class));
+        assertThat(applicationInfos.getBody(), is(notNullValue()));
+        assertThat(applicationInfos.getBody().length, is(equalTo(1)));
+        assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId)));
+    }
 
     @Before
     public void init() {
@@ -119,71 +131,74 @@ public class ApiControllerTest {
     }
 
     @Test
-    public void testDeleteApplication() throws Exception {
+    public void test_delete_application() throws Exception {
+        //Given nothing
         String applicationId = "applicationToDelete";
-        mockMvc.perform(delete(Config.Path.API_CONTEXT + Config.Path.APPLICATIONS_SUB_PATH + applicationId))
-                .andExpect(status().is(HttpStatus.NO_CONTENT.value()))
-                .andDo(mvcResult -> verify(applicationRepository, times(1)).delete(eq(applicationId)));
+
+        //When delete is done on an application
+        ResultActions resultActions = mockMvc.perform(
+                delete(Config.Path.API_CONTEXT + Config.Path.APPLICATIONS_SUB_PATH + applicationId));
+        //Then NO Content is sent
+        resultActions = resultActions.andExpect(status().is(HttpStatus.NO_CONTENT.value()));
+        //AND it called delete on the repository
+        resultActions.andDo(mvcResult -> verify(applicationRepository, times(1)).delete(eq(applicationId)));
 
     }
 
     @Test
-    public void testListApplicationById() throws Exception {
+    public void test_list_applications() throws Exception {
+        //given repository contains an application black listed
+        ApplicationInfo applicationInfo = BeanGenerator.createAppInfoWithDiagnostic(applicationId, "applicationName",
+                CloudFoundryAppState.STARTED);
+        applicationInfo.getEnrollmentState().addEnrollmentState("serviceId");
+        applicationInfo.getEnrollmentState().updateEnrollment("serviceId", true);
+        when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
+
+        //When listing of application is called
+        ResultActions resultActions = mockMvc.perform(
+                get(Config.Path.API_CONTEXT + Config.Path.APPLICATIONS_SUB_PATH).accept(MediaType.APPLICATION_JSON));
+        //Then result is ok
+        resultActions = resultActions.andExpect(status().isOk());
+        //And content type is application/json
+        resultActions = resultActions.andExpect(content()
+                .contentType(new MediaType(MediaType.APPLICATION_JSON,
+                        Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))));
+        //And repository function was called
+        resultActions = resultActions.andDo(mvcResult -> verify(applicationRepository, times(1)).findAll());
+        //And result contains a single application with good id
+        resultActions.andDo(mvcResult ->
+                checkMvcResultsContainsASingleApplicationWithCorrectId(mvcResult, applicationId));
+    }
+
+    @Test
+    public void test_list_applications_on_a_space_enroller_config() throws Exception {
+        //Given a service is bound to an application
         String serviceId = "serviceIdListById";
         ApplicationInfo applicationInfo = BeanGenerator.createAppInfoWithDiagnostic(applicationId,
                 "appName", CloudFoundryAppState.STARTED);
         applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
         when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
 
-        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceId + "/applications/")
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content()
-                        .contentType(new MediaType(MediaType.APPLICATION_JSON,
-                                Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
-                .andDo(mvcResult -> {
-                    verify(applicationRepository, times(1)).findAll();
-                    ServerResponse<ApplicationInfo[]> applicationInfos = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(),
-                                    TypeFactory.defaultInstance()
-                                            .constructParametrizedType(ServerResponse.class, ServerResponse.class,
-                                                    ApplicationInfo[].class));
-                    assertThat(applicationInfos.getBody(), is(notNullValue()));
-                    assertThat(applicationInfos.getBody().length, is(equalTo(1)));
-                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId)));
-                });
+        //When list applications of this service
+        ResultActions resultActions = mockMvc.perform(
+                get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceId + "/applications/")
+                        .accept(MediaType.APPLICATION_JSON));
+        // Then result is OK
+        resultActions = resultActions.andExpect(status().isOk());
+        //And content type is application/json
+        resultActions = resultActions.andExpect(content()
+                .contentType(new MediaType(MediaType.APPLICATION_JSON,
+                        Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))));
+        //And repository function was called
+        resultActions = resultActions.andDo(mvcResult -> verify(applicationRepository, times(1)).findAll());
+        //And it contains a single application info with good id
+        resultActions.andDo(mvcResult ->
+                checkMvcResultsContainsASingleApplicationWithCorrectId(mvcResult, applicationId));
     }
 
     @Test
-    public void testListApplications() throws Exception {
-
-        ApplicationInfo applicationInfo = BeanGenerator.createAppInfoWithDiagnostic(applicationId, "applicationName",
-                CloudFoundryAppState.STARTED);
-
-        applicationInfo.getEnrollmentState().addEnrollmentState("serviceId");
-        when(applicationRepository.findAll()).thenReturn(Collections.singletonList(applicationInfo));
-
-        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.APPLICATIONS_SUB_PATH)
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content()
-                        .contentType(new MediaType(MediaType.APPLICATION_JSON,
-                                Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
-                .andDo(mvcResult -> {
-                    verify(applicationRepository, times(1)).findAll();
-                    ServerResponse<ApplicationInfo[]> applicationInfos = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(),
-                                    TypeFactory.defaultInstance()
-                                            .constructParametrizedType(ServerResponse.class, ServerResponse.class,
-                                                    ApplicationInfo[].class));
-                    assertThat(applicationInfos.getBody(), is(notNullValue()));
-                    assertThat(applicationInfos.getBody().length, is(equalTo(1)));
-                    assertThat(applicationInfos.getBody()[0].getUuid(), is(equalTo(applicationId)));
-                });
-    }
-
-    @Test
-    public void testListBindings() throws Exception {
+    public void test_list_bindings_on_exisiting_instance() throws Exception {
+        //Given the repository contains a single binding of an instance
         Binding serviceBinding = Binding.builder()
                 .serviceBindingId(serviceBindingId)
                 .serviceInstanceId(serviceInstanceId)
@@ -192,70 +207,94 @@ public class ApiControllerTest {
                 .build();
         when(bindingRepository.findAll()).thenReturn(Collections.singletonList(serviceBinding));
 
-        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "/bindings/")
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk()).andExpect(content()
-                .contentType(new MediaType(MediaType.APPLICATION_JSON,
-                        Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
-                .andDo(mvcResult -> {
-                    verify(bindingRepository, times(1)).findAll();
-                    ServerResponse<Binding[]> serviceBindings = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(),
-                                    TypeFactory.defaultInstance()
-                                            .constructParametrizedType(ServerResponse.class, ServerResponse.class,
-                                                    Binding[].class));
-                    assertThat(serviceBindings.getBody(), is(notNullValue()));
-                    assertThat(serviceBindings.getBody().length, is(equalTo(1)));
-                    assertThat(serviceBindings.getBody()[0].getServiceBindingId(), is(equalTo(serviceBindingId)));
+        //When list of the instance binding is called
+        ResultActions resultActions = mockMvc.perform(
+                get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "/bindings/")
+                        .accept(MediaType.APPLICATION_JSON));
 
-                });
-        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "-tmp"
-                + "/bindings/")
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk()).andExpect(content()
+        //Then OK is sent
+        resultActions = resultActions.andExpect(status().isOk());
+        //And application/json content type is sent
+        resultActions = resultActions.andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
-                        Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
-                .andDo(mvcResult -> {
-                    verify(bindingRepository, times(2)).findAll();
-                    ServerResponse<Binding[]> serviceBindings = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(),
-                                    TypeFactory.defaultInstance()
-                                            .constructParametrizedType(ServerResponse.class, ServerResponse.class,
-                                                    Binding[].class));
-                    assertThat(serviceBindings.getBody(), is(notNullValue()));
-                    assertThat(serviceBindings.getBody().length, is(equalTo(0)));
-                });
+                        Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))));
+        //And respository function is called
+        resultActions = resultActions.andDo(mvcResult -> verify(bindingRepository, times(1)).findAll());
+        //And the result contains a single service binding
+        resultActions.andDo(mvcResult -> {
+            ServerResponse<Binding[]> serviceBindings = objectMapper
+                    .readValue(mvcResult.getResponse().getContentAsString(),
+                            TypeFactory.defaultInstance()
+                                    .constructParametrizedType(ServerResponse.class, ServerResponse.class,
+                                            Binding[].class));
+            assertThat(serviceBindings.getBody(), is(notNullValue()));
+            assertThat(serviceBindings.getBody().length, is(equalTo(1)));
+            assertThat(serviceBindings.getBody()[0].getServiceBindingId(), is(equalTo(serviceBindingId)));
+
+        });
     }
 
     @Test
-    public void testListInstances() throws Exception {
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put(Config.ServiceInstanceParameters.IDLE_DURATION, Duration.ofMinutes(15));
-        parameters.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, Pattern.compile(".*"));
-
-        SpaceEnrollerConfig serviceInstance = SpaceEnrollerConfig.builder()
-                .id(serviceInstanceId).build();
-
-        when(spaceEnrollerConfigRepository.findAll()).thenReturn(Collections.singletonList(serviceInstance));
-
-        mockMvc.perform(get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH).accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk()).andExpect(content()
+    public void test_list_bindings_on_non_exisitng_instance() throws Exception {
+        //Given the repository does not contain any binding
+        when(bindingRepository.findAll()).thenReturn(Collections.emptyList());
+        //When list of bindings of unknown service binding is called
+        ResultActions resultActions = mockMvc.perform(
+                get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + serviceInstanceId + "-tmp" + "/bindings/")
+                        .accept(MediaType.APPLICATION_JSON));
+        //Then status OK is returned
+        resultActions = resultActions.andExpect(status().isOk());
+        //And application/json content type is returned
+        resultActions = resultActions.andExpect(content()
                 .contentType(new MediaType(MediaType.APPLICATION_JSON,
-                        Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))))
-                .andDo(mvcResult -> {
-                    verify(spaceEnrollerConfigRepository, times(1)).findAll();
-                    ServerResponse<SpaceEnrollerConfig[]> serviceInstances = objectMapper
-                            .readValue(mvcResult.getResponse().getContentAsString(),
-                                    TypeFactory.defaultInstance()
-                                            .constructParametrizedType(ServerResponse.class, ServerResponse.class,
-                                                    SpaceEnrollerConfig[].class)
-                            );
-                    assertThat(serviceInstances.getBody(), is(notNullValue()));
-                    assertThat(serviceInstances.getBody().length, is(equalTo(1)));
-                    assertThat(serviceInstances.getBody()[0].getId(),
-                            is(equalTo(serviceInstanceId)));
+                        Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))));
+        //And respository function is called
+        resultActions = resultActions.andDo(mvcResult -> verify(bindingRepository, times(1)).findAll());
+        //And body contains an empty list
+        resultActions.andDo(mvcResult -> {
+            ServerResponse<Binding[]> serviceBindings = objectMapper
+                    .readValue(mvcResult.getResponse().getContentAsString(),
+                            TypeFactory.defaultInstance()
+                                    .constructParametrizedType(ServerResponse.class, ServerResponse.class,
+                                            Binding[].class));
+            assertThat(serviceBindings.getBody(), is(notNullValue()));
+            assertThat(serviceBindings.getBody().length, is(equalTo(0)));
+        });
+    }
 
-                });
+    @Test
+    public void test_list_space_enroller_config() throws Exception {
+        //Given the repository contains a single config
+        SpaceEnrollerConfig spaceEnrollerConfig = SpaceEnrollerConfig.builder()
+                .id(serviceInstanceId).build();
+        when(spaceEnrollerConfigRepository.findAll()).thenReturn(Collections.singletonList(spaceEnrollerConfig));
+
+        //When request of list enroller config is done
+        ResultActions resultActions = mockMvc.perform(
+                get(Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH).accept(MediaType.APPLICATION_JSON));
+
+        //Then result is ok
+        resultActions = resultActions.andExpect(status().isOk());
+        //And content type is application/json
+        resultActions = resultActions.andExpect(content()
+                .contentType(new MediaType(MediaType.APPLICATION_JSON,
+                        Collections.singletonMap("charset", Charset.forName("UTF-8").toString()))));
+        //And repository function was called
+        resultActions = resultActions.andDo(mvcResult -> verify(spaceEnrollerConfigRepository, times(1)).findAll());
+        //And it contains a single config with good id
+        resultActions.andDo(mvcResult -> {
+            ServerResponse<SpaceEnrollerConfig[]> serviceInstances = objectMapper
+                    .readValue(mvcResult.getResponse().getContentAsString(),
+                            TypeFactory.defaultInstance()
+                                    .constructParametrizedType(ServerResponse.class, ServerResponse.class,
+                                            SpaceEnrollerConfig[].class)
+                    );
+            assertThat(serviceInstances.getBody(), is(notNullValue()));
+            assertThat(serviceInstances.getBody().length, is(equalTo(1)));
+            assertThat(serviceInstances.getBody()[0].getId(),
+                    is(equalTo(serviceInstanceId)));
+
+        });
     }
 
 }
