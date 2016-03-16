@@ -47,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {ApplicationConfiguration.class, RepositoryConfig.class})
-public abstract class ApplicationRepositoryTest extends CrudRepositoryTest<ApplicationInfo>{
+public abstract class ApplicationRepositoryTest extends CrudRepositoryTest<ApplicationInfo> {
 
     @Autowired
     private ApplicationRepository applicationRepository;
@@ -66,20 +66,13 @@ public abstract class ApplicationRepositoryTest extends CrudRepositoryTest<Appli
     @Override
     protected void compareReloaded(ApplicationInfo original, ApplicationInfo reloaded) {
         assertThat(reloaded.getUuid(), is(equalTo(original.getUuid())));
-        if(original.getEnrollmentState() != null){
+        if (original.getEnrollmentState() != null) {
             assertThat(reloaded.getEnrollmentState(), is(notNullValue()));
             assertThat(reloaded.getEnrollmentState().getStates(), is(notNullValue()));
             assertThat(reloaded.getEnrollmentState().getStates().size(), is(equalTo(original.getEnrollmentState()
                     .getStates().size())));
         }
         assertThat(reloaded, is(equalTo(original)));
-    }
-
-    @Before
-    @After
-    public void setAndClearDao() {
-        setDao(applicationRepository);
-        applicationRepository.deleteAll();
     }
 
     /**
@@ -99,6 +92,13 @@ public abstract class ApplicationRepositoryTest extends CrudRepositoryTest<Appli
 
         //then the empty diagnosticInfo is not null
         assertThat(retrievedInfo.getDiagnosticInfo(), is(notNullValue()));
+    }
+
+    @Before
+    @After
+    public void setAndClearDao() {
+        setDao(applicationRepository);
+        applicationRepository.deleteAll();
     }
 
     @Test

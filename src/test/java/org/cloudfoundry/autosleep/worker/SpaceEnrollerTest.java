@@ -68,7 +68,7 @@ public class SpaceEnrollerTest {
 
     private static final String SPACE_ID = UUID.randomUUID().toString();
 
-    private String NEW_APP_ID = UUID.randomUUID().toString();
+    private static final String NEW_APP_ID = UUID.randomUUID().toString();
 
     @Mock
     private ApplicationRepository applicationRepository;
