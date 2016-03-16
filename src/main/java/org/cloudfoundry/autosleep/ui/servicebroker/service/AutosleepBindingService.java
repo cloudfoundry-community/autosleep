@@ -124,8 +124,8 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             try {
                 List<String> appIds = cfApi.listRouteApplications(routeId);
                 log.debug("CF knows {} apps, amoung which autosleep knows {}", appIds.size(),
-                        appRepository.countByAppid(appIds));
-                if (appRepository.countByAppid(appIds) != appIds.size()) {
+                        appRepository.countByApplicationIds(appIds));
+                if (appRepository.countByApplicationIds(appIds) != appIds.size()) {
                     throw new ServiceBrokerException("Only Autosleep is allowed to bind route to itself");
                 }
             } catch (CloudFoundryException e) {
