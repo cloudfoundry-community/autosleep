@@ -21,8 +21,10 @@ package org.cloudfoundry.autosleep.worker.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -34,12 +36,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-@Component
+@Service
 @Slf4j
-@Scope(value = "singleton")
 public class Clock {
 
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Config.NB_THREAD_FOR_TASK);
+    @Autowired
+    private ScheduledExecutorService scheduler;
 
     private final Map<String/*taskId*/, ScheduledFuture<?>> tasks = new HashMap<>();
 
