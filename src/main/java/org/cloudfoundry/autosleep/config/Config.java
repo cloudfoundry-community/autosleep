@@ -23,16 +23,6 @@ import java.time.Duration;
 
 public interface Config {
 
-    int CF_API_TIMEOUT_IN_S = 8;
-
-    Duration DEFAULT_INACTIVITY_PERIOD = Duration.ofDays(1);
-
-    Duration DELAY_BEFORE_FIRST_SERVICE_CHECK = Duration.ofSeconds(10);
-
-    int NB_THREAD_FOR_TASK = 5;
-
-    Duration PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART = Duration.ofSeconds(3);
-
     interface CloudFoundryAppState {
 
         String STARTED = "STARTED";
@@ -113,4 +103,14 @@ public interface Config {
         String SECRET = "secret";
 
     }
+
+    Duration CF_API_TIMEOUT = Duration.ofSeconds(8);
+
+    Duration DEFAULT_INACTIVITY_PERIOD = Duration.ofDays(1);
+
+    Duration DELAY_BEFORE_FIRST_SERVICE_CHECK = Duration.ofSeconds(10);
+
+    int NB_THREAD_FOR_TASK = 5;
+
+    Duration PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART = Duration.ofSeconds(3);
 }

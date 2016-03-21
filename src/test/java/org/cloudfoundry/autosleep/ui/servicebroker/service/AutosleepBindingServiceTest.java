@@ -213,7 +213,7 @@ public class AutosleepBindingServiceTest {
         //given that the app is linked to the route in CF
         when(cfApi.listRouteApplications(ROUTE_UID)).thenReturn(singletonList(APP_UID));
         //given that the application is known from autosleep
-        when(appRepo.countByAppid(singletonList(APP_UID))).thenReturn(1L);
+        when(appRepo.countByApplicationIds(singletonList(APP_UID))).thenReturn(1L);
 
         //when receive a new ROUTE binding
         bindingService.createServiceInstanceBinding(createRouteBindingTemplate.withServiceInstanceId("Sid")

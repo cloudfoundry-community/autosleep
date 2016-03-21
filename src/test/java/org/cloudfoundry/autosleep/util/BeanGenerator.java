@@ -61,7 +61,9 @@ public class BeanGenerator {
         if (appUuid == null) {
             appUuid = UUID.randomUUID().toString();
         }
-        ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
+        ApplicationInfo applicationInfo = ApplicationInfo.builder()
+                .uuid(appUuid)
+                .build();
         if (serviceId != null) {
             applicationInfo.getEnrollmentState().addEnrollmentState(serviceId);
         }
@@ -74,7 +76,9 @@ public class BeanGenerator {
 
     public static ApplicationInfo createAppInfoWithDiagnostic(String appUuid, String name, String state, Instant
             lastLogDate, Instant lastEventDate) {
-        ApplicationInfo applicationInfo = new ApplicationInfo(appUuid);
+        ApplicationInfo applicationInfo = ApplicationInfo.builder()
+                .uuid(appUuid)
+                .build();
         applicationInfo.updateDiagnosticInfo(state,
                 createAppLog(lastLogDate),
                 createCloudEvent(lastEventDate),
@@ -85,7 +89,7 @@ public class BeanGenerator {
     public static ApplicationInfo.DiagnosticInfo.ApplicationLog createAppLog(Instant instant) {
         return ApplicationInfo.DiagnosticInfo.ApplicationLog.builder()
                 .message("fakelog")
-                .timestamp(instant != null ? instant : Instant.now())
+                .timestamp((instant != null ? instant : Instant.now()).toEpochMilli())
                 .messageType("STDOUT")
                 .sourceName("sourceName")
                 .sourceId("sourceId")
@@ -120,8 +124,10 @@ public class BeanGenerator {
 
     public static ApplicationInfo.DiagnosticInfo.ApplicationEvent createCloudEvent(Instant instant) {
         ApplicationInfo.DiagnosticInfo.ApplicationEvent event =
-                new ApplicationInfo.DiagnosticInfo.ApplicationEvent("fakeEvent");
-        event.setTimestamp(instant != null ? instant : Instant.now());
+                ApplicationInfo.DiagnosticInfo.ApplicationEvent.builder()
+                        .name("fakeEvent")
+                        .timestamp((instant != null ? instant : Instant.now()).toEpochMilli())
+                        .build();
         return event;
     }
 
@@ -130,7 +136,7 @@ public class BeanGenerator {
     }
 
     public static Binding createRouteBinding(String bindingId,
-                                                  String serviceId, String routeId) {
+                                             String serviceId, String routeId) {
         return Binding.builder()
                 .resourceType(Route)
                 .serviceBindingId(bindingId)
@@ -139,7 +145,7 @@ public class BeanGenerator {
     }
 
     public static Binding createRouteBinding(String bindingId) {
-        return createRouteBinding(bindingId, "","arouteId");
+        return createRouteBinding(bindingId, "", "arouteId");
     }
 
     public static SpaceEnrollerConfig createServiceInstance() {

@@ -33,19 +33,40 @@ import static org.junit.Assert.assertTrue;
 public class ApplicationInfoTest {
 
     @Test
-    public void testIsWatched() throws Exception {
+    public void test_default_is_not_watched() throws Exception {
+        //Given a default application info
         ApplicationInfo info = BeanGenerator.createAppInfo();
+
+        //When asked if watched
+        //Then it returns false
         assertFalse(info.getEnrollmentState().isWatched());
+    }
+
+    @Test
+    public void test_adding_a_service_move_enrollment_to_watched() throws Exception {
+        //Given a default application info
+        ApplicationInfo info = BeanGenerator.createAppInfo();
+        String serviceId = "testIsWatched";
+        //When adding a service
+        info.getEnrollmentState().addEnrollmentState(serviceId);
+        //Then application is watched
+        assertTrue(info.getEnrollmentState().isWatched());
+    }
+
+    @Test
+    public void test_blacklist_on_single_existing_set_not_watched() throws Exception {
+        //Given a default application info that is watched by a service
+        ApplicationInfo info = BeanGenerator.createAppInfo();
         String serviceId = "testIsWatched";
         info.getEnrollmentState().addEnrollmentState(serviceId);
-        assertTrue(info.getEnrollmentState().isWatched());
 
+        //When removing the service
         info.getEnrollmentState().updateEnrollment(serviceId, true);
+
+        //Then applications is no longuer watched
         assertFalse(info.getEnrollmentState().isWatched());
 
-        info.getEnrollmentState().addEnrollmentState(serviceId);
-        info.getEnrollmentState().updateEnrollment(serviceId, false);
-        assertFalse(info.getEnrollmentState().isWatched());
+
     }
 
 }

@@ -36,10 +36,10 @@ import javax.persistence.Id;
 @Setter
 @Slf4j
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@AllArgsConstructor
 @ToString
-@EqualsAndHashCode(of = {"serviceBindingId","serviceInstanceId"})
+@EqualsAndHashCode(of = {"serviceBindingId", "serviceInstanceId"})
 @Entity
 public class Binding {
 

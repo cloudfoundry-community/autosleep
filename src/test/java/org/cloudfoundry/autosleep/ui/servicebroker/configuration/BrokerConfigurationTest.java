@@ -19,7 +19,6 @@
 
 package org.cloudfoundry.autosleep.ui.servicebroker.configuration;
 
-
 import org.cloudfoundry.community.servicebroker.model.BrokerApiVersion;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,7 +38,7 @@ public class BrokerConfigurationTest {
     private BrokerApiVersion brokerApiVersion;
 
     @Test
-    public void testBrokerVersion() {
+    public void test_broker_version_is_all() {
         assertThat(brokerApiVersion.getApiVersion(), is(equalTo("*")));
     }
 

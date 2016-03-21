@@ -40,34 +40,41 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class DeployedApplicationConfigTest {
 
-    private static final UUID APP_ID = UUID.randomUUID();
-
     private static final String APPLICATION_NAME = "test";
 
-    private static final String[] URIS = {"somewhere.org", "somewhere-else.org", "nowhere.org"};
+    private static final UUID APP_ID = UUID.randomUUID();
 
-    @Mock
-    private Environment environment;
+    private static final String[] URIS = {"somewhere.org", "somewhere-else.org", "nowhere.org"};
 
     @InjectMocks
     private DeployedApplicationConfig config;
 
-    @Test
-    public void testLoadCurrentDeployment() throws Exception {
-        when(environment.getProperty(eq(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY)))
-                .thenReturn(null);
-        DeployedApplicationConfig.Deployment deployment = config.loadCurrentDeployment();
-        assertThat(deployment, is(nullValue()));
+    @Mock
+    private Environment environment;
 
+    @Test
+    public void test_read_current_deployment_with_but_no_uris() throws Exception {
+        //Given property is present without uris
         when(environment.getProperty(eq(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY)))
-                .thenReturn(BeanGenerator.getSampleVcapApplication(APP_ID, APPLICATION_NAME))
-                .thenReturn(BeanGenerator.getSampleVcapApplication(APP_ID, APPLICATION_NAME, URIS));
-        deployment = config.loadCurrentDeployment();
+                .thenReturn(BeanGenerator.getSampleVcapApplication(APP_ID, APPLICATION_NAME));
+        //When deployment is done
+        DeployedApplicationConfig.Deployment deployment = config.loadCurrentDeployment();
+        //Then deployment is not null but  does not contain any uri
+        assertThat(deployment, is(notNullValue()));
         assertThat(deployment.getApplicationUris(), is(notNullValue()));
         assertThat(deployment.getApplicationUris().size(), is(equalTo(0)));
         assertThat(deployment.getFirstUri(), is(nullValue()));
+    }
 
-        deployment = config.loadCurrentDeployment();
+    @Test
+    public void test_read_current_deployment_with_uris() throws Exception {
+        //Given property is present without uris
+        when(environment.getProperty(eq(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY)))
+                .thenReturn(BeanGenerator.getSampleVcapApplication(APP_ID, APPLICATION_NAME, URIS));
+        //When deployment is done
+        DeployedApplicationConfig.Deployment deployment = config.loadCurrentDeployment();
+
+        //Then deployment is not null and contains any uri
         assertThat(deployment, is(notNullValue()));
         assertThat(deployment.getApplicationId(), is(equalTo(APP_ID.toString())));
         assertThat(deployment.getApplicationName(), is(equalTo(APPLICATION_NAME)));
@@ -75,6 +82,17 @@ public class DeployedApplicationConfigTest {
         assertThat(deployment.getApplicationUris().size(), is(equalTo(URIS.length)));
         assertThat(deployment.getFirstUri(), is(equalTo(URIS[0])));
 
+    }
+
+    @Test
+    public void test_read_current_deployment_without_property() throws Exception {
+        //Given property is not present
+        when(environment.getProperty(eq(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY)))
+                .thenReturn(null);
+        //When deployment is done
+        DeployedApplicationConfig.Deployment deployment = config.loadCurrentDeployment();
+        //Then deployment returns nothing
+        assertThat(deployment, is(nullValue()));
     }
 
 }

@@ -29,9 +29,9 @@ import java.util.List;
 
 public interface BindingRepository extends CrudRepository<Binding, String> {
 
-    Binding findByResourceId(String id);
-
     List<Binding> findAllByResourceType(ResourceType resourceType);
+
+    Binding findByResourceId(String id);
 
     @Query("select b from Binding b where b.resourceId in (:ids) and b.resourceType = :resType")
     List<Binding> findByResourceIdAndType(@Param("ids") List<String> ids, @Param("resType") ResourceType resType);

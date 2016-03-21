@@ -54,7 +54,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -114,7 +113,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                                     .applicationId(application.getGuid())
                                     .serviceInstanceId(serviceInstanceId)
                                     .build())
-                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
+                    .get(Config.CF_API_TIMEOUT);
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
@@ -138,7 +137,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                             .serviceInstanceId(serviceInstanceId)
                             .routeId(routeId)
                             .build())
-                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
+                    .get(Config.CF_API_TIMEOUT);
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
@@ -149,20 +148,20 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             return null;
         } else {
             EventEntity cfEvent = event.getEntity();
-            ApplicationInfo.DiagnosticInfo.ApplicationEvent applicationEvent =
-                    new ApplicationInfo.DiagnosticInfo.ApplicationEvent(cfEvent.getType());
-            applicationEvent.setActor(cfEvent.getActor());
-            applicationEvent.setActee(cfEvent.getActee());
-            applicationEvent.setTimestamp(Instant.parse(cfEvent.getTimestamp()));
-            applicationEvent.setType(cfEvent.getType());
-            return applicationEvent;
+            return ApplicationInfo.DiagnosticInfo.ApplicationEvent.builder()
+                    .actee(cfEvent.getActee())
+                    .actor(cfEvent.getActor())
+                    .name(cfEvent.getType())
+                    .timestamp(Instant.parse(cfEvent.getTimestamp()).toEpochMilli())
+                    .type(cfEvent.getType())
+                    .build();
         }
     }
 
     private ApplicationInfo.DiagnosticInfo.ApplicationLog buildAppLog(LogMessage cfLog) {
         return cfLog == null ? null : ApplicationInfo.DiagnosticInfo.ApplicationLog.builder()
                 .message(cfLog.getMessage())
-                .timestamp(cfLog.getTimestamp().toInstant())
+                .timestamp(cfLog.getTimestamp().getTime())
                 .messageType(cfLog.getMessageType().toString())
                 .sourceId(cfLog.getSourceId())
                 .sourceName(cfLog.getSourceName())
@@ -179,7 +178,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                                         .applicationId(applicationUuid)
                                         .state(targetState)
                                         .build())
-                        .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
+                        .get(Config.CF_API_TIMEOUT);
             } else {
                 log.warn("application {} already in state {}, nothing to do", applicationUuid, targetState);
             }
@@ -251,7 +250,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         listEventPublisher.subscribe(listEventSubscriber);
 
         try {
-            if (!latch.await(Config.CF_API_TIMEOUT_IN_S, TimeUnit.SECONDS)) {
+            if (!latch.await(Config.CF_API_TIMEOUT.getSeconds(), TimeUnit.SECONDS)) {
                 throw new IllegalStateException("Subscriber timed out");
             } else //noinspection ThrowableResultOfMethodCallIgnored
                 if (error.get() != null) {
@@ -284,7 +283,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                     .get(GetApplicationRequest.builder()
                             .applicationId(applicationUuid)
                             .build())
-                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S))
+                    .get(Config.CF_API_TIMEOUT)
                     .getEntity().getState();
 
         } catch (RuntimeException r) {
@@ -301,7 +300,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                             ListApplicationRoutesRequest.builder()
                                     .applicationId(applicationUuid)
                                     .build())
-                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
+                    .get(Config.CF_API_TIMEOUT);
             return response.getResources().stream().map(
                     routeResource -> routeResource.getMetadata().getId()
             ).collect(Collectors.toList());
@@ -320,7 +319,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                     .list(ListApplicationsRequest.builder()
                             .spaceId(spaceUuid)
                             .build())
-                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
+                    .get(Config.CF_API_TIMEOUT);
             return response.getResources().stream().filter(
                     cloudApplication -> (
                             spaceUuid == null
@@ -349,7 +348,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                             ListRouteApplicationsRequest.builder()
                                     .routeId(routeUuid)
                                     .build())
-                    .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
+                    .get(Config.CF_API_TIMEOUT);
             return response.getResources().stream()
                     .map(appResource -> appResource.getMetadata().getId())
                     .collect(Collectors.toList());
@@ -376,7 +375,8 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 .delete(DeleteServiceBindingRequest.builder()
                         .serviceBindingId(bindingId)
                         .build())
-                .get(Duration.ofSeconds(Config.CF_API_TIMEOUT_IN_S));
+                .get(Config.CF_API_TIMEOUT);
 
     }
+
 }

@@ -29,5 +29,5 @@ import java.util.List;
 public interface ApplicationRepository extends CrudRepository<ApplicationInfo, String> {
 
     @Query("select count(a) from ApplicationInfo a where a.uuid in (:ids)")
-    Long countByAppid(@Param("ids") List<String> ids);
+    Long countByApplicationIds(@Param("ids") List<String> ids);
 }

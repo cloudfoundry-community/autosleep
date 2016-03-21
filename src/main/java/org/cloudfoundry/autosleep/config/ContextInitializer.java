@@ -25,7 +25,6 @@ import org.springframework.cloud.CloudException;
 import org.springframework.cloud.CloudFactory;
 import org.springframework.cloud.service.ServiceInfo;
 import org.springframework.cloud.service.common.MysqlServiceInfo;
-import org.springframework.cloud.service.common.RedisServiceInfo;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -48,13 +47,13 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
      */
     private static final String DEFAULT_PROFILE = "default";
 
-    private static final Map<Class<? extends ServiceInfo>, String> autorizedPersistenceProfiles =
+    private static final Map<Class<? extends ServiceInfo>, String> authorizedPersistenceProfiles =
             new HashMap<>();
 
     private static final List<String> validLocalProfiles = Arrays.asList("mysql");
 
     static {
-        autorizedPersistenceProfiles.put(MysqlServiceInfo.class, "mysql");
+        authorizedPersistenceProfiles.put(MysqlServiceInfo.class, "mysql");
     }
 
     private String[] createProfileNames(String baseName, String suffix) {
@@ -65,7 +64,6 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
 
     /**
      * Check parameter given via env var, and that it is listed as authorized local profile.
-     *
      * @param appEnvironment app context env
      * @return the two profils to activate if available ( "profile" and "profile-local")
      */
@@ -98,7 +96,6 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
 
     /**
      * Check if one of the authorized profile is available in the cloud configuration.
-     *
      * @param cloud Contextual cloud
      * @return the two profils to activate if available ( "profile" and "profile-cloud")
      */
@@ -107,14 +104,14 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
         log.info("Found serviceInfos: " + StringUtils.collectionToCommaDelimitedString(availableServices));
         List<String> availableProfiles = availableServices.stream()
                 .map(Object::getClass)
-                .filter(autorizedPersistenceProfiles::containsKey)
-                .map(autorizedPersistenceProfiles::get)
+                .filter(authorizedPersistenceProfiles::containsKey)
+                .map(authorizedPersistenceProfiles::get)
                 .collect(Collectors.toList());
 
         if (availableProfiles.size() > 1) {
             throw new IllegalStateException(
                     "Only one service of the following types may be bound to this application: "
-                            + autorizedPersistenceProfiles.values().toString() + ". "
+                            + authorizedPersistenceProfiles.values().toString() + ". "
                             + "These services are bound to the application: ["
                             + StringUtils.collectionToCommaDelimitedString(availableProfiles) + "]");
         } else if (availableProfiles.size() > 0) {
@@ -150,4 +147,5 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
             appEnvironment.addActiveProfile(persistenceProfile);
         }
     }
+    
 }

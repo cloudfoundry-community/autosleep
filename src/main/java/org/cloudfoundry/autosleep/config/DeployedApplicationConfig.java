@@ -72,4 +72,5 @@ public class DeployedApplicationConfig {
             return objectMapper.readValue(deployment, Deployment.class);
         }
     }
+    
 }

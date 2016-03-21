@@ -37,12 +37,11 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.mockito.Matchers.eq;
@@ -53,16 +52,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(MockitoJUnitRunner.class)
 public class DashboardControllerTest {
 
+    private static final String planId = "0309U";
+
+    private static final String serviceDefinitionId = "serviceDefinitionId";
+
     private static final String serviceInstanceId = "dashboardCtrlTestSID";
 
     @Mock
-    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
+    private ApplicationRepository applicationRepository;
 
     @Mock
     private BindingRepository bindingRepository;
-
-    @Mock
-    private ApplicationRepository applicationRepository;
 
     @Mock
     private Catalog catalog;
@@ -72,8 +72,23 @@ public class DashboardControllerTest {
 
     private MockMvc mockMvc;
 
-    private static final String planId = "0309U";
-    private static final String serviceDefinitionId = "serviceDefinitionId";
+    @Mock
+    private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
+
+    private SpaceEnrollerConfig getServiceInstance() {
+
+        return SpaceEnrollerConfig.builder()
+                .idleDuration(Duration.parse("PT1M"))
+                .forcedAutoEnrollment(true)
+                .secret("Pa$$w0rd")
+                .serviceDefinitionId(serviceDefinitionId)
+                .planId(planId)
+                .organizationId("orgGuid")
+                .spaceId("spaceId")
+                .id(serviceInstanceId)
+                .excludeFromAutoEnrollment(Pattern.compile(".*"))
+                .build();
+    }
 
     @Before
     public void init() {
@@ -84,45 +99,31 @@ public class DashboardControllerTest {
                         Collections.singletonList(new Plan(planId, "plan", "")))));
     }
 
-    private SpaceEnrollerConfig getServiceInstance(boolean withExcludeParam) {
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put(Config.ServiceInstanceParameters.IDLE_DURATION, Duration.parse("PT1M"));
-        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, true);
-        parameters.put(Config.ServiceInstanceParameters.SECRET, "Pa$$w0rd");
-        if (withExcludeParam) {
-            parameters.put(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT, Pattern.compile(".*"));
-        }
-        SpaceEnrollerConfig.SpaceEnrollerConfigBuilder builder = SpaceEnrollerConfig.builder()
-                .idleDuration(Duration.parse("PT1M"))
-                .forcedAutoEnrollment(true)
-                .secret("Pa$$w0rd")
-                .serviceDefinitionId(serviceDefinitionId)
-                .planId(planId)
-                .organizationId("orgGuid")
-                .spaceId("spaceId")
-                .id(serviceInstanceId);
-        if (withExcludeParam) {
-            builder.excludeFromAutoEnrollment(Pattern.compile(".*"));
-        }
-        return builder.build();
+    @Test
+    public void test_app_existing_id() throws Exception {
+        //Given requested application exists
+        when(spaceEnrollerConfigRepository.findOne(eq(serviceInstanceId)))
+                .thenReturn(getServiceInstance());
+
+        //When user performs a request
+        ResultActions resultActions = mockMvc.perform(get(Config.Path.DASHBOARD_CONTEXT + "/" + serviceInstanceId)
+                .accept(MediaType.TEXT_HTML));
+        //Then status is ok
+        resultActions.andExpect(status().isOk());
     }
 
     @Test
-    public void testApps() throws Exception {
+    public void test_app_not_found() throws Exception {
+        //Given requested application does not exist
         when(spaceEnrollerConfigRepository.findOne(eq(serviceInstanceId)))
-                .thenReturn(getServiceInstance(false))
-                .thenReturn(getServiceInstance(true))
                 .thenReturn(null);
 
-        mockMvc.perform(get(Config.Path.DASHBOARD_CONTEXT + "/" + serviceInstanceId).accept(MediaType.TEXT_HTML))
-                .andExpect(status().isOk());
+        //When user performs a request
+        ResultActions resultActions = mockMvc.perform(get(Config.Path.DASHBOARD_CONTEXT + "/" + serviceInstanceId)
+                .accept(MediaType.TEXT_HTML));
 
-        mockMvc.perform(get(Config.Path.DASHBOARD_CONTEXT + "/" + serviceInstanceId).accept(MediaType.TEXT_HTML))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(get(Config.Path.DASHBOARD_CONTEXT + "/" + serviceInstanceId).accept(MediaType.TEXT_HTML))
-                .andExpect(status().is(HttpStatus.NOT_FOUND.value()));
+        //Then status is not found
+        resultActions.andExpect(status().is(HttpStatus.NOT_FOUND.value()));
     }
-
 
 }

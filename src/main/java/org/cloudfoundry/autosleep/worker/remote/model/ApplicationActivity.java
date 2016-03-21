@@ -24,15 +24,25 @@ import lombok.Getter;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 
 @Getter
-@Builder
 public class ApplicationActivity {
 
-    private ApplicationIdentity application;
+    private final ApplicationIdentity application;
 
-    private ApplicationInfo.DiagnosticInfo.ApplicationEvent lastEvent;
+    private final ApplicationInfo.DiagnosticInfo.ApplicationEvent lastEvent;
 
-    private ApplicationInfo.DiagnosticInfo.ApplicationLog lastLog;
+    private final ApplicationInfo.DiagnosticInfo.ApplicationLog lastLog;
 
-    private String state;
+    private final String state;
+
+    @Builder
+    ApplicationActivity(ApplicationIdentity application,
+                        ApplicationInfo.DiagnosticInfo.ApplicationEvent lastEvent,
+                        ApplicationInfo.DiagnosticInfo.ApplicationLog lastLog,
+                        String state) {
+        this.application = application;
+        this.lastEvent = lastEvent;
+        this.lastLog = lastLog;
+        this.state = state;
+    }
 
 }

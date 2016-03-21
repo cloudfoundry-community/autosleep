@@ -93,7 +93,7 @@ public class ContextInitializerTest {
     }
 
     @Test
-    public void testCloud() {
+    public void test_initialize_in_cloud_context_instanciate_services() {
         when(contextInitializer.getCloud()).thenReturn(cloud);
 
         contextInitializer.initialize(applicationContext);
@@ -105,7 +105,7 @@ public class ContextInitializerTest {
 
 
     @Test
-    public void tesDefault() {
+    public void test_initialize_default_profile() {
         when(contextInitializer.getCloud()).thenReturn(null);
         contextInitializer.initialize(applicationContext);
 

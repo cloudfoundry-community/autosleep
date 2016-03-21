@@ -59,13 +59,16 @@ public class AutosleepCatalogBuilderTest {
     private Environment environment;
 
     @Test
-    public void testBuildCatalog() {
+    public void test_catalog_is_built() {
+        //Given environment variable are configured
         when(environment.getProperty(eq(Config.EnvKey.CF_SERVICE_BROKER_ID), anyString()))
                 .thenReturn(SERVICE_BROKER_ID);
         when(environment.getProperty(eq(EnvKey.CF_SERVICE_PLAN_ID), anyString()))
                 .thenReturn(SERVICE_PLAN_ID);
-
+        //When catalog is built
         Catalog catalog = catalogBuilder.buildCatalog();
+
+        //Then catalog contains the good values
         assertThat(catalog.getServiceDefinitions().size(), is(equalTo(1)));
         ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
         assertThat(serviceDefinition.getId(), is(equalTo(SERVICE_BROKER_ID)));

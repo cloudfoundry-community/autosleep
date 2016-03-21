@@ -46,6 +46,14 @@
               <section>
                 <rule>
                   <match>
+                    <INTERFACE>true</INTERFACE>
+                  </match>
+                  <order>BY_NAME</order>
+                </rule>
+              </section>
+              <section>
+                <rule>
+                  <match>
                     <AND>
                       <FIELD>true</FIELD>
                       <FINAL>true</FINAL>
@@ -290,14 +298,6 @@
                 <rule>
                   <match>
                     <METHOD>true</METHOD>
-                  </match>
-                  <order>BY_NAME</order>
-                </rule>
-              </section>
-              <section>
-                <rule>
-                  <match>
-                    <INTERFACE>true</INTERFACE>
                   </match>
                   <order>BY_NAME</order>
                 </rule>

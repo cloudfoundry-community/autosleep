@@ -68,6 +68,8 @@ public class SpaceEnrollerTest {
 
     private static final String SPACE_ID = UUID.randomUUID().toString();
 
+    private static final String NEW_APP_ID = UUID.randomUUID().toString();
+
     @Mock
     private ApplicationRepository applicationRepository;
 
@@ -82,7 +84,7 @@ public class SpaceEnrollerTest {
 
     private List<String> remoteApplicationIds = Arrays.asList(UUID.randomUUID().toString(),
             UUID.randomUUID().toString(),
-            UUID.randomUUID().toString(),
+            NEW_APP_ID,
             APP_ID);
 
     private SpaceEnroller spaceEnroller;
@@ -108,14 +110,6 @@ public class SpaceEnrollerTest {
         //default
         when(spaceEnrollerConfig.getSpaceId()).thenReturn(SPACE_ID);
         when(spaceEnrollerConfig.getId()).thenReturn(SERVICE_ID);
-        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
-        when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
-                .thenReturn(remoteApplicationIds.stream()
-                        .map(applicationId -> ApplicationIdentity.builder()
-                                .guid(applicationId)
-                                .name(applicationId)
-                                .build())
-                        .collect(Collectors.toList()));
 
         when(deployment.getApplicationId()).thenReturn(APP_ID);
 
@@ -131,82 +125,151 @@ public class SpaceEnrollerTest {
     }
 
     @Test
-    public void testNewAppeared() throws Exception {
+    public void test_enroller_bind_applications_bound_to_other_service_but_not_itself() throws Exception {
+        //Given the service exist
         when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
+        //And it does not exlude any application
         when(spaceEnrollerConfig.getExcludeFromAutoEnrollment()).thenReturn(null);
-        //it will return every ids
+        //And we localy have all remote bound to another service
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
-                //do not return app id
+                //do not return local app id
                 .filter(remoteApplicationId -> !remoteApplicationId.equals(APP_ID))
                 .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId,
-                        "another_service_id"))
+                        SERVICE_ID + "-other"))
                 .collect(Collectors.toList()));
-        spaceEnroller.run();
-
-        verify(spaceEnroller, times(1)).rescheduleWithDefaultPeriod();
-        verify(cloudFoundryApi, times(1)).listApplications(eq(SPACE_ID), eq(null));
-        //Normally remote app has not be bound
-        verify(cloudFoundryApi, times(1))
-                .bindServiceInstance(argThat(anyListOfSize(remoteApplicationIds.size() - 1)),
-                        anyString());
-
-        Pattern pattern = Pattern.compile(".*");
-
-        when(spaceEnrollerConfig.getExcludeFromAutoEnrollment()).thenReturn(pattern);
-        spaceEnroller.run();
-        verify(cloudFoundryApi, times(1)).listApplications(eq(SPACE_ID), eq(pattern));
-
-    }
-
-    @Test
-    public void testNoNew() throws Exception {
-        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
-        //it will return every ids except final one
-        when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
-                //do not return app id
-                .filter(remoteApplicationId -> !remoteApplicationId.equals(APP_ID))
-                .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId,
-                        SERVICE_ID))
-                .collect(Collectors.toList()));
-        spaceEnroller.run();
-
-        verify(spaceEnroller, times(1)).rescheduleWithDefaultPeriod();
-        verify(cloudFoundryApi, never())
-                .bindServiceInstance(anyListOf(ApplicationIdentity.class), anyString());
-
-    }
-
-    @Test
-    public void testRunRemoteError() throws CloudFoundryException, EntityNotFoundException {
-        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
-        when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
-        when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
-                .thenThrow(new CloudFoundryException(null))
+        //And remote applications contain the same applications
+        when(cloudFoundryApi.listApplications(eq(SPACE_ID), eq(null)))
                 .thenReturn(remoteApplicationIds.stream()
                         .map(applicationId -> ApplicationIdentity.builder()
                                 .guid(applicationId)
                                 .name(applicationId)
                                 .build())
                         .collect(Collectors.toList()));
-        doThrow(new CloudFoundryException(
-                new EntityNotFoundException(EntityType.service, SERVICE_ID)))
-                .when(cloudFoundryApi)
-                .bindServiceInstance(anyListOf(ApplicationIdentity.class), eq(SERVICE_ID));
-        //First list call fails
+        //When we run the task
         spaceEnroller.run();
+        //Then it reschedule itself
         verify(spaceEnroller, times(1)).rescheduleWithDefaultPeriod();
-        //Second bind call fails
-        spaceEnroller.run();
-        verify(spaceEnroller, times(2)).rescheduleWithDefaultPeriod();
+        //Normally all applications are bound
+        verify(cloudFoundryApi, times(1))
+                .bindServiceInstance(argThat(anyListOfSize(remoteApplicationIds.size() - 1)),
+                        anyString());
 
     }
 
     @Test
-    public void testRunServiceDeleted() {
-        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(null);
+    public void test_enroller_bind_new_application_but_not_itself() throws Exception {
+        //Given the service exist
+        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
+        //And it does not exlude any application
+        when(spaceEnrollerConfig.getExcludeFromAutoEnrollment()).thenReturn(null);
+        //And we locally have all remote but the local one and another one
+        when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
+                //do not return local app id
+                .filter(remoteApplicationId -> !remoteApplicationId.equals(APP_ID)
+                        && !remoteApplicationId.equals(NEW_APP_ID))
+                .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId,
+                        SERVICE_ID))
+                .collect(Collectors.toList()));
+        //And remote applications contain the all applications
+        when(cloudFoundryApi.listApplications(eq(SPACE_ID), eq(null)))
+                .thenReturn(remoteApplicationIds.stream()
+                        .map(applicationId -> ApplicationIdentity.builder()
+                                .guid(applicationId)
+                                .name(applicationId)
+                                .build())
+                        .collect(Collectors.toList()));
+        //When we run the task
         spaceEnroller.run();
+        //Then it reschedule itself
+        verify(spaceEnroller, times(1)).rescheduleWithDefaultPeriod();
+        //Normally remote app has been bound
+        verify(cloudFoundryApi, times(1))
+                .bindServiceInstance(argThat(anyListOfSize(1)),
+                        anyString());
+
+    }
+
+    @Test
+    public void test_enroller_deletes_itself_when_service_does_not_exist_anymore() {
+        //Given the service attached to tasks does not exist
+        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(null);
+        //When task runs
+        spaceEnroller.run();
+        //Then it removes itself
         verify(clock, times(1)).removeTask(eq(SERVICE_ID));
+        //And does not reschedule
         verify(spaceEnroller, never()).rescheduleWithDefaultPeriod();
+    }
+
+    @Test
+    public void test_enroller_does_not_bind_itself_when_none_is_found_and_reschedule() throws Exception {
+        //Given the service exist
+        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
+        //it will return every ids except local one
+        when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
+                //do not return local app id
+                .filter(remoteApplicationId -> !remoteApplicationId.equals(APP_ID))
+                .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId,
+                        SERVICE_ID))
+                .collect(Collectors.toList()));
+        //And remote applications contain the all applications
+        when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
+                .thenReturn(remoteApplicationIds.stream()
+                        .map(applicationId -> ApplicationIdentity.builder()
+                                .guid(applicationId)
+                                .name(applicationId)
+                                .build())
+                        .collect(Collectors.toList()));
+        //When we run the task
+        spaceEnroller.run();
+        //Then it reschedule itself
+        verify(spaceEnroller, times(1)).rescheduleWithDefaultPeriod();
+        //And it never bind an application
+        verify(cloudFoundryApi, never())
+                .bindServiceInstance(anyListOf(ApplicationIdentity.class), anyString());
+
+    }
+
+    @Test
+    public void test_enroller_reschedule_itself_when_remote_error_occurs_on_binding()
+            throws CloudFoundryException, EntityNotFoundException {
+        //Given the service exist
+        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
+        //And local repository is empty
+        when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
+        //And list of application returns some applications
+        when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
+                .thenReturn(remoteApplicationIds.stream()
+                        .map(applicationId -> ApplicationIdentity.builder()
+                                .guid(applicationId)
+                                .name(applicationId)
+                                .build())
+                        .collect(Collectors.toList()));
+        //And binding will throw an error
+        doThrow(new CloudFoundryException(
+                new EntityNotFoundException(EntityType.service, SERVICE_ID)))
+                .when(cloudFoundryApi)
+                .bindServiceInstance(anyListOf(ApplicationIdentity.class), eq(SERVICE_ID));
+        //When task is run
+        spaceEnroller.run();
+        //Then it rescheduled itself with default period
+        verify(spaceEnroller, times(1)).rescheduleWithDefaultPeriod();
+    }
+
+    @Test
+    public void test_enroller_reschedule_itself_when_remote_error_occurs_on_remote_application_list()
+            throws CloudFoundryException, EntityNotFoundException {
+        //Given the service exist
+        when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
+        //And local repository is empty
+        when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
+        //And list of application will fail
+        when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
+                .thenThrow(new CloudFoundryException(null));
+        //When task is run
+        spaceEnroller.run();
+        //Then it rescheduled itself with default period
+        verify(spaceEnroller, times(1)).rescheduleWithDefaultPeriod();
     }
 
 }

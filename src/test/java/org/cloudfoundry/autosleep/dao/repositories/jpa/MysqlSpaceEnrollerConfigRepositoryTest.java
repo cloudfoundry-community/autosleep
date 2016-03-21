@@ -19,12 +19,12 @@
 
 package org.cloudfoundry.autosleep.dao.repositories.jpa;
 
-import org.cloudfoundry.autosleep.dao.repositories.ServiceRepositoryTest;
+import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepositoryTest;
 import org.springframework.test.annotation.IfProfileValue;
 import org.springframework.test.context.ActiveProfiles;
 
 @IfProfileValue(name = "integration-test", value = "true")
 @ActiveProfiles({"mysql", "mysql-local"})
-public class MysqlSpaceEnrollerConfigRepositoryTest extends ServiceRepositoryTest {
+public class MysqlSpaceEnrollerConfigRepositoryTest extends SpaceEnrollerConfigRepositoryTest {
 
 }

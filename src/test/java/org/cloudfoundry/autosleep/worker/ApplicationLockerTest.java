@@ -73,35 +73,37 @@ public class ApplicationLockerTest {
 
 
     @Test
-    public void testExecuteThreadSafe() throws Exception {
+    public void test_execute_thread_safe_locks_properly() throws Exception {
         Duration duration = Duration.ofMillis(500);
         ArrayList<Integer> someInts = new ArrayList<>();
+        //Given a task that will wait a little before adding its id
         Runnable task1 = spy(new SleepingRun(1, duration.dividedBy(5).toMillis(), someInts));
+        //And another one that will add it immediately
         Runnable task2 = spy(new DryRun(2, someInts));
+        //When we launch the sleeping one before the second one
         applicationLocker.executeThreadSafe("someId", task1);
-        Thread.sleep(duration.dividedBy(10).toMillis());
         applicationLocker.executeThreadSafe("someId", task2);
-        Thread.sleep(duration.toMillis());
+        //Then all tasks are run
         verify(task1, times(1)).run();
         verify(task2, times(1)).run();
+        //And the ids of task have been inserted in the good order
         assertThat(someInts.size(), is(equalTo(2)));
+        //The first one is the first that called the executeThreadSafe even if it slept
         assertThat(someInts.get(0), is(equalTo(1)));
+        //And the second one is the dry one
         assertThat(someInts.get(1), is(equalTo(2)));
     }
 
     @Test
-    public void testRemoveApplication() throws Exception {
+    public void test_remove_applications_succeed() throws Exception {
         Runnable task1 = () -> log.debug("passed");
+        //Given a lock exist
         applicationLocker.executeThreadSafe("someId", task1);
-        //call on existing task does not throw exception
+        //When we call a remove
         applicationLocker.removeApplication("someId");
-        //call again neither
-        applicationLocker.removeApplication("someId");
-        //Call on non existing neither
-        applicationLocker.removeApplication("someOtherId");
-
-
+        //Then no exception is thrown
     }
+
 
 
 }

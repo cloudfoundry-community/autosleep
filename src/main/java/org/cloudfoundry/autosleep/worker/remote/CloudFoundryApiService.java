@@ -40,15 +40,14 @@ public interface CloudFoundryApiService {
 
     List<String/**ids**/> listApplicationRoutes(String applicationUuid) throws CloudFoundryException;
 
-    List<String/**ids**/> listRouteApplications(String routeUuid) throws CloudFoundryException;
-
     List<ApplicationIdentity> listApplications(String spaceUuid, Pattern excludeNames) throws CloudFoundryException;
+
+    List<String/**ids**/> listRouteApplications(String routeUuid) throws CloudFoundryException;
 
     void startApplication(String applicationUuid) throws CloudFoundryException;
 
     void stopApplication(String applicationUuid) throws CloudFoundryException;
 
     void unbind(String bindingId) throws CloudFoundryException;
-
 
 }

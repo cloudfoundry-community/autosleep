@@ -17,23 +17,22 @@
  * limitations under the License.
  */
 
-package org.cloudfoundry.autosleep.worker.remote.model;
+package org.cloudfoundry.autosleep.worker.scheduling;
 
-import lombok.Builder;
-import lombok.Getter;
+import org.cloudfoundry.autosleep.config.Config;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-@Getter
-public class ApplicationIdentity {
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
-    private final String guid;
+@Configuration
+public class SchedulerConfig {
 
-    private final String name;
-
-    @Builder
-    ApplicationIdentity(String guid,
-                        String name) {
-        this.guid = guid;
-        this.name = name;
+    @Bean
+    public ScheduledExecutorService getScheduler() {
+        return Executors.newScheduledThreadPool(Config.NB_THREAD_FOR_TASK);
     }
 
 }
+

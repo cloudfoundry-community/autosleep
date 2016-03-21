@@ -51,8 +51,11 @@ class SpaceEnroller extends AbstractPeriodicTask {
     private DeployedApplicationConfig.Deployment deployment;
 
     @Builder
-    SpaceEnroller(Clock clock, Duration period, String spaceEnrollerConfigId,
-                  CloudFoundryApiService cloudFoundryApi, SpaceEnrollerConfigRepository spaceEnrollerConfigRepository,
+    SpaceEnroller(Clock clock,
+                  Duration period,
+                  String spaceEnrollerConfigId,
+                  CloudFoundryApiService cloudFoundryApi,
+                  SpaceEnrollerConfigRepository spaceEnrollerConfigRepository,
                   ApplicationRepository applicationRepository,
                   DeployedApplicationConfig.Deployment deployment) {
         super(clock, period);
