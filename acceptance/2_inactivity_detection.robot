@@ -2,7 +2,7 @@
 Resource        Keywords.robot
 Documentation   Test if inactivity is detected
 Force Tags      Service broker
-Test Setup      Run Keywords  Clean all service data  Create service broker  Create service instance  Bind application
+Test Setup      Run Keywords  Clean all service data  Check broker is published  Create service instance  Bind application
 Test Teardown   Run Keywords  Clean all service data
 
 *** Test Cases ***

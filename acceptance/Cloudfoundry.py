@@ -30,10 +30,17 @@ class Cloudfoundry(object):
         self.service_broker_auth_password = service_broker_auth_password
         self.instance_name = instance_name
         self.default_create_instance_parameters = default_create_instance_parameters
+
         self.instance_guid = None
         self.binding_guid = None
         self.broker_guid = None
+        for service_broker in self.client.service_broker.list(space_guid=self.space_guid):
+            if service_broker['entity']['name'] == self.service_broker_name \
+                    and service_broker['entity']['broker_url'] == self.service_broker_endpoint:
+                self.broker_guid = service_broker['metadata']['guid']
         self.plan_guid = None
+        self._set_plan_from_broker()
+
 
     def clean_all_service_data(self):
         logging.info('clean_all_service_data - %s - %s - %s', self.space_guid, self.instance_name,
@@ -58,14 +65,6 @@ class Cloudfoundry(object):
                     else:
                         raise
             logging.info('clean_all_service_data - instance deleted')
-        for service_broker in self.client.service_broker.list(space_guid=self.space_guid):
-            if service_broker['entity']['name'] == self.service_broker_name \
-                    and service_broker['entity']['broker_url'] == self.service_broker_endpoint:
-                logging.info('clean_all_service_data broker - %s', service_broker['metadata']['guid'])
-                self.client.service_broker.remove(service_broker['metadata']['guid'])
-                logging.info('clean_all_service_data - broker deleted')
-        self.broker_guid = None
-        self.plan_guid = None
         self.instance_guid = None
         self.binding_guid = None
 
@@ -78,16 +77,11 @@ class Cloudfoundry(object):
                                                                self.service_broker_auth_password, self.space_guid)
             self.broker_guid = service_broker['metadata']['guid']
             logging.info('create_service_broker - broker created')
-            self.plan_guid = None
-            service = self.client.service.get_first(service_broker_guid=service_broker['metadata']['guid'])
-            if service is None:
-                raise AssertionError('No service for service broker %s' % self.service_broker_name)
-            logging.info('create_service_broker - service got')
-            plan = self.client.service_plan.get_first(service_guid=service['metadata']['guid'])
-            if plan is None:
-                raise AssertionError('No plan for service broker %s' % self.service_broker_name)
-            self.plan_guid = plan['metadata']['guid']
-            logging.info('create_service_broker - plan got')
+            self._set_plan_from_broker()
+
+    def check_broker_is_published(self):
+        if self.broker_guid is None:
+            self.create_service_broker()
 
     def delete_service_broker(self):
         if self.broker_guid is None:
@@ -96,6 +90,23 @@ class Cloudfoundry(object):
             self.client.service_broker.remove(self.broker_guid)
             self.broker_guid = None
             self.plan_guid = None
+
+    def check_broker_is_not_published(self):
+        if self.broker_guid is not None:
+            self.delete_service_broker()
+
+    def _set_plan_from_broker(self):
+        if self.broker_guid is None:
+            self.plan_guid = None
+        else:
+            service = self.client.service.get_first(service_broker_guid=self.broker_guid)
+            if service is None:
+                raise AssertionError('No service for service broker %s' % self.service_broker_name)
+            logging.info('_set_plan_from_broker - service got')
+            plan = self.client.service_plan.get_first(service_guid=service['metadata']['guid'])
+            if plan is None:
+                raise AssertionError('No plan for service broker %s' % self.service_broker_name)
+            self.plan_guid = plan['metadata']['guid']
 
     def create_service_instance(self, parameters=None):
         if self.instance_guid is not None:

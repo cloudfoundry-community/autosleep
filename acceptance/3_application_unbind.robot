@@ -15,7 +15,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
     [Documentation]     Check that app are still started ${DEFAULT_INACTIVITY} after their last http activity
 
 	Clean all service data
-	Create service broker
+	Check broker is published
 	Create service instance      ${INSTANCE_PARAMETERS}
 
 	Stop application

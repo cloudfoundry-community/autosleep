@@ -9,6 +9,7 @@ Force Tags      Service broker
 0) Prepare
     [Documentation]     Clean service bindings and instance if exist
     Clean all service data
+    Check broker is not published
 
 1) create service broker
     [Documentation]     Create a service broker
