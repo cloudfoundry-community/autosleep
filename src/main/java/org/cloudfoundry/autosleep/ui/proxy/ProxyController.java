@@ -27,6 +27,7 @@ import org.cloudfoundry.autosleep.dao.model.Binding;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApi;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
+import org.cloudfoundry.autosleep.worker.scheduling.TimeManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
@@ -53,6 +54,9 @@ public class ProxyController {
     @Autowired
     CloudFoundryApi cfApi;
 
+    @Autowired
+    private TimeManager timeManager;
+
     @RequestMapping(value = "/{routeBindingId}")
     @ResponseBody
     public ModelAndView listApplicationsById(@PathVariable("routeBindingId") String bindingId,
@@ -75,13 +79,17 @@ public class ProxyController {
             Set<String> appToStart = new HashSet<>(cfApi.listRouteApplications(routeId));
 
             //launch start for each one
-            for (String appId : appToStart) {
-                cfApi.startApplication(appId);
+            for (Iterator<String> iter = appToStart.iterator(); iter.hasNext(); ) {
+                String appId = iter.next();
+                if (!cfApi.startApplication(appId)) {
+                    log.debug("app {} already started", appId);
+                    iter.remove();
+                }
             }
 
             //wait for them to start
             while (!appToStart.isEmpty()) {
-                Thread.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART.toMillis());
+                timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
                 for (Iterator<String> iter = appToStart.iterator(); iter.hasNext(); ) {
                     String appId = iter.next();
                     if (CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {

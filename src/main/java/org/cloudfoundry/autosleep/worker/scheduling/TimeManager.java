@@ -20,18 +20,26 @@
 package org.cloudfoundry.autosleep.worker.scheduling;
 
 import org.cloudfoundry.autosleep.config.Config;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
-@Configuration
-public class SchedulerConfig {
+@Service
+public class TimeManager {
 
-    @Bean
-    public ScheduledExecutorService getScheduler() {
-        return Executors.newScheduledThreadPool(Config.NB_THREAD_FOR_TASK);
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Config.NB_THREAD_FOR_TASK);
+
+    public ScheduledFuture<?> schedule(Runnable command,
+                                       Duration duration) {
+        return scheduler.schedule(command, duration.toMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    public void sleep(Duration duration) throws InterruptedException {
+        Thread.sleep(duration.toMillis());
     }
 
 }

@@ -21,6 +21,7 @@ package org.cloudfoundry.autosleep.worker;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
+import org.cloudfoundry.autosleep.worker.scheduling.TimeManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -56,7 +57,7 @@ public class ClockTest {
     private Runnable runnable;
 
     @Mock
-    private ScheduledExecutorService scheduler;
+    private TimeManager timeManager;
 
     @Test
     public void test_list_tasks_ids() throws Exception {
@@ -88,6 +89,6 @@ public class ClockTest {
         //When we schedule a task
         clock.scheduleTask(TEST_ID, PERIOD, runnable);
         //It does not run immediately
-        verify(scheduler, times(1)).schedule(eq(runnable), eq(PERIOD.toMillis()), eq(TimeUnit.MILLISECONDS));
+        verify(timeManager, times(1)).schedule(eq(runnable), eq(PERIOD));
     }
 }
