@@ -8,19 +8,24 @@ Download war and associated _manifest.tmpl.yml_ from [latest release] (https://g
 ### Prepare your manifest
 Make a *manifest.yml* file according to the manifest.tmpl.yml template.
 
+Prerequisites:
+* a CC API user with cloudcontroller.read and cloudcontroller.write scopes, and role "SpaceDevelopper" on the enrolleable autosleep spaces
+* (optional) a UAA OAuth client, with cloudcontroller.read and cloudcontroller.write scopes
+
+
 Autosleep service needs properties to work . The properties that are used are:
 
 - __security.user.name__: the basic auth username for the service.
 - __security.user.password__: the basic auth password for the service.
 - __cf.client.target.endpoint__: the api endpoint of the cloudfoundry instance.
 - __cf.client.skip.ssl.validation__: set this property to _true_ if the current cloudfoundry instance use self-signed certificates.
-- __cf.client.username__: the username that will be used in by the autosleep service.
-- __cf.client.password__: the password that will be used in by the autosleep service.
-- __cf.client.clientId__: the client id of the application (optional). If none provided, it will used ```"cf"```.
-- __cf.client.clientSecret__: the client secret of the application (optional). If none provided, it will used ```""```.
+- __cf.client.username__: the username of the pre-requisite CC API user that will be used in by the autosleep service. This user should have org role
+- __cf.client.password__: the CC API password of the pre-requisite CC API user that will be used in by the autosleep service.
+- __cf.client.clientId__: the client id of the application (optional) used to perform CC API calls. If none provided, it will used ```"cf"```.
+- __cf.client.clientSecret__: the client secret of the application (optional) used to perform CC API calls. If none provided, it will used ```""```.
 - __cf.security.password.encodingSecret__: the secret used to hash password (optional). If none provided, it will use ```""```.
-- __cf.service.broker.id__: the service broker id. If none provided, it will use ```"autosleep"```.
-- __cf.service.plan.id__: the service plan id. If none provided, it will use ```"default"```.
+- __cf.service.broker.id__: the service broker id. If none provided, it will use ```"autosleep"```. Must be unique in the CF instance across all brokers.
+- __cf.service.plan.id__: the service plan id. If none provided, it will use ```"default"```. Must be unique in the CF instance across all brokers.
 
 There are two ways of providing these properties to autosleep.
 
@@ -48,9 +53,5 @@ where:
 
 
 ## Publish as a private broker
-Currently cf does not support private service broker creation.But you may use ```cf curl``` command.
-With the same parameters as above:
 
-```cf curl /v2/service_brokers -X POST -d '{"name":"<name>","broker_url":"<url>","auth_username":"<login>","auth_password":"<password>","space_guid":"<space_id>"}'```
-
-where ```space_id``` is the space guid where the application is deployed.
+```cf create-service-broker <name> <login <password> <url> --space-scoped```
