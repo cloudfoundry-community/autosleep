@@ -161,7 +161,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
 
         final Binding binding = bindingRepository.findOne(bindingId);
         if (binding.getResourceType() == Application) {
-            log.debug("app binding{}", binding);
+            log.debug("application unbinding{}", binding);
             final String appId = binding.getResourceId();
 
             SpaceEnrollerConfig serviceInstance = spaceEnrollerConfigRepository.findOne(request.getServiceInstanceId());
@@ -183,8 +183,9 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                                     //we had a proxy route binding for this app, clean it before remove app binding
                                     cfApi.unbind(linkedRouteBinding.getServiceBindingId());
                                 } catch (CloudFoundryException e) {
-                                    throw new ServiceBrokerException("Autosleep was unable to clear related route "
-                                            + "binding.");
+                                    log.error("Autosleep was unable to clear related route binding {}.",
+                                            linkedRouteBinding.getServiceBindingId());
+                                    bindingRepository.delete(linkedRouteBinding.getServiceBindingId());
                                 }
                             });
                 }
@@ -214,7 +215,8 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                 throw new ServiceBrokerException("Couldn't clean related app bindings", e);
             }
 
-        } else {
+        } else  if (binding.getResourceType() == Route) {
+            log.debug("route unbinding{}", binding);
             bindingRepository.delete(bindingId);
         }
     }

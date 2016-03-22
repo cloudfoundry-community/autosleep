@@ -54,9 +54,11 @@ import static java.util.Collections.singletonList;
 import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Application;
 import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Route;
 import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
+import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -250,16 +252,16 @@ public class AutosleepBindingServiceTest {
     }
 
     @Test
-    public void delete_app_binding_should_also_remove_route_binding() throws Exception {
+    public void delete_app_binding_should_also_unbind_route() throws Exception {
         String testId = "testCascadeBindingDeletion";
         String linkedRouteBindingId = testId + "linkedRouteBinding";
 
         //given that a route is mapped in CF, also registered in autosleep
         DeleteServiceInstanceBindingRequest deleteRequest = prepareCascadeDeleteTest(testId, linkedRouteBindingId);
 
-        //given that a route is mapped to this application in CF
+        //and that a route is mapped to this application in CF
         when(cfApi.listApplicationRoutes(APP_UID)).thenReturn(singletonList(ROUTE_UID));
-        //given that a route binding is also registered in autosleep
+        //and that a route binding is also registered in autosleep
         when(bindingRepository.findByResourceIdAndType(singletonList(ROUTE_UID), Route))
                 .thenReturn(singletonList(
                         BeanGenerator.createRouteBinding(linkedRouteBindingId, testId, ROUTE_UID)));
@@ -267,32 +269,41 @@ public class AutosleepBindingServiceTest {
         //when unbinding the app
         bindingService.deleteServiceInstanceBinding(deleteRequest);
 
-        //then app binding should be cleared from database, and CF API should be called to unbind route
+        //then app binding should be cleared from database
         verify(appRepo, times(1)).delete(applicationInfo.getUuid());
+        //and CF API should be called to unbind route
         verify(cfApi, times(1)).unbind(linkedRouteBindingId);
 
     }
 
     @Test
-    public void delete_app_binding_cascade_deletion_should_scream_if_cf_api_fails() throws Exception {
+    public void delete_app_binding_should_also_remove_route_binding_when_remote_unbind_fail() throws Exception {
         String testId = "testCascadeBindingDeletion";
+        String linkedRouteBindingId = testId + "linkedRouteBinding";
 
         //given that a route is mapped in CF, also registered in autosleep
-        DeleteServiceInstanceBindingRequest deleteRequest = prepareCascadeDeleteTest(testId);
-        //given that cf is off
-        Mockito.doThrow(
-                new CloudFoundryException(new Throwable("TestException"))
-        ).when(cfApi).unbind(anyString());
+        DeleteServiceInstanceBindingRequest deleteRequest = prepareCascadeDeleteTest(testId, linkedRouteBindingId);
 
+        //and that a route is mapped to this application in CF
+        when(cfApi.listApplicationRoutes(APP_UID)).thenReturn(singletonList(ROUTE_UID));
+        //and that a route binding is also registered in autosleep
+        when(bindingRepository.findByResourceIdAndType(singletonList(ROUTE_UID), Route))
+                .thenReturn(singletonList(
+                        BeanGenerator.createRouteBinding(linkedRouteBindingId, testId, ROUTE_UID)));
+        //and for some reason cloudfoundry api will refuse route unbinding
+        doThrow(new CloudFoundryException(new Throwable("TestException"))).when(cfApi).unbind(anyString());
         //when unbinding the app
+        bindingService.deleteServiceInstanceBinding(deleteRequest);
 
-        //then en exception is raised, and nothing is deleted
-        verifyThrown(() -> bindingService.deleteServiceInstanceBinding(deleteRequest), ServiceBrokerException.class);
-        verify(bindingRepository, never()).delete(testId);
+        //then app binding should be cleared from database, and CF API should be called to unbind route
+        verify(appRepo, times(1)).delete(applicationInfo.getUuid());
+        verify(bindingRepository, times(1)).delete(linkedRouteBindingId);
+        verify(cfApi, times(1)).unbind(linkedRouteBindingId);
+
     }
 
     @Test
-    public void delete_app_binding_should_scream_if_unable_to_clear_route_bindings() throws Exception {
+    public void delete_app_binding_should_scream_if_unable_to_list_route_bindings() throws Exception {
         String testId = "testCascadeBindingDeletion";
 
         //given that a route is mapped in CF, also registered in autosleep
