@@ -19,13 +19,13 @@ Autosleep service needs properties to work . The properties that are used are:
 - __security.user.password__: the basic auth password for the service.
 - __cf.client.target.endpoint__: the api endpoint of the cloudfoundry instance.
 - __cf.client.skip.ssl.validation__: set this property to _true_ if the current cloudfoundry instance use self-signed certificates.
-- __cf.client.username__: the username of a pre-requite CC API user that will be used in by the autosleep service. This user should have org role
-- __cf.client.password__: the CC API password that will be used in by the autosleep service.
-- __cf.client.clientId__: the client id of the application (optional). If none provided, it will used ```"cf"```.
-- __cf.client.clientSecret__: the client secret of the application (optional). If none provided, it will used ```""```.
+- __cf.client.username__: the username of the pre-requisite CC API user that will be used in by the autosleep service. This user should have org role
+- __cf.client.password__: the CC API password of the pre-requisite CC API user that will be used in by the autosleep service.
+- __cf.client.clientId__: the client id of the application (optional) used to perform CC API calls. If none provided, it will used ```"cf"```.
+- __cf.client.clientSecret__: the client secret of the application (optional) used to perform CC API calls. If none provided, it will used ```""```.
 - __cf.security.password.encodingSecret__: the secret used to hash password (optional). If none provided, it will use ```""```.
-- __cf.service.broker.id__: the service broker id. If none provided, it will use ```"autosleep"```.
-- __cf.service.plan.id__: the service plan id. If none provided, it will use ```"default"```.
+- __cf.service.broker.id__: the service broker id. If none provided, it will use ```"autosleep"```. Must be unique in the CF instance across all brokers.
+- __cf.service.plan.id__: the service plan id. If none provided, it will use ```"default"```. Must be unique in the CF instance across all brokers.
 
 There are two ways of providing these properties to autosleep.
 
