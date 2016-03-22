@@ -102,11 +102,15 @@ public interface Config {
 
         String SECRET = "secret";
 
+        String IGNORE_ROUTE_SERVICE_ERROR = "autosleep-despite-route-services-error";
+
     }
 
     Duration CF_API_TIMEOUT = Duration.ofSeconds(8);
 
     Duration DEFAULT_INACTIVITY_PERIOD = Duration.ofDays(1);
+
+    Boolean DEFAULT_IGNORE_SERVICE_ERROR = Boolean.FALSE;
 
     Duration DELAY_BEFORE_FIRST_SERVICE_CHECK = Duration.ofSeconds(10);
 

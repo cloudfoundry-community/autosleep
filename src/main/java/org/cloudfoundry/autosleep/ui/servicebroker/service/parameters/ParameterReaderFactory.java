@@ -21,6 +21,7 @@ package org.cloudfoundry.autosleep.ui.servicebroker.service.parameters;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.InvalidParameterException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -137,6 +138,36 @@ public class ParameterReaderFactory {
                 }
             }
 
+        };
+    }
+
+    @Bean(name = ServiceInstanceParameters.IGNORE_ROUTE_SERVICE_ERROR)
+    public ParameterReader<Boolean> buildIgnoreRouteServiceErrorReader() {
+        return new ParameterReader<Boolean>() {
+
+            @Override
+            public String getParameterName() {
+                return Config.ServiceInstanceParameters.IGNORE_ROUTE_SERVICE_ERROR;
+            }
+
+            @Override
+            public Boolean readParameter(Object parameter, boolean withDefault)
+                    throws InvalidParameterException {
+                if (parameter != null) {
+                    String ignoreRouteError = ((String) parameter).toLowerCase();
+                    log.debug("ignoreRouteServiceError " + ignoreRouteError);
+                    if (parameter.equals(Boolean.TRUE.toString().toLowerCase())) {
+                        return Boolean.TRUE;
+                    } else if (parameter.equals(Boolean.FALSE.toString().toLowerCase())) {
+                        return Boolean.FALSE;
+                    } else {
+                        throw new InvalidParameterException(Config.ServiceInstanceParameters.IGNORE_ROUTE_SERVICE_ERROR,
+                                "bad parameter value. Must be a boolean value.");
+                    }
+                } else {
+                    return Config.DEFAULT_IGNORE_SERVICE_ERROR;
+                }
+            }
         };
     }
 

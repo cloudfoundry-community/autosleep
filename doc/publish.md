@@ -4,11 +4,12 @@ How to make autosleep service broker available in your market place.
 ## Deploy autosleep application
 This is how to deploy autosleep application in cloudfoundry. If you wish to run it elsewhere you're on your own.
 ### Retrieve war
-Download war and associated _manifest.tmpl.yml_ from [latest release] (https://github.com/Orange-OpenSource/autosleep/releases/), or [build it yourself] (build.md).
+Download war and associated _manifest.tmpl.yml_ from [latest release](https://github.com/Orange-OpenSource/autosleep/releases/), or [build it yourself](build.md).
 ### Prepare your manifest
 Make a *manifest.yml* file according to the manifest.tmpl.yml template.
 
 Prerequisites:
+
 * a CC API user with cloudcontroller.read and cloudcontroller.write scopes, and role "SpaceDevelopper" on the enrolleable autosleep spaces
 * (optional) a UAA OAuth client, with cloudcontroller.read and cloudcontroller.write scopes
 
@@ -30,12 +31,12 @@ Autosleep service needs properties to work . The properties that are used are:
 There are two ways of providing these properties to autosleep.
 
 1. In _manifest.yml_: by giving these informations in the _manifest.yml_, in the _JAVA_OPTS_ section.
-2. By providing them with the command ```cf  set-env <application name> <property name>  <property value>```. Keep in mind that dot characters are forbidden by cloudfoundry and must be replaced by underscores. For example, you may provide the username like this ```cf  set-env my-autosleep-service cf_client_username  bobby```
+2. By providing them with the command `cf  set-env <application name> <property name>  <property value>`. Keep in mind that dot characters are forbidden by cloudfoundry and must be replaced by underscores. For example, you may provide the username like this `cf  set-env my-autosleep-service cf_client_username  bobby`
 
 ### Deploy your app
-```
+`
 cf push -f manifest.yml -p org.cloudfoundry.autosleep.war 
-```    
+`    
 
 
 ## Publish on the market place
@@ -43,15 +44,15 @@ Check that the autosleep application is running and retrieve its url (`cf app au
 
 Then run the following command:
 
-```cf create-service-broker <name> <login <password> <url>```
+`cf create-service-broker <name> <login <password> <url>`
 
 where:
 
-- ```login``` and ```password``` are the values you provided in the _manifest.yml_ file for environment properties ___security.user.name___ and ___security.user.password___.
-- ```name``` the name of the service as it will appear in the marketplace.
-- ```url```: the URL of your servicde broker.
+- `login` and `password` are the values you provided in the _manifest.yml_ file for environment properties ___security.user.name___ and ___security.user.password___.
+- `name` the name of the service as it will appear in the marketplace.
+- `url`: the URL of your servicde broker.
 
 
 ## Publish as a private broker
 
-```cf create-service-broker <name> <login <password> <url> --space-scoped```
+`cf create-service-broker <name> <login <password> <url> --space-scoped`

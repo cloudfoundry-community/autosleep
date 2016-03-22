@@ -9,14 +9,14 @@ The project relies on the Lombok code generation. Install the corresponding plug
 
 Retrieve the sources, and execute the following command in the root directory of the project:
 
-```
+`
 ./gradlew build
-```
+`
 or 
 
-```
+`
 ./gradlew.bat build
-```
+`
 
 according to your environment.
 

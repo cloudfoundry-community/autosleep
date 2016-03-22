@@ -34,6 +34,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class ParameterReaderFactoryTest {
 
@@ -224,6 +225,63 @@ public class ParameterReaderFactoryTest {
         Duration withoutDefault = idleDurationReader.readParameter(null, false);
         //Then it returns null
         assertThat(withoutDefault, is(nullValue()));
+    }
+
+    @Test
+    public void test_ignore_route_error_fails_to_read_bad_syntax() {
+        //Given the parameter reader for ignore route error
+        ParameterReader<Boolean> ignoreRouteServiceErrorReader = factory.buildIgnoreRouteServiceErrorReader();
+        //When we submit a bad syntax
+        //Then it fails
+        verifyThrown(() -> ignoreRouteServiceErrorReader
+                        .readParameter("toto",
+                                true),
+                InvalidParameterException.class,
+                parameterChecked ->
+                        assertThat(parameterChecked.getParameterName(),
+                                is(equalTo(ServiceInstanceParameters.IGNORE_ROUTE_SERVICE_ERROR))));
+    }
+
+    @Test
+    public void test_ignore_route_error_handle_right_parameter() {
+        //Given the parameter reader for ignore route error
+        ParameterReader<Boolean> ignoreRouteServiceErrorReader = factory.buildIgnoreRouteServiceErrorReader();
+        //When we ask the parameter
+        String parameter = ignoreRouteServiceErrorReader.getParameterName();
+        //Then we obtain the auto enrollment parameter
+        assertThat(parameter, is(equalTo(ServiceInstanceParameters.IGNORE_ROUTE_SERVICE_ERROR)));
+    }
+
+    @Test
+    public void test_ignore_route_error_read_parameter() {
+        //Given the parameter reader for ignore route error
+        ParameterReader<Boolean> ignoreRouteServiceErrorReader = factory.buildIgnoreRouteServiceErrorReader();
+        //When we read a bad syntax
+        Boolean ignoreRouteError = ignoreRouteServiceErrorReader.readParameter(Boolean.TRUE.toString(), true);
+        //Then we obtained the value submitted
+        assertTrue(ignoreRouteError);
+    }
+
+    @Test
+    public void test_ignore_route_error_returns_default_when_null_submitted_with_default() {
+        //Given the parameter reader for ignore route error
+        ParameterReader<Boolean> ignoreRouteServiceErrorReader = factory.buildIgnoreRouteServiceErrorReader();
+        //When we ask to read null with default
+        Boolean withDefault = ignoreRouteServiceErrorReader.readParameter(null, true);
+        //Then it returns default
+        assertThat(withDefault, is(equalTo(Config.DEFAULT_IGNORE_SERVICE_ERROR)));
+    }
+
+    //
+
+    @Test
+    public void test_ignore_route_error_returns_default_when_null_submitted_without_default() {
+        //Given the parameter reader for ignore route error
+        ParameterReader<Boolean> ignoreRouteServiceErrorReader = factory.buildIgnoreRouteServiceErrorReader();
+        //When we ask to read null with default
+        Boolean withoutDefault = ignoreRouteServiceErrorReader.readParameter(null, false);
+        //Then it returns default
+        assertThat(withoutDefault, is(equalTo(Config.DEFAULT_IGNORE_SERVICE_ERROR)));
     }
 
     @Test

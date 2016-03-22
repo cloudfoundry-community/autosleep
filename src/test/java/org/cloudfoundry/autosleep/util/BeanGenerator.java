@@ -79,10 +79,10 @@ public class BeanGenerator {
         ApplicationInfo applicationInfo = ApplicationInfo.builder()
                 .uuid(appUuid)
                 .build();
-        applicationInfo.updateDiagnosticInfo(state,
-                createAppLog(lastLogDate),
+        applicationInfo.updateDiagnosticInfo(createAppLog(lastLogDate),
                 createCloudEvent(lastEventDate),
-                name);
+                name,
+                state);
         return applicationInfo;
     }
 

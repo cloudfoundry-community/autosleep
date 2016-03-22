@@ -21,3 +21,4 @@ coverage-error.log
 acceptance/acceptance.cfg
 
 dump.rdb
+acceptance/sandbox.robot
