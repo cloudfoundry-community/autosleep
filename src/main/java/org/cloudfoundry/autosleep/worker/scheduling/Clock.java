@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 public class Clock {
 
     @Autowired
-    private ScheduledExecutorService scheduler;
+    private TimeManager timeManager;
 
     private final Map<String/*taskId*/, ScheduledFuture<?>> tasks = new HashMap<>();
 
@@ -70,7 +70,7 @@ public class Clock {
      */
     public void scheduleTask(String id, Duration duration, Runnable action) {
         log.debug("scheduleTask - task {}", id);
-        ScheduledFuture<?> handle = scheduler.schedule(action, duration.toMillis(), TimeUnit.MILLISECONDS);
+        ScheduledFuture<?> handle = timeManager.schedule(action, duration);
         tasks.put(id, handle);
     }
 

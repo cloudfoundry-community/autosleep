@@ -168,7 +168,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 .build();
     }
 
-    private void changeApplicationState(String applicationUuid, String targetState) throws CloudFoundryException {
+    private boolean changeApplicationState(String applicationUuid, String targetState) throws CloudFoundryException {
         log.debug("changeApplicationState to {}", targetState);
         try {
             if (!targetState.equals(getApplicationState(applicationUuid))) {
@@ -179,8 +179,10 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                                         .state(targetState)
                                         .build())
                         .get(Config.CF_API_TIMEOUT);
+                return true;
             } else {
                 log.warn("application {} already in state {}, nothing to do", applicationUuid, targetState);
+                return false;
             }
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
@@ -262,9 +264,9 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                                     .guid(appUid)
                                     .name(app.getName())
                                     .build())
-                            .state(app.getState())
                             .lastEvent(buildAppEvent(lastEventReference.get()))
                             .lastLog(buildAppLog(lastLogReference.get()))
+                            .state(app.getState())
                             .build();
                 }
         } catch (InterruptedException e) {
@@ -358,15 +360,15 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     }
 
     @Override
-    public void startApplication(String applicationUuid) throws CloudFoundryException {
+    public boolean startApplication(String applicationUuid) throws CloudFoundryException {
         log.debug("startApplication");
-        changeApplicationState(applicationUuid, CloudFoundryAppState.STARTED);
+        return changeApplicationState(applicationUuid, CloudFoundryAppState.STARTED);
     }
 
     @Override
-    public void stopApplication(String applicationUuid) throws CloudFoundryException {
+    public boolean stopApplication(String applicationUuid) throws CloudFoundryException {
         log.debug("stopApplication");
-        changeApplicationState(applicationUuid, CloudFoundryAppState.STOPPED);
+        return changeApplicationState(applicationUuid, CloudFoundryAppState.STOPPED);
     }
 
     @Override
