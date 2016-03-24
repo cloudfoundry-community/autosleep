@@ -90,7 +90,7 @@ public class WorkerManager implements WorkerManagerService {
                 .bindingId(appBindingId)
                 .clock(clock)
                 .cloudFoundryApi(cloudFoundryApi)
-                .ignoreRouteBindingError(config.getIgnoreRouteServiceError())
+                .ignoreRouteBindingError(config.isIgnoreRouteServiceError())
                 .period(interval)
                 .spaceEnrollerConfigId(config.getId())
                 .build();

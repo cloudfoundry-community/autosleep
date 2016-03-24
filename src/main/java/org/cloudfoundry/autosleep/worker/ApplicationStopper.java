@@ -62,7 +62,7 @@ class ApplicationStopper extends AbstractPeriodicTask {
                        CloudFoundryApiService cloudFoundryApi,
                        ApplicationRepository applicationRepository,
                        ApplicationLocker applicationLocker,
-                       Boolean ignoreRouteBindingError) {
+                       boolean ignoreRouteBindingError) {
         super(clock, period);
         this.appUid = appUid;
         this.spaceEnrollerConfigId = spaceEnrollerConfigId;

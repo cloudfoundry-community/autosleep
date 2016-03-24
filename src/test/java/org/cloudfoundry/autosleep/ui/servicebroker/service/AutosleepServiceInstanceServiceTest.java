@@ -277,7 +277,7 @@ public class AutosleepServiceInstanceServiceTest {
         //and default values are applied
         assertFalse(serviceInstance.isForcedAutoEnrollment());
         assertThat(serviceInstance.getIdleDuration(), is(equalTo(Config.DEFAULT_INACTIVITY_PERIOD)));
-        assertThat(serviceInstance.getIgnoreRouteServiceError(), is(equalTo(Boolean.FALSE)));
+        assertThat(serviceInstance.isIgnoreRouteServiceError(), is(equalTo(Boolean.FALSE)));
         assertThat(serviceInstance.getSecret(), is(nullValue()));
         assertThat(serviceInstance.getExcludeFromAutoEnrollment(), is(nullValue()));
     }
@@ -365,7 +365,7 @@ public class AutosleepServiceInstanceServiceTest {
         //then  service is saved with good exclusion
         assertThat(serviceInstances.size(), is(equalTo(1)));
         SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
-        assertThat(serviceInstance.getIgnoreRouteServiceError(), is(equalTo(Boolean.TRUE)));
+        assertThat(serviceInstance.isIgnoreRouteServiceError(), is(equalTo(Boolean.TRUE)));
     }
 
     @Test
