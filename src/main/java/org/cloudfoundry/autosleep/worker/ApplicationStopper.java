@@ -49,6 +49,8 @@ class ApplicationStopper extends AbstractPeriodicTask {
 
     private final CloudFoundryApiService cloudFoundryApi;
 
+    private final Boolean ignoreRouteBindingError;
+
     private final String spaceEnrollerConfigId;
 
     @Builder
@@ -59,7 +61,8 @@ class ApplicationStopper extends AbstractPeriodicTask {
                        String bindingId,
                        CloudFoundryApiService cloudFoundryApi,
                        ApplicationRepository applicationRepository,
-                       ApplicationLocker applicationLocker) {
+                       ApplicationLocker applicationLocker,
+                       boolean ignoreRouteBindingError) {
         super(clock, period);
         this.appUid = appUid;
         this.spaceEnrollerConfigId = spaceEnrollerConfigId;
@@ -67,6 +70,7 @@ class ApplicationStopper extends AbstractPeriodicTask {
         this.cloudFoundryApi = cloudFoundryApi;
         this.applicationRepository = applicationRepository;
         this.applicationLocker = applicationLocker;
+        this.ignoreRouteBindingError = ignoreRouteBindingError;
     }
 
     private Duration checkActiveApplication(ApplicationInfo applicationInfo, ApplicationActivity applicationActivity)
@@ -110,10 +114,11 @@ class ApplicationStopper extends AbstractPeriodicTask {
             ApplicationActivity applicationActivity = cloudFoundryApi.getApplicationActivity(appUid);
             log.debug("Checking on app {} state", appUid);
 
-            applicationInfo.updateDiagnosticInfo(applicationActivity.getState(),
+            applicationInfo.updateDiagnosticInfo(
                     applicationActivity.getLastLog(),
                     applicationActivity.getLastEvent(),
-                    applicationActivity.getApplication().getName());
+                    applicationActivity.getApplication().getName(),
+                    applicationActivity.getState());
             if (CloudFoundryAppState.STOPPED.equals(applicationActivity.getState())) {
                 log.debug("App already stopped.");
             } else {
@@ -146,15 +151,21 @@ class ApplicationStopper extends AbstractPeriodicTask {
         log.info("Stopping app [{} / {}], last event: {}, last log: {}",
                 applicationActivity.getApplication().getName(), appUid,
                 applicationActivity.getLastEvent(), applicationActivity.getLastLog());
-
         //TODO add temporary state? so that service broker knows we are calling?
         //retrieve all routes for this app
         List<String> routeIds = cloudFoundryApi.listApplicationRoutes(appUid);
-
-        for (String routeId : routeIds) {
-            log.debug("Adding route binding between {} and {} before stopping {}",
-                    spaceEnrollerConfigId, routeId, appUid);
-            cloudFoundryApi.bindServiceToRoute(spaceEnrollerConfigId, routeId);
+        try {
+            for (String routeId : routeIds) {
+                log.debug("Adding route binding between {} and {} before stopping {}",
+                        spaceEnrollerConfigId, routeId, appUid);
+                cloudFoundryApi.bindServiceToRoute(spaceEnrollerConfigId, routeId);
+            }
+        } catch (CloudFoundryException c) {
+            if (this.ignoreRouteBindingError == null || !this.ignoreRouteBindingError) {
+                throw c;
+            } else {
+                log.debug("Skip route binding error or {} on application {}.", spaceEnrollerConfigId, appUid);
+            }
         }
         cloudFoundryApi.stopApplication(appUid);
         applicationInfo.markAsPutToSleep();

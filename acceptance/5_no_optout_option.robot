@@ -13,7 +13,7 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
 *** Test Cases ***
 1) No auto-enrollment without secret
     [Documentation]              Check that we can not create a service with no-optout option without providing a secret
-    ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}   auto-enrollment=forced
+    ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}   auto-enrollment=forced   autosleep-despite-route-services-error=true
     Run Keyword And Expect Error    InvalidStatusCode: 502*Service broker error: \'auto-enrollment\': *     Create service instance  ${parameters}
 
 

@@ -19,15 +19,11 @@
 
 package org.cloudfoundry.autosleep.dao.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonCreator.Mode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -132,7 +128,6 @@ public class ApplicationInfo {
             @JsonDeserialize(using = InstantDeserializer.class)
             @Column(name = "log_time")
             private Instant timestamp;
-
 
             @Builder
             ApplicationLog(String message,
@@ -289,12 +284,14 @@ public class ApplicationInfo {
                 .build();
     }
 
-    public void updateDiagnosticInfo(String state, DiagnosticInfo.ApplicationLog lastLog, DiagnosticInfo
-            .ApplicationEvent lastEvent, String name) {
-        this.diagnosticInfo.appState = state;
+    public void updateDiagnosticInfo(DiagnosticInfo.ApplicationLog lastLog,
+                                     DiagnosticInfo.ApplicationEvent lastEvent,
+                                     String name,
+                                     String state) {
         this.diagnosticInfo.lastLog = lastLog;
         this.diagnosticInfo.lastEvent = lastEvent;
         this.name = name;
+        this.diagnosticInfo.appState = state;
     }
 
 }

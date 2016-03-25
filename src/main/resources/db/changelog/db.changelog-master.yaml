@@ -118,31 +118,22 @@ databaseChangeLog:
             name: spaceId
             type: VARCHAR(255)
 - changeSet:
+#adding column for new feature "ignoreRouteServiceError"
+#remove unwanted index on forcedEnrollment
     id: 2
     author: Arnaud Ruffin
     changes:
-    - createTable:
-        tableName: RouteBinding
+    - addColumn:
+        tableName: SpaceEnrollerConfig
         columns:
         - column:
-            name: bindingId
-            type: VARCHAR(255)
+            name: ignoreRouteServiceError
+            type: BIT(1)
+            defaultValueBoolean: false
             constraints:
-                primaryKey: true
-                nullable: false
-        - column:
-            name: configurationId
-            type: VARCHAR(255)
-        - column:
-            name: routeID
-            type: VARCHAR(255)
-        - column:
-            name: linkedApplicationId
-            type: VARCHAR(255)
-        - column:
-            name: linkedApplicationBindingId
-            type: VARCHAR(255)
-        - column:
-            name: localRoute
-            type: VARCHAR(255)
-
+              nullable: false
+    - dropPrimaryKey:
+        tableName: SpaceEnrollerConfig
+    - addPrimaryKey:
+        tableName: SpaceEnrollerConfig
+        columnNames: id

@@ -34,6 +34,7 @@ public class ApplicationActivity {
 
     private final String state;
 
+
     @Builder
     ApplicationActivity(ApplicationIdentity application,
                         ApplicationInfo.DiagnosticInfo.ApplicationEvent lastEvent,

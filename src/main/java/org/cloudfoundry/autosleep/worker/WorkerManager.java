@@ -84,14 +84,15 @@ public class WorkerManager implements WorkerManagerService {
         log.debug("Initializing a watch on app {}, for an idleDuration of {} ", applicationId,
                 interval.toString());
         ApplicationStopper checker = ApplicationStopper.builder()
-                .clock(clock)
-                .period(interval)
-                .appUid(applicationId)
-                .cloudFoundryApi(cloudFoundryApi)
-                .spaceEnrollerConfigId(config.getId())
-                .bindingId(appBindingId)
-                .applicationRepository(applicationRepository)
                 .applicationLocker(applicationLocker)
+                .applicationRepository(applicationRepository)
+                .appUid(applicationId)
+                .bindingId(appBindingId)
+                .clock(clock)
+                .cloudFoundryApi(cloudFoundryApi)
+                .ignoreRouteBindingError(config.isIgnoreRouteServiceError())
+                .period(interval)
+                .spaceEnrollerConfigId(config.getId())
                 .build();
         checker.startNow();
     }

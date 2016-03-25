@@ -15,7 +15,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
     Clean all service data
     Check broker is published
 	${regex}					Catenate   SEPARATOR=      ^(?:(?!    ${TESTED_APP_NAME}   ).)*$
-    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${regex}
+    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${regex}	autosleep-despite-route-services-error=true
     Create service instance      ${parameters}
     Wait Until Keyword Succeeds     ${INACTIVITY_IN_S}s  3s  Should be bound
 
@@ -24,7 +24,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
     [Documentation]        Check that no application is bound by the service instance
     Clean all service data
     Check broker is published
-    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}
+    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}	autosleep-despite-route-services-error=true
     Create service instance      ${parameters}
     ${halfPeriod}=      Evaluate  ${INACTIVITY_IN_S}/2
     Sleep                    ${halfPeriod}

@@ -21,6 +21,7 @@ package org.cloudfoundry.autosleep.ui.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
@@ -83,6 +84,10 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
     private ParameterReader<Duration> idleDurationReader;
 
     @Autowired
+    @Qualifier(ServiceInstanceParameters.IGNORE_ROUTE_SERVICE_ERROR)
+    private ParameterReader<Boolean> ignoreRouteServiceErrorReader;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -129,6 +134,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             Duration idleDuration = consumeParameter(createParameters, true, idleDurationReader);
             Pattern excludeFromAutoEnrollment = consumeParameter(createParameters, true,
                     excludeFromAutoEnrollmentReader);
+            Boolean ignoreRouteServiceError = consumeParameter(createParameters, true, ignoreRouteServiceErrorReader);
 
             if (!createParameters.isEmpty()) {
                 String parameterNames = String.join(", ", createParameters.keySet().iterator().next());
@@ -145,6 +151,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                     .organizationId(request.getOrganizationGuid())
                     .spaceId(request.getSpaceGuid())
                     .idleDuration(idleDuration)
+                    .ignoreRouteServiceError(ignoreRouteServiceError)
                     .excludeFromAutoEnrollment(excludeFromAutoEnrollment)
                     .forcedAutoEnrollment(autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced)
                     .secret(secret != null ? passwordEncoder.encode(secret) : null)

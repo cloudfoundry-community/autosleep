@@ -36,13 +36,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -55,10 +53,11 @@ public abstract class ApplicationRepositoryTest extends CrudRepositoryTest<Appli
     @Override
     protected ApplicationInfo build(String id) {
         ApplicationInfo result = BeanGenerator.createAppInfoLinkedToService(id, "APTestServiceId");
-        result.updateDiagnosticInfo(CloudFoundryAppState.STARTED,
+        result.updateDiagnosticInfo(
                 BeanGenerator.createAppLog(),
                 BeanGenerator.createCloudEvent(),
-                "appName");
+                "appName",
+                CloudFoundryAppState.STARTED);
         result.getEnrollmentState().addEnrollmentState("serviceId");
         return result;
     }

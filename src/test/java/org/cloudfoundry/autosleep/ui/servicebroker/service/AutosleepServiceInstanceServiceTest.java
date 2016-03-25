@@ -21,6 +21,7 @@ package org.cloudfoundry.autosleep.ui.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
@@ -99,8 +100,9 @@ public class AutosleepServiceInstanceServiceTest {
     @Mock
     private ApplicationRepository applicationRepository;
 
-    private DeleteServiceInstanceRequest deleteRequest;
     private CreateServiceInstanceRequest createRequest;
+
+    private DeleteServiceInstanceRequest deleteRequest;
 
     @Mock
     private DeployedApplicationConfig.Deployment deployment;
@@ -126,6 +128,11 @@ public class AutosleepServiceInstanceServiceTest {
     @Qualifier(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT)
     private ParameterReader<Pattern> excludeFromAutoEnrollmentReader
             = parameterReaderFactory.buildExcludeFromAutoEnrollmentReader();
+
+    @Spy
+    @Qualifier(ServiceInstanceParameters.IGNORE_ROUTE_SERVICE_ERROR)
+    private ParameterReader<Boolean> ignoreRouteServiceErrorReader
+            = parameterReaderFactory.buildIgnoreRouteServiceErrorReader();
 
     private String passwordEncoded = "passwordEncoded";
 
@@ -164,23 +171,6 @@ public class AutosleepServiceInstanceServiceTest {
                 .withServiceInstanceId(SERVICE_INSTANCE_ID);
     }
 
-    @Test
-    public void arbitrary_duration_is_stored() throws Exception {
-        //given the service does not exist
-        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
-
-        //when user submit only the duration
-        Map<String, Object> params = singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PT10H");
-        CreateServiceInstanceRequest createRequest = getCreateRequestWithArbitraryParams(params);
-        instanceService.createServiceInstance(createRequest);
-
-        //then  service is saved with good duration
-        verify(spaceEnrollerConfigRepository, times(1)).save(any(SpaceEnrollerConfig.class));
-        assertThat(serviceInstances.size(), is(equalTo(1)));
-        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
-        assertThat(serviceInstance.getIdleDuration(), is(equalTo(Duration.ofHours(10))));
-    }
-
     @Before
     public void initService() {
         serviceInstances.clear();
@@ -199,7 +189,7 @@ public class AutosleepServiceInstanceServiceTest {
         createRequest = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
                 ORG_TEST, SPACE_TEST, null, false);
         createRequest.withServiceInstanceId(SERVICE_INSTANCE_ID);
-     
+
         when(environment.getProperty(Config.EnvKey.SECURITY_PASSWORD)).thenReturn(superPassword);
 
     }
@@ -220,8 +210,6 @@ public class AutosleepServiceInstanceServiceTest {
         result.put(key, value);
         return result;
     }
-
-
 
     @Test
     public void test_applications_are_cleaned_when_service_deleted() throws Exception {
@@ -251,6 +239,23 @@ public class AutosleepServiceInstanceServiceTest {
     }
 
     @Test
+    public void test_arbitrary_duration_is_stored() throws Exception {
+        //given the service does not exist
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+
+        //when user submit only the duration
+        Map<String, Object> params = singletonMap(Config.ServiceInstanceParameters.IDLE_DURATION, "PT10H");
+        CreateServiceInstanceRequest createRequest = getCreateRequestWithArbitraryParams(params);
+        instanceService.createServiceInstance(createRequest);
+
+        //then  service is saved with good duration
+        verify(spaceEnrollerConfigRepository, times(1)).save(any(SpaceEnrollerConfig.class));
+        assertThat(serviceInstances.size(), is(equalTo(1)));
+        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
+        assertThat(serviceInstance.getIdleDuration(), is(equalTo(Duration.ofHours(10))));
+    }
+
+    @Test
     public void test_creation_with_default() throws Exception {
         //given the service does not exist
         when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
@@ -272,6 +277,7 @@ public class AutosleepServiceInstanceServiceTest {
         //and default values are applied
         assertFalse(serviceInstance.isForcedAutoEnrollment());
         assertThat(serviceInstance.getIdleDuration(), is(equalTo(Config.DEFAULT_INACTIVITY_PERIOD)));
+        assertThat(serviceInstance.isIgnoreRouteServiceError(), is(equalTo(Boolean.FALSE)));
         assertThat(serviceInstance.getSecret(), is(nullValue()));
         assertThat(serviceInstance.getExcludeFromAutoEnrollment(), is(nullValue()));
     }
@@ -343,6 +349,23 @@ public class AutosleepServiceInstanceServiceTest {
         assertThat(serviceInstances.size(), is(equalTo(1)));
         SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
         assertTrue(serviceInstance.isForcedAutoEnrollment());
+    }
+
+    @Test
+    public void test_ignore_route_error_is_well_read() throws Exception {
+        //given the service does not exist
+        when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
+
+        //when user submit only the exclusion
+        Map<String, Object> params = singletonMap(
+                ServiceInstanceParameters.IGNORE_ROUTE_SERVICE_ERROR, Boolean.TRUE.toString());
+        CreateServiceInstanceRequest createRequest = getCreateRequestWithArbitraryParams(params);
+        instanceService.createServiceInstance(createRequest);
+
+        //then  service is saved with good exclusion
+        assertThat(serviceInstances.size(), is(equalTo(1)));
+        SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
+        assertThat(serviceInstance.isIgnoreRouteServiceError(), is(equalTo(Boolean.TRUE)));
     }
 
     @Test

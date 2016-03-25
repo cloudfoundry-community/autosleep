@@ -68,6 +68,9 @@ public class SpaceEnrollerConfig {
     private Duration idleDuration;
 
     @JsonProperty
+    private boolean ignoreRouteServiceError;
+
+    @JsonProperty
     private String organizationId;
 
     @JsonProperty

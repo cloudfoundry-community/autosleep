@@ -7,7 +7,7 @@ Test Teardown   Run Keywords  Clean all service data
 *** Variables ***
 ${INACTIVITY_IN_S}  30
 ${INACTIVITY}  PT${INACTIVITY_IN_S}S
-&{INSTANCE_PARAMETERS}		idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}
+&{INSTANCE_PARAMETERS}		idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}	autosleep-despite-route-services-error=true
 
 *** Test Cases ***
 

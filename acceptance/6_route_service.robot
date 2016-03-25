@@ -3,6 +3,8 @@ Resource        Keywords.robot
 Documentation   Test the route service feature
 Force Tags      Route service
 
+#TODO remove all "autosleep-despite-route-services-error=true" from the other test once route binding available
+
 
 *** Test Cases ***
 Auto-Stopped app should be bound to a route service
