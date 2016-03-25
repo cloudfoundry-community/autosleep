@@ -155,11 +155,7 @@ class ApplicationStopper extends AbstractPeriodicTask {
         //retrieve all routes for this app
         List<String> routeIds = cloudFoundryApi.listApplicationRoutes(appUid);
         try {
-            for (String routeId : routeIds) {
-                log.debug("Adding route binding between {} and {} before stopping {}",
-                        spaceEnrollerConfigId, routeId, appUid);
-                cloudFoundryApi.bindServiceToRoute(spaceEnrollerConfigId, routeId);
-            }
+            cloudFoundryApi.bindRoutes(spaceEnrollerConfigId, routeIds);
         } catch (CloudFoundryException c) {
             if (this.ignoreRouteBindingError == null || !this.ignoreRouteBindingError) {
                 throw c;

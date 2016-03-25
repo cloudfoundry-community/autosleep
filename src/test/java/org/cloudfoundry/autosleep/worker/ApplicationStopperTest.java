@@ -187,13 +187,15 @@ public class ApplicationStopperTest {
     @Test
     public void test_application_is_stopped_when_bind_route_fails_and_ignore_route_error() throws Exception {
         //given the application is started but not active and does skip route error
+        List<String> applicationsRoutes = Arrays.asList("route_1", "route_2");
         when(applicationActivity.getState()).thenReturn(CloudFoundryAppState.STARTED);
         when(applicationActivity.getLastEvent()).thenReturn(BeanGenerator.createCloudEvent(Instant.now().minus(
                 INTERVAL.multipliedBy(2))));
         when(applicationActivity.getLastLog()).thenReturn(BeanGenerator.createAppLog(Instant.now()
                 .minus(INTERVAL.multipliedBy(2))));
+        when(cloudFoundryApi.listApplicationRoutes(APP_UID)).thenReturn(applicationsRoutes);
         doThrow(new CloudFoundryException(new Exception("test")))
-                .when(cloudFoundryApi).bindServiceToRoute(eq(INSTANCE_ID), anyString());
+                .when(cloudFoundryApi).bindRoutes(INSTANCE_ID, applicationsRoutes);
 
         //when task is run
         applicationStopper.run();
@@ -225,9 +227,8 @@ public class ApplicationStopperTest {
         //and it list routes
         verify(cloudFoundryApi, times(1)).listApplicationRoutes(APP_UID);
         //and on each routes it binds the service to ir
-        for (String routeId : applicationsRoutes) {
-            verify(cloudFoundryApi, times(1)).bindServiceToRoute(INSTANCE_ID, routeId);
-        }
+        verify(cloudFoundryApi, times(1)).bindRoutes(INSTANCE_ID, applicationsRoutes);
+
         //and it did stop the application
         verify(cloudFoundryApi, times(1)).stopApplication(APP_UID);
         verify(applicationInfo, times(1)).markAsPutToSleep();
