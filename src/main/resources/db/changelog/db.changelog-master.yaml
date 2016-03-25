@@ -118,6 +118,8 @@ databaseChangeLog:
             name: spaceId
             type: VARCHAR(255)
 - changeSet:
+#adding column for new feature "ignoreRouteServiceError"
+#remove unwanted index on forcedEnrollment
     id: 2
     author: Arnaud Ruffin
     changes:
@@ -126,7 +128,12 @@ databaseChangeLog:
         columns:
         - column:
             name: ignoreRouteServiceError
-            type: BOOLEAN
+            type: BIT(1)
             defaultValueBoolean: false
             constraints:
               nullable: false
+    - dropPrimaryKey:
+        tableName: SpaceEnrollerConfig
+    - addPrimaryKey:
+        tableName: SpaceEnrollerConfig
+        columnNames: id
