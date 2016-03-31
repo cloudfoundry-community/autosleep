@@ -95,7 +95,7 @@ class SpaceEnroller extends AbstractPeriodicTask {
                         .collect(Collectors.toList());
                 if (!newApplications.isEmpty()) {
                     log.debug("{} - new applications", newApplications.size());
-                    cloudFoundryApi.bindServiceInstance(newApplications, serviceInstance.getId());
+                    cloudFoundryApi.bindApplications(serviceInstance.getId(), newApplications);
                 } else {
                     log.debug("No new app to bind (all already enrolled or filtered by regexp)");
                 }

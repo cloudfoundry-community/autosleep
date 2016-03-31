@@ -27,12 +27,9 @@ import java.util.regex.Pattern;
 
 public interface CloudFoundryApiService {
 
-    void bindServiceInstance(ApplicationIdentity application, String serviceInstanceId) throws CloudFoundryException;
+    void bindApplications(String serviceInstanceId, List<ApplicationIdentity> application) throws CloudFoundryException;
 
-    void bindServiceInstance(List<ApplicationIdentity> application, String serviceInstanceId) throws
-            CloudFoundryException;
-
-    void bindServiceToRoute(String serviceInstanceId, String routeId) throws CloudFoundryException;
+    void bindRoutes(String serviceInstanceId, List<String> routeIds) throws CloudFoundryException;
 
     ApplicationActivity getApplicationActivity(String appUid) throws CloudFoundryException;
 

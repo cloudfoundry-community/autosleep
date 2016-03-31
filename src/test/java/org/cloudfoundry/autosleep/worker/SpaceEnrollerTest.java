@@ -64,11 +64,11 @@ public class SpaceEnrollerTest {
 
     private static final Duration INTERVAL = Duration.ofMillis(300);
 
+    private static final String NEW_APP_ID = UUID.randomUUID().toString();
+
     private static final String SERVICE_ID = "serviceId";
 
     private static final String SPACE_ID = UUID.randomUUID().toString();
-
-    private static final String NEW_APP_ID = UUID.randomUUID().toString();
 
     @Mock
     private ApplicationRepository applicationRepository;
@@ -151,8 +151,7 @@ public class SpaceEnrollerTest {
         verify(spaceEnroller, times(1)).rescheduleWithDefaultPeriod();
         //Normally all applications are bound
         verify(cloudFoundryApi, times(1))
-                .bindServiceInstance(argThat(anyListOfSize(remoteApplicationIds.size() - 1)),
-                        anyString());
+                .bindApplications(anyString(), argThat(anyListOfSize(remoteApplicationIds.size() - 1)));
 
     }
 
@@ -184,8 +183,7 @@ public class SpaceEnrollerTest {
         verify(spaceEnroller, times(1)).rescheduleWithDefaultPeriod();
         //Normally remote app has been bound
         verify(cloudFoundryApi, times(1))
-                .bindServiceInstance(argThat(anyListOfSize(1)),
-                        anyString());
+                .bindApplications(anyString(), argThat(anyListOfSize(1)));
 
     }
 
@@ -226,7 +224,7 @@ public class SpaceEnrollerTest {
         verify(spaceEnroller, times(1)).rescheduleWithDefaultPeriod();
         //And it never bind an application
         verify(cloudFoundryApi, never())
-                .bindServiceInstance(anyListOf(ApplicationIdentity.class), anyString());
+                .bindApplications(anyString(), anyListOf(ApplicationIdentity.class));
 
     }
 
@@ -249,7 +247,7 @@ public class SpaceEnrollerTest {
         doThrow(new CloudFoundryException(
                 new EntityNotFoundException(EntityType.service, SERVICE_ID)))
                 .when(cloudFoundryApi)
-                .bindServiceInstance(anyListOf(ApplicationIdentity.class), eq(SERVICE_ID));
+                .bindApplications(eq(SERVICE_ID), anyListOf(ApplicationIdentity.class));
         //When task is run
         spaceEnroller.run();
         //Then it rescheduled itself with default period
