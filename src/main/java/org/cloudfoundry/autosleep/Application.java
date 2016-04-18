@@ -29,7 +29,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
 @EnableAutoConfiguration
-@ComponentScan(basePackages = {"org.cloudfoundry.community.servicebroker", "org.cloudfoundry.autosleep"})
+@ComponentScan(basePackages = {"org.springframework.cloud.servicebroker", "org.cloudfoundry.autosleep"})
 @EnableWebMvc
 @Slf4j
 public class Application {

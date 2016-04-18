@@ -29,7 +29,7 @@ import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.ui.web.model.ServerResponse;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
-import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

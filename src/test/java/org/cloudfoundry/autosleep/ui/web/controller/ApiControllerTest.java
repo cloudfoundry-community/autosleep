@@ -34,9 +34,9 @@ import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository
 import org.cloudfoundry.autosleep.ui.web.model.ServerResponse;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
-import org.cloudfoundry.community.servicebroker.model.Catalog;
-import org.cloudfoundry.community.servicebroker.model.Plan;
-import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
+import org.springframework.cloud.servicebroker.model.Catalog;
+import org.springframework.cloud.servicebroker.model.Plan;
+import org.springframework.cloud.servicebroker.model.ServiceDefinition;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

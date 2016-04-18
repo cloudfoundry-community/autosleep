@@ -32,15 +32,15 @@ import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterR
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
-import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
-import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
-import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
-import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
-import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceResponse;
-import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceRequest;
-import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceResponse;
-import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
-import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceResponse;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceExistsException;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
+import org.springframework.cloud.servicebroker.model.CreateServiceInstanceRequest;
+import org.springframework.cloud.servicebroker.model.CreateServiceInstanceResponse;
+import org.springframework.cloud.servicebroker.model.DeleteServiceInstanceRequest;
+import org.springframework.cloud.servicebroker.model.DeleteServiceInstanceResponse;
+import org.springframework.cloud.servicebroker.model.UpdateServiceInstanceRequest;
+import org.springframework.cloud.servicebroker.model.UpdateServiceInstanceResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -158,16 +158,14 @@ public class AutosleepServiceInstanceServiceTest {
             params = Collections.emptyMap();
         }
         return new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
-                ORG_TEST, SPACE_TEST, params, false).withServiceInstanceId(SERVICE_INSTANCE_ID);
+                ORG_TEST, SPACE_TEST, params).withServiceInstanceId(SERVICE_INSTANCE_ID);
     }
 
     private UpdateServiceInstanceRequest getUpdateRequestWithArbitraryParams(Map<String, Object> params) {
         if (params == null) {
             params = Collections.emptyMap();
         }
-        return new UpdateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
-                params,
-                false)
+        return new UpdateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,params)
                 .withServiceInstanceId(SERVICE_INSTANCE_ID);
     }
 
@@ -183,11 +181,8 @@ public class AutosleepServiceInstanceServiceTest {
         }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
         when(passwordEncoder.encode(any(CharSequence.class))).thenReturn(passwordEncoded);
 
-        deleteRequest = new DeleteServiceInstanceRequest(SERVICE_INSTANCE_ID, SERVICE_DEFINITION_ID, PLAN_ID, null,
-                false);
-
-        createRequest = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,
-                ORG_TEST, SPACE_TEST, null, false);
+        deleteRequest = new DeleteServiceInstanceRequest(SERVICE_INSTANCE_ID, SERVICE_DEFINITION_ID, PLAN_ID, null);
+        createRequest = new CreateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID, ORG_TEST, SPACE_TEST, null);
         createRequest.withServiceInstanceId(SERVICE_INSTANCE_ID);
 
         when(environment.getProperty(Config.EnvKey.SECURITY_PASSWORD)).thenReturn(superPassword);
@@ -456,8 +451,7 @@ public class AutosleepServiceInstanceServiceTest {
         //No change plan supported
         UpdateServiceInstanceRequest changePlanRequest = new UpdateServiceInstanceRequest(SERVICE_DEFINITION_ID,
                 PLAN_ID + "_other",
-                Collections.emptyMap(),
-                false)
+                Collections.emptyMap())
                 .withServiceInstanceId(SERVICE_INSTANCE_ID);
 
         verifyThrown(() -> instanceService.updateServiceInstance(changePlanRequest),

@@ -30,19 +30,19 @@ import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
-import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
-import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
-import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
-import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
-import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
-import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceResponse;
-import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceRequest;
-import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceResponse;
-import org.cloudfoundry.community.servicebroker.model.GetLastServiceOperationRequest;
-import org.cloudfoundry.community.servicebroker.model.GetLastServiceOperationResponse;
-import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
-import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceResponse;
-import org.cloudfoundry.community.servicebroker.service.ServiceInstanceService;
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceExistsException;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
+import org.springframework.cloud.servicebroker.model.CreateServiceInstanceRequest;
+import org.springframework.cloud.servicebroker.model.CreateServiceInstanceResponse;
+import org.springframework.cloud.servicebroker.model.DeleteServiceInstanceRequest;
+import org.springframework.cloud.servicebroker.model.DeleteServiceInstanceResponse;
+import org.springframework.cloud.servicebroker.model.GetLastServiceOperationRequest;
+import org.springframework.cloud.servicebroker.model.GetLastServiceOperationResponse;
+import org.springframework.cloud.servicebroker.model.UpdateServiceInstanceRequest;
+import org.springframework.cloud.servicebroker.model.UpdateServiceInstanceResponse;
+import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
@@ -166,8 +166,9 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             if (firstUri == null) {
                 firstUri = "local-deployment";
             }
-
-            return new CreateServiceInstanceResponse(firstUri + Config.Path.DASHBOARD_CONTEXT + "/" + serviceId, false);
+            return new CreateServiceInstanceResponse()
+                    .withDashboardUrl(firstUri + Config.Path.DASHBOARD_CONTEXT + "/" + serviceId)
+                    .withAsync(false);
         }
     }
 
@@ -201,7 +202,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                                         }
                                     }
                                 }));
-        return new DeleteServiceInstanceResponse(false);
+        return new DeleteServiceInstanceResponse().withAsync(false);
     }
 
     @Override
@@ -222,7 +223,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
         if (spaceEnrollerConfig == null) {
             throw new ServiceInstanceDoesNotExistException(spaceEnrollerConfigId);
         } else if (!spaceEnrollerConfig.getPlanId().equals(request.getPlanId())) {
-            /* org.cloudfoundry.community.servicebroker.model.ServiceInstance doesn't let us modify planId field
+            /* org.springframework.cloud.servicebroker.model.ServiceInstance doesn't let us modify planId field
              * (private), and only handle service instance updates by re-creating them from scratch. As we need to
              * handle real updates (secret params), we are not supporting plan updates for now.*/
             throw new ServiceInstanceUpdateNotSupportedException("Service plan updates not supported.");
@@ -257,7 +258,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                         autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced);
                 spaceEnrollerConfigRepository.save(spaceEnrollerConfig);
             }
-            return new UpdateServiceInstanceResponse(false);
+            return new UpdateServiceInstanceResponse().withAsync(false);
         }
     }
 

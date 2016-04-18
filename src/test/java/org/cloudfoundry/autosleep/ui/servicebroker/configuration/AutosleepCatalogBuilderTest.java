@@ -21,9 +21,9 @@ package org.cloudfoundry.autosleep.ui.servicebroker.configuration;
 
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.EnvKey;
-import org.cloudfoundry.community.servicebroker.model.Catalog;
-import org.cloudfoundry.community.servicebroker.model.Plan;
-import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
+import org.springframework.cloud.servicebroker.model.Catalog;
+import org.springframework.cloud.servicebroker.model.Plan;
+import org.springframework.cloud.servicebroker.model.ServiceDefinition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;

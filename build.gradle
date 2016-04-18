@@ -90,9 +90,10 @@ dependencies {
 
     //Groovy templates
     compile "org.codehaus.groovy:groovy-templates:${groovyVersion}"
+
     //API Service broker
-    //compile("org.cloudfoundry:spring-boot-cf-service-broker:$cfServiceBrokerVersion")
-    compile("com.github.cloudfoundry-community:spring-boot-cf-service-broker:$cfServiceBrokerCommitId")
+    compile("org.springframework.cloud:spring-cloud-cloudfoundry-service-broker:${springCloudServiceBrokerVersion}")
+    testCompile(group: "org.springframework.cloud", name: "spring-cloud-cloudfoundry-service-broker", version: "${springCloudServiceBrokerVersion}", classifier: "tests")
 
     //Client library
     compile("org.cloudfoundry:cloudfoundry-client-spring:$cfClientLibVersion")
