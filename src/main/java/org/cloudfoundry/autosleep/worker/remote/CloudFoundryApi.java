@@ -114,7 +114,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
     private <T, U> void bind(List<T> objectsToBind, Function<T, Mono<U>> caller)
             throws CloudFoundryException {
-        log.debug("bind - {}", objectsToBind.size());
+        log.debug("bind - {} objects", objectsToBind.size());
         final CountDownLatch latch = new CountDownLatch(objectsToBind.size());
         final AtomicReference<Throwable> errorEncountered = new AtomicReference<>(null);
         final Subscriber<U> subscriber

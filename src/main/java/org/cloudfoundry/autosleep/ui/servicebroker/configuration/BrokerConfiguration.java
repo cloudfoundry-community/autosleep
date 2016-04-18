@@ -19,7 +19,7 @@
 
 package org.cloudfoundry.autosleep.ui.servicebroker.configuration;
 
-import org.cloudfoundry.community.servicebroker.model.BrokerApiVersion;
+import org.springframework.cloud.servicebroker.model.BrokerApiVersion;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

@@ -32,13 +32,15 @@ import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
-import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
-import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
-import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
-import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingResponse;
-import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
-import org.cloudfoundry.community.servicebroker.model.ServiceBindingResource;
-import org.cloudfoundry.community.servicebroker.service.ServiceInstanceBindingService;
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceBindingExistsException;
+import org.springframework.cloud.servicebroker.model.CreateServiceInstanceAppBindingResponse;
+import org.springframework.cloud.servicebroker.model.CreateServiceInstanceBindingRequest;
+import org.springframework.cloud.servicebroker.model.CreateServiceInstanceBindingResponse;
+import org.springframework.cloud.servicebroker.model.CreateServiceInstanceRouteBindingResponse;
+import org.springframework.cloud.servicebroker.model.DeleteServiceInstanceBindingRequest;
+import org.springframework.cloud.servicebroker.model.ServiceBindingResource;
+import org.springframework.cloud.servicebroker.service.ServiceInstanceBindingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -112,14 +114,11 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                 appRepository.save(appInfo);
                 workerManager.registerApplicationStopper(spaceEnrollerConfig, targetAppId, bindingId);
             });
-            return new CreateServiceInstanceBindingResponse(
-                    Collections.singletonMap(
-                            Config.ServiceInstanceParameters.IDLE_DURATION,
-                            spaceEnrollerConfig.getIdleDuration().toString()));
+            return new CreateServiceInstanceAppBindingResponse().withCredentials(Collections.singletonMap(
+                    Config.ServiceInstanceParameters.IDLE_DURATION, spaceEnrollerConfig.getIdleDuration().toString()));
         } else if (routeId != null) {
             log.debug("creating binding {} for route {}", bindingId, routeId);
 
-            //TODO check how to check that only autosleep can bind a route to itself.
             //check we know at least one app or all?
             try {
                 List<String> appIds = cfApi.listRouteApplications(routeId);
@@ -142,11 +141,8 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                 firstUri = "local-deployment";
             }
 
-            return new CreateServiceInstanceBindingResponse(
-                    Collections.singletonMap(
-                            Config.ServiceInstanceParameters.IDLE_DURATION,
-                            spaceEnrollerConfig.getIdleDuration().toString()),
-                    firstUri + Config.Path.PROXY_CONTEXT + "/" + bindingId);
+            return new CreateServiceInstanceRouteBindingResponse()
+                    .withRouteServiceUrl(firstUri + Config.Path.PROXY_CONTEXT + "/" + bindingId);
         } else {
             throw new ServiceBrokerException("Unknown bind resource type");
         }
