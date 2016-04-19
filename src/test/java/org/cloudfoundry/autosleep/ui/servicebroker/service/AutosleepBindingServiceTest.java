@@ -294,38 +294,6 @@ public class AutosleepBindingServiceTest {
     }
 
     @Test
-    public void new_route_binding_should_scream_cf_api_fails() throws Exception {
-        //given that the app is linked to the route in CF
-        when(cfApi.listRouteApplications(ROUTE_UID)).thenThrow(new CloudFoundryException(new Exception()));
-
-        //when receive a new ROUTE binding
-        //then it should scream, and not save anything
-        verifyThrown(() -> bindingService.createServiceInstanceBinding(createRouteBindingTemplate
-                .withServiceInstanceId("Sid")
-                .withBindingId("Bidroute")), ServiceBrokerException.class);
-        verify(bindingRepository, never()).save(any(Binding.class));
-    }
-
-    /**
-     * Test that only autosleep can call itself on a route binding (no manual route binding).
-     */
-    @Test
-    public void new_route_binding_should_scream_if_unknown_appid() throws Exception {
-        //given that the app is linked to the route in CF
-        when(cfApi.listRouteApplications(ROUTE_UID)).thenReturn(singletonList(APP_UID));
-        //given that the application is unknown from autosleep
-        when(appRepo.findOne(APP_UID)).thenReturn(null);
-
-        //when receive a new ROUTE binding
-
-        //then it should scream, and not save anything
-        verifyThrown(() -> bindingService.createServiceInstanceBinding(createRouteBindingTemplate
-                .withServiceInstanceId("Sid")
-                .withBindingId("Bidroute")), ServiceBrokerException.class);
-        verify(bindingRepository, never()).save(any(Binding.class));
-    }
-
-    @Test
     public void new_route_binding_should_store_binding() throws Exception {
         //given that the app is linked to the route in CF
         when(cfApi.listRouteApplications(ROUTE_UID)).thenReturn(singletonList(APP_UID));

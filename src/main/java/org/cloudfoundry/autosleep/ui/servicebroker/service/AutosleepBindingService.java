@@ -88,7 +88,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
 
         String targetAppId = (String) request.getBindResource()
                 .get(ServiceBindingResource.BIND_RESOURCE_KEY_APP.toString());
-        String routeId = (String) request.getBindResource()
+        String route = (String) request.getBindResource()
                 .get(ServiceBindingResource.BIND_RESOURCE_KEY_ROUTE.toString());
 
         Binding.BindingBuilder bindingBuilder = Binding.builder()
@@ -116,23 +116,10 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             });
             return new CreateServiceInstanceAppBindingResponse().withCredentials(Collections.singletonMap(
                     Config.ServiceInstanceParameters.IDLE_DURATION, spaceEnrollerConfig.getIdleDuration().toString()));
-        } else if (routeId != null) {
-            log.debug("creating binding {} for route {}", bindingId, routeId);
+        } else if (route != null) {
+            log.debug("creating binding {} for route {}", bindingId, route);
 
-            //check we know at least one app or all?
-            try {
-                List<String> appIds = cfApi.listRouteApplications(routeId);
-                log.debug("CF knows {} apps, amoung which autosleep knows {}", appIds.size(),
-                        appRepository.countByApplicationIds(appIds));
-                if (appRepository.countByApplicationIds(appIds) != appIds.size()) {
-                    throw new ServiceBrokerException("Only Autosleep is allowed to bind route to itself");
-                }
-            } catch (CloudFoundryException e) {
-                throw new ServiceBrokerException("Can't check applications map to this route id");
-            }
-
-            bindingBuilder.resourceId(routeId)
-                    .resourceType(Route);
+            bindingBuilder.resourceId(route).resourceType(Route);
 
             bindingRepository.save(bindingBuilder.build());
 
@@ -142,7 +129,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             }
 
             return new CreateServiceInstanceRouteBindingResponse()
-                    .withRouteServiceUrl(firstUri + Config.Path.PROXY_CONTEXT + "/" + bindingId);
+                    .withRouteServiceUrl("https://" + firstUri + Config.Path.PROXY_CONTEXT + "/" + bindingId);
         } else {
             throw new ServiceBrokerException("Unknown bind resource type");
         }
