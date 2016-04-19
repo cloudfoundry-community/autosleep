@@ -23,8 +23,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.ContextInitializer;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
@@ -39,6 +42,11 @@ public class Application {
                 .initializers(new ContextInitializer())
                 .run(args);
         log.debug("Application started");
+    }
+
+    @Bean
+    RestOperations restOperations() {
+        return new RestTemplate();
     }
 
 }

@@ -19,73 +19,110 @@
 
 package org.cloudfoundry.autosleep.ui.proxy;
 
+import org.cloudfoundry.autosleep.Application;
 import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.config.Config.Path;
 import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.util.BeanGenerator;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApi;
-import org.cloudfoundry.autosleep.worker.scheduling.TimeManager;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.test.web.client.RequestMatcher;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.WebApplicationContext;
 
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-
-import static java.util.UUID.randomUUID;
-import static org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState.STARTED;
-import static org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState.STOPPED;
-import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.cloudfoundry.autosleep.ui.proxy.ProxyController.HEADER_FORWARD_URL;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.HEAD;
+import static org.springframework.http.MediaType.TEXT_PLAIN;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@RunWith(MockitoJUnitRunner.class)
+/**
+ * Thanks to @nebhale
+ * https://raw.githubusercontent.com/nebhale/route-service-example/master/src/test/java/org/cloudfoundry/example
+ * /ControllerTest.java
+ */
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = Application.class)
+@WebAppConfiguration
 public class ProxyControllerTest {
 
-    static final String BINDING_ID = "someid";
+    private static final String BODY_VALUE = "test-body";
 
-    static final String ROUTE_ID = "routeid";
+    private MockMvc mockMvc;
+
+    private MockRestServiceServer mockServer;
+
+   /* static final String BINDING_ID = "someid";
+
+    static final String ROUTE_ID = "routeid";*/
+
+    @Test
+    public void should_forward_get_request() throws Exception {
+        testForwardRequest(method(GET), "get");
+    }
+
+    public void testForwardRequest(RequestMatcher requestMatcher, String urlSuffixe) throws Exception {
+        this.mockServer
+                .expect(requestMatcher)
+                .andExpect(requestTo("http://localhost/original/" + urlSuffixe))
+                .andRespond(withSuccess(BODY_VALUE, TEXT_PLAIN));
+
+        this.mockMvc
+                .perform(get("http://localhost/" + Config.Path.PROXY_CONTEXT + "/abindingid")
+                        .header(HEADER_FORWARD_URL, "http://localhost/original/" + urlSuffixe))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(TEXT_PLAIN))
+                .andExpect(content().string(BODY_VALUE));
+
+        this.mockServer.verify();
+    }
+
+    @Test
+    public void should_fail_if_no_binding_provided() throws Exception {
+
+        this.mockMvc
+                .perform(get("http://localhost/" + Config.Path.PROXY_CONTEXT)
+                        .header(HEADER_FORWARD_URL, "http://localhost/original/get"))
+                .andExpect(status().isNotFound());
+
+        this.mockServer.verify();
+    }
+
+    @Test
+    public void headRequest() throws Exception {
+        this.mockServer
+                .expect(method(HEAD))
+                .andExpect(requestTo("http://localhost/original/head"))
+                .andRespond(withSuccess());
+
+        this.mockMvc
+                .perform(head("http://localhost/" + Config.Path.PROXY_CONTEXT + "/abindingid")
+                        .header(HEADER_FORWARD_URL, "http://localhost/original/head"))
+                .andExpect(status().isOk());
+
+        this.mockServer.verify();
+    }
 
     @Mock
     private BindingRepository bindingRepo;
 
-    @Mock
-    private CloudFoundryApi cfApi;
-
-    @Mock
-    private TimeManager timeManager;
-
-    private MockMvc mockMvc;
-
-    @InjectMocks
-    private ProxyController proxyController;
-
-    @Before
-    public void init() {
-        MockitoAnnotations.initMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(proxyController).build();
-
-    }
-
     @Test
     public void on_incoming_traffic_all_apps_stopped_linked_to_route_id_should_be_started() throws Exception {
+       /*TODO?
         List<String> appList = Arrays.asList(randomUUID().toString(),
+
                 randomUUID().toString(),
                 randomUUID().toString());
 
@@ -111,57 +148,17 @@ public class ProxyControllerTest {
         verify(timeManager, times(1)).sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
         // and all application should be checked once
         verify(cfApi, times(appList.size())).getApplicationState(anyString());
-
+ */
     }
 
-    @Test
-    public void on_incoming_traffic_all_apps_already_started_does_not_check_and_return_immediately() throws Exception {
-        List<String> appList = Arrays.asList(randomUUID().toString(),
-                randomUUID().toString(),
-                randomUUID().toString());
-
-        //GIVEN that the binding is known
-        when(bindingRepo.findOne(BINDING_ID)).thenReturn(BeanGenerator.createRouteBinding(BINDING_ID,
-                "serviceid", ROUTE_ID));
-        //and that stored route is linked to a list of application
-        when(cfApi.listRouteApplications(ROUTE_ID)).thenReturn(appList);
-        // and application are not yet started
-        when(cfApi.startApplication(anyString())).thenReturn(false);
-
-
-        //WHEN calling proxy path THEN traffic should be forwarded without any error
-        mockMvc.perform(get(Path.PROXY_CONTEXT + "/" + BINDING_ID)
-                .header(ProxyController.HEADER_FORWARD_URL, "www.cloudfoundry.org")
-                .accept(MediaType.ALL))
-                .andExpect(status().is(HttpStatus.FOUND.value()));
-
-        //and all apps should be started
-        verify(cfApi, times(appList.size())).startApplication(anyString());
-        //and since they are already started it should never sleep to let them start
-        verify(timeManager, never()).sleep(any(Duration.class));
-        //and it should never ask their state
-        verify(cfApi, never()).getApplicationState(anyString());
+    @Autowired
+    void setRestTemplate(RestTemplate restTemplate) {
+        this.mockServer = MockRestServiceServer.createServer(restTemplate);
     }
 
-    @Test
-    public void request_with_unknown_binding_only_forward_traffic() throws Exception {
-        //GIVEN that the binding isn't known
-        when(bindingRepo.findOne(BINDING_ID)).thenReturn(null);
-
-        //WHEN calling proxy path THEN traffic should be forwarded without any error
-        mockMvc.perform(get(Path.PROXY_CONTEXT + "/" + BINDING_ID)
-                .header(ProxyController.HEADER_FORWARD_URL, "www.cloudfoundry.org")
-                .accept(MediaType.ALL))
-                .andExpect(status().is(HttpStatus.FOUND.value()));
-        //TODO test Spring ResultMatcher.redirectedUrlPattern
+    @Autowired
+    void setWebApplicationContext(WebApplicationContext wac) {
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
     }
 
-    @Test
-    public void request_without_forward_url_should_fail() throws Exception {
-        verifyThrown(() -> mockMvc.perform(get(Path.PROXY_CONTEXT + "/" + BINDING_ID)
-                        .accept(MediaType.ALL))
-                        .andExpect(status().is5xxServerError()),
-                Exception.class);
-
-    }
 }
