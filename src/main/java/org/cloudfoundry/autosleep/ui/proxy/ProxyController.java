@@ -32,10 +32,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestOperations;
 
 import java.net.URI;
@@ -44,7 +44,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-@RestController
+@Controller
 @RequestMapping(Path.PROXY_CONTEXT)
 @Slf4j
 public class ProxyController {
@@ -63,10 +63,23 @@ public class ProxyController {
     @Autowired
     private TimeManager timeManager;
 
+    private void logHeader(RequestEntity<byte[]> request){
+        request.getHeaders().toSingleValueMap().forEach((s, s2) -> log.debug("Header content {} - {} ", s , s2 ));
+    }
+
+
+    @RequestMapping(value = "/{routeBindingId}")
+    @ResponseBody
+    void badlyFormatedRequest(@PathVariable("routeBindingId") String bindingId,  RequestEntity<byte[]> request){
+        log.error("Missing Header? {}",HEADER_FORWARD_URL);
+        logHeader(request);
+    }
+
+
+
     @RequestMapping(value = "/{routeBindingId}", headers = {HEADER_FORWARD_URL})
     @ResponseBody
-    ResponseEntity<?> listApplicationsById(@PathVariable("routeBindingId") String bindingId,
-                                           RequestEntity<byte[]> request)
+    ResponseEntity<?> proxify(@PathVariable("routeBindingId") String bindingId,  RequestEntity<byte[]> request)
             throws CloudFoundryException, InterruptedException {
 
         log.debug("Incoming HTTP request for binding {} : {}" , bindingId, request);
@@ -128,6 +141,5 @@ public class ProxyController {
 
         return new RequestEntity<>(incoming.getBody(), headers, incoming.getMethod(), uri);
     }
-
-
+    
 }
