@@ -12,6 +12,7 @@ For now we provide a [service broker](https://docs.cloudfoundry.org/services/man
 
 * automatically bind applications in space (filtering out applications whose name matches a regexp).
 * watch every bound application, measure inactivity (based on **https logs** and **redeploy/restart events**) and stop the application when an inactivity threshold is reached.
+* a service dashboard for users to understand behavior of the service (such as time to sleep or current enrollment status)
 
 Download [latest release](https://github.com/Orange-OpenSource/autosleep/releases/) if you want to give it a try.
 
