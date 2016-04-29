@@ -26,7 +26,7 @@ Autosleep service needs properties to work . The properties that are used are:
 - __cf.client.clientId__: the client id of the application (optional) used to perform CC API calls. If none provided, it will used ```"cf"```.
 - __cf.client.clientSecret__: the client secret of the application (optional) used to perform CC API calls. If none provided, it will used ```""```.
 - __cf.security.password.encodingSecret__: the secret used to hash password (optional). If none provided, it will use ```""```.
-- __cf.service.broker.id__: the service broker id. If none provided, it will use ```"autosleep"```. Must be unique in the CF instance across all brokers.
+- __cf.service.broker.id__: the service broker id that is used as a "service offering name" and will appear in the marketplace. If none provided, it will use ```"autosleep"```. Must be unique in the CF instance across all brokers.
 - __cf.service.plan.id__: the service plan id. If none provided, it will use ```"default"```. Must be unique in the CF instance across all brokers.
 
 There are two ways of providing these properties to autosleep:
@@ -44,16 +44,22 @@ cf push -f manifest.yml -p autosleep-x-y-z.jar
 ## Publish on the market place
 Check that the autosleep application is running and retrieve its url (`cf app autosleep-app`). 
 
-Then run the following command:
+Then register the app as a service broker:
 
-`cf create-service-broker <name> <login <password> <url>`
+`cf create-service-broker <broker-name> <login <password> <url>`
 
 where:
 
 - `login` and `password` are the values you provided in the _manifest.yml_ file for environment properties ___security.user.name___ and ___security.user.password___.
-- `name` the name of the service as it will appear in the marketplace.
+- `broker-name` the name of the broker as listed to CF operator.
 - `url`: the URL of the autosleep app collected above.
 
+Finally, choose to expose the default plan into one or all organisations
+
+`cf enable-service-access <offering-name> -o <org-name>`
+
+where:
+- `offering-name` corresponds to the value of __cf.service.broker.id__ filled in the manifest file.
 
 ## Publish as a private broker
 
