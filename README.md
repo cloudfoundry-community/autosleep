@@ -5,15 +5,16 @@ The aim of the auto-sleep project is to give the ability for Cloud Foundry users
 
 # Status
 This is a work in progress. 
-You can check the [full specifications](https://docs.google.com/document/d/1tMhIBX3tw7kPEOMCzKhUgmtmr26GVxyXwUTwMO71THI/).
+You can check the [full specifications](https://docs.google.com/document/d/1tMhIBX3tw7kPEOMCzKhUgmtmr26GVxyXwUTwMO71THI/) and the currently supported features in the [acceptance tests](https://github.com/Orange-OpenSource/autosleep/tree/develop/acceptance).
 
 ### What's already working:
 For now we provide a [service broker](https://docs.cloudfoundry.org/services/managing-service-brokers.html) which instances will:
 
 * automatically bind applications in space (filtering out applications whose name matches a regexp).
 * watch every bound application, measure inactivity (based on **https logs** and **redeploy/restart events**) and stop the application when an inactivity threshold is reached.
+* a service dashboard for users to understand behavior of the service (such as time to sleep or current enrollment status)
 
-Download [latest release](https://github.com/Orange-OpenSource/autosleep/releases/) if you want to have a try.
+Download [latest release](https://github.com/Orange-OpenSource/autosleep/releases/) if you want to give it a try.
 
 ### What we are working on:
 * automatic restart on incoming HTTP trafic
@@ -23,7 +24,7 @@ Download [latest release](https://github.com/Orange-OpenSource/autosleep/release
 We suppose that the autosleep service broker is already available in your market place. If you need help on that check [how to publish service broker](doc/publish.md).
 
 
-##Create your autosleep service instance
+## Create your autosleep service instance
 
 ### Basics
 
@@ -49,7 +50,7 @@ Optionally the autosleep service broker accepts the following parameters:
 
 These parameters can be provided on service creations as well as on service updates, eg.
 `
-cf cs autosleep default my-autosleep -c '{"inactivity": "PT1H15M"}'
+cf cs autosleep default my-autosleep -c '{"idle-duration": "PT1H15M"}'
 `
 
 #### *idle-duration* 
@@ -69,10 +70,12 @@ If you don't want all the application to be automatically bound, you can set thi
 
 #### :lock:*auto-enrollment* 
 
-By default this parameter is set as `standard`. If platform teams (admins, org managers, or specific members of the space) don't want all space members to be able to manually unbound apps from the autosleep service themselves, then a forced mode is supported. When set to this:
+By default this parameter is set as `standard`. If platform teams (admins, org managers, or specific members of the space) don't want all space members to be able to manually permanently unbound apps from the autosleep service themselves, then a forced mode is supported.
 
-* manually unbound apps will automatically be re-bound again after the activity period
-* the autosleep service-instance won't be deletable by space members to disable auto-bindings
+In a forced auto-enrollment mode then:
+
+* manually unbound apps will automatically be re-bound again after the inactivity period. Until the then, app teams are free to delete the app if a cleanup is necessary.
+* the autosleep service-instance won't be deletable by space members to disable next auto-enrollments
 
 To enable to `forced` mode, set the `auto-enrollment` parameter to ``forced``. As this is a protected parameter, you will have also have to provide a [`secret` parameter](#secret).
 
@@ -80,13 +83,15 @@ To enable to `forced` mode, set the `auto-enrollment` parameter to ``forced``. A
 - *Default value :* `standard`
 
 #### *secret*
+
 Provide a secret if you wish to set/change a protected parameter. Please save it carefully, has you will be asked to provide the same secret the next time you set/change a protected parameter. As a fallback, you may also use the credential password set at deployment time (see  the `security.user.password` in [publish documentation](doc/publish.md)).
 
 - *Example:*`'{"secret": "Th1s1zg00dP@$$w0rd"}'`
 - *Default value :* `null`
 
 #### *autosleep-despite-route-services-error*
-On some application, *cloudfoundry api* may refuse to bind *autosleep service instance* to the application's routes (we need to do this operation to reroute all application flow to *autosleep* in order to restart the application if requested). Since we do these binding operations **before** stopping application, if *api* refuse the operation, the application will never be stopped. 
+
+On some application, *cloudfoundry api* may refuse to bind *autosleep service instance* (exposing itself as a route service) to the application's routes (we need to do this operation to reroute all application flow to *autosleep* in order to restart the application if requested). Since we perform these binding operations **before** stopping application, if *api* refuse the operation, the application will never be stopped. 
 By setting the value of this parameter to `true`, you skip the errors sent by *route binding* operations and put the application to sleep anyway. Be aware that the application will not be restarted automatically by the *autosleep* if requested.
 
 * Example `'{"autosleep-despite-route-services-error" : true}'`
