@@ -49,7 +49,7 @@ Optionally the autosleep service broker accepts the following parameters:
 
 These parameters can be provided on service creations as well as on service updates, eg.
 `
-cf cs autosleep default my-autosleep -c '{"inactivity": "PT1H15M"}'
+cf cs autosleep default my-autosleep -c '{"idle-duration": "PT1H15M"}'
 `
 
 #### *idle-duration* 
