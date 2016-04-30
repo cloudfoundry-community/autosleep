@@ -19,7 +19,7 @@ Autosleep service needs properties to work . The properties that are used are:
 
 - __security.user.name__: the basic auth username for the service broker.
 - __security.user.password__: the basic auth password for the service broker.
-- __cf.client.target.endpoint__: the expected **hostname** of api endpoint of the cloudfoundry instance.
+- __cf.client.target.host__: the expected **hostname** of api endpoint of the cloudfoundry instance.
 - __cf.client.skip.ssl.validation__: set this property to _true_ if the current cloudfoundry instance use self-signed certificates.
 - __cf.client.username__: the username of the pre-requisite CC API user that will be used in by the autosleep service.
 - __cf.client.password__: the password of the pre-requisite CC API user that will be used in by the autosleep service.

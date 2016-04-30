@@ -44,7 +44,7 @@ public class ApplicationTest {
         @PostConstruct
         public void initClientEnvironment() {
             log.debug("initClientEnvironment - setting properties");
-            System.setProperty(Config.EnvKey.CF_ENDPOINT, "http://somewhere.org");
+            System.setProperty(Config.EnvKey.CF_HOST, "somewhere.org");
             System.setProperty(Config.EnvKey.CF_SKIP_SSL_VALIDATION, "true");
             System.setProperty(Config.EnvKey.CF_USERNAME, "username");
             System.setProperty(Config.EnvKey.CF_PASSWORD, "password");

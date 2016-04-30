@@ -51,7 +51,7 @@ public class CloudfoundryClientBuilder {
 
     @PostConstruct
     public void initClients() {
-        final String targetEndpoint = env.getProperty(Config.EnvKey.CF_ENDPOINT);
+        final String targetHost = env.getProperty(Config.EnvKey.CF_HOST);
         final boolean skipSslValidation = Boolean.parseBoolean(env.getProperty(
                 Config.EnvKey.CF_SKIP_SSL_VALIDATION,
                 Boolean.FALSE.toString()));
@@ -61,11 +61,11 @@ public class CloudfoundryClientBuilder {
         final String clientSecret = env.getProperty(Config.EnvKey.CF_CLIENT_SECRET, DefaultClientIdentification.SECRET);
         try {
 
-            log.debug("buildClient - targetEndpoint={}", targetEndpoint);
+            log.debug("buildClient - targetHost={}", targetHost);
             log.debug("buildClient - skipSslValidation={}", skipSslValidation);
             log.debug("buildClient - username={}", username);
             cfClient = SpringCloudFoundryClient.builder()
-                    .host(targetEndpoint)
+                    .host(targetHost)
                     .clientId(clientId)
                     .clientSecret(clientSecret)
                     .skipSslValidation(skipSslValidation)
