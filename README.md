@@ -56,7 +56,7 @@ cf cs autosleep default my-autosleep -c '{"idle-duration": "PT1H15M"}'
 #### *idle-duration* 
 Duration after which bound applications will be considered as inactive. The time format used is [the ISO8601] (https://en.wikipedia.org/wiki/ISO_8601#Durations) duration format.
 
-- *Example:*`'{"inactivity": "PT1H15M"}'`
+- *Example:*`'{"idle-duration": "PT1H15M"}'`
  would stop the application after *1 hour and 15 minutes* of inactivity.
 - *Default value :*  24H
 
