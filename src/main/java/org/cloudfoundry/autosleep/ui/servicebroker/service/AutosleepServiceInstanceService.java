@@ -30,6 +30,8 @@ import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceExistsException;
@@ -43,8 +45,6 @@ import org.springframework.cloud.servicebroker.model.GetLastServiceOperationResp
 import org.springframework.cloud.servicebroker.model.UpdateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.UpdateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -177,9 +177,16 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             DeleteServiceInstanceRequest request) throws ServiceBrokerException {
         final String spaceEnrollerConfigId = request.getServiceInstanceId();
         log.debug("deleteServiceInstance - {}", spaceEnrollerConfigId);
+        SpaceEnrollerConfig config = spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId);
+        if (config != null) {
+            if (config.isForcedAutoEnrollment()) {
+                log.debug("deleteServiceInstance - {} - forced enrollment. Denied", spaceEnrollerConfigId);
+                throw new ServiceBrokerException("Service " + spaceEnrollerConfigId + " is in forced enrollment. " +
+                        "You need to update it first");
+            } else {
+                spaceEnrollerConfigRepository.delete(spaceEnrollerConfigId);
+            }
 
-        if (spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId) != null) {
-            spaceEnrollerConfigRepository.delete(spaceEnrollerConfigId);
         } else {
             log.warn("Received delete on unknown id %s - This can be the result of CloudFoundry automatically trying "
                     + "to clean services that failed during their creation", spaceEnrollerConfigId);
