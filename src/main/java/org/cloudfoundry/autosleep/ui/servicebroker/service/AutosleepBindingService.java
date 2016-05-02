@@ -96,7 +96,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                 .serviceBindingId(bindingId);
 
         if (targetAppId != null) {
-            log.debug("creating binding {} for app {}", bindingId, targetAppId);
+            log.info("Creating binding {} for app {}", bindingId, targetAppId);
             bindingBuilder.resourceId(targetAppId)
                     .resourceType(Application);
             applicationLocker.executeThreadSafe(targetAppId, () -> {
@@ -117,7 +117,6 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             return new CreateServiceInstanceAppBindingResponse().withCredentials(Collections.singletonMap(
                     Config.ServiceInstanceParameters.IDLE_DURATION, spaceEnrollerConfig.getIdleDuration().toString()));
         } else if (route != null) {
-            log.debug("creating binding {} for route {}", bindingId, route);
 
             bindingBuilder.resourceId(route).resourceType(Route);
 
@@ -128,8 +127,10 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                 firstUri = "local-deployment";
             }
 
-            return new CreateServiceInstanceRouteBindingResponse()
-                    .withRouteServiceUrl("https://" + firstUri + Config.Path.PROXY_CONTEXT + "/" + bindingId);
+            String redirectionRoute = "https://" + firstUri + Config.Path.PROXY_CONTEXT + "/fix/" + bindingId;
+            log.info("Create route binding : redirection from [{}] to [{}] (bid {})", route, redirectionRoute, bindingId);
+
+            return new CreateServiceInstanceRouteBindingResponse().withRouteServiceUrl(redirectionRoute);
         } else {
             throw new ServiceBrokerException("Unknown bind resource type");
         }
@@ -144,11 +145,11 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
 
         final Binding binding = bindingRepository.findOne(bindingId);
         if (binding.getResourceType() == Application) {
-            log.debug("application unbinding{}", binding);
+            log.info("Unbinding app {} (binding {})", binding.getResourceId(), bindingId);
             final String appId = binding.getResourceId();
 
             SpaceEnrollerConfig serviceInstance = spaceEnrollerConfigRepository.findOne(request.getServiceInstanceId());
-            log.debug(" serviceInstance{}", serviceInstance);
+            log.debug("serviceInstance {}", serviceInstance);
             //TODO check if need to add in lock
             try {
                 //call CFAPI to get routes associated to app
@@ -199,7 +200,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             }
 
         } else  if (binding.getResourceType() == Route) {
-            log.debug("route unbinding{}", binding);
+            log.info("Unbinding route {} (binding {})", binding.getResourceId(), bindingId);
             bindingRepository.delete(bindingId);
         }
     }

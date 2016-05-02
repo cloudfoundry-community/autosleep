@@ -30,13 +30,16 @@ import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
 import org.cloudfoundry.autosleep.worker.scheduling.TimeManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.client.RestOperations;
 
+import java.net.URI;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -55,18 +58,31 @@ public class ProxyController {
     CloudFoundryApi cfApi;
 
     @Autowired
+    RestOperations restOperations;
+
+    @Autowired
     private TimeManager timeManager;
+
+    private void logHeader(RequestEntity<byte[]> request){
+        request.getHeaders().toSingleValueMap().forEach((s, s2) -> log.debug("Header content {} - {} ", s , s2 ));
+    }
+
 
     @RequestMapping(value = "/{routeBindingId}")
     @ResponseBody
-    public ModelAndView listApplicationsById(@PathVariable("routeBindingId") String bindingId,
-                                             @RequestHeader HttpHeaders headers)
+    void badlyFormatedRequest(@PathVariable("routeBindingId") String bindingId,  RequestEntity<byte[]> request){
+        log.error("Missing Header? {}",HEADER_FORWARD_URL);
+        logHeader(request);
+    }
+
+
+
+    @RequestMapping(value = "/{routeBindingId}", headers = {HEADER_FORWARD_URL})
+    @ResponseBody
+    ResponseEntity<?> proxify(@PathVariable("routeBindingId") String bindingId,  RequestEntity<byte[]> request)
             throws CloudFoundryException, InterruptedException {
 
-        log.debug("proxy call on route binding {}", bindingId);
-        if (!headers.containsKey(HEADER_FORWARD_URL)) {
-            throw new CloudFoundryException(new Exception("Missing header " + HEADER_FORWARD_URL));
-        }
+        log.debug("Incoming HTTP request for binding {} : {}" , bindingId, request);
 
         Binding routeBinding = bindingRepository.findOne(bindingId);
         if (routeBinding == null) {
@@ -74,9 +90,12 @@ public class ProxyController {
             //another http request already started the app and removed the binding, just forward the traffic
         } else {
             //TODO ADD LOCK ON BINDING
-            String routeId = routeBinding.getResourceId();
 
-            Set<String> appToStart = new HashSet<>(cfApi.listRouteApplications(routeId));
+
+            /*String route = routeBinding.getResourceId();
+            Set<String> appToStart = new HashSet<>(cfApi.listRouteApplications(route));*/
+            //TEMPORARY, while searching for a solution
+            Set<String> appToStart = new HashSet<>(Collections.singletonList("0a9393b0-7db8-48df-8699-77543e84651a"));
 
             //launch start for each one
             for (Iterator<String> iter = appToStart.iterator(); iter.hasNext(); ) {
@@ -104,8 +123,23 @@ public class ProxyController {
             bindingRepository.delete(bindingId);
         }
         //unqueue traffic
-        log.debug("forwarding traffic to {}", headers.get(HEADER_FORWARD_URL));
-        return new ModelAndView("redirect:" + headers.get(HEADER_FORWARD_URL));
+        RequestEntity<?> outgoing = buildOutgoingRequest(request);
+        log.debug("forwarding traffic to {}", request.getHeaders().get(HEADER_FORWARD_URL));
+        log.debug("Outgoing Request: {}", outgoing);
+
+        return this.restOperations.exchange(outgoing, byte[].class);
     }
 
+    private static RequestEntity<?> buildOutgoingRequest(RequestEntity<?> incoming) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.putAll(incoming.getHeaders());
+
+        URI uri = headers.remove(HEADER_FORWARD_URL).stream()
+                .findFirst()
+                .map(URI::create)
+                .orElseThrow(() -> new IllegalStateException(String.format("No %s header present", HEADER_FORWARD_URL)));
+
+        return new RequestEntity<>(incoming.getBody(), headers, incoming.getMethod(), uri);
+    }
+    
 }
