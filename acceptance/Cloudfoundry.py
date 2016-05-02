@@ -1,7 +1,10 @@
-from cloudfoundry_client import CloudFoundryClient, InvalidStatusCode
 import httplib
-import logging
 import json
+import logging
+
+import requests
+from cloudfoundry_client import CloudFoundryClient, InvalidStatusCode
+from requests.auth import HTTPBasicAuth
 
 
 class Cloudfoundry(object):
@@ -41,7 +44,6 @@ class Cloudfoundry(object):
         self.plan_guid = None
         self._set_plan_from_broker()
 
-
     def clean_all_service_data(self):
         logging.info('clean_all_service_data - %s - %s - %s', self.space_guid, self.instance_name,
                      self.application_guid)
@@ -62,6 +64,13 @@ class Cloudfoundry(object):
                                     ex.body['error_code'] == 'CF-AssociationNotEmpty':
                         logging.debug('some binding appeared in the meantime. looping again')
                         pass
+                    elif ex.status_code == httplib.BAD_GATEWAY and type(ex.body) == dict and \
+                            " can't be deleted during forced enrollment" in ex.body['description']:
+                        logging.info('%s is in forced mode. Updating it as standard' % self.instance_guid)
+                        parameters = dict()
+                        parameters['auto-enrollment'] = 'standard'
+                        parameters['secret'] = self.service_broker_auth_password
+                        self.client.service_instance.update(instance['metadata']['guid'], parameters)
                     else:
                         raise
             logging.info('clean_all_service_data - instance deleted')
@@ -132,6 +141,7 @@ class Cloudfoundry(object):
             logging.info('update_service_instance - ok')
 
     def delete_service_instance(self):
+        logging.info('delete_service_instance - start')
         if self.instance_guid is None:
             raise AssertionError('Please create service instance before deleting it')
         else:

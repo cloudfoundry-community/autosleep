@@ -33,35 +33,19 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
 
     Wait Until Keyword Succeeds     ${longPeriod}s  3s  Should be bound
 
-3) Forced auto-enrollment can unbind, but will be rebound
-    [Documentation]     Check that we can not unbind an app from a service with auto-enrollment option set to true
-    # create service instance with noptout
-    ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}	secret=${DEFAULT_SECRET}   auto-enrollment=forced
-    Create service instance      ${parameters}
 
-    Bind application
-
-    ## unbind service instance
-    Unbind application
-
-
-    ${longPeriod}=      Evaluate  ${DEFAULT_INACTIVITY_IN_S}*3
-
-    Wait Until Keyword Succeeds     ${longPeriod}s  3s  Should be bound
-
-4) Forced auto-enrollment mode can not delete autosleep service instance
+3) Forced auto-enrollment mode can not delete autosleep service instance
     [Documentation]        Check that during forced auto-enrollment mode, a service instance can't be deleted to escape from autoenrolling apps within the space
     # create service instance  with noptout
     ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}   auto-enrollment=forced  secret=${DEFAULT_SECRET}
     Create service instance       ${parameters}
 
     # delete service -> refuse
-    Delete service instance
-    ${maxToWait}=      Evaluate  2*${DEFAULT_INACTIVITY_IN_S}
-    Run Keyword And Expect Error    InvalidStatusCode: 502*Service broker error: \this autosleep service instance can't be delete during forced enrollment mode. Switch back to normal enrollment mode to enable deletes
+    ${error_delete}=    Run Keyword And Expect Error    *       Delete service instance
+    Should Match        ${error_delete}     InvalidStatusCode: 502*Service broker error: this autosleep service instance can't be deleted during forced enrollment mode. Switch back to normal enrollment mode to allow its deletion.*
 
 
-5) Auto-enrollment mode can not change with wrong secret
+4) Auto-enrollment mode can not change with wrong secret
     [Documentation]        Check that the auto-enrollment option of a service can not be updated without providing the right secret
     # create service instance with noptout
     ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}   auto-enrollment=forced  secret=${DEFAULT_SECRET}
@@ -69,10 +53,11 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
 
     # update service -> refuse
     ${parameters}                Create Dictionary	auto-enrollment=standard     secret=whatsthepass
-    Run Keyword And Expect Error    InvalidStatusCode: 502*Service broker error: \'secret\': *    Update service instance   ${parameters}
+    ${error_update}=    Run Keyword And Expect Error        *       Update service instance     ${parameters}
+    Should Match    ${error_update}         InvalidStatusCode: 502*Service broker error: \'secret\': *
 
 
-6) Auto-enrollment mode can change with right secret
+5) Auto-enrollment mode can change with right secret
     [Documentation]        Check that the auto-enrollment option can be changed if the right secret is provided
     # create service instance with noptout
     ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}   auto-enrollment=forced  secret=${DEFAULT_SECRET}
@@ -89,7 +74,7 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
     # check unbind -> accept
     Unbind application
 
-7) Auto-enrollment service can change with admin secret
+6) Auto-enrollment service can change with admin secret
     [Documentation]        Check that the auto-enrollment option can be changed if the admin secret is provided
     # create service instance with noptout
     ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}   auto-enrollment=forced  secret=${DEFAULT_SECRET}
