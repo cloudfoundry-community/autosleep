@@ -20,8 +20,8 @@
 package org.cloudfoundry.autosleep.ui.proxy;
 
 import org.cloudfoundry.autosleep.Application;
+import org.cloudfoundry.autosleep.access.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -60,45 +60,18 @@ public class ProxyControllerTest {
 
     private static final String BODY_VALUE = "test-body";
 
+    @Mock
+    private BindingRepository bindingRepo;
+
     private MockMvc mockMvc;
 
+    /*
+    static final String BINDING_ID = "someid";
+
+    static final String ROUTE_ID = "routeid";
+    */
+
     private MockRestServiceServer mockServer;
-
-   /* static final String BINDING_ID = "someid";
-
-    static final String ROUTE_ID = "routeid";*/
-
-    @Test
-    public void should_forward_get_request() throws Exception {
-        testForwardRequest(method(GET), "get");
-    }
-
-    public void testForwardRequest(RequestMatcher requestMatcher, String urlSuffixe) throws Exception {
-        this.mockServer
-                .expect(requestMatcher)
-                .andExpect(requestTo("http://localhost/original/" + urlSuffixe))
-                .andRespond(withSuccess(BODY_VALUE, TEXT_PLAIN));
-
-        this.mockMvc
-                .perform(get("http://localhost/" + Config.Path.PROXY_CONTEXT + "/abindingid")
-                        .header(HEADER_FORWARD_URL, "http://localhost/original/" + urlSuffixe))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(TEXT_PLAIN))
-                .andExpect(content().string(BODY_VALUE));
-
-        this.mockServer.verify();
-    }
-
-    @Test
-    public void should_fail_if_no_binding_provided() throws Exception {
-
-        this.mockMvc
-                .perform(get("http://localhost/" + Config.Path.PROXY_CONTEXT)
-                        .header(HEADER_FORWARD_URL, "http://localhost/original/get"))
-                .andExpect(status().isNotFound());
-
-        this.mockServer.verify();
-    }
 
     @Test
     public void headRequest() throws Exception {
@@ -114,9 +87,6 @@ public class ProxyControllerTest {
 
         this.mockServer.verify();
     }
-
-    @Mock
-    private BindingRepository bindingRepo;
 
     @Test
     public void on_incoming_traffic_all_apps_stopped_linked_to_route_id_should_be_started() throws Exception {
@@ -159,6 +129,38 @@ public class ProxyControllerTest {
     @Autowired
     void setWebApplicationContext(WebApplicationContext wac) {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+    }
+
+    @Test
+    public void should_fail_if_no_binding_provided() throws Exception {
+
+        this.mockMvc
+                .perform(get("http://localhost/" + Config.Path.PROXY_CONTEXT)
+                        .header(HEADER_FORWARD_URL, "http://localhost/original/get"))
+                .andExpect(status().isNotFound());
+
+        this.mockServer.verify();
+    }
+
+    @Test
+    public void should_forward_get_request() throws Exception {
+        testForwardRequest(method(GET), "get");
+    }
+
+    public void testForwardRequest(RequestMatcher requestMatcher, String urlSuffixe) throws Exception {
+        this.mockServer
+                .expect(requestMatcher)
+                .andExpect(requestTo("http://localhost/original/" + urlSuffixe))
+                .andRespond(withSuccess(BODY_VALUE, TEXT_PLAIN));
+
+        this.mockMvc
+                .perform(get("http://localhost/" + Config.Path.PROXY_CONTEXT + "/abindingid")
+                        .header(HEADER_FORWARD_URL, "http://localhost/original/" + urlSuffixe))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(TEXT_PLAIN))
+                .andExpect(content().string(BODY_VALUE));
+
+        this.mockServer.verify();
     }
 
 }

@@ -19,7 +19,7 @@
 
 package org.cloudfoundry.autosleep.util;
 
-import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
 import org.junit.Test;
 
 import java.time.Duration;

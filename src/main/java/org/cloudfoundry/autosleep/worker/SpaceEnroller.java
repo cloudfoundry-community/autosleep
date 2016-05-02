@@ -22,12 +22,12 @@ package org.cloudfoundry.autosleep.worker;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
-import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
-import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
+import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
+import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
+import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.scheduling.AbstractPeriodicTask;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 
@@ -103,7 +103,7 @@ class SpaceEnroller extends AbstractPeriodicTask {
                 /*a 409 "conflict" error is possible (if someone tries to delete a service at the same time
                 but without consequences
                  */
-                log.error("remote error", c);
+                log.error("cloudfoundry error", c);
             }
             rescheduleWithDefaultPeriod();
         } else {

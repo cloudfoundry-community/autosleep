@@ -19,9 +19,9 @@
 
 package org.cloudfoundry.autosleep.ui.web.controller;
 
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
+import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.access.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
 import org.springframework.cloud.servicebroker.model.Catalog;
 import org.springframework.cloud.servicebroker.model.Plan;
 import org.springframework.cloud.servicebroker.model.ServiceDefinition;

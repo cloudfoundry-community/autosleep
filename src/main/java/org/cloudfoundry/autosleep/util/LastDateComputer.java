@@ -20,7 +20,7 @@
 package org.cloudfoundry.autosleep.util;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
 
 import java.time.Instant;
 

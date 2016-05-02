@@ -21,6 +21,7 @@ package org.cloudfoundry.autosleep;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.ContextInitializer;
+import org.cloudfoundry.autosleep.access.cloudfoundry.config.CloudfoundryClientBuilder;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.ComponentScan;
@@ -35,7 +36,8 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 public class Application {
 
     public static void main(String[] args) {
-        new SpringApplicationBuilder(Application.class)
+        new SpringApplicationBuilder(CloudfoundryClientBuilder.class)
+                .child(Application.class)
                 .initializers(new ContextInitializer())
                 .run(args);
         log.debug("Application started");

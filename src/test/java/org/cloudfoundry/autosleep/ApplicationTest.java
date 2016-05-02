@@ -19,11 +19,26 @@
 
 package org.cloudfoundry.autosleep;
 
+import javassist.CannotCompileException;
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtMethod;
+import javassist.NotFoundException;
+import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.ClassFile;
+import javassist.bytecode.ConstPool;
+import javassist.bytecode.annotation.Annotation;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.access.cloudfoundry.config.CloudfoundryClientBuilder;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
+import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.logging.LoggingClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnNotWebApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -32,28 +47,32 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import javax.annotation.PostConstruct;
 import java.util.UUID;
 
+import static org.mockito.Mockito.mock;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {ApplicationTest.MockClientConfiguration.class, Application.class})
 @WebAppConfiguration
 public class ApplicationTest {
 
-
     @Configuration
     @Slf4j
     public static class MockClientConfiguration {
+
+        @Getter(onMethod = @__(@Bean))
+        private CloudFoundryClient cloudFoundryClient;
+
+        @Getter(onMethod = @__(@Bean))
+        private LoggingClient logClient;
+
         @PostConstruct
-        public void initClientEnvironment() {
-            log.debug("initClientEnvironment - setting properties");
-            System.setProperty(Config.EnvKey.CF_HOST, "somewhere.org");
-            System.setProperty(Config.EnvKey.CF_SKIP_SSL_VALIDATION, "true");
-            System.setProperty(Config.EnvKey.CF_USERNAME, "username");
-            System.setProperty(Config.EnvKey.CF_PASSWORD, "password");
-            System.setProperty(Config.EnvKey.CF_CLIENT_ID, "clientId");
-            System.setProperty(Config.EnvKey.CF_CLIENT_SECRET, "clientSecret");
+        public void initClientEnvironment() throws NotFoundException {
+            cloudFoundryClient = mock(CloudFoundryClient.class);
+            logClient = mock(LoggingClient.class);
             System.setProperty(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY,
                     BeanGenerator.getSampleVcapApplication(UUID.randomUUID(), "autosleep",
                             "http://somewhere-else.org"));
         }
+
     }
 
     @Test

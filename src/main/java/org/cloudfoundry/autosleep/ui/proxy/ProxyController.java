@@ -20,13 +20,13 @@
 package org.cloudfoundry.autosleep.ui.proxy;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApi;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
+import org.cloudfoundry.autosleep.access.dao.model.Binding;
+import org.cloudfoundry.autosleep.access.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.config.Config.Path;
-import org.cloudfoundry.autosleep.dao.model.Binding;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApi;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
 import org.cloudfoundry.autosleep.worker.scheduling.TimeManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -51,6 +51,19 @@ public class ProxyController {
 
     static final String HEADER_FORWARD_URL = "X-CF-Forwarded-Url";
 
+    private static RequestEntity<?> buildOutgoingRequest(RequestEntity<?> incoming) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.putAll(incoming.getHeaders());
+
+        URI uri = headers.remove(HEADER_FORWARD_URL).stream()
+                .findFirst()
+                .map(URI::create)
+                .orElseThrow(() -> new IllegalStateException(String.format("No %s header present",
+                        HEADER_FORWARD_URL)));
+
+        return new RequestEntity<>(incoming.getBody(), headers, incoming.getMethod(), uri);
+    }
+
     @Autowired
     BindingRepository bindingRepository;
 
@@ -63,26 +76,25 @@ public class ProxyController {
     @Autowired
     private TimeManager timeManager;
 
-    private void logHeader(RequestEntity<byte[]> request){
-        request.getHeaders().toSingleValueMap().forEach((s, s2) -> log.debug("Header content {} - {} ", s , s2 ));
-    }
-
-
     @RequestMapping(value = "/{routeBindingId}")
     @ResponseBody
-    void badlyFormatedRequest(@PathVariable("routeBindingId") String bindingId,  RequestEntity<byte[]> request){
-        log.error("Missing Header? {}",HEADER_FORWARD_URL);
+    void badlyFormatedRequest(@PathVariable("routeBindingId") String bindingId, RequestEntity<byte[]> request) {
+        log.error("Missing Header? {}", HEADER_FORWARD_URL);
         logHeader(request);
     }
 
-
+    private void logHeader(RequestEntity<byte[]> request) {
+        request.getHeaders()
+                .toSingleValueMap()
+                .forEach((name, value) -> log.debug("Header content {} - {} ", name, value));
+    }
 
     @RequestMapping(value = "/{routeBindingId}", headers = {HEADER_FORWARD_URL})
     @ResponseBody
-    ResponseEntity<?> proxify(@PathVariable("routeBindingId") String bindingId,  RequestEntity<byte[]> request)
+    ResponseEntity<?> proxify(@PathVariable("routeBindingId") String bindingId, RequestEntity<byte[]> request)
             throws CloudFoundryException, InterruptedException {
 
-        log.debug("Incoming HTTP request for binding {} : {}" , bindingId, request);
+        log.debug("Incoming HTTP request for binding {} : {}", bindingId, request);
 
         Binding routeBinding = bindingRepository.findOne(bindingId);
         if (routeBinding == null) {
@@ -130,16 +142,4 @@ public class ProxyController {
         return this.restOperations.exchange(outgoing, byte[].class);
     }
 
-    private static RequestEntity<?> buildOutgoingRequest(RequestEntity<?> incoming) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.putAll(incoming.getHeaders());
-
-        URI uri = headers.remove(HEADER_FORWARD_URL).stream()
-                .findFirst()
-                .map(URI::create)
-                .orElseThrow(() -> new IllegalStateException(String.format("No %s header present", HEADER_FORWARD_URL)));
-
-        return new RequestEntity<>(incoming.getBody(), headers, incoming.getMethod(), uri);
-    }
-    
 }

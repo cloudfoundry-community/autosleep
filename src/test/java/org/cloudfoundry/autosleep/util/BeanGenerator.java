@@ -19,18 +19,18 @@
 
 package org.cloudfoundry.autosleep.util;
 
-import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.model.Binding;
-import org.cloudfoundry.autosleep.dao.model.Binding.ResourceType;
-import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.access.dao.model.Binding;
+import org.cloudfoundry.autosleep.access.dao.model.Binding.ResourceType;
+import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
+import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Route;
+import static org.cloudfoundry.autosleep.access.dao.model.Binding.ResourceType.Route;
 
 public class BeanGenerator {
 

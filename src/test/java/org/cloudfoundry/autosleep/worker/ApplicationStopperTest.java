@@ -21,16 +21,16 @@ package org.cloudfoundry.autosleep.worker;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
-import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
-import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException;
-import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException.EntityType;
-import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
-import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
+import org.cloudfoundry.autosleep.access.cloudfoundry.EntityNotFoundException;
+import org.cloudfoundry.autosleep.access.cloudfoundry.EntityNotFoundException.EntityType;
+import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationActivity;
+import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.junit.Before;
 import org.junit.Test;
@@ -148,7 +148,7 @@ public class ApplicationStopperTest {
 
     @Test
     public void test_application_is_not_stopped_if_no_activity_found() throws Exception {
-        //given remote activity is not found
+        //given cloudfoundry activity is not found
         when(applicationActivity.getLastLog()).thenReturn(null);
         when(applicationActivity.getLastEvent()).thenReturn(null);
         //when task is run
@@ -278,7 +278,7 @@ public class ApplicationStopperTest {
 
     @Test
     public void test_task_is_reschedule_even_when_not_found_remotely() throws Exception {
-        //given remote application is not found
+        //given cloudfoundry application is not found
         when(cloudFoundryApi.getApplicationActivity(APP_UID))
                 .thenThrow(
                         new CloudFoundryException(
@@ -295,7 +295,7 @@ public class ApplicationStopperTest {
 
     @Test
     public void test_task_is_reschedule_even_when_remote_error() throws Exception {
-        //given remote call fails for some reason
+        //given cloudfoundry call fails for some reason
         when(cloudFoundryApi.getApplicationActivity(APP_UID))
                 .thenThrow(new CloudFoundryException(new Exception("Mock call")));
         //when task is run
