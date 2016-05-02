@@ -17,28 +17,19 @@
  * limitations under the License.
  */
 
-package org.cloudfoundry.autosleep;
+package org.cloudfoundry.autosleep.config;
 
-import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.ContextInitializer;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 
 @Configuration
-@EnableAutoConfiguration
-@ComponentScan(basePackages = {"org.springframework.cloud.servicebroker", "org.cloudfoundry.autosleep"})
-@EnableWebMvc
-@Slf4j
-public class Application {
+public class RestConfig {
 
-    public static void main(String[] args) {
-        new SpringApplicationBuilder(Application.class)
-                .initializers(new ContextInitializer())
-                .run(args);
-        log.debug("Application started");
+    @Bean
+    RestOperations restOperations() {
+        return new RestTemplate();
     }
 
 }
