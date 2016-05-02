@@ -32,6 +32,15 @@ import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterR
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceExistsException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
@@ -41,14 +50,6 @@ import org.springframework.cloud.servicebroker.model.DeleteServiceInstanceReques
 import org.springframework.cloud.servicebroker.model.DeleteServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.UpdateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.UpdateServiceInstanceResponse;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -165,7 +166,7 @@ public class AutosleepServiceInstanceServiceTest {
         if (params == null) {
             params = Collections.emptyMap();
         }
-        return new UpdateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID,params)
+        return new UpdateServiceInstanceRequest(SERVICE_DEFINITION_ID, PLAN_ID, params)
                 .withServiceInstanceId(SERVICE_INSTANCE_ID);
     }
 
@@ -173,7 +174,7 @@ public class AutosleepServiceInstanceServiceTest {
     public void initService() {
         serviceInstances.clear();
         doAnswer(invocationOnMock ->
-                        serviceInstances.add((SpaceEnrollerConfig) invocationOnMock.getArguments()[0])
+                serviceInstances.add((SpaceEnrollerConfig) invocationOnMock.getArguments()[0])
         ).when(spaceEnrollerConfigRepository).save(any(SpaceEnrollerConfig.class));
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArguments()[1]).run();
@@ -290,6 +291,19 @@ public class AutosleepServiceInstanceServiceTest {
         //then the repository is invoked
         verify(spaceEnrollerConfigRepository, times(1)).delete(SERVICE_INSTANCE_ID);
         assertThat(response, is(notNullValue()));
+    }
+
+    @Test
+    public void test_delete_service_instance_fails_when_service_in_forced() throws Exception {
+        //a spaceEnrollerConfig in forced enrollment
+        SpaceEnrollerConfig config = BeanGenerator.createServiceInstance(SERVICE_INSTANCE_ID);
+        config.setForcedAutoEnrollment(true);
+        when(spaceEnrollerConfigRepository.findOne(anyString()))
+                .thenReturn(config);
+
+        //when service is asked to delete
+        //then it fails
+        verifyThrown(() -> instanceService.deleteServiceInstance(deleteRequest), ServiceBrokerException.class);
     }
 
     @Test
@@ -427,7 +441,7 @@ public class AutosleepServiceInstanceServiceTest {
     }
 
     @Test
-    public void test_update_fails_when_autoenrollment_without_secret() throws Exception {
+    public void test_update_fails_when_auto_enrollment_without_secret() throws Exception {
         //given service exists
         service_exist_in_database();
 

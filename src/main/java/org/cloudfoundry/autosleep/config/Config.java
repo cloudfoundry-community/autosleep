@@ -49,7 +49,7 @@ public interface Config {
 
         String CF_ENCODING_SECRET = "cf.security.password.encodingSecret";
 
-        String CF_ENDPOINT = "cf.client.target.endpoint";
+        String CF_HOST = "cf.client.target.host";
 
         String CF_PASSWORD = "cf.client.password";
 
