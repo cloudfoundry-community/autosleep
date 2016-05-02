@@ -23,10 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
-import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
+import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
@@ -157,7 +157,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                     .secret(secret != null ? passwordEncoder.encode(secret) : null)
                     .build();
 
-            // save in repository before calling remote because otherwise local service binding controller will
+            // save in repository before calling cloudfoundry because otherwise local service binding controller will
             // fail retrieving the service
             spaceEnrollerConfigRepository.save(spaceEnrollerConfig);
             workerManager.registerSpaceEnroller(spaceEnrollerConfig);
@@ -181,8 +181,8 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
         if (config != null) {
             if (config.isForcedAutoEnrollment()) {
                 log.debug("deleteServiceInstance - {} - forced enrollment. Denied", spaceEnrollerConfigId);
-                throw new ServiceBrokerException("Service " + spaceEnrollerConfigId + " is in forced enrollment. " +
-                        "You need to update it first");
+                throw new ServiceBrokerException("Service " + spaceEnrollerConfigId + " is in forced enrollment. "
+                        + "You need to update it first");
             } else {
                 spaceEnrollerConfigRepository.delete(spaceEnrollerConfigId);
             }

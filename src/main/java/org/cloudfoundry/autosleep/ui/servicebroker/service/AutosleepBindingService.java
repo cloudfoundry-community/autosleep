@@ -22,16 +22,16 @@ package org.cloudfoundry.autosleep.ui.servicebroker.service;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
-import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.model.Binding;
-import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.BindingRepository;
-import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.access.dao.model.Binding;
+import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
+import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.access.dao.repositories.BindingRepository;
+import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.springframework.cloud.servicebroker.model.CreateServiceInstanceAppBindingResponse;
@@ -47,8 +47,8 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 import java.util.List;
 
-import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Application;
-import static org.cloudfoundry.autosleep.dao.model.Binding.ResourceType.Route;
+import static org.cloudfoundry.autosleep.access.dao.model.Binding.ResourceType.Application;
+import static org.cloudfoundry.autosleep.access.dao.model.Binding.ResourceType.Route;
 
 @Service
 @Slf4j
@@ -128,7 +128,8 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             }
 
             String redirectionRoute = "https://" + firstUri + Config.Path.PROXY_CONTEXT + "/fix/" + bindingId;
-            log.info("Create route binding : redirection from [{}] to [{}] (bid {})", route, redirectionRoute, bindingId);
+            log.info("Create route binding : redirection from [{}] to [{}] (bid {})",
+                    route, redirectionRoute, bindingId);
 
             return new CreateServiceInstanceRouteBindingResponse().withRouteServiceUrl(redirectionRoute);
         } else {

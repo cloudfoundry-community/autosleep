@@ -19,7 +19,7 @@
 
 package org.cloudfoundry.autosleep.worker;
 
-import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
+import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 
 public interface WorkerManagerService {
 

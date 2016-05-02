@@ -20,15 +20,15 @@
 package org.cloudfoundry.autosleep.worker;
 
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
-import org.cloudfoundry.autosleep.dao.model.SpaceEnrollerConfig;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.dao.repositories.SpaceEnrollerConfigRepository;
+import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
+import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
-import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException;
-import org.cloudfoundry.autosleep.worker.remote.EntityNotFoundException.EntityType;
-import org.cloudfoundry.autosleep.worker.remote.model.ApplicationIdentity;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
+import org.cloudfoundry.autosleep.access.cloudfoundry.EntityNotFoundException;
+import org.cloudfoundry.autosleep.access.cloudfoundry.EntityNotFoundException.EntityType;
+import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.junit.Before;
 import org.junit.Test;
@@ -130,14 +130,14 @@ public class SpaceEnrollerTest {
         when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
         //And it does not exlude any application
         when(spaceEnrollerConfig.getExcludeFromAutoEnrollment()).thenReturn(null);
-        //And we localy have all remote bound to another service
+        //And we localy have all cloudfoundry bound to another service
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 //do not return local app id
                 .filter(remoteApplicationId -> !remoteApplicationId.equals(APP_ID))
                 .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId,
                         SERVICE_ID + "-other"))
                 .collect(Collectors.toList()));
-        //And remote applications contain the same applications
+        //And cloudfoundry applications contain the same applications
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), eq(null)))
                 .thenReturn(remoteApplicationIds.stream()
                         .map(applicationId -> ApplicationIdentity.builder()
@@ -161,7 +161,7 @@ public class SpaceEnrollerTest {
         when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
         //And it does not exlude any application
         when(spaceEnrollerConfig.getExcludeFromAutoEnrollment()).thenReturn(null);
-        //And we locally have all remote but the local one and another one
+        //And we locally have all cloudfoundry but the local one and another one
         when(applicationRepository.findAll()).thenReturn(remoteApplicationIds.stream()
                 //do not return local app id
                 .filter(remoteApplicationId -> !remoteApplicationId.equals(APP_ID)
@@ -169,7 +169,7 @@ public class SpaceEnrollerTest {
                 .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId,
                         SERVICE_ID))
                 .collect(Collectors.toList()));
-        //And remote applications contain the all applications
+        //And cloudfoundry applications contain the all applications
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), eq(null)))
                 .thenReturn(remoteApplicationIds.stream()
                         .map(applicationId -> ApplicationIdentity.builder()
@@ -181,7 +181,7 @@ public class SpaceEnrollerTest {
         spaceEnroller.run();
         //Then it reschedule itself
         verify(spaceEnroller, times(1)).rescheduleWithDefaultPeriod();
-        //Normally remote app has been bound
+        //Normally cloudfoundry app has been bound
         verify(cloudFoundryApi, times(1))
                 .bindApplications(anyString(), argThat(anyListOfSize(1)));
 
@@ -210,7 +210,7 @@ public class SpaceEnrollerTest {
                 .map(remoteApplicationId -> BeanGenerator.createAppInfoLinkedToService(remoteApplicationId,
                         SERVICE_ID))
                 .collect(Collectors.toList()));
-        //And remote applications contain the all applications
+        //And cloudfoundry applications contain the all applications
         when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenReturn(remoteApplicationIds.stream()
                         .map(applicationId -> ApplicationIdentity.builder()

@@ -22,13 +22,13 @@ package org.cloudfoundry.autosleep.worker;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
-import org.cloudfoundry.autosleep.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.LastDateComputer;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.worker.remote.CloudFoundryException;
-import org.cloudfoundry.autosleep.worker.remote.model.ApplicationActivity;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
+import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.scheduling.AbstractPeriodicTask;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 
@@ -125,7 +125,7 @@ class ApplicationStopper extends AbstractPeriodicTask {
                 rescheduleDelta = checkActiveApplication(applicationInfo, applicationActivity);
             }
         } catch (CloudFoundryException c) {
-            log.error("error while requesting remote api", c);
+            log.error("error while requesting cloudfoundry api", c);
         } catch (Throwable t) {
             log.error("unsuspected error", t);
         } finally {
