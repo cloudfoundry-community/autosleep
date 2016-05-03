@@ -1,11 +1,12 @@
 @startuml
-title Service Instance FSM
+title Autosleep Service Instance FSM
 scale 1024 width
 [*] --> StandardEnrollment
-StandardEnrollment --> ForcedEnrollment: [update(enrollment=forced,unlockSecret=s)]
-StandardEnrollment: unbind(): accept and add application to black list
+StandardEnrollment --> ForcedEnrollment: update(enrollment=forced,\nsecret=adminSecret)
+StandardEnrollment: unbind(): accept and add application to enrollment black list
 StandardEnrollment: delete(): accept
-ForcedEnrollment : unlockSecret
-ForcedEnrollment --> StandardEnrollment: [update(enrollment=regular,unlockSecret=s)]
-ForcedEnrollment --> StandardEnrollment: [update(enrollment=regular,unlockSecret=adminSecret)]
+ForcedEnrollment : secret
+ForcedEnrollment --> ForcedEnrollment: update(enrollment=regular,\nsecret!=adminSecret) : \n / refuse
+ForcedEnrollment --> StandardEnrollment: update(enrollment=regular,\nsecret=adminSecret)
 ForcedEnrollment : unbind(): accept but still candidate to automatic enrollment
+ForcedEnrollment : delete(): refuse
