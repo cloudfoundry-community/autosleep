@@ -21,6 +21,8 @@ package org.cloudfoundry.autosleep.worker;
 
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
+import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepository;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
@@ -31,6 +33,7 @@ import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.worker.scheduling.AbstractPeriodicTask;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -52,6 +55,9 @@ class ApplicationStopper extends AbstractPeriodicTask {
     private final Boolean ignoreRouteBindingError;
 
     private final String spaceEnrollerConfigId;
+
+    @Autowired
+    private ProxyMapEntryRepository proxyMap;
 
     @Builder
     ApplicationStopper(Clock clock,
@@ -151,9 +157,11 @@ class ApplicationStopper extends AbstractPeriodicTask {
         log.info("Stopping app [{} / {}], last event: {}, last log: {}",
                 applicationActivity.getApplication().getName(), appUid,
                 applicationActivity.getLastEvent(), applicationActivity.getLastLog());
-        //TODO add temporary state? so that service broker knows we are calling?
+
+
         //retrieve all routes for this app
         List<String> routeIds = cloudFoundryApi.listApplicationRoutes(appUid);
+         /*TODO uncomment whenever route services handle stopped apps
         try {
             cloudFoundryApi.bindRoutes(spaceEnrollerConfigId, routeIds);
         } catch (CloudFoundryException c) {
@@ -162,7 +170,19 @@ class ApplicationStopper extends AbstractPeriodicTask {
             } else {
                 log.debug("Skip route binding error or {} on application {}.", spaceEnrollerConfigId, appUid);
             }
-        }
+        }*/
+
+
+        routeIds.forEach(id -> {
+            try {
+                String domainURL = cloudFoundryApi.getDomainUrl(id);
+                log.debug("Got domainURL {}",domainURL);
+                proxyMap.save(new ProxyMapEntry(domainURL, appUid, false));
+            } catch (CloudFoundryException e) {
+               log.error("Couldn't get domainURL corresponding to a route ",e);
+            }
+        });
+
         cloudFoundryApi.stopApplication(appUid);
         applicationInfo.markAsPutToSleep();
     }

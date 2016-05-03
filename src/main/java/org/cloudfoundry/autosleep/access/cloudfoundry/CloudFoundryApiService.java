@@ -35,6 +35,8 @@ public interface CloudFoundryApiService {
 
     String getApplicationState(String applicationUuid) throws CloudFoundryException;
 
+    String getDomainUrl(String routeId) throws CloudFoundryException;
+
     List<String/**ids**/> listApplicationRoutes(String applicationUuid) throws CloudFoundryException;
 
     List<ApplicationIdentity> listApplications(String spaceUuid, Pattern excludeNames) throws CloudFoundryException;

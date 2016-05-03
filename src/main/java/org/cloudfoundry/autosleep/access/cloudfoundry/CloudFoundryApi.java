@@ -37,6 +37,8 @@ import org.cloudfoundry.client.v2.events.EventEntity;
 import org.cloudfoundry.client.v2.events.EventResource;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
+import org.cloudfoundry.client.v2.routes.GetRouteRequest;
+import org.cloudfoundry.client.v2.routes.GetRouteResponse;
 import org.cloudfoundry.client.v2.routes.ListRouteApplicationsRequest;
 import org.cloudfoundry.client.v2.routes.ListRouteApplicationsResponse;
 import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
@@ -262,6 +264,14 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
+    }
+
+    @Override
+    public String getDomainUrl(String routeId) throws CloudFoundryException {
+        log.debug("getDomainUrl");
+        GetRouteResponse response = cfClient.routes().get(GetRouteRequest.builder().routeId(routeId).build()).get
+                (Config.CF_API_TIMEOUT);
+        return response.getEntity().getDomainUrl();
     }
 
     @Override

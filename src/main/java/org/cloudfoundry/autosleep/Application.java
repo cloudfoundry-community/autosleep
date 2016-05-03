@@ -20,8 +20,8 @@
 package org.cloudfoundry.autosleep;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.ContextInitializer;
 import org.cloudfoundry.autosleep.access.cloudfoundry.config.CloudfoundryClientBuilder;
+import org.cloudfoundry.autosleep.config.ContextInitializer;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.ComponentScan;
@@ -29,7 +29,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
-@EnableAutoConfiguration
+@EnableAutoConfiguration(exclude = {
+        org.cloudfoundry.autosleep.ui.proxy.WildcardProxy.class,
+        org.springframework.boot.actuate.autoconfigure.ManagementSecurityAutoConfiguration.class})
 @ComponentScan(basePackages = {"org.springframework.cloud.servicebroker", "org.cloudfoundry.autosleep"})
 @EnableWebMvc
 @Slf4j

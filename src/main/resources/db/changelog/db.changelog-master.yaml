@@ -137,3 +137,25 @@ databaseChangeLog:
     - addPrimaryKey:
         tableName: SpaceEnrollerConfig
         columnNames: id
+#adding temporary table for wildcard routing
+- changeSet:
+    id: 3
+    author: Arnaud Ruffin
+    changes:
+    - createTable:
+        tableName: RouteMap
+        columns:
+        - column:
+            name: host
+            type: VARCHAR(255)
+            constraints:
+                primaryKey: true
+                nullable: false
+        - column:
+            name: appId
+            type: VARCHAR(255)
+        - column:
+            name: isRestarting
+            type: BIT(1)
+            constraints:
+                nullable: false

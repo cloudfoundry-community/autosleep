@@ -176,7 +176,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                 }
                 applicationLocker.executeThreadSafe(appId,
                         () -> {
-                            log.debug("deleteServiceInstanceBinding on app ", appId);
+                            log.debug("deleteServiceInstanceBinding on app {}", appId);
                             ApplicationInfo appInfo = appRepository.findOne(appId);
                             if (appInfo != null) {
                                 appInfo.getEnrollmentState()
