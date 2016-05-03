@@ -33,6 +33,8 @@ import org.cloudfoundry.client.v2.applications.ListApplicationRoutesResponse;
 import org.cloudfoundry.client.v2.applications.ListApplicationsRequest;
 import org.cloudfoundry.client.v2.applications.ListApplicationsResponse;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
+import org.cloudfoundry.client.v2.domains.GetDomainRequest;
+import org.cloudfoundry.client.v2.domains.GetDomainResponse;
 import org.cloudfoundry.client.v2.events.EventEntity;
 import org.cloudfoundry.client.v2.events.EventResource;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
@@ -41,6 +43,7 @@ import org.cloudfoundry.client.v2.routes.GetRouteRequest;
 import org.cloudfoundry.client.v2.routes.GetRouteResponse;
 import org.cloudfoundry.client.v2.routes.ListRouteApplicationsRequest;
 import org.cloudfoundry.client.v2.routes.ListRouteApplicationsResponse;
+import org.cloudfoundry.client.v2.routes.RouteEntity;
 import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
 import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
 import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceToRouteRequest;
@@ -267,11 +270,17 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     }
 
     @Override
-    public String getDomainUrl(String routeId) throws CloudFoundryException {
-        log.debug("getDomainUrl");
+    public String getHost(String routeId) throws CloudFoundryException {
+        log.debug("getHost");
         GetRouteResponse response = cfClient.routes().get(GetRouteRequest.builder().routeId(routeId).build()).get
                 (Config.CF_API_TIMEOUT);
-        return response.getEntity().getDomainUrl();
+        RouteEntity routeEntity = response.getEntity();
+        String route = routeEntity.getHost()+routeEntity.getPath();
+        log.debug("route =  {}", route);
+
+        GetDomainResponse domainResponse = cfClient.domains().get(GetDomainRequest.builder().domainId(routeEntity.getDomainId()).build()).get(Config.CF_API_TIMEOUT);
+        log.debug("domain = {}",domainResponse.getEntity());
+        return route + "." + domainResponse.getEntity().getName();
     }
 
     @Override

@@ -20,6 +20,7 @@
 package org.cloudfoundry.autosleep.worker;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepository;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
@@ -62,6 +63,9 @@ public class WorkerManager implements WorkerManagerService {
     @Autowired
     private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
+    @Autowired
+    private ProxyMapEntryRepository proxyMapEntryRepository;
+
     @PostConstruct
     public void init() {
         log.debug("Initializer watchers for every app already enrolled (except if handle by another instance of "
@@ -93,6 +97,7 @@ public class WorkerManager implements WorkerManagerService {
                 .ignoreRouteBindingError(config.isIgnoreRouteServiceError())
                 .period(interval)
                 .spaceEnrollerConfigId(config.getId())
+                .proxyMap(proxyMapEntryRepository)
                 .build();
         checker.startNow();
     }

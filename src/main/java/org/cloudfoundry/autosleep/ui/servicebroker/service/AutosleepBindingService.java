@@ -145,6 +145,10 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
         log.debug("deleteServiceInstanceBinding - {} on service {}", bindingId, serviceId);
 
         final Binding binding = bindingRepository.findOne(bindingId);
+        if (binding == null){
+            log.error("Trying to delete unknown binding {}, letting it pass",bindingId);
+           return;
+        }
         if (binding.getResourceType() == Application) {
             log.info("Unbinding app {} (binding {})", binding.getResourceId(), bindingId);
             final String appId = binding.getResourceId();

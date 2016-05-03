@@ -21,19 +21,18 @@ package org.cloudfoundry.autosleep.worker;
 
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
-import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepository;
-import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
-import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.util.ApplicationLocker;
-import org.cloudfoundry.autosleep.util.LastDateComputer;
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationActivity;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
+import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepository;
+import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
+import org.cloudfoundry.autosleep.util.ApplicationLocker;
+import org.cloudfoundry.autosleep.util.LastDateComputer;
 import org.cloudfoundry.autosleep.worker.scheduling.AbstractPeriodicTask;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -56,8 +55,7 @@ class ApplicationStopper extends AbstractPeriodicTask {
 
     private final String spaceEnrollerConfigId;
 
-    @Autowired
-    private ProxyMapEntryRepository proxyMap;
+    private final ProxyMapEntryRepository proxyMap;
 
     @Builder
     ApplicationStopper(Clock clock,
@@ -68,7 +66,8 @@ class ApplicationStopper extends AbstractPeriodicTask {
                        CloudFoundryApiService cloudFoundryApi,
                        ApplicationRepository applicationRepository,
                        ApplicationLocker applicationLocker,
-                       boolean ignoreRouteBindingError) {
+                       boolean ignoreRouteBindingError,
+                       ProxyMapEntryRepository proxyMap) {
         super(clock, period);
         this.appUid = appUid;
         this.spaceEnrollerConfigId = spaceEnrollerConfigId;
@@ -77,6 +76,7 @@ class ApplicationStopper extends AbstractPeriodicTask {
         this.applicationRepository = applicationRepository;
         this.applicationLocker = applicationLocker;
         this.ignoreRouteBindingError = ignoreRouteBindingError;
+        this.proxyMap = proxyMap;
     }
 
     private Duration checkActiveApplication(ApplicationInfo applicationInfo, ApplicationActivity applicationActivity)
@@ -175,11 +175,11 @@ class ApplicationStopper extends AbstractPeriodicTask {
 
         routeIds.forEach(id -> {
             try {
-                String domainURL = cloudFoundryApi.getDomainUrl(id);
-                log.debug("Got domainURL {}",domainURL);
-                proxyMap.save(new ProxyMapEntry(domainURL, appUid, false));
+                String host = cloudFoundryApi.getHost(id);
+                log.debug("Got host {}",host);
+                proxyMap.save(new ProxyMapEntry(host, appUid, false));
             } catch (CloudFoundryException e) {
-               log.error("Couldn't get domainURL corresponding to a route ",e);
+               log.error("Couldn't get host corresponding to a route ",e);
             }
         });
 

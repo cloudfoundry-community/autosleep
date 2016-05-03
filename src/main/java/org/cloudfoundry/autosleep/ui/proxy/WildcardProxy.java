@@ -100,6 +100,9 @@ public class WildcardProxy {
 
     }
 
+
+    //TODO @RequestHeader
+
     @RequestMapping(headers = {HEADER_PROTOCOL, HEADER_HOST})
     ResponseEntity<?> service(RequestEntity<byte[]> incoming) throws InterruptedException {
 
@@ -120,7 +123,7 @@ public class WildcardProxy {
             ProxyMapEntry mapEntry = proxyMap.findOne(targetHost);
 
             if (mapEntry == null) {
-                return new ResponseEntity<Object>("This page doesn't exist!", HttpStatus.NOT_FOUND);
+                return new ResponseEntity<Object>("Sorry, but this page doesn't exist!", HttpStatus.NOT_FOUND);
             } else if (mapEntry.isRestarting()) {
                 return new ResponseEntity<Object>("Autosleep is restarting, please retry in few seconds", HttpStatus
                         .SERVICE_UNAVAILABLE);
@@ -132,6 +135,7 @@ public class WildcardProxy {
                     String appId = mapEntry.getAppId();
                     if(!CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))){
                         cfApi.startApplication(appId);
+                        timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
                     }
                     while (!CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {
                         log.debug("waiting for app {} restart...", appId);
