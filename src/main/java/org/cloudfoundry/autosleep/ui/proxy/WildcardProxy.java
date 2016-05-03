@@ -58,6 +58,12 @@ public class WildcardProxy {
 
     static final String HEADER_PROTOCOL = "x-forwarded-proto";
 
+    private static void logHeader(RequestEntity<byte[]> request) {
+        request.getHeaders()
+                .toSingleValueMap()
+                .forEach((name, value) -> log.debug("Header content {} - {} ", name, value));
+    }
+
     private final RestOperations restOperations;
 
     private String autosleepHost;
@@ -81,6 +87,8 @@ public class WildcardProxy {
         this.restOperations = restOperations;
     }
 
+    //TODO @RequestHeader
+
     private RequestEntity<?> getOutgoingRequest(RequestEntity<?> incoming) {
         HttpHeaders headers = new HttpHeaders();
         headers.putAll(incoming.getHeaders());
@@ -94,8 +102,6 @@ public class WildcardProxy {
         return new RequestEntity<>(incoming.getBody(), headers, incoming.getMethod(), uri);
     }
 
-    //TODO @RequestHeader
-
     @PostConstruct
     void init() {
         //not stored in Config, because this impl is temporary
@@ -104,7 +110,7 @@ public class WildcardProxy {
         try {
             autosleepHost = InetAddress.getLocalHost().getHostName();
             this.proxySignature = Arrays.toString(MessageDigest.getInstance("MD5").digest((autosleepHost
-                   +  securityPass).getBytes("UTF-8")));
+                    + securityPass).getBytes("UTF-8")));
         } catch (UnknownHostException e) {
             log.error("Couldn't resolve host", e);
         } catch (NoSuchAlgorithmException e) {
@@ -112,13 +118,6 @@ public class WildcardProxy {
         } catch (UnsupportedEncodingException e) {
             log.error("Couldn't encode string to UTF-8", e);
         }
-
-    }
-
-    private void logHeader(RequestEntity<byte[]> request) {
-        request.getHeaders()
-                .toSingleValueMap()
-                .forEach((name, value) -> log.debug("Header content {} - {} ", name, value));
     }
 
     @RequestMapping(headers = {HEADER_PROTOCOL, HEADER_HOST})
@@ -143,8 +142,8 @@ public class WildcardProxy {
             if (mapEntry == null) {
                 return new ResponseEntity<Object>("Sorry, but this page doesn't exist!", HttpStatus.NOT_FOUND);
             } else if (mapEntry.isRestarting()) {
-                return new ResponseEntity<Object>("Autosleep is restarting, please retry in few seconds", HttpStatus
-                        .SERVICE_UNAVAILABLE);
+                return new ResponseEntity<Object>("Autosleep is restarting, please retry in few seconds",
+                        HttpStatus.SERVICE_UNAVAILABLE);
             } else {
                 mapEntry.setRestarting(true);
 
@@ -164,6 +163,8 @@ public class WildcardProxy {
 
                 } catch (CloudFoundryException e) {
                     log.error("Couldn't launch app restart", e);
+                    mapEntry.setRestarting(false);
+                    proxyMap.save(mapEntry);
                 }
             }
 

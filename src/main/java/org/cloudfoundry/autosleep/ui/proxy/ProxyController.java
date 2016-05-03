@@ -22,7 +22,6 @@ package org.cloudfoundry.autosleep.ui.proxy;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApi;
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
-import org.cloudfoundry.autosleep.access.dao.model.Binding;
 import org.cloudfoundry.autosleep.access.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
@@ -39,10 +38,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestOperations;
 
 import java.net.URI;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 
 @Controller
 @RequestMapping(Path.PROXY_CONTEXT)
@@ -76,64 +71,24 @@ public class ProxyController {
     @Autowired
     private TimeManager timeManager;
 
-    @RequestMapping(value = "/{routeBindingId}")
-    @ResponseBody
-    void badlyFormatedRequest(@PathVariable("routeBindingId") String bindingId, RequestEntity<byte[]> request) {
-        log.error("Missing Header? {}", HEADER_FORWARD_URL);
-        logHeader(request);
-    }
 
-    private void logHeader(RequestEntity<byte[]> request) {
-        request.getHeaders()
-                .toSingleValueMap()
-                .forEach((name, value) -> log.debug("Header content {} - {} ", name, value));
-    }
-
-    @RequestMapping(value = "/{routeBindingId}", headers = {HEADER_FORWARD_URL})
+    @RequestMapping(value = "/{appGuidToRestart}", headers = {HEADER_FORWARD_URL})
     @ResponseBody
-    ResponseEntity<?> proxify(@PathVariable("routeBindingId") String bindingId, RequestEntity<byte[]> request)
+    ResponseEntity<?> proxify(@PathVariable("appGuidToRestart") String appId, RequestEntity<byte[]> request)
             throws CloudFoundryException, InterruptedException {
 
-        log.debug("Incoming HTTP request for binding {} : {}", bindingId, request);
+        log.debug("Incoming HTTP request for app {} : {}", appId, request);
 
-        Binding routeBinding = bindingRepository.findOne(bindingId);
-        if (routeBinding == null) {
-            log.debug("Route binding already removed");
-            //another http request already started the app and removed the binding, just forward the traffic
-        } else {
-            //TODO ADD LOCK ON BINDING
-
-
-            /*String route = routeBinding.getResourceId();
-            Set<String> appToStart = new HashSet<>(cfApi.listRouteApplications(route));*/
-            //TEMPORARY, while searching for a solution
-            Set<String> appToStart = new HashSet<>(Collections.singletonList("0a9393b0-7db8-48df-8699-77543e84651a"));
-
-            //launch start for each one
-            for (Iterator<String> iter = appToStart.iterator(); iter.hasNext(); ) {
-                String appId = iter.next();
-                if (!cfApi.startApplication(appId)) {
-                    log.debug("app {} already started", appId);
-                    iter.remove();
-                }
-            }
-
-            //wait for them to start
-            while (!appToStart.isEmpty()) {
-                timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
-                for (Iterator<String> iter = appToStart.iterator(); iter.hasNext(); ) {
-                    String appId = iter.next();
-                    if (CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {
-                        log.debug("app {} started", appId);
-                        iter.remove();
-                    } else {
-                        log.debug("still waiting for app {}", appId);
-                    }
-                }
-            }
-            //TODO REMOVE LOCK
-            bindingRepository.delete(bindingId);
+        if (!CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {
+            cfApi.startApplication(appId);
+            timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
         }
+        while (!CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {
+            log.debug("waiting for app {} restart...", appId);
+            timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
+            //TODO add timeout that would log error and reset semaphore?
+        }
+
         //unqueue traffic
         RequestEntity<?> outgoing = buildOutgoingRequest(request);
         log.debug("forwarding traffic to {}", request.getHeaders().get(HEADER_FORWARD_URL));
