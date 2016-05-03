@@ -52,17 +52,18 @@ import java.util.List;
 @Slf4j
 public class WildcardProxy {
 
+    static final String HEADER_FORWARDED = "CF-Autosleep-Proxy-Signature";
+
     static final String HEADER_HOST = "host";
 
     static final String HEADER_PROTOCOL = "x-forwarded-proto";
-
-    static final String HEADER_FORWARDED = "CF-Autosleep-Proxy-Signature";
 
     private final RestOperations restOperations;
 
     private String autosleepHost;
 
-    private String proxySignature;
+    @Autowired
+    private CloudFoundryApi cfApi;
 
     @Autowired
     private Environment env;
@@ -70,8 +71,7 @@ public class WildcardProxy {
     @Autowired
     private ProxyMapEntryRepository proxyMap;
 
-    @Autowired
-    private CloudFoundryApi cfApi;
+    private String proxySignature;
 
     @Autowired
     private TimeManager timeManager;
@@ -81,6 +81,21 @@ public class WildcardProxy {
         this.restOperations = restOperations;
     }
 
+    private RequestEntity<?> getOutgoingRequest(RequestEntity<?> incoming) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.putAll(incoming.getHeaders());
+        headers.put(HEADER_FORWARDED, Collections.singletonList(proxySignature));
+
+        String protocol = headers.remove(HEADER_PROTOCOL).stream().findFirst().get();
+        String host = headers.remove(HEADER_HOST).stream().findFirst().get();
+        //TODO add path
+
+        URI uri = URI.create(protocol + "://" + host);
+        return new RequestEntity<>(incoming.getBody(), headers, incoming.getMethod(), uri);
+    }
+
+    //TODO @RequestHeader
+
     @PostConstruct
     void init() {
         //not stored in Config, because this impl is temporary
@@ -88,8 +103,8 @@ public class WildcardProxy {
         autosleepHost = null;
         try {
             autosleepHost = InetAddress.getLocalHost().getHostName();
-            this.proxySignature = Arrays.toString(MessageDigest.getInstance("MD5").digest((autosleepHost +
-                    securityPass).getBytes("UTF-8")));
+            this.proxySignature = Arrays.toString(MessageDigest.getInstance("MD5").digest((autosleepHost
+                   +  securityPass).getBytes("UTF-8")));
         } catch (UnknownHostException e) {
             log.error("Couldn't resolve host", e);
         } catch (NoSuchAlgorithmException e) {
@@ -100,8 +115,11 @@ public class WildcardProxy {
 
     }
 
-
-    //TODO @RequestHeader
+    private void logHeader(RequestEntity<byte[]> request) {
+        request.getHeaders()
+                .toSingleValueMap()
+                .forEach((name, value) -> log.debug("Header content {} - {} ", name, value));
+    }
 
     @RequestMapping(headers = {HEADER_PROTOCOL, HEADER_HOST})
     ResponseEntity<?> service(RequestEntity<byte[]> incoming) throws InterruptedException {
@@ -133,7 +151,7 @@ public class WildcardProxy {
                 proxyMap.save(mapEntry);
                 try {
                     String appId = mapEntry.getAppId();
-                    if(!CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))){
+                    if (!CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {
                         cfApi.startApplication(appId);
                         timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
                     }
@@ -155,25 +173,6 @@ public class WildcardProxy {
         log.info("Outgoing Request: {}", outgoing);
 
         return this.restOperations.exchange(outgoing, byte[].class);
-    }
-
-    private RequestEntity<?> getOutgoingRequest(RequestEntity<?> incoming) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.putAll(incoming.getHeaders());
-        headers.put(HEADER_FORWARDED, Collections.singletonList(proxySignature));
-
-        String protocol = headers.remove(HEADER_PROTOCOL).stream().findFirst().get();
-        String host = headers.remove(HEADER_HOST).stream().findFirst().get();
-        //TODO add path
-
-        URI uri = URI.create(protocol + "://" + host);
-        return new RequestEntity<>(incoming.getBody(), headers, incoming.getMethod(), uri);
-    }
-
-    private void logHeader(RequestEntity<byte[]> request) {
-        request.getHeaders()
-                .toSingleValueMap()
-                .forEach((name, value) -> log.debug("Header content {} - {} ", name, value));
     }
 
 }

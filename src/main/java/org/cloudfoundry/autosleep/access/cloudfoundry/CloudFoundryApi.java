@@ -272,14 +272,15 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     @Override
     public String getHost(String routeId) throws CloudFoundryException {
         log.debug("getHost");
-        GetRouteResponse response = cfClient.routes().get(GetRouteRequest.builder().routeId(routeId).build()).get
-                (Config.CF_API_TIMEOUT);
+        GetRouteResponse response = cfClient.routes().get(GetRouteRequest.builder().routeId(routeId).build())
+                .get(Config.CF_API_TIMEOUT);
         RouteEntity routeEntity = response.getEntity();
-        String route = routeEntity.getHost()+routeEntity.getPath();
+        String route = routeEntity.getHost() + routeEntity.getPath();
         log.debug("route =  {}", route);
 
-        GetDomainResponse domainResponse = cfClient.domains().get(GetDomainRequest.builder().domainId(routeEntity.getDomainId()).build()).get(Config.CF_API_TIMEOUT);
-        log.debug("domain = {}",domainResponse.getEntity());
+        GetDomainResponse domainResponse = cfClient.domains().get(GetDomainRequest.builder().domainId(routeEntity
+                .getDomainId()).build()).get(Config.CF_API_TIMEOUT);
+        log.debug("domain = {}", domainResponse.getEntity());
         return route + "." + domainResponse.getEntity().getName();
     }
 

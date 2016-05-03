@@ -20,6 +20,8 @@
 package org.cloudfoundry.autosleep.worker;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
+import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepository;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
@@ -91,6 +93,9 @@ public class ApplicationStopperTest {
     @Mock
     private CloudFoundryApiService cloudFoundryApi;
 
+    @Mock
+    private ProxyMapEntryRepository proxyMapEntryRepository;
+
     /**
      * Build mocks.
      */
@@ -118,6 +123,7 @@ public class ApplicationStopperTest {
         }).when(applicationLocker).executeThreadSafe(anyString(), any(Runnable.class));
 
         applicationStopper = spy(ApplicationStopper.builder()
+                .proxyMap(proxyMapEntryRepository)
                 .applicationLocker(applicationLocker)
                 .applicationRepository(applicationRepository)
                 .appUid(APP_UID)
@@ -226,8 +232,11 @@ public class ApplicationStopperTest {
         verify(applicationStopper, times(1)).handleApplicationEnrolled(applicationInfo);
         //and it list routes
         verify(cloudFoundryApi, times(1)).listApplicationRoutes(APP_UID);
+        /*TODO uncomment whenever route service ready to route when app stopped
         //and on each routes it binds the service to ir
-        verify(cloudFoundryApi, times(1)).bindRoutes(INSTANCE_ID, applicationsRoutes);
+        verify(cloudFoundryApi, times(1)).bindRoutes(INSTANCE_ID, applicationsRoutes);*/
+        verify(cloudFoundryApi, times(2)).getHost(anyString());
+        verify(proxyMapEntryRepository, times(2)).save(any(ProxyMapEntry.class));
 
         //and it did stop the application
         verify(cloudFoundryApi, times(1)).stopApplication(APP_UID);

@@ -53,9 +53,9 @@ class ApplicationStopper extends AbstractPeriodicTask {
 
     private final Boolean ignoreRouteBindingError;
 
-    private final String spaceEnrollerConfigId;
-
     private final ProxyMapEntryRepository proxyMap;
+
+    private final String spaceEnrollerConfigId;
 
     @Builder
     ApplicationStopper(Clock clock,
@@ -158,10 +158,9 @@ class ApplicationStopper extends AbstractPeriodicTask {
                 applicationActivity.getApplication().getName(), appUid,
                 applicationActivity.getLastEvent(), applicationActivity.getLastLog());
 
-
         //retrieve all routes for this app
         List<String> routeIds = cloudFoundryApi.listApplicationRoutes(appUid);
-         /*TODO uncomment whenever route services handle stopped apps
+        /*TODO uncomment whenever route services handle stopped apps
         try {
             cloudFoundryApi.bindRoutes(spaceEnrollerConfigId, routeIds);
         } catch (CloudFoundryException c) {
@@ -172,14 +171,13 @@ class ApplicationStopper extends AbstractPeriodicTask {
             }
         }*/
 
-
         routeIds.forEach(id -> {
             try {
                 String host = cloudFoundryApi.getHost(id);
-                log.debug("Got host {}",host);
+                log.debug("Got host {}", host);
                 proxyMap.save(new ProxyMapEntry(host, appUid, false));
             } catch (CloudFoundryException e) {
-               log.error("Couldn't get host corresponding to a route ",e);
+                log.error("Couldn't get host corresponding to a route ", e);
             }
         });
 

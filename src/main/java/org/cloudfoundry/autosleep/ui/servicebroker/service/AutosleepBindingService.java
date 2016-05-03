@@ -145,9 +145,9 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
         log.debug("deleteServiceInstanceBinding - {} on service {}", bindingId, serviceId);
 
         final Binding binding = bindingRepository.findOne(bindingId);
-        if (binding == null){
-            log.error("Trying to delete unknown binding {}, letting it pass",bindingId);
-           return;
+        if (binding == null) {
+            log.error("Trying to delete unknown binding {}, letting it pass", bindingId);
+            return;
         }
         if (binding.getResourceType() == Application) {
             log.info("Unbinding app {} (binding {})", binding.getResourceId(), bindingId);
@@ -204,7 +204,7 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                 throw new ServiceBrokerException("Couldn't clean related app bindings", e);
             }
 
-        } else  if (binding.getResourceType() == Route) {
+        } else if (binding.getResourceType() == Route) {
             log.info("Unbinding route {} (binding {})", binding.getResourceId(), bindingId);
             bindingRepository.delete(bindingId);
         }
