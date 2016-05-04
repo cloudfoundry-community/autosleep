@@ -14,26 +14,113 @@ plugins {
     id "com.github.hierynomus.license" version "0.12.1"
 }
 
-repositories {
-    mavenLocal()
-    jcenter()
-    //URL repo to get the desired compiled version
-    maven { url "https://jitpack.io" }
-    maven { url 'http://repo.spring.io/libs-snapshot' }
+/*allprojects {
+    apply from: 'test.gradle'
+    apply from: 'coverage.gradle'
+}*/
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'spring-boot'
+    apply plugin: 'war'
+
+    apply from: "$rootProject.projectDir/test.gradle"
+    apply from: "$rootProject.projectDir/coverage.gradle"
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    repositories {
+        mavenLocal()
+        jcenter()
+        //URL repo to get the desired compiled version
+        maven { url "https://jitpack.io" }
+        maven { url 'http://repo.spring.io/libs-snapshot' }
+
+    }
+
+    dependencies {
+        // Lombok
+        providedCompile "org.projectlombok:lombok:$lombokVersion"
+        //Spring boot
+        compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+        compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
+        // For now /actuator should be available if hateoas in the classpath. Tested it, does not work.
+        // compile "org.springframework.boot:spring-boot-starter-hateoas:$springBootVersion"
+
+        //Groovy templates
+        compile "org.codehaus.groovy:groovy-templates:${groovyVersion}"
+
+        //API Service broker
+        compile("org.springframework.cloud:spring-cloud-cloudfoundry-service-broker:${springCloudServiceBrokerVersion}")
+        testCompile(group: "org.springframework.cloud", name: "spring-cloud-cloudfoundry-service-broker", version: "${springCloudServiceBrokerVersion}", classifier: "tests")
+
+        //Client library
+        compile("org.cloudfoundry:cloudfoundry-client-spring:$cfClientLibVersion")
+        //reactor
+        compile("io.projectreactor:reactor-core:$reactorCoreVersion")
+        //protobuf
+        compile "com.google.protobuf:protobuf-java:$protobufVersion"
+
+        //Logs
+        compile "org.slf4j:slf4j-api:$slf4jVersion"
+        compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+        // Spring Data
+        compile "org.springframework.data:spring-data-jpa:$springDataJpaVersion"
+        // MySQL Persistence
+        runtime "mysql:mysql-connector-java:$mysqlConnectorVersion"
+        runtime "com.h2database:h2"
+        compile "commons-dbcp:commons-dbcp:1.4"
+        compile "org.hibernate:hibernate-entitymanager:4.3.11.Final"
+        // Spring Cloud
+        compile "org.springframework.cloud:spring-cloud-spring-service-connector:$springCloudServiceConnectorVersion"
+        compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector:$springCloudCFConnectorVersion"
+
+        //liquibase
+        compile "org.liquibase:liquibase-core:$liquibaseVersion"
+
+    }
+
+    bootRun {
+        // to retrieve profile using -Dspring.profiles.active={PROFILE}
+        systemProperties = System.properties
+        // static classpath resources reloadable in the live application
+        addResources = true
+    }
+
+
+    processResources {
+        from(sourceSets.main.resources.srcDirs) {
+            filesMatching('**/*.properties') {
+                filter(ReplaceTokens, tokens: [version: project.version])
+            }
+        }
+    }
+
+    processTestResources {
+        from(sourceSets.test.resources.srcDirs) {
+            filesMatching('**/*.properties') {
+                filter(ReplaceTokens, tokens: [version: project.version])
+            }
+        }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-parameters"
+    }
+
+
+
+    sourceSets.main.compileClasspath += configurations.providedCompile
+    sourceSets.test.compileClasspath += configurations.providedCompile
+    sourceSets.test.runtimeClasspath += configurations.providedCompile
 
 }
-apply plugin: 'java'
-apply plugin: 'spring-boot'
-apply plugin: 'war'
-apply from: 'test.gradle'
-apply from: 'coverage.gradle'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
-tasks.withType(JavaCompile) {
-    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-parameters"
-}
+
+
+
 
 license {
     header rootProject.file('config/HEADER')
@@ -46,81 +133,9 @@ license {
     }
 }
 
-processResources {
-    from(sourceSets.main.resources.srcDirs) {
-        filesMatching('**/*.properties') {
-            filter(ReplaceTokens, tokens: [version: project.version])
-        }
-    }
-}
-
-processTestResources {
-    from(sourceSets.test.resources.srcDirs) {
-        filesMatching('**/*.properties') {
-            filter(ReplaceTokens, tokens: [version: project.version])
-        }
-    }
-}
-
-war {
-    baseName = "$domainName.$projectName"
-    version = version
-}
-war.rootSpec.exclude "cloudfoundry_client.properties"
 
 task wrapper(type: Wrapper) {
     gradleVersion = "2.7"
 }
 
-bootRun {
-    // to retrieve profile using -Dspring.profiles.active={PROFILE}
-    systemProperties = System.properties
-    // static classpath resources reloadable in the live application
-    addResources = true
-}
 
-dependencies {
-    // Lombok
-    providedCompile "org.projectlombok:lombok:$lombokVersion"
-    //Spring boot
-    compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
-    compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
-    // For now /actuator should be available if hateoas in the classpath. Tested it, does not work.
-    // compile "org.springframework.boot:spring-boot-starter-hateoas:$springBootVersion"
-
-    //Groovy templates
-    compile "org.codehaus.groovy:groovy-templates:${groovyVersion}"
-
-    //API Service broker
-    compile("org.springframework.cloud:spring-cloud-cloudfoundry-service-broker:${springCloudServiceBrokerVersion}")
-    testCompile(group: "org.springframework.cloud", name: "spring-cloud-cloudfoundry-service-broker", version: "${springCloudServiceBrokerVersion}", classifier: "tests")
-
-    //Client library
-    compile("org.cloudfoundry:cloudfoundry-client-spring:$cfClientLibVersion")
-    //reactor
-    compile("io.projectreactor:reactor-core:$reactorCoreVersion")
-    //protobuf
-    compile "com.google.protobuf:protobuf-java:$protobufVersion"
-
-    //Logs
-    compile "org.slf4j:slf4j-api:$slf4jVersion"
-    compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
-    // Spring Data
-    compile "org.springframework.data:spring-data-jpa:$springDataJpaVersion"
-    // MySQL Persistence
-    runtime "mysql:mysql-connector-java:$mysqlConnectorVersion"
-    runtime "com.h2database:h2"
-    compile "commons-dbcp:commons-dbcp:1.4"
-    compile "org.hibernate:hibernate-entitymanager:4.3.11.Final"
-    // Spring Cloud
-    compile "org.springframework.cloud:spring-cloud-spring-service-connector:$springCloudServiceConnectorVersion"
-    compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector:$springCloudCFConnectorVersion"
-
-    //liquibase
-    compile "org.liquibase:liquibase-core:$liquibaseVersion"
-
-}
-
-sourceSets.main.compileClasspath += configurations.providedCompile
-sourceSets.test.compileClasspath += configurations.providedCompile
-sourceSets.test.runtimeClasspath += configurations.providedCompile

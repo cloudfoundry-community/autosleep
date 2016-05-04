@@ -9,6 +9,7 @@ pmd {
 
 checkstyle {
     toolVersion = "6.11.2"
+    configFile = rootProject.file('config/checkstyle/checkstyle.xml')
 }
 
 test {

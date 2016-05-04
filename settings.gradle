@@ -1,1 +1,3 @@
-
+rootProject.name = 'autosleep'
+include 'common'
+include 'service-broker'
