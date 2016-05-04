@@ -33,11 +33,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestOperations;
+import org.springframework.web.servlet.HandlerMapping;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URI;
@@ -87,19 +90,12 @@ public class WildcardProxy {
         this.restOperations = restOperations;
     }
 
-    //TODO @RequestHeader
-
-    private RequestEntity<?> getOutgoingRequest(RequestEntity<?> incoming) {
+    private RequestEntity<?> getOutgoingRequest(RequestEntity<?> incoming, URI destination) {
         HttpHeaders headers = new HttpHeaders();
         headers.putAll(incoming.getHeaders());
+        //add custom header with our signature, to identify our own forwarded traffic
         headers.put(HEADER_FORWARDED, Collections.singletonList(proxySignature));
-
-        String protocol = headers.remove(HEADER_PROTOCOL).stream().findFirst().get();
-        String host = headers.remove(HEADER_HOST).stream().findFirst().get();
-        //TODO add path
-
-        URI uri = URI.create(protocol + "://" + host);
-        return new RequestEntity<>(incoming.getBody(), headers, incoming.getMethod(), uri);
+        return new RequestEntity<>(incoming.getBody(), headers, incoming.getMethod(), destination);
     }
 
     @PostConstruct
@@ -121,12 +117,15 @@ public class WildcardProxy {
     }
 
     @RequestMapping(headers = {HEADER_PROTOCOL, HEADER_HOST})
-    ResponseEntity<?> service(RequestEntity<byte[]> incoming) throws InterruptedException {
+    ResponseEntity<?> proxify(@RequestHeader(HEADER_HOST) String targetHost,
+                              @RequestHeader(HEADER_PROTOCOL) String protocol,
+                              RequestEntity<byte[]> incoming,
+                              HttpServletRequest request) throws InterruptedException {
 
-        String targetHost = incoming.getHeaders().get(HEADER_HOST).get(0).trim();
         List<String> alreadyForwardedHeader = incoming.getHeaders().get(HEADER_FORWARDED);
+        String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
 
-        log.info("Incoming Request for route : {}", targetHost);
+        log.info("Incoming Request for route : {} path: {}", targetHost, path);
         //logHeader(incoming);
 
         //TODO test if my own
@@ -170,9 +169,11 @@ public class WildcardProxy {
 
         }
 
-        RequestEntity<?> outgoing = getOutgoingRequest(incoming);
+        URI uri = URI.create(protocol + "://" + targetHost + path);
+        RequestEntity<?> outgoing = getOutgoingRequest(incoming, uri);
         log.info("Outgoing Request: {}", outgoing);
 
+        //if "outgoing" point to a 404, this will trigger a 500. Is this really a pb?
         return this.restOperations.exchange(outgoing, byte[].class);
     }
 

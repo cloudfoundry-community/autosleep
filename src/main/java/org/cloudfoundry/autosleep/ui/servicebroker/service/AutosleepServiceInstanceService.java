@@ -181,8 +181,8 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
         if (config != null) {
             if (config.isForcedAutoEnrollment()) {
                 log.debug("deleteServiceInstance - {} - forced enrollment. Denied", spaceEnrollerConfigId);
-                throw new ServiceBrokerException("this autosleep service instance can't be deleted during forced " +
-                        "enrollment mode. Switch back to normal enrollment mode to allow its deletion.");
+                throw new ServiceBrokerException("this autosleep service instance can't be deleted during forced "
+                        + "enrollment mode. Switch back to normal enrollment mode to allow its deletion.");
             } else {
                 spaceEnrollerConfigRepository.delete(spaceEnrollerConfigId);
             }
