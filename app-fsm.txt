@@ -23,9 +23,12 @@ NotEnrolled: onEntry: release any queued traffic \n& unregister-route-service if
 
 state Enrolled {
 
+    [*] -> Sleeping
+
     state Active {
       Started --> Stopping : [inactivity threshold met] \n/ register-route-service && stop
-      Starting --> Starting: [incoming traffic received]\n / queue-traffic
+      Starting --> Starting: [incoming traffic received \n&& queue !=full]\n / queue-traffic
+      Starting --> Starting: [incoming traffic received \n&& queue ==full]\n / reject-traffic: 403
       Starting --> Started: [start complete]\n / release queued traffic & unregister-route-service
     }
 
