@@ -1,0 +1,79 @@
+/*
+ * Autosleep
+ * Copyright (C) 2016 Orange
+ * Authors: Benjamin Einaudi   benjamin.einaudi@orange.com
+ *          Arnaud Ruffin      arnaud.ruffin@orange.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+subprojects {
+
+    apply plugin: 'spring-boot'
+    apply plugin: 'war'
+
+    apply from: "$rootProject.projectDir/test.gradle"
+    apply from: "$rootProject.projectDir/coverage.gradle"
+
+
+    dependencies {
+
+        //Spring Cloud CF connector
+        compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector:$springCloudCFConnectorVersion"
+
+        //liquibase
+        compile "org.liquibase:liquibase-core:$liquibaseVersion"
+
+    }
+
+    bootRun {
+        // to retrieve profile using -Dspring.profiles.active={PROFILE}
+        systemProperties = System.properties
+        // static classpath resources reloadable in the live application
+        addResources = true
+    }
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-parameters"
+    }
+
+
+
+    sourceSets.main.compileClasspath += configurations.compileOnly
+    sourceSets.test.compileClasspath += configurations.compileOnly
+    sourceSets.test.runtimeClasspath += configurations.compileOnly
+
+}
+
+
+
+
+
+license {
+    header rootProject.file('config/HEADER')
+    strictCheck true
+    excludes(["**/*.css", "**/boost*", "**/bootbox*", "**/jquery*", "**/banner.txt", "**/*png",
+              "**/*eot", "**/*ttf", "**/*woff*", "**/*gif", "**/*jpg", "**/*tpl", "**/*svg", "**/*map",
+              "**/*xml", "**/*yaml"])
+    mapping {
+        java='PHP'
+    }
+}
+
+
+task wrapper(type: Wrapper) {
+    gradleVersion = "2.7"
+}
+
+

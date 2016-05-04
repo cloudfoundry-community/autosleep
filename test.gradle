@@ -30,3 +30,14 @@ dependencies {
     //Test for annotations
     testCompile  "com.fasterxml.jackson.module:jackson-module-parameter-names:$jacksonParameterNames"
 }
+
+tasks.withType(FindBugs) {
+    reports {
+        xml.enabled false
+        html.enabled true
+    }
+}
+
+findbugs {
+    effort = "default"
+}
