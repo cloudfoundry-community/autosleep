@@ -38,12 +38,10 @@ subprojects {
         //Groovy templates
         compile "org.codehaus.groovy:groovy-templates:${groovyVersion}"
 
-        //CF JAVA Client library
+        //CF java client library and dependencies
         compile("org.cloudfoundry:cloudfoundry-client-spring:$cfClientLibVersion")
         compile("io.projectreactor:reactor-core:$reactorCoreVersion")
-        //protobuf
-        //TODO are you sur this is still needed?
-        // compile "com.google.protobuf:protobuf-java:$protobufVersion"
+        compile "com.google.protobuf:protobuf-java:$protobufVersion"
 
         //Logs
         compile "org.slf4j:slf4j-api:$slf4jVersion"
