@@ -93,8 +93,4 @@ license {
 }
 
 
-task wrapper(type: Wrapper) {
-    gradleVersion = "2.12"
-}
-
-
+//no more wrapper task, use gradle wrapper --gradle-version 2.12 to generate wrappre
