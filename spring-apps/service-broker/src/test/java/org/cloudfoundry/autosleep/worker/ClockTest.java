@@ -21,7 +21,7 @@ package org.cloudfoundry.autosleep.worker;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
-import org.cloudfoundry.autosleep.worker.scheduling.TimeManager;
+import org.cloudfoundry.autosleep.util.TimeManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -30,8 +30,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.time.Duration;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;

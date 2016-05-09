@@ -26,7 +26,7 @@ import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
 import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepository;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
-import org.cloudfoundry.autosleep.worker.scheduling.TimeManager;
+import org.cloudfoundry.autosleep.util.TimeManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
@@ -118,12 +118,12 @@ public class WildcardProxy {
 
     @RequestMapping(headers = {HEADER_PROTOCOL, HEADER_HOST})
     ResponseEntity<?> proxify(@RequestHeader(HEADER_HOST) String targetHost,
-                              @RequestHeader(HEADER_PROTOCOL) String protocol,
                               RequestEntity<byte[]> incoming,
                               HttpServletRequest request) throws InterruptedException {
 
         List<String> alreadyForwardedHeader = incoming.getHeaders().get(HEADER_FORWARDED);
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+        String protocol = incoming.getHeaders().get(HEADER_PROTOCOL).get(0);
 
         log.info("Incoming Request for route : {} path: {}", targetHost, path);
         //logHeader(incoming);

@@ -26,7 +26,7 @@ import org.cloudfoundry.autosleep.access.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.config.Config.Path;
-import org.cloudfoundry.autosleep.worker.scheduling.TimeManager;
+import org.cloudfoundry.autosleep.util.TimeManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.RequestEntity;

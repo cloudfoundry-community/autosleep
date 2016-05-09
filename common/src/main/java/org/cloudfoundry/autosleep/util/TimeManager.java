@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.cloudfoundry.autosleep.worker.scheduling;
+package org.cloudfoundry.autosleep.util;
 
 import org.cloudfoundry.autosleep.config.Config;
 import org.springframework.stereotype.Service;
