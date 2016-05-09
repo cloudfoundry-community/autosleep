@@ -22,6 +22,7 @@ test {
     }
     // to retrieve profile using -Dspring.profiles.active={PROFILE}
     systemProperties = System.properties
+    systemProperties['user.dir'] = workingDir
 }
 
 dependencies {

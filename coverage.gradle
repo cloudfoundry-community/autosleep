@@ -3,6 +3,7 @@ apply plugin: 'jacoco'
 apply plugin: "com.github.kt3k.coveralls"
 
 jacocoTestReport {
+
     reports {
         //XML required by coveralls and for the below coverage checks
         xml.enabled true
@@ -23,7 +24,8 @@ jacocoTestReport {
         })
     }
 
-    doLast {
+   /* Not working anymore.... need debugging
+   doLast {
         def report = file("${jacoco.reportsDir}/test/jacocoTestReport.xml")
         logger.lifecycle("Checking coverage results: ${report}")
 
@@ -55,6 +57,6 @@ jacocoTestReport {
             logger.quiet("* ${it.key.padLeft(15)} coverage rate: ${it.value}%")
         }
         logger.quiet("***************************************************************")
-    }
+    }*/
 }
 check.dependsOn jacocoTestReport
