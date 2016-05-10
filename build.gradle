@@ -14,8 +14,13 @@ plugins {
 
 
 subprojects {
-    apply plugin: 'java'
 
+    if (name == 'spring-apps') {
+        //prevent parent folder from building an empty jar
+        return
+    }
+
+    apply plugin: 'java'
     apply from: "$rootProject.projectDir/test.gradle"
     apply from: "$rootProject.projectDir/coverage.gradle"
 
@@ -68,6 +73,12 @@ subprojects {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-parameters"
     }
 
+    tasks.withType(Jar) { // includes War and Jar
+        manifest {
+            attributes( "Implementation-Title": baseName,
+                        "Implementation-Version": version)
+        }
+    }
 
 
     sourceSets.main.compileClasspath += configurations.compileOnly

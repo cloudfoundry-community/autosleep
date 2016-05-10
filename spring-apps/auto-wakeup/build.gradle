@@ -19,7 +19,7 @@
 
 import org.apache.tools.ant.filters.ReplaceTokens
 
-description = 'proxy'
+description = 'auto-wakeup (wildcard proxy, app starter)'
 
 apply plugin: 'war'
 
@@ -31,6 +31,8 @@ dependencies {
 }
 
 war {
+    jar.enabled = false
+
     baseName = "$domainName.$rootProjectName.$project.name"
     version = version
 

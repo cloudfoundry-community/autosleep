@@ -21,8 +21,8 @@
 description = 'common'
 
 jar {
-    baseName = 'autosleep-common'
-    version = '0.0.1-SNAPSHOT'
+    baseName = "$domainName.$rootProjectName.$project.name"
+    version = version
 }
 
 

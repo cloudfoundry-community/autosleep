@@ -1,4 +1,4 @@
 rootProject.name = 'autosleep'
 include 'common'
-include 'spring-apps:service-broker'
-include 'spring-apps:proxy'
+include 'spring-apps:auto-sleep'
+include 'spring-apps:auto-wakeup'

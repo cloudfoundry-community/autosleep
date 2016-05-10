@@ -18,7 +18,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-description = 'service-broker'
+description = 'auto-sleep (service-broker, app stopper, auto enroller)'
 
 apply plugin: 'war'
 
@@ -37,6 +37,8 @@ dependencies {
 }
 
 war {
+    jar.enabled = false
+
     baseName = "$domainName.$rootProjectName.$project.name"
     version = version
 

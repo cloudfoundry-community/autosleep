@@ -1,0 +1,9 @@
+
+    _         _              __  _
+   /_\  _   _| |_ ___       / _\| | ___  ___ _ __
+  //_\\| | | | __/ _ \ _____\ \ | |/ _ \/ _ \ '_ \
+ /  _  \ |_| | || (_) |_____|\ \| |  __/  __/ |_) |
+ \_/ \_/\__,_|\__\___/      \__/|_|\___|\___| .__/   :: Service Broker, Application Stopper, Auto-Enrollment, Dashboards
+                                            |_|
+  :: Application version : ${application.version}
+  :: Spring Boot version : ${spring-boot.formatted-version}
