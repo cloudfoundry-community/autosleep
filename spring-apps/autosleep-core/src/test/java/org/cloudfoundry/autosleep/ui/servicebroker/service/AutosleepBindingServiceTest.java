@@ -20,8 +20,8 @@
 package org.cloudfoundry.autosleep.ui.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
-import org.cloudfoundry.autosleep.ui.servicebroker.service.AutosleepBindingService;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo.EnrollmentState.State;
 import org.cloudfoundry.autosleep.access.dao.model.Binding;
@@ -29,11 +29,10 @@ import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
+import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
-import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -295,7 +294,7 @@ public class AutosleepBindingServiceTest {
     }
 
     @Test
-    public void new_route_binding_should_store_binding() throws Exception {
+    public void new_route_binding_should_not_store_binding() throws Exception {
         //given that the app is linked to the route in CF
         when(cfApi.listRouteApplications(ROUTE_UID)).thenReturn(singletonList(APP_UID));
         //given that the application is known from autosleep
@@ -307,7 +306,7 @@ public class AutosleepBindingServiceTest {
 
         //then create it and store it to repository
         verify(appRepo, never()).save(any(ApplicationInfo.class));
-        verify(bindingRepository, times(1)).save(any(Binding.class));
+        verify(bindingRepository, never()).save(any(Binding.class));
 
     }
 

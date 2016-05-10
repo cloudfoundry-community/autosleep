@@ -20,28 +20,27 @@
 package org.cloudfoundry.autosleep.ui.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.access.dao.model.Binding;
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
+import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
-import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.springframework.cloud.servicebroker.model.CreateServiceInstanceAppBindingResponse;
 import org.springframework.cloud.servicebroker.model.CreateServiceInstanceBindingRequest;
 import org.springframework.cloud.servicebroker.model.CreateServiceInstanceBindingResponse;
-import org.springframework.cloud.servicebroker.model.CreateServiceInstanceRouteBindingResponse;
 import org.springframework.cloud.servicebroker.model.DeleteServiceInstanceBindingRequest;
 import org.springframework.cloud.servicebroker.model.ServiceBindingResource;
 import org.springframework.cloud.servicebroker.service.ServiceInstanceBindingService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -118,20 +117,13 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                     Config.ServiceInstanceParameters.IDLE_DURATION, spaceEnrollerConfig.getIdleDuration().toString()));
         } else if (route != null) {
 
-            bindingBuilder.resourceId(route).resourceType(Route);
-
-            bindingRepository.save(bindingBuilder.build());
-
-            String firstUri = deployment.getFirstUri();
-            if (firstUri == null) {
-                firstUri = "local-deployment";
-            }
-
-            String redirectionRoute = "https://" + firstUri + Config.Path.PROXY_CONTEXT + "/fix/" + bindingId;
-            log.info("Create route binding : redirection from [{}] to [{}] (bid {})",
-                    route, redirectionRoute, bindingId);
-
-            return new CreateServiceInstanceRouteBindingResponse().withRouteServiceUrl(redirectionRoute);
+            //TODO once route services handle stopped apps
+            // retrieved targetAppId in arbitraryParams
+            // retrieve proxy url (in settings)
+            // send redirection route
+            // String redirectionRoute = "https://" + proxyURL + Config.Path.PROXY_CONTEXT + "/fix/" + targetAppId;
+            log.error("AutoWakeup based on route services not implemented yet. ");
+            return null;
         } else {
             throw new ServiceBrokerException("Unknown bind resource type");
         }
