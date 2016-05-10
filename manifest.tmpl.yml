@@ -21,9 +21,9 @@ applications:
   memory: 1G
   instances: 1
   host: autowakeup
-  path: spring-apps/auto-wakeup/build/libs/org.cloudfoundry.autosleep.auto-wakeup-0.3.0.war
+  path: spring-apps/autowakeup-proxy/build/libs/org.cloudfoundry.autosleep.autowakeup-proxy-0.3.0.war
 - name: autosleep-app
   memory: 1G
   instances: 1
   host: autosleep
-  path: spring-apps/auto-sleep/build/libs/org.cloudfoundry.autosleep.auto-sleep-0.3.0.war
+  path: spring-apps/autosleep-core/build/libs/org.cloudfoundry.autosleep.autosleep-core-0.3.0.war

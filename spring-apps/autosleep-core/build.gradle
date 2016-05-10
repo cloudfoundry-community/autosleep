@@ -1,5 +1,3 @@
-import org.apache.tools.ant.filters.ReplaceTokens
-
 /*
  * Autosleep
  * Copyright (C) 2016 Orange
@@ -20,13 +18,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
  */
 description = 'auto-sleep (service-broker, app stopper, auto enroller)'
 
-apply plugin: 'war'
-
-
 dependencies {
-    compile project(':common')
-    testCompile project(':common')
-
 
     //Service Broker
     compile("org.springframework.cloud:spring-cloud-cloudfoundry-service-broker:${springCloudServiceBrokerVersion}")
@@ -34,33 +26,4 @@ dependencies {
             name: "spring-cloud-cloudfoundry-service-broker",
             version: "${springCloudServiceBrokerVersion}",
             classifier: "tests")
-}
-
-war {
-    jar.enabled = false
-
-    baseName = "$domainName.$rootProjectName.$project.name"
-    version = version
-
-    //prevent default tar and zip files to be built
-    distTar.enabled = false
-    distZip.enabled = false
-}
-war.rootSpec.exclude "cloudfoundry_client.properties"
-
-
-processResources {
-    from(sourceSets.main.resources.srcDirs) {
-        filesMatching('**/*.properties') {
-            filter(ReplaceTokens, tokens: [version: project.version])
-        }
-    }
-}
-
-processTestResources {
-    from(sourceSets.test.resources.srcDirs) {
-        filesMatching('**/*.properties') {
-            filter(ReplaceTokens, tokens: [version: project.version])
-        }
-    }
 }
