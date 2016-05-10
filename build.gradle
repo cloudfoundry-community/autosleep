@@ -8,10 +8,11 @@ buildscript {
         jcenter()
     }
 }
+
 plugins {
+    id "io.spring.dependency-management" version "0.5.6.RELEASE"
     id "com.github.hierynomus.license" version "0.12.1"
 }
-
 
 subprojects {
 
@@ -24,49 +25,57 @@ subprojects {
     apply from: "$rootProject.projectDir/test.gradle"
     apply from: "$rootProject.projectDir/coverage.gradle"
 
+    apply plugin: "io.spring.dependency-management"
+
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
 
     repositories {
         mavenLocal()
         jcenter()
-        //URL repo to get the desired compiled version
-        maven { url "https://jitpack.io" }
+        //needed for cf-java-client M release
         maven { url 'http://repo.spring.io/libs-snapshot' }
+    }
 
+    /* allow us not to specify most versions of the dependencies, since they will be retrieved according
+    to springBoot version. Normally we would only have to apply spring-boot plugin to achieve the same result,
+    but here we have a subproject that would not support it (common) but requires the dependencies nonetheless
+    */
+    dependencyManagement {
+        imports {
+            mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
+        }
     }
 
     dependencies {
         // Lombok
         compileOnly "org.projectlombok:lombok:$lombokVersion"
 
-        //Groovy templates
-        compile "org.codehaus.groovy:groovy-templates:${groovyVersion}"
-
         //CF java client library and dependencies
         compile("org.cloudfoundry:cloudfoundry-client-spring:$cfClientLibVersion")
+
         compile("io.projectreactor:reactor-core:$reactorCoreVersion")
         compile "com.google.protobuf:protobuf-java:$protobufVersion"
 
         //Logs
-        compile "org.slf4j:slf4j-api:$slf4jVersion"
-        compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+        compile "org.slf4j:slf4j-api"
+        compile "org.slf4j:jcl-over-slf4j"
         // Spring Data
-        compile "org.springframework.data:spring-data-jpa:$springDataJpaVersion"
-        compile "org.springframework.cloud:spring-cloud-spring-service-connector:$springCloudServiceConnectorVersion"
+        compile "org.springframework.data:spring-data-jpa"
+        compile "org.springframework.cloud:spring-cloud-spring-service-connector"
         // Persistence
-        runtime "mysql:mysql-connector-java:$mysqlConnectorVersion"
-        runtime "com.h2database:h2:1.4.191"
-        compile "commons-dbcp:commons-dbcp:1.4"
-        compile "org.hibernate:hibernate-entitymanager:4.3.11.Final"
-        compile "org.liquibase:liquibase-core:$liquibaseVersion"
+        runtime "mysql:mysql-connector-java"
+        runtime "com.h2database:h2"
+        compile "commons-dbcp:commons-dbcp"
+        compile "org.hibernate:hibernate-entitymanager"
+        compile "org.liquibase:liquibase-core"
 
-        //Spring boot
-        compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
-        compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
+        //Groovy templates
+        compile "org.codehaus.groovy:groovy-templates"
+
+        //org.springframework.boot.autoconfigure needed in common for now... TODO move to spring-apps
+        compile "org.springframework.boot:spring-boot-starter-actuator"
     }
-
-
 
 
     tasks.withType(JavaCompile) {
@@ -80,17 +89,11 @@ subprojects {
         }
     }
 
-
     sourceSets.main.compileClasspath += configurations.compileOnly
     sourceSets.test.compileClasspath += configurations.compileOnly
     sourceSets.test.runtimeClasspath += configurations.compileOnly
 
 }
-
-
-
-
-
 
 license {
     header rootProject.file('config/HEADER')
@@ -102,6 +105,5 @@ license {
         java = 'PHP'
     }
 }
-
 
 //no more wrapper task, use gradle wrapper --gradle-version 2.12 to generate wrappre

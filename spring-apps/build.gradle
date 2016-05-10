@@ -19,7 +19,6 @@ import org.apache.tools.ant.filters.ReplaceTokens
  * limitations under the License.
  */
 
-
 subprojects {
 
     apply plugin: 'spring-boot'
@@ -30,8 +29,16 @@ subprojects {
         testCompile project(':common')
 
         //Spring Cloud CF connector
-        compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector:$springCloudCFConnectorVersion"
+        compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector"
 
+        //Spring boot
+        compile "org.springframework.boot:spring-boot-starter-web"
+
+        providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+    }
+
+    configurations {
+        providedRuntime
     }
 
     bootRun {
@@ -46,12 +53,10 @@ subprojects {
         version = version
 
         //prevent default tar and zip files to be built
-        distTar.enabled = false
-        distZip.enabled = false
+       // distZip.enabled = false
         jar.enabled = false
     }
     war.rootSpec.exclude "cloudfoundry_client.properties"
-
 
     processResources {
         from(sourceSets.main.resources.srcDirs) {
