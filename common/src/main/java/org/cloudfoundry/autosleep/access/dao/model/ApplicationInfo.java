@@ -135,13 +135,23 @@ public class ApplicationInfo {
                            String sourceId,
                            String sourceName,
                            long timestamp) {
-                this.message = message;
+                this.setMessage(message);
                 this.messageType = messageType;
                 this.sourceId = sourceId;
                 this.sourceName = sourceName;
                 this.timestamp = Instant.ofEpochMilli(timestamp);
             }
 
+            private void setMessage(String message) {
+                //TODO:replace with apache commons StringUtils.abbreviate(message, 255)
+                if (message != null) {
+                    int length = message.length();
+                    if (length > 254) {
+                        message = message.substring(0, 254);
+                    }
+                }
+                this.message = message;
+            }
         }
 
         @JsonSerialize
