@@ -57,7 +57,7 @@ function listApplications (id){
                     row.append($("<div>").addClass("col-xs-2 text-center").html("-"));
 
                 var stateElement = $("<span>").attr("data-toggle","tooltip")
-                    .attr("title",application.watched?"WATCHED":"IGNORED")
+                    .attr("title",application.watched?"ENROLLED":"OPTED-OUT")
                     .addClass("col-xs-1 text-center glyphicon");
 
                 if (!application.watched) {
