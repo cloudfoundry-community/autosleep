@@ -20,6 +20,9 @@ description = 'auto-sleep (service-broker, app stopper, auto enroller)'
 
 dependencies {
 
+    //Groovy templates
+    compile "org.codehaus.groovy:groovy-templates"
+
     //Service Broker
     compile("org.springframework.cloud:spring-cloud-cloudfoundry-service-broker:${springCloudServiceBrokerVersion}")
     testCompile(group: "org.springframework.cloud",
