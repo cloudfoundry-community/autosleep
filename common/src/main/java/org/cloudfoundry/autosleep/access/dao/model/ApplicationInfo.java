@@ -31,6 +31,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
@@ -143,14 +144,7 @@ public class ApplicationInfo {
             }
 
             private void setMessage(String message) {
-                //TODO:replace with apache commons StringUtils.abbreviate(message, 255)
-                if (message != null) {
-                    int length = message.length();
-                    if (length > 254) {
-                        message = message.substring(0, 254);
-                    }
-                }
-                this.message = message;
+                this.message = StringUtils.abbreviate(message,254);
             }
         }
 
