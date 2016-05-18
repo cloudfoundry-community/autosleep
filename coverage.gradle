@@ -33,11 +33,15 @@ task jacocoRootReport(type: JacocoReport, group: 'Coverage reports') {
             fileTree(dir: it,
                     exclude: ['org/cloudfoundry/autosleep/access/cloudfoundry/**', //won't test cf-java-client
                               'org/cloudfoundry/autosleep/access/cloudfoundry/model/**', //won't test pojo
-                              'org/cloudfoundry/autosleep/access/cloudfoundry/config/**', //won't config cf-java-client
-                              'org/cloudfoundry/autosleep/worker/scheduling/TimeManager.class', //won't java concurent
+                              'org/cloudfoundry/autosleep/access/cloudfoundry/config/**', //won't test config
+                              'org/cloudfoundry/autosleep/util/TimeManager.class',
                               'org/cloudfoundry/autosleep/access/dao/model/**',  //won't test pojo
+                              'org/cloudfoundry/autosleep/access/dao/config/data/RelationalCloudDataSourceConfig.java', //cloud config
                               'org/cloudfoundry/autosleep/config/ContextInitializer.class', //won't test cloud context init
-                              'org/cloudfoundry/autosleep/Application.class']) //
+                              'org/cloudfoundry/autosleep/Application.class', //skip main
+                              'org/cloudfoundry/autosleep/ui/proxy/Application.class', //skip main
+                              'org/cloudfoundry/autosleep/ui/proxy/ProxyController.class' //not implemented for now
+             ])
         })
     }
 }

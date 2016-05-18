@@ -41,12 +41,9 @@ import org.springframework.web.servlet.HandlerMapping;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -61,13 +58,9 @@ public class WildcardProxy {
 
     static final String HEADER_PROTOCOL = "x-forwarded-proto";
 
-    private static void logHeader(RequestEntity<byte[]> request) {
-        request.getHeaders()
-                .toSingleValueMap()
-                .forEach((name, value) -> log.debug("Header content {} - {} ", name, value));
-    }
-
     private final RestOperations restOperations;
+
+    protected String proxySignature;
 
     private String autosleepHost;
 
@@ -79,8 +72,6 @@ public class WildcardProxy {
 
     @Autowired
     private ProxyMapEntryRepository proxyMap;
-
-    private String proxySignature;
 
     @Autowired
     private TimeManager timeManager;
@@ -99,21 +90,14 @@ public class WildcardProxy {
     }
 
     @PostConstruct
-    void init() {
+    void init() throws Exception {
         //not stored in Config, because this impl is temporary
         String securityPass = env.getProperty("security.user.password");
         autosleepHost = null;
-        try {
-            autosleepHost = InetAddress.getLocalHost().getHostName();
-            this.proxySignature = Arrays.toString(MessageDigest.getInstance("MD5").digest((autosleepHost
-                    + securityPass).getBytes("UTF-8")));
-        } catch (UnknownHostException e) {
-            log.error("Couldn't resolve host", e);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Couldn't get an MD5 encoder", e);
-        } catch (UnsupportedEncodingException e) {
-            log.error("Couldn't encode string to UTF-8", e);
-        }
+        autosleepHost = InetAddress.getLocalHost().getHostName();
+        this.proxySignature = Arrays.toString(MessageDigest.getInstance("MD5").digest((autosleepHost
+                + securityPass).getBytes("UTF-8")));
+
     }
 
     @RequestMapping(headers = {HEADER_PROTOCOL, HEADER_HOST})
@@ -126,13 +110,8 @@ public class WildcardProxy {
         String protocol = incoming.getHeaders().get(HEADER_PROTOCOL).get(0);
 
         log.info("Incoming Request for route : {} path: {}", targetHost, path);
-        //logHeader(incoming);
 
-        //TODO test if my own
-        if (targetHost.equalsIgnoreCase(autosleepHost)) {
-            //TODO ignore
-            log.error("This is self traffic, should be improved");
-        } else if (alreadyForwardedHeader != null && proxySignature.equals(alreadyForwardedHeader.get(0))) {
+        if (alreadyForwardedHeader != null && proxySignature.equals(alreadyForwardedHeader.get(0))) {
             log.error("We've already forwarded this traffic, this should not happen");
             return new ResponseEntity<Object>("Infinite loop forwarding error", HttpStatus.INTERNAL_SERVER_ERROR);
         } else {
@@ -166,7 +145,6 @@ public class WildcardProxy {
                     proxyMap.save(mapEntry);
                 }
             }
-
         }
 
         URI uri = URI.create(protocol + "://" + targetHost + path);
