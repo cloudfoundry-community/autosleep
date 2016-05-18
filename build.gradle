@@ -14,6 +14,15 @@ plugins {
     id "com.github.hierynomus.license" version "0.12.1"
 }
 
+allprojects {
+    repositories {
+        mavenLocal()
+        jcenter()
+        //needed for cf-java-client M release
+        maven { url 'http://repo.spring.io/libs-snapshot' }
+    }
+}
+
 subprojects {
 
     if (name == 'spring-apps') {
@@ -23,19 +32,12 @@ subprojects {
 
     apply plugin: 'java'
     apply from: "$rootProject.projectDir/test.gradle"
-    apply from: "$rootProject.projectDir/coverage.gradle"
+
 
     apply plugin: "io.spring.dependency-management"
 
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-
-    repositories {
-        mavenLocal()
-        jcenter()
-        //needed for cf-java-client M release
-        maven { url 'http://repo.spring.io/libs-snapshot' }
-    }
 
     /* allow us not to specify most versions of the dependencies, since they will be retrieved according
     to springBoot version. Normally we would only have to apply spring-boot plugin to achieve the same result,
@@ -91,6 +93,8 @@ subprojects {
     sourceSets.test.runtimeClasspath += configurations.compileOnly
 
 }
+
+apply from: "$rootProject.projectDir/coverage.gradle"
 
 license {
     header rootProject.file('config/HEADER')
