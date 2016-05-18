@@ -1,23 +1,29 @@
+domain: cf.ns.nd-paas.itn.ftgroup
+buildpack: java_buildpack
+env:
+  JAVA_OPTS: >
+    -Dlogging.level.org.springframework.web.filter.CommonsRequestLoggingFilter=ERROR
+    -Dsecurity.user.name=<security username>
+    -Dsecurity.user.password=<security password>
+    -Dcf.client.target.host=<hostname>
+    -Dcf.client.skip.ssl.validation=false
+    -Dcf.client.username=<username>
+    -Dcf.client.password=<password>
+    -Dcf.client.clientId=<client_id>
+    -Dcf.client.clientSecret=<client_secret>
+    -Dcf.security.password.encodingSecret=<password_encoding_secret>
+    -Dcf.service.broker.id=<service_broker_id>
+    -Dcf.service.plan.id=<service_plan_id>
+services:
+  - mysql
 applications:
+- name: autowakeup-app
+  memory: 1G
+  instances: 1
+  host: autowakeup
+  path: spring-apps/autowakeup-proxy/build/libs/org.cloudfoundry.autosleep.autowakeup-proxy-0.3.0.war
 - name: autosleep-app
   memory: 1G
   instances: 1
   host: autosleep
-  domain: cf.ns.nd-paas.itn.ftgroup
-  services:
-    - mysql
-  buildpack: java_buildpack
-  env:
-    JAVA_OPTS: >
-      -Dlogging.level.org.springframework.web.filter.CommonsRequestLoggingFilter=ERROR
-      -Dsecurity.user.name=<security username>
-      -Dsecurity.user.password=<security password>
-      -Dcf.client.target.host=<hostname>
-      -Dcf.client.skip.ssl.validation=false
-      -Dcf.client.username=<username>
-      -Dcf.client.password=<password>
-      -Dcf.client.clientId=<client_id>
-      -Dcf.client.clientSecret=<client_secret>
-      -Dcf.security.password.encodingSecret=<password_encoding_secret>
-      -Dcf.service.broker.id=<service_broker_id>
-      -Dcf.service.plan.id=<service_plan_id>
+  path: spring-apps/autosleep-core/build/libs/org.cloudfoundry.autosleep.autosleep-core-0.3.0.war

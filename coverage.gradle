@@ -2,11 +2,30 @@
 apply plugin: 'jacoco'
 apply plugin: "com.github.kt3k.coveralls"
 
-jacocoTestReport {
+def analysableProjects = subprojects.findAll { it.name != 'spring-apps' }
+
+task jacocoRootReport(type: JacocoReport, group: 'Coverage reports') {
+    description = 'Generates an aggregate report from all subprojects'
+    dependsOn(analysableProjects.test)
+
+    additionalSourceDirs = files(analysableProjects.sourceSets.main.allSource.srcDirs)
+    sourceDirectories = files(analysableProjects.sourceSets.main.allSource.srcDirs)
+    classDirectories = files(analysableProjects.sourceSets.main.output)
+    executionData = files(analysableProjects.jacocoTestReport.executionData)
+
     reports {
-        //XML required by coveralls and for the below coverage checks
-        xml.enabled true
-        html.enabled = true
+        html.enabled = true // human readable
+        xml.enabled = true // required by coveralls
+    }
+
+    onlyIf = {
+        /* jacocoRootReport doesn't work if some subprojects don't have any tests
+         * at all because this causes the onlyIf of JacocoReport to be false. */
+        true
+    }
+
+    doFirst {
+        executionData = files(executionData.findAll { it.exists() })
     }
 
     afterEvaluate {
@@ -14,47 +33,21 @@ jacocoTestReport {
             fileTree(dir: it,
                     exclude: ['org/cloudfoundry/autosleep/access/cloudfoundry/**', //won't test cf-java-client
                               'org/cloudfoundry/autosleep/access/cloudfoundry/model/**', //won't test pojo
-                              'org/cloudfoundry/autosleep/access/cloudfoundry/config/**', //won't config cf-java-client
-                              'org/cloudfoundry/autosleep/worker/scheduling/TimeManager.class', //won't java concurent
+                              'org/cloudfoundry/autosleep/access/cloudfoundry/config/**', //won't test config
+                              'org/cloudfoundry/autosleep/util/TimeManager.class',
                               'org/cloudfoundry/autosleep/access/dao/model/**',  //won't test pojo
+                              'org/cloudfoundry/autosleep/access/dao/config/data/RelationalCloudDataSourceConfig.java', //cloud config
                               'org/cloudfoundry/autosleep/config/ContextInitializer.class', //won't test cloud context init
-                              'org/cloudfoundry/autosleep/Application.class']) //
-
+                              'org/cloudfoundry/autosleep/Application.class', //skip main
+                              'org/cloudfoundry/autosleep/ui/proxy/Application.class', //skip main
+                              'org/cloudfoundry/autosleep/ui/proxy/ProxyController.class' //not implemented for now
+             ])
         })
     }
-
-    doLast {
-        def report = file("${jacoco.reportsDir}/test/jacocoTestReport.xml")
-        logger.lifecycle("Checking coverage results: ${report}")
-
-        def parser = new XmlParser()
-        parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
-        def results = parser.parse(report)
-
-        def percentage = {
-            def covered = it.'@covered' as Double
-            def missed = it.'@missed' as Double
-            ((covered / (covered + missed)) * 100).round(2)
-        }
-
-        def counters = results.counter
-        def metrics = [:]
-        metrics << [
-                'instruction': percentage(counters.find { it.'@type'.equals('INSTRUCTION') }),
-                'branch'     : percentage(counters.find { it.'@type'.equals('BRANCH') }),
-                'line'       : percentage(counters.find { it.'@type'.equals('LINE') }),
-                'complexity' : percentage(counters.find { it.'@type'.equals('COMPLEXITY') }),
-                'method'     : percentage(counters.find { it.'@type'.equals('METHOD') }),
-                'class'      : percentage(counters.find { it.'@type'.equals('CLASS') })
-        ]
-
-        logger.quiet("************************ Code Coverage ************************")
-        logger.quiet("*")
-        metrics.each {
-            logger.quiet("* ${it.key.padLeft(15)} coverage rate: ${it.value}%")
-        }
-        logger.quiet("***************************************************************")
-    }
 }
-check.dependsOn jacocoTestReport
+
+coveralls {
+    sourceDirs = analysableProjects.sourceSets.main.allSource.srcDirs.flatten()
+    jacocoReportPath = "${buildDir}/reports/jacoco/jacocoRootReport/jacocoRootReport.xml"
+}
+

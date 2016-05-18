@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration debug="true">
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <Target>System.out</Target>
+        <encoder>
+            <pattern>%-5level %logger{30}\(%line\) - %message%n</pattern>
+        </encoder>
+    </appender>
+    <logger name="org.cloudfoundry.autosleep" >
+        <level value="DEBUG" />
+    </logger>
+    <logger name="org.springframework" >
+        <level value="WARN" />
+    </logger>
+    <logger name="org.apache.http.wire">
+        <level value="INFO" />
+    </logger>
+
+    <root>
+        <appender-ref ref="stdout" />
+        <!--<level value="OFF" />-->
+        <level value="INFO" />
+    </root>
+</configuration>

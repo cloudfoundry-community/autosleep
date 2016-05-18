@@ -20,6 +20,6 @@ branches:
     - /^feature-.*$/
     - /^fix-.*$/
 after_success:
-  - ./gradlew jacocoTestReport coveralls 
+  - ./gradlew jacocoRootReport coveralls
 notifications:
   slack: autosleep:eY0VgmPawVzYa7tWKhmnBdES
