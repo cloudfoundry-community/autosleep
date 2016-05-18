@@ -20,11 +20,17 @@
 
 description = 'common'
 
+dependencies {
+    // StringUtils.abbreviate useful to prevent db issues
+    compile "org.apache.commons:commons-lang3:$commonsLangVersion"
+}
+
 jar {
     baseName = "$domainName.$rootProjectName.$project.name"
     version = version
 }
 
+//retrieve common tests as dependency for subtests (testutils,etc...)
 configurations {
     testArtifacts.extendsFrom testRuntime
 }

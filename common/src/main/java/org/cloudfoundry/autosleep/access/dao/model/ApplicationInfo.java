@@ -31,6 +31,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.util.serializer.InstantDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.InstantSerializer;
@@ -135,13 +136,16 @@ public class ApplicationInfo {
                            String sourceId,
                            String sourceName,
                            long timestamp) {
-                this.message = message;
+                this.setMessage(message);
                 this.messageType = messageType;
                 this.sourceId = sourceId;
                 this.sourceName = sourceName;
                 this.timestamp = Instant.ofEpochMilli(timestamp);
             }
 
+            private void setMessage(String message) {
+                this.message = StringUtils.abbreviate(message,254);
+            }
         }
 
         @JsonSerialize
