@@ -28,6 +28,9 @@ subprojects {
         compile project(':common')
         testCompile project(':common')
 
+        //retrieve common tests as dependency for subtests (testutils,etc...)
+        testCompile project (path: ":common", configuration: 'testArtifacts')
+
         //Spring Cloud CF connector
         compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector"
 
