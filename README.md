@@ -17,7 +17,7 @@ For now we provide a [service broker](https://docs.cloudfoundry.org/services/man
 Download [latest release](https://github.com/Orange-OpenSource/autosleep/releases/) if you want to give it a try.
 
 ### What we are working on:
-* automatic restart on incoming HTTP trafic (see early work in the [feature-wildcard-proxy](https://github.com/Orange-OpenSource/autosleep/tree/feature-wildcard-proxy) branch)
+* automatic restart on incoming HTTP trafic (see early work in the [develop](https://github.com/Orange-OpenSource/autosleep/tree/develop) branch)
 
 # Usage by CloudFoundry users
 
