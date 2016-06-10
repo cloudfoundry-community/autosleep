@@ -37,7 +37,7 @@ There are two ways of providing these properties to autosleep:
 ### Deploy autosleep app
 
 `
-cf push -f manifest.yml -p autosleep-x-y-z.jar
+cf push -f manifest.yml
 `    
 
 
