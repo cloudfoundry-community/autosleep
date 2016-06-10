@@ -15,6 +15,7 @@ Prerequisites:
    * on private CF instance: favor an admin user with cloudcontroller.admin scope
 * (optional) a UAA OAuth client, with cloudcontroller.read and cloudcontroller.write scopes
 * a mysql service instance (with min 10 connections see [related issue 200](https://github.com/Orange-OpenSource/autosleep/issues/200))
+* (optional) a dedicated space to deploy autosleep and autowakeup apps on which CF users don't have acces.s
 
 
 Autosleep service needs properties to work . The properties that are used are:
