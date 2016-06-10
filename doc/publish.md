@@ -15,6 +15,7 @@ Prerequisites:
    * on private CF instance: favor an admin user with cloudcontroller.admin scope
 * (optional) a UAA OAuth client, with cloudcontroller.read and cloudcontroller.write scopes
 * a mysql service instance (with min 10 connections see [related issue 200](https://github.com/Orange-OpenSource/autosleep/issues/200))
+* a wildcard route for each of the domains with routes that will trigger autowake up of apps.
 * (optional) a dedicated space to deploy autosleep and autowakeup apps on which CF users don't have acces.s
 
 
@@ -43,6 +44,12 @@ There are two ways of providing these properties to autosleep:
 cf push -f manifest.yml
 `    
 
+Create a wildcard route for each of domain where sleeping apps will receive traffic. This will
+
+`
+cf create-route autosleep mydomain.org -n '*'
+cf map-route autowakeup-app mydomain.org --hostname '*'
+`
 
 ## Publish on the market place
 Check that the autosleep application is running and retrieve its url (`cf app autosleep-app`). 
