@@ -46,10 +46,10 @@ cf push -f manifest.yml
 
 Create a wildcard route for each of domain where sleeping apps will receive traffic. This will
 
-`
-cf create-route autosleep mydomain.org -n '*'
+```
+cf create-route <autosleep-space> mydomain.org -n '*'
 cf map-route autowakeup-app mydomain.org --hostname '*'
-`
+```
 
 ## Publish on the market place
 Check that the autosleep application is running and retrieve its url (`cf app autosleep-app`). 
