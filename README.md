@@ -40,7 +40,7 @@ Once bound, your application will be watched for inactivity, and automatically s
 
 ### Advanced configuration parameters
 
-Optionally the autosleep service broker accepts the following parameters: 
+Optionally the autosleep service broker accepts the following parameters during service creation: 
 
 - [`idle-duration`](#idle-duration)
 - [`exclude-from-auto-enrollment `](#exclude-from-auto-enrollment)
@@ -48,10 +48,12 @@ Optionally the autosleep service broker accepts the following parameters:
 - [`secret `](#secret)
 - [`autosleep-despite-route-services-error`](#autosleep-despite-route-services-error)
 
-These parameters can be provided on service creations as well as on service updates, eg.
+Only the `auto-enrollment ` field is is mutable, i.e. is accepted on service updates, e.g.
 `
-cf cs autosleep default my-autosleep -c '{"idle-duration": "PT1H15M"}'
+cf cs autosleep default my-autosleep -c '{"auto-enrollment": "normal", "secret": "Th1s1zg00dP@$$w0rd"}'
 `
+
+If you need to update other fields (e.g. `idle-duration`), rather choose to instanciate a new service instance.up
 
 #### *idle-duration* 
 Duration after which bound applications will be considered as inactive. The time format used is [the ISO8601] (https://en.wikipedia.org/wiki/ISO_8601#Durations) duration format.
