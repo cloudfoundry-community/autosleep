@@ -57,45 +57,41 @@ Feature: public paas service provider org and space autoenrollment
 
       # Include or exclude orgs and space from enrollment using regular expressions
       enrollspace.include-orgs=*
-      enrollspace.exclude-orgs=system_domain
+      enrollspace.exclude-orgs=system_domain|premium
       enrollspace.include-space=*
       enrollspace.exclude-space=
       #Exclude shared from autowakeup registration
       enrollspace.exclude-domain=portal.acme.com
 
 
-      #Specify autosleep service-instance configuration (as arbitrary params) applied on every auto enrolled space.
-      #TODO: review this: is there cases where this might be different from service customer defaults ?
-      #TODO: do we really need this ?
+      #Specify autosleep service-instance default configuration (as arbitrary params) applied on every auto enrolled space,
+      # or to opt-ins when no arbitrary params are set
 
       #Specify autosleep config in enrolled spaces
       #Override default 24H idle duration
-      enrollspace.space-config.idle-duration=T10H
+      default.idle-duration=T10H
       #Choose apps to exclude from enrollment
-      enrollspace.space-config.exclude-from-auto-enrollment=
-      #app enrollment mode among: standard, forced
-      enrollspace.space-config.auto-enrollment=standard
-      #enrollspace.space-config.secret=Th1s1zg00dP@$$w0rd
+      default.exclude-from-auto-enrollment=
+      #app enrollment mode among: standard, forced.
+      default.auto-enrollment=standard
+      #default.secret=Th1s1zg00dP@$$w0rd
 
       """
 
 
   Scenario: new org and space discovered triggers default config autoenrollment
 
-    Given a CF instance with the following orgs, spaces
+    Given a CF instance with the following orgs, spaces (visible to the autosleep user)
       | org           | spaces             |
       | system_domain | autosleep,admin-ui |
       | team-a-prod   | portal             |
       | team-a-dev    | portal             |
-      | team-b        | dev, prod          |
     And the autosleep service instances in each space are
       | org           | space     | autosleep service instances (arbitrary params) |
       | system_domain | autosleep |                                                |
       | system_domain | admin-ui  |                                                |
       | team-a-prod   | portal    |                                                |
       | team-a-dev    | portal    |                                                |
-      | team-b        | dev       |                                                |
-      | team-b        | prod      |                                                |
 
     When the clock reaches the scan date
     Then autosleep periodically automatically scans orgs and spaces
@@ -103,15 +99,73 @@ Feature: public paas service provider org and space autoenrollment
       | org           | space     | autosleep service instances (arbitrary params)                       |
       | system_domain | autosleep |                                                                      |
       | system_domain | admin-ui  |                                                                      |
-      | team-a-prod   | portal    |                                                                      |
+      | team-a-prod   | portal    | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
       | team-a-dev    | portal    | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
-      | team-b        | dev       | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
-      | team-b        | prod      |                                                                      |
+
+  Scenario: backoffice management of org and space enrollment
+
+    Given a CF instance with the following orgs, spaces (visible to the autosleep user)
+      | org(guid)        | spaces(guid)  |
+      | system_domain(0) | autosleep(90) |
+      | team-a-prod(1)   | portal(100)   |
+      | team-a-dev(2)    | portal(101)   |
+      | premium(2)       | portal(102)   |
+    And the autosleep service instances in each space are
+      | org           | space     | autosleep service instances (arbitrary params) |
+      | system_domain | autosleep |                                                |
+      | team-a-prod   | portal    |                                                |
+      | team-a-dev    | portal    |                                                |
+    When the clock reaches the scan date
+    Then autosleep periodically automatically scans orgs and spaces
+    And the autosleep service instances in each space are
+      | org        | space  | autosleep service instances (arbitrary params)                       |
+      | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
+      | team-b-dev | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
+    And the backoffice REST API returns
+      | endpoint                              | method | body                                                                           |
+      | enrolled-orgs/1/default-space-config/ | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
+      | enrolled-orgs/2/default-space-config/ | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
+      | enrolled-space/100/config             | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
+      | enrolled-space/101/config             | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
+
+
+    When a backoffice change is made through
+      | endpoint                  | method | body                                                                           |
+      | enrolled-space/101/config | PUT    | {idle-duration=T48H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
+    Then the autosleep service instances in each space are
+      | org        | space  | autosleep service instances (arbitrary params)                       |
+      | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
+    When a backoffice change is made through
+      | endpoint           | method | body |
+      | enrolled-space/101 | DELETE |      |
+    Then the autosleep service instances in each space are
+      | org        | space  | autosleep service instances (arbitrary params)                       |
+      | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
+    When the clock reaches the scan date
+    Then autosleep periodically automatically scans orgs and spaces
+    And the autosleep service instances in each space are
+      | org        | space  | autosleep service instances (arbitrary params)                       |
+      | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
+
+
+    When a backoffice change is made through
+      | endpoint       | method | body |
+      | enrolled-org/3 | PUT    |      |
+    Then the autosleep service instances in each space are
+      | org         | space  | autosleep service instances (arbitrary params)                       |
+      | team-a-prod | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
+      | premium     | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
+    When the clock reaches the scan date
+    Then autosleep periodically automatically scans orgs and spaces
+    And the autosleep service instances in each space are
+      | org         | space  | autosleep service instances (arbitrary params)                       |
+      | team-a-prod | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
+      | premium     | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
 
 
   Scenario: no new org and space discovered, leaves autoenrollment untouched
 
-    Given a CF instance with the following orgs, spaces
+    Given a CF instance with the following orgs, spaces (visible to the autosleep user)
       | org        | spaces |
       | team-a-dev | portal |
     And the autosleep service instances in each space are
@@ -125,7 +179,7 @@ Feature: public paas service provider org and space autoenrollment
 
   Scenario: Preexisting service customer autosleep instances left untouched by autoenrollment
 
-    Given a CF instance with the following orgs, spaces
+    Given a CF instance with the following orgs, spaces (visible to the autosleep user)
       | org        | private domains | spaces |
       | team-a-dev | portal.acme.com | portal |
     And the autosleep service instances in each space are
@@ -140,7 +194,7 @@ Feature: public paas service provider org and space autoenrollment
 
   Scenario: transient opt out from space enrollment (enrollspace.mode=forced)
 
-    Given a CF instance with the following orgs, spaces
+    Given a CF instance with the following orgs, spaces (visible to the autosleep user)
       | org        | spaces |
       | team-a-dev | portal |
     And the autosleep service instances in each space are
@@ -162,54 +216,3 @@ Feature: public paas service provider org and space autoenrollment
       | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
 
 
-  Scenario: backoffice management of org and space enrollment
-
-    Given a CF instance with the following orgs, spaces
-      | org(guid)      | spaces(guid) |
-      | team-a-prod(1) | portal(100)  |
-      | team-a-dev(2)  | portal(101)  |
-    And the autosleep service instances in each space are
-      | org         | space  | autosleep service instances (arbitrary params) |
-      | team-a-prod | portal |                                                |
-      | team-a-dev  | portal |                                                |
-    When the clock reaches the scan date
-    Then autosleep periodically automatically scans orgs and spaces
-    And the autosleep service instances in each space are
-      | org        | space  | autosleep service instances (arbitrary params)                       |
-      | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
-    And the backoffice REST API returns
-      | endpoint                              | method | body                                                                           |
-      | enrolled-orgs/1/default-space-config/ | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
-      | enrolled-space/101/config             | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
-    When a backoffice change is made through
-      | endpoint                  | method | body                                                                           |
-      | enrolled-space/101/config | PUT    | {idle-duration=T48H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
-    Then the autosleep service instances in each space are
-      | org        | space  | autosleep service instances (arbitrary params)                       |
-      | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
-    When a backoffice change is made through
-      | endpoint           | method | result                                                                         |
-      | enrolled-space/101 | DELETE | {idle-duration=T48H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
-    Then the autosleep service instances in each space are
-      | org        | space  | autosleep service instances (arbitrary params) |
-      | team-a-dev | portal |                                                |
-    When the clock reaches the scan date
-    Then autosleep periodically automatically scans orgs and spaces
-    And the autosleep service instances in each space are
-      | org        | space  | autosleep service instances (arbitrary params)                       |
-      | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
-
-
-    When a backoffice change is made through
-      | endpoint       | method | body |
-      | enrolled-org/2 | PUT    |      |
-    Then the autosleep service instances in each space are
-      | org         | space  | autosleep service instances (arbitrary params)                       |
-      | team-a-prod | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
-      | team-a-dev  | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
-    When the clock reaches the scan date
-    Then autosleep periodically automatically scans orgs and spaces
-    And the autosleep service instances in each space are
-      | org         | space  | autosleep service instances (arbitrary params)                       |
-      | team-a-prod | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
-      | team-a-dev  | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |

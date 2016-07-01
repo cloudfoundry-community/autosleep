@@ -42,25 +42,24 @@ Feature: private paas service provider org and space autoenrollment
       enrollspace.exclude-domain=portal.acme.com
 
 
-      #Specify autosleep service-instance configuration (as arbitrary params) applied on every auto enrolled space.
-      #TODO: review this: is there cases where this might be different from service customer defaults ?
-      #TODO: do we really need this ?
+      #Specify autosleep service-instance default configuration (as arbitrary params) applied on every auto enrolled space,
+      # or to opt-ins when no arbitrary params are set
 
       #Specify autosleep config in enrolled spaces
       #Override default 24H idle duration
-      enrollspace.space-config.idle-duration=T10H
+      default.idle-duration=T10H
       #Choose apps to exclude from enrollment
-      enrollspace.space-config.exclude-from-auto-enrollment=
-      #app enrollment mode among: standard, forced
-      enrollspace.space-config.auto-enrollment=standard
-      #enrollspace.space-config.secret=Th1s1zg00dP@$$w0rd
+      default.exclude-from-auto-enrollment=
+      #app enrollment mode among: standard, forced (standard applies when unspecified)
+      default.auto-enrollment=standard
+      #default.secret=Th1s1zg00dP@$$w0rd
 
       """
 
 
   Scenario: new org and space discovered triggers default config autoenrollment except excluded spaces
 
-    Given a CF instance with the following orgs, spaces
+    Given a CF instance with the following orgs, spaces (visible to the autosleep user)
       | org           | spaces             |
       | system_domain | autosleep,admin-ui |
       | team-a-prod   | portal             |
@@ -70,7 +69,6 @@ Feature: private paas service provider org and space autoenrollment
     And the autosleep service instances in each space are
       | org           | space     | autosleep service instances (arbitrary params) |
       | system_domain | autosleep |                                                |
-      | system_domain | admin-ui  |                                                |
       | system_domain | admin-ui  |                                                |
       | team-a-prod   | portal    |                                                |
       | team-a-dev    | portal    |                                                |
@@ -86,7 +84,6 @@ Feature: private paas service provider org and space autoenrollment
       | org           | space     | autosleep service instances (arbitrary params)                       |
       | system_domain | autosleep |                                                                      |
       | system_domain | admin-ui  |                                                                      |
-      | system_domain | admin-ui  |                                                                      |
       | team-a-prod   | portal    |                                                                      |
       | team-a-dev    | portal    | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
       | team-b        | dev       | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
@@ -97,7 +94,7 @@ Feature: private paas service provider org and space autoenrollment
 
   Scenario: permanent opt out from space enrollment (enrollspace.mode=standard)
 
-    Given a CF instance with the following orgs, spaces
+    Given a CF instance with the following orgs, spaces (visible to the autosleep user)
       | org        | spaces |
       | team-a-dev | portal |
     And the autosleep service instances in each space are
