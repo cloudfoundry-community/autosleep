@@ -6,6 +6,7 @@ Feature: public paas org and space autoenrollmennt
 
   In addition, upon commercial negociations with customers, the service provider needs to tune the autosleep
   configuration on a customer per customer basis (e.g. exclude orgs, spaces, apps, or tune idle duration).
+  This is done through a backoffice REST API
 
   The autosleep service (default service plan) is made visible to all orgs in the market place. This is useful for customers
   to access documentation associated with autosleep service instances that appear in their space and understand the actions
@@ -22,7 +23,26 @@ Feature: public paas org and space autoenrollmennt
   domains wildcard route get mapped to the autosleep application). Application autowakeup on private domains would need
   service consummers actions to route orphan traffic to the autosleep public route.
 
-  Orgs and spaces are being applied default configuration.
+  service-provider back office REST API endpoints
+  enrolled-orgs/guid PUT, DELETE: enroll or unenroll a given org with default autosleep configuration
+  enrolled-orgs/guid/default-space-config/ GET,PUT: access/modify default space config for an org
+  enrollspace.space-config.idle-duration=T24H
+          #Choose apps to exclude from enrollment
+  enrollspace.space-config.exclude-from-auto-enrollment=
+          #app enrollment mode among: standard, forced
+  enrollspace.space-config.auto-enrollment=standard
+          #enrollspace.space-config.secret=Th1s1zg00dP@$$w0rd
+
+  enrolled-orgs/guid/space/guid PUT/DELETE: enroll or unenroll a given space with org default space config.
+  enrolled-orgs/guid/space/guid/config:
+        #Override default 24H idle duration
+  idle-duration=T10H
+          #Choose apps to exclude from enrollment
+  exclude-from-auto-enrollment=
+          #app enrollment mode among: standard, forced
+  auto-enrollment=standard
+  secret=Th1s1zg00dP@$$w0rd
+
 
   Background:
     Given autosleep is deployed by service provider with the following configuration flags
@@ -51,7 +71,9 @@ Feature: public paas org and space autoenrollmennt
       enrollspace.exclude-domain=portal.acme.com
 
 
-      #Specify autosleep service-instance configuration (as arbitrary params) applied on every auto enrolled space
+      #Specify autosleep service-instance configuration (as arbitrary params) applied on every auto enrolled space.
+      #TODO: review this: is there cases where this might be different from service customer defaults ?
+      #TODO: do we really need this ?
 
       #Specify autosleep config in enrolled spaces
       #Override default 24H idle duration
@@ -157,4 +179,21 @@ Feature: public paas org and space autoenrollmennt
 
 
   Scenario: backoffice management of org and space enrollment
+
+    Given a CF instance with the following orgs, spaces
+      | org(guid)      | spaces(guid) |
+      | team-a-prod(1) | portal(100)  |
+      | team-a-dev(2)  | portal(101)  |
+    And the autosleep service instances in each space are
+      | org         | space  | autosleep service instances (arbitrary params) |
+      | team-a-prod | portal |                                                |
+      | team-a-dev  | portal |                                                |
+    When the clock reaches the scan date
+    Then autosleep periodically automatically scans orgs and spaces
+    And the autosleep service instances in each space are
+      | org        | space  | autosleep service instances (arbitrary params)                       |
+      | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
+    And the backoffice REST API returns
+      | endpoint                              | method | result |
+      | enrolled-orgs/1/default-space-config/ | GET    |        |
 
