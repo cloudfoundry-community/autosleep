@@ -1,6 +1,7 @@
-Feature: public paas org and space autoenrollmennt
+Feature: public paas service provider org and space autoenrollment
 
-  A public service provider offers CF self service mode, where customers create new orgs and spaces (choosing how to name them), and may delete spaces, and orgs.
+  A public service provider offers CF self service mode, where customers create new orgs and spaces (choosing how to
+  name them), and may delete spaces, and orgs (i.e. without autosleep preventing such self-service org/space mgt)
 
   The service provider would like to have autosleep automatically applied with default configuration on all new orgs and spaces created.
 
@@ -13,7 +14,9 @@ Feature: public paas org and space autoenrollmennt
   performed on their applications.
 
   Service consummers are not given capability to disable autosleep or configure autosleep
-  (e.g. exclude apps, tune idle duration) in a self service mode.
+  (e.g. exclude apps, tune idle duration) in a self service mode. The service provider therefore configures the
+  the forced space enrollment mode in which opt-outs are only transient, leaving a fair timeslot to delete the autosleep
+  service instance (which is necessary to delete a space).
 
   While service consummer may create new autosleep service instances in their space, the service-provider-instanciated
   service instance still applies. Service-consummer-instanciated autosleep service instance would in effect only reduce
@@ -54,9 +57,9 @@ Feature: public paas org and space autoenrollmennt
 
       # Include or exclude orgs and space from enrollment using regular expressions
       enrollspace.include-orgs=*
-      enrollspace.exclude-orgs=(*prod|system_domain)
+      enrollspace.exclude-orgs=system_domain
       enrollspace.include-space=*
-      enrollspace.exclude-space=prod*
+      enrollspace.exclude-space=
       #Exclude shared from autowakeup registration
       enrollspace.exclude-domain=portal.acme.com
 
@@ -85,19 +88,14 @@ Feature: public paas org and space autoenrollmennt
       | team-a-prod   | portal             |
       | team-a-dev    | portal             |
       | team-b        | dev, prod          |
-      | sandbox       | usera,userb,userc  |
     And the autosleep service instances in each space are
       | org           | space     | autosleep service instances (arbitrary params) |
       | system_domain | autosleep |                                                |
-      | system_domain | admin-ui  |                                                |
       | system_domain | admin-ui  |                                                |
       | team-a-prod   | portal    |                                                |
       | team-a-dev    | portal    |                                                |
       | team-b        | dev       |                                                |
       | team-b        | prod      |                                                |
-      | sandbox       | usera     |                                                |
-      | sandbox       | userb     |                                                |
-      | sandbox       | userc     |                                                |
 
     When the clock reaches the scan date
     Then autosleep periodically automatically scans orgs and spaces
@@ -105,17 +103,13 @@ Feature: public paas org and space autoenrollmennt
       | org           | space     | autosleep service instances (arbitrary params)                       |
       | system_domain | autosleep |                                                                      |
       | system_domain | admin-ui  |                                                                      |
-      | system_domain | admin-ui  |                                                                      |
       | team-a-prod   | portal    |                                                                      |
       | team-a-dev    | portal    | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
       | team-b        | dev       | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
       | team-b        | prod      |                                                                      |
-      | sandbox       | usera     | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
-      | sandbox       | userb     | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
-      | sandbox       | userc     | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
 
 
-  Scenario: no org and space discovered, leaves autoenrollment untouched
+  Scenario: no new org and space discovered, leaves autoenrollment untouched
 
     Given a CF instance with the following orgs, spaces
       | org        | spaces |
