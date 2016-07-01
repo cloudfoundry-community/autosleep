@@ -68,12 +68,12 @@ Feature: public paas org and space autoenrollmennt
   Scenario: new org and space discovered triggers default config autoenrollment
 
     Given a CF instance with the following orgs, spaces
-      | org           | spaces             | private domains          | shared domains      |
-      | system_domain | autosleep,admin-ui | cf.paas-provider.com     | cfapps-provider.com |
-      | team-a-prod   | portal             | portal.acme.com          | cfapps-provider.com |
-      | team-a-dev    | portal             | dev.acme.com             | cfapps-provider.com |
-      | team-b        | dev, prod          | dev.bar.com,prod.bar.com | cfapps-provider.com |
-      | sandbox       | usera,userb,userc  |                          | cfapps-provider.com |
+      | org           | spaces             |
+      | system_domain | autosleep,admin-ui |
+      | team-a-prod   | portal             |
+      | team-a-dev    | portal             |
+      | team-b        | dev, prod          |
+      | sandbox       | usera,userb,userc  |
     And the autosleep service instances in each space are
       | org           | space     | autosleep service instances (arbitrary params) |
       | system_domain | autosleep |                                                |
