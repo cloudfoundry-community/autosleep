@@ -24,24 +24,14 @@ Feature: public paas org and space autoenrollmennt
   service consummers actions to route orphan traffic to the autosleep public route.
 
   service-provider back office REST API endpoints
+
   enrolled-orgs/guid PUT, DELETE: enroll or unenroll a given org with default autosleep configuration
   enrolled-orgs/guid/default-space-config/ GET,PUT: access/modify default space config for an org
-  enrollspace.space-config.idle-duration=T24H
-          #Choose apps to exclude from enrollment
-  enrollspace.space-config.exclude-from-auto-enrollment=
-          #app enrollment mode among: standard, forced
-  enrollspace.space-config.auto-enrollment=standard
-          #enrollspace.space-config.secret=Th1s1zg00dP@$$w0rd
+  { idle-duration=T24H, exclude-from-auto-enrollment="" auto-enrollment=standard }
 
-  enrolled-orgs/guid/space/guid PUT/DELETE: enroll or unenroll a given space with org default space config.
-  enrolled-orgs/guid/space/guid/config:
-        #Override default 24H idle duration
-  idle-duration=T10H
-          #Choose apps to exclude from enrollment
-  exclude-from-auto-enrollment=
-          #app enrollment mode among: standard, forced
-  auto-enrollment=standard
-  secret=Th1s1zg00dP@$$w0rd
+  enrolled-space/guid PUT/DELETE: enroll or unenroll a given space with org default space config.
+  enrolled-space/guid/config: change space autosleep config (persistent to transient opt-out)
+  { idle-duration=T10H, exclude-from-auto-enrollment="", auto-enrollment=standard, secret=Th1s1zg00dP@$$w0rd }
 
 
   Background:
@@ -194,6 +184,38 @@ Feature: public paas org and space autoenrollmennt
       | org        | space  | autosleep service instances (arbitrary params)                       |
       | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
     And the backoffice REST API returns
-      | endpoint                              | method | result |
-      | enrolled-orgs/1/default-space-config/ | GET    |        |
+      | endpoint                              | method | body                                                                           |
+      | enrolled-orgs/1/default-space-config/ | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
+      | enrolled-space/101/config             | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
+    When a backoffice change is made through
+      | endpoint                  | method | body                                                                           |
+      | enrolled-space/101/config | PUT    | {idle-duration=T48H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
+    Then the autosleep service instances in each space are
+      | org        | space  | autosleep service instances (arbitrary params)                       |
+      | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
+    When a backoffice change is made through
+      | endpoint           | method | result                                                                         |
+      | enrolled-space/101 | DELETE | {idle-duration=T48H, exclude-from-auto-enrollment=, auto-enrollment=standard } |
+    Then the autosleep service instances in each space are
+      | org        | space  | autosleep service instances (arbitrary params) |
+      | team-a-dev | portal |                                                |
+    When the clock reaches the scan date
+    Then autosleep periodically automatically scans orgs and spaces
+    And the autosleep service instances in each space are
+      | org        | space  | autosleep service instances (arbitrary params)                       |
+      | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
 
+
+    When a backoffice change is made through
+      | endpoint       | method | body |
+      | enrolled-org/2 | PUT    |      |
+    Then the autosleep service instances in each space are
+      | org         | space  | autosleep service instances (arbitrary params)                       |
+      | team-a-prod | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
+      | team-a-dev  | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
+    When the clock reaches the scan date
+    Then autosleep periodically automatically scans orgs and spaces
+    And the autosleep service instances in each space are
+      | org         | space  | autosleep service instances (arbitrary params)                       |
+      | team-a-prod | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=standard) |
+      | team-a-dev  | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=standard) |
