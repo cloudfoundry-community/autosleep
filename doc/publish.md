@@ -74,3 +74,7 @@ where:
 ## Publish as a private broker
 
 `cf create-service-broker <name> <login <password> <url> --space-scoped`
+
+## Access the backoffice UI
+
+The /admin/debug/ endpoint provides the list of all service instances, and bound applications in a central place. It is protected by basic auth credentials (the service broker credentials). 
