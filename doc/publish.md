@@ -1,5 +1,6 @@
-#Publish
-How to make autosleep service broker available in your market place.
+#Publish manually
+
+This section describes how to maunally make autosleep service broker available in your market place.
 
 ## Deploy autosleep application
 This is how to deploy autosleep application in cloudfoundry. If you wish to run it elsewhere you're on your own.
@@ -78,3 +79,8 @@ where:
 ## Access the backoffice UI
 
 The /admin/debug/ endpoint provides the list of all service instances, and bound applications in a central place. It is protected by basic auth credentials (the service broker credentials). 
+
+
+#Publish automatically
+
+Alternatively, you may use https://github.com/Orange-OpenSource/cloudfoundry-operators-tools-boshrelease#orange-autosleep-service-for-cloudfoundry to automatically install autosleep from a bosh CLI using packaged bosh errands.
