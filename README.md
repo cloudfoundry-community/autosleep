@@ -5,7 +5,7 @@ The aim of the auto-sleep project is to give the ability for Cloud Foundry users
 
 # Status
 This is a work in progress. 
-You can check the [full specifications](https://docs.google.com/document/d/1tMhIBX3tw7kPEOMCzKhUgmtmr26GVxyXwUTwMO71THI/) and the currently supported features in the [acceptance tests](https://github.com/Orange-OpenSource/autosleep/tree/develop/acceptance).
+You can check the [full specifications](https://docs.google.com/document/d/1tMhIBX3tw7kPEOMCzKhUgmtmr26GVxyXwUTwMO71THI/) and the currently supported features in the [acceptance tests](acceptance/).
 
 Get a deeper introduction in the Autosleep talk at Cf Summit Santa Clata 2016 ( [slides](http://fr.slideshare.net/gberche/autosleep-inactive-apps-get-automatically-put-to-sleep-and-restarted-on-incoming-traffic),  [youtube video recording](https://www.youtube.com/watch?v=fQQRGxqkM-4&index=29&list=PLhuMOCWn4P9gGrKEtCBKYpEl5BXGBCsQZ), and [high-res demo](https://drive.google.com/open?id=0B_RQz82RzSUndnd4TFJOODFkTU0) )
 
@@ -18,7 +18,7 @@ For now we provide a [service broker](https://docs.cloudfoundry.org/services/man
 * watch every bound application, measure inactivity (based on **https logs** and **redeploy/restart events**) and stop the application when an inactivity threshold is reached.
 * a service dashboard for users to understand behavior of the service (such as time to sleep or current enrollment status)
 
-Download [latest release](https://github.com/Orange-OpenSource/autosleep/releases/) if you want to give it a try.
+Download [latest release](https://github.com/Orange-OpenSource/autosleep/releases/) if you want to give it a try, or [build from sources](/doc/build.md)
 
 ### What we are working on:
 * automatic restart on incoming HTTP trafic (see early work in the [develop](https://github.com/Orange-OpenSource/autosleep/tree/develop) branch)
