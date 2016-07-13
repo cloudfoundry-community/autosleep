@@ -23,8 +23,15 @@ Feature: public paas service provider org and space autoenrollment
   idle duration of enrolled apps.
 
   Applications autowakeup is applied on all shared domains provided by the service providers (with the preq that shared
-  domains wildcard route get mapped to the autosleep application). Application autowakeup on private domains would need
-  service consummers actions to route orphan traffic to the autosleep public route.
+  domains wildcard route get mapped to the autowakeup application by service provider).
+  Application autowakeup on private domains would either need service consummers actions to route orphan traffic to the
+  autowakeup public route, or could be automated by the autoenrolment feature.
+  Autosleep autoenrollment could automate this processing:
+  - create a dedicated "service-consummer-autowakeup" space in the service consummer org,
+  - create wildcard route for customers private domains in the "service-consummer-autowakeup" space
+  - automatically push the zuul proxy in the "service-consummer-autowakeup" space.
+  Service consummers could potentially alter the "service-consummer-autowakeup" to filter out confidential traffic from
+  autowakeup, or disable the traffic proxying to autowakeup, resulting in sleeping apps not being waken up anymore.
 
   service-provider back office REST API endpoints (inspired from
   https://github.com/cloudfoundry/cc-api-v3-style-guide/blob/master/README.md ) which are used to construct
