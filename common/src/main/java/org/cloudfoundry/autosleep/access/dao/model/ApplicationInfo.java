@@ -48,7 +48,7 @@ import java.util.HashMap;
 @Slf4j
 @Entity
 @EqualsAndHashCode
-@ToString
+@ToString(of = {"uuid", "name", "diagnosticInfo"})
 public class ApplicationInfo {
 
     @Getter
@@ -56,6 +56,7 @@ public class ApplicationInfo {
     @Embeddable
     @EqualsAndHashCode
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    @ToString(of = {"appState", "lastCheck", "lastEvent", "lastLog", "nextCheck"})
     public static class DiagnosticInfo {
 
         @Getter
@@ -64,6 +65,7 @@ public class ApplicationInfo {
         @Embeddable
         @EqualsAndHashCode
         @NoArgsConstructor(access = AccessLevel.PRIVATE)
+        @ToString(of={"timestamp", "type"})
         public static class ApplicationEvent {
 
             @JsonSerialize
@@ -107,6 +109,7 @@ public class ApplicationInfo {
         @Embeddable
         @EqualsAndHashCode
         @NoArgsConstructor(access = AccessLevel.PRIVATE)
+        @ToString(of={"timestamp", "messageType", "sourceId", "sourceName"})
         public static class ApplicationLog {
 
             @JsonSerialize
