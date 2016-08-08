@@ -9,9 +9,8 @@ manifest*.yml
 #local slf4j config
 src/main/resources/logback.xml
 #Local config for cloudfoundry client test
-src/test/resources/cloudfoundry_client.properties
-src/main/resources/cloudfoundry_client.properties
-src/test/java/org/cloudfoundry/autosleep/Sandbox.java
+common/src/test/java/org/cloudfoundry/autosleep/Sandbox.java
+common/src/test/resources/cloudfoundry_client.properties
 ## acceptance test results
 log.html
 output.xml
