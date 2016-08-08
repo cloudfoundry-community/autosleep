@@ -25,9 +25,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.DefaultClientIdentification;
 import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.logging.LoggingClient;
-import org.cloudfoundry.spring.client.SpringCloudFoundryClient;
-import org.cloudfoundry.spring.logging.SpringLoggingClient;
+import org.cloudfoundry.doppler.DopplerClient;
+import org.cloudfoundry.reactor.ConnectionContext;
+import org.cloudfoundry.reactor.DefaultConnectionContext;
+import org.cloudfoundry.reactor.TokenProvider;
+import org.cloudfoundry.reactor.client.ReactorCloudFoundryClient;
+import org.cloudfoundry.reactor.doppler.ReactorDopplerClient;
+import org.cloudfoundry.reactor.tokenprovider.PasswordGrantTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -47,15 +51,15 @@ public class CloudfoundryClientBuilder {
     @Getter
     private static class ClientContainer {
 
-        private CloudFoundryClient client;
+        private CloudFoundryClient cloudFoundryClient;
 
-        private LoggingClient logClient;
+        private DopplerClient dopplerClient;
 
         @Builder
-        ClientContainer(CloudFoundryClient client,
-                        LoggingClient logClient) {
-            this.client = client;
-            this.logClient = logClient;
+        ClientContainer(CloudFoundryClient cloudFoundryClient,
+                        DopplerClient dopplerClient) {
+            this.cloudFoundryClient = cloudFoundryClient;
+            this.dopplerClient = dopplerClient;
         }
     }
 
@@ -82,19 +86,29 @@ public class CloudfoundryClientBuilder {
                 log.debug("buildClient - targetHost={}", targetHost);
                 log.debug("buildClient - skipSslValidation={}", skipSslValidation);
                 log.debug("buildClient - username={}", username);
-                SpringCloudFoundryClient client = SpringCloudFoundryClient.builder()
-                        .host(targetHost)
-                        .clientId(clientId)
-                        .clientSecret(clientSecret)
+                ConnectionContext connectionContext = DefaultConnectionContext.builder()
+                        .apiHost(targetHost)
                         .skipSslValidation(skipSslValidation)
+                        .build();
+                TokenProvider tokenProvider = PasswordGrantTokenProvider.builder()
                         .username(username)
                         .password(password)
+                        .clientId(clientId)
+                        .clientSecret(clientSecret)
                         .build();
 
-                SpringLoggingClient logClient = SpringLoggingClient.builder().cloudFoundryClient(client).build();
+                CloudFoundryClient client = ReactorCloudFoundryClient.builder()
+                        .connectionContext(connectionContext)
+                        .tokenProvider(tokenProvider)
+                        .build();
+                DopplerClient dopplerClient = ReactorDopplerClient.builder()
+                        .connectionContext(connectionContext)
+                        .tokenProvider(tokenProvider)
+                        .build();
+
                 this.clientContainer = ClientContainer.builder()
-                        .client(client)
-                        .logClient(logClient)
+                        .cloudFoundryClient(client)
+                        .dopplerClient(dopplerClient)
                         .build();
                 return this.clientContainer;
             } catch (RuntimeException r) {
@@ -111,14 +125,14 @@ public class CloudfoundryClientBuilder {
 
     @Bean
     @ConditionalOnMissingBean(CloudFoundryClient.class)
-    public CloudFoundryClient getClient() {
-        return buildIfNeeded().getClient();
+    public CloudFoundryClient cloudFoundryClient() {
+        return buildIfNeeded().getCloudFoundryClient();
     }
 
     @Bean
-    @ConditionalOnMissingBean(LoggingClient.class)
-    public LoggingClient getLogClient() {
-        return buildIfNeeded().getLogClient();
+    @ConditionalOnMissingBean(DopplerClient.class)
+    public DopplerClient dopplerClient() {
+        return buildIfNeeded().getDopplerClient();
     }
 
 }
