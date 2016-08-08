@@ -16,370 +16,375 @@ package org.cloudfoundry.integrationclient;/*
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.v2.applications.*;
+import org.cloudfoundry.client.v2.applications.GetApplicationRequest;
+import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
+import org.cloudfoundry.client.v2.applications.ListApplicationRoutesRequest;
+import org.cloudfoundry.client.v2.applications.ListApplicationRoutesResponse;
+import org.cloudfoundry.client.v2.applications.ListApplicationsResponse;
+import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
+import org.cloudfoundry.client.v2.applications.UpdateApplicationResponse;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
-import org.cloudfoundry.client.v2.servicebindings.*;
+import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
+import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingResponse;
+import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
+import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingResponse;
+import org.cloudfoundry.client.v2.servicebindings.ListServiceBindingsRequest;
+import org.cloudfoundry.client.v2.servicebindings.ListServiceBindingsResponse;
 import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceToRouteRequest;
 import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceToRouteResponse;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
-import org.cloudfoundry.logging.LogMessage;
-import org.cloudfoundry.logging.RecentLogsRequest;
-import org.cloudfoundry.spring.client.SpringCloudFoundryClient;
-import org.cloudfoundry.spring.logging.SpringLoggingClient;
+import org.cloudfoundry.doppler.DopplerClient;
+import org.cloudfoundry.doppler.Envelope;
+import org.cloudfoundry.doppler.RecentLogsRequest;
+import org.cloudfoundry.reactor.ConnectionContext;
+import org.cloudfoundry.reactor.DefaultConnectionContext;
+import org.cloudfoundry.reactor.TokenProvider;
+import org.cloudfoundry.reactor.client.ReactorCloudFoundryClient;
+import org.cloudfoundry.reactor.doppler.ReactorDopplerClient;
+import org.cloudfoundry.reactor.tokenprovider.PasswordGrantTokenProvider;
 import org.cloudfoundry.util.test.TestSubscriber;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 
-/**
- * Created by buce8373 on 08/12/2015.
- */
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = Sandbox.SandboxConfiguration.class)
 public class Sandbox {
 
-    private static final long DEFAULT_TIMEOUT_IN_SECONDS = 2;
+	private static final long DEFAULT_TIMEOUT_IN_SECONDS = 2;
 
-    @Value("${test.application.id}")
-    private String applicationId;
+	@PropertySource("classpath:test.properties")
+	public static class SandboxConfiguration {
 
-    @Value("${cf.client.id}")
-    private String cfClientId;
+		@Bean
+		public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+			return new PropertySourcesPlaceholderConfigurer();
+		}
+	}
 
-    @Value("${cf.client.secret}")
-    private String cfClientSecret;
+	@Value("${cf.url}")
+	private String cfUrl;
 
-    @Value("${cf.password}")
-    private String cfPassword;
+	@Value("${cf.client.id}")
+	private String cfClientId;
 
-    @Value("${cf.url}")
-    private String cfUrl;
+	@Value("${cf.client.secret}")
+	private String cfClientSecret;
 
-    @Value("${cf.username}")
-    private String cfUsername;
+	@Value("${cf.username}")
+	private String cfUsername;
 
-    private CloudFoundryClient client;
+	@Value("${cf.password}")
+	private String cfPassword;
 
-    private SpringLoggingClient loggregatorClient;
+	@Value("${cf.skip.verification}")
+	private boolean skipVerification;
 
-    @Value("${test.route.id}")
-    private String routeId;
+	@Value("${test.application.id}")
+	private String applicationId;
 
-    @Value("${test.service.instance.id}")
-    private String serviceInstanceId;
+	@Value("${test.space.id}")
+	private String spaceId;
 
-    @Value("${cf.skip.verification}")
-    private boolean skipVerification;
+	@Value("${test.service.instance.id}")
+	private String serviceInstanceId;
 
-    @Value("${test.space.id}")
-    private String spaceId;
+	@Value("${test.route.id}")
+	private String routeId;
 
-    @Before
-    public void buildClient() {
-        if (client == null) {
-            log.debug("Building to {}", cfUrl);
-            SpringCloudFoundryClient client = SpringCloudFoundryClient.builder()
-                    .host(cfUrl)
-                    .clientId(cfClientId)
-                    .clientSecret(cfClientSecret)
-                    .skipSslValidation(skipVerification)
-                    .username(cfUsername)
-                    .password(cfPassword).build();
-            loggregatorClient = SpringLoggingClient.builder().cloudFoundryClient(client).build();
-            this.client = client;
-        }
-    }
+	private CloudFoundryClient client;
 
-    @Test
-    public void get_application_poll() {
-        log.debug("get_application_get");
-        Mono<GetApplicationResponse> publisher = this.client
-                .applicationsV2().get(GetApplicationRequest.builder().applicationId(applicationId).build());
-        //wait for 30s by default
-        GetApplicationResponse response = publisher.get();
-        assertThat(response, is(notNullValue()));
-        assertThat(response.getMetadata(), is(notNullValue()));
-        assertThat(response.getEntity(), is(notNullValue()));
-        assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
-        assertThat(response.getEntity().getState(), is(notNullValue()));
+	private DopplerClient loggregatorClient;
 
-        log.debug("get_application_get - {} found (state = {})", response.getEntity().getName(), response.getEntity()
-                .getState());
+	@Before
+	public void buildClient() {
+		if (client == null) {
+			log.debug("Building to {}", cfUrl);
+			ConnectionContext connectionContext = DefaultConnectionContext.builder()
+					.apiHost(cfUrl)
+					.skipSslValidation(skipVerification)
+					.build();
+			TokenProvider tokenProvider = PasswordGrantTokenProvider.builder()
+					.password(cfPassword)
+					.username(cfUsername)
+					.clientId(cfClientId)
+					.clientSecret(cfClientSecret)
+					.build();
 
-    }
+			this.client = ReactorCloudFoundryClient.builder()
+					.connectionContext(connectionContext)
+					.tokenProvider(tokenProvider)
+					.build();
 
-    @Test
-    public void get_application_subscribe() throws InterruptedException {
-        log.debug("get_application_subscribe");
-        TestSubscriber<GetApplicationResponse> subscriber = new TestSubscriber<>();
+			this.loggregatorClient = ReactorDopplerClient.builder()
+					.connectionContext(connectionContext)
+					.tokenProvider(tokenProvider)
+					.build();
+		}
+	}
 
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getMetadata(), is(notNullValue()));
-            assertThat(response.getEntity(), is(notNullValue()));
-            assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
-            log.debug("get_application_subscribe - {} found", response.getEntity().getName());
-        });
-        Mono<GetApplicationResponse> publisher = this.client
-                .applicationsV2().get(GetApplicationRequest.builder().applicationId(applicationId).build());
-        publisher.subscribe(subscriber);
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+	@Test
+	public void get_application_poll() {
+		log.debug("get_application_get");
+		Mono<GetApplicationResponse> publisher = this.client
+				.applicationsV2().get(GetApplicationRequest.builder().applicationId(applicationId).build());
+		//wait for 30s by default
+		GetApplicationResponse response = publisher.block();
+		assertThat(response, is(notNullValue()));
+		assertThat(response.getMetadata(), is(notNullValue()));
+		assertThat(response.getEntity(), is(notNullValue()));
+		assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
+		assertThat(response.getEntity().getState(), is(notNullValue()));
 
-    }
+		log.debug("get_application_get - {} found (state = {})", response.getEntity().getName(), response.getEntity().getState());
 
-    @Test
-    public void get_last_events() throws InterruptedException {
-        TestSubscriber<ListEventsResponse> subscriber = new TestSubscriber<>();
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getResources(), is(notNullValue()));
-            response.getResources().stream()
-                    .map(eventResource -> eventResource.getEntity().getTimestamp())
-                    .forEach(log::debug);
-            if(!response.getResources().isEmpty()){
-                Instant time = Instant.parse(response.getResources().get(response.getResources().size() - 1).getEntity()
-                        .getTimestamp());
-                log.debug("This is my timestamp {}", time);
-            } else {
-                log.warn("No event found");
-            }
+	}
 
-        });
+	@Test
+	public void get_application_subscribe() throws InterruptedException {
+		log.debug("get_application_subscribe");
+		TestSubscriber<GetApplicationResponse> subscriber = new TestSubscriber<>();
 
-        Mono<ListEventsResponse> publisher = this.client
-                .events().list(ListEventsRequest.builder().actee(applicationId).build());
-        publisher.subscribe(subscriber);
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-    }
+		subscriber.assertThat(response -> {
+			assertThat(response, is(notNullValue()));
+			assertThat(response.getMetadata(), is(notNullValue()));
+			assertThat(response.getEntity(), is(notNullValue()));
+			assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
+			log.debug("get_application_subscribe - {} found", response.getEntity().getName());
+		});
+		Mono<GetApplicationResponse> publisher = this.client
+				.applicationsV2().get(GetApplicationRequest.builder().applicationId(applicationId).build());
+		publisher.subscribe(subscriber);
+		subscriber.verify(Duration.ofSeconds(DEFAULT_TIMEOUT_IN_SECONDS));
 
-    @Test
-    public void get_last_logs() throws Throwable {
+	}
 
-        final AtomicInteger count = new AtomicInteger();
-        final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicReference<Throwable> error = new AtomicReference<>(null);
-        final AtomicLong newestTimestamp = new AtomicLong();
-        Subscriber<LogMessage> subscriber = new Subscriber<LogMessage>() {
+	@Test
+	public void test_stop() throws InterruptedException {
+		log.debug("test_stop - start");
+		log.debug("Stopping application {}", applicationId);
+		TestSubscriber<UpdateApplicationResponse> subscriber = new TestSubscriber<>();
+		subscriber.assertThat(response -> {
+			assertThat(response, is(notNullValue()));
+			assertThat(response.getMetadata(), is(notNullValue()));
+			assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
+			log.debug("application stopped - {}", response.getEntity().getName());
+			log.debug("test_stop - end");
+		});
+		Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
+				(UpdateApplicationRequest.builder().applicationId(applicationId).state("STOPPED").build());
+		publisherStart.subscribe(subscriber);
 
-            @Override
-            public void onComplete() {
-                latch.countDown();
-            }
+		subscriber.verify(Duration.ofSeconds(DEFAULT_TIMEOUT_IN_SECONDS));
 
-            @Override
-            public void onError(Throwable t) {
-                error.set(t);
-                latch.countDown();
-            }
+	}
 
-            @Override
-            public void onNext(LogMessage message) {
-                long messageTimestamp = message.getTimestamp().getTime();
-                if (newestTimestamp.get() < messageTimestamp) {
-                    newestTimestamp.set(messageTimestamp);
-                }
-                count.incrementAndGet();
-            }
+	@Test
+	public void test_start() throws InterruptedException {
+		log.debug("test_start - start");
+		log.debug("Starting application {}", applicationId);
+		TestSubscriber<UpdateApplicationResponse> subscriber = new TestSubscriber<>();
+		subscriber.assertThat(response -> {
+			assertThat(response, is(notNullValue()));
+			assertThat(response.getMetadata(), is(notNullValue()));
+			assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
+			log.debug("application started - {}", response.getEntity().getName());
+			log.debug("test_start - end");
+		});
+		Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
+				(UpdateApplicationRequest.builder().applicationId(applicationId).state("STARTED").build());
+		publisherStart.subscribe(subscriber);
+		subscriber.verify(Duration.ofSeconds(DEFAULT_TIMEOUT_IN_SECONDS));
+	}
 
-            @Override
-            public void onSubscribe(Subscription s) {
-                s.request(Long.MAX_VALUE);
-            }
-        };
-        Publisher<LogMessage> publisher = loggregatorClient.recent(RecentLogsRequest.builder()
-                .applicationId(applicationId)
-                .build());
-        publisher.subscribe(subscriber);
-        if (!latch.await(10, TimeUnit.SECONDS)) {
-            throw new IllegalStateException("Subscriber timed out");
-        } else if (error.get() != null) {
-            throw error.get();
-        } else {
-            log.error("Last timestamp=%{} - got {} message", new Date(newestTimestamp.get()), count.get());
-        }
-    }
+	@Test
+	public void test_list_by_space() throws InterruptedException {
 
-    @Test
-    public void test_bind_unbind_application() {
-        Mono<CreateServiceBindingResponse> publisherBinding = client.serviceBindings().create
-                (CreateServiceBindingRequest
-                        .builder()
-                        .applicationId(applicationId)
-                        .serviceInstanceId(serviceInstanceId).build());
-        CreateServiceBindingResponse responseBinding = publisherBinding.get();
-        assertThat(responseBinding, is(notNullValue()));
-        assertThat(responseBinding.getMetadata(), is(notNullValue()));
-        assertThat(responseBinding.getEntity(), is(notNullValue()));
-        assertThat(responseBinding.getEntity().getApplicationId(), is(equalTo(applicationId)));
-        assertThat(responseBinding.getEntity().getServiceInstanceId(), is(equalTo(serviceInstanceId)));
+		TestSubscriber<ListApplicationsResponse> subscriber = new TestSubscriber<>();
+		subscriber.assertThat(response -> {
+			assertThat(response, is(notNullValue()));
+			assertThat(response.getResources(), is(notNullValue()));
+			response.getResources().stream()
+					.map(applicationResource -> applicationResource.getEntity().getName())
+					.forEach(log::debug);
+		});
 
-        Mono<Void> response = client.serviceBindings().delete(DeleteServiceBindingRequest.builder().serviceBindingId
-                (responseBinding.getMetadata().getId()).build());
-        //will block until response ?
-        response.get();
+		Mono<ListApplicationsResponse> publisher = this.client
+				.applicationsV2()
+				.list(org.cloudfoundry.client.v2.applications.ListApplicationsRequest.builder()
+						.spaceId(spaceId).build());
+		publisher.subscribe(subscriber);
+		subscriber.verify(Duration.ofSeconds(DEFAULT_TIMEOUT_IN_SECONDS));
 
-        //List to check that it works
-        Mono<ListServiceBindingsResponse> publisherList = client.serviceBindings().list(ListServiceBindingsRequest
-                .builder()
-                .applicationId(applicationId)
-                .serviceInstanceId(serviceInstanceId).build());
-        ListServiceBindingsResponse listBinding = publisherList.get();
-        assertThat(listBinding, is(notNullValue()));
-        assertThat(listBinding.getResources(), is(notNullValue()));
-        assertThat(listBinding.getResources().size(), is(equalTo(0)));
+	}
 
-    }
+	@Test
+	public void get_last_logs() throws Throwable {
 
-    @Test
-    public void test_bind_unbind_route() {
-        Mono<BindServiceInstanceToRouteResponse> publisherBinding = client.serviceInstances().bindToRoute(
-                BindServiceInstanceToRouteRequest
-                        .builder()
-                        .serviceInstanceId(serviceInstanceId)
-                        .routeId(routeId).build());
-        BindServiceInstanceToRouteResponse responseBinding = publisherBinding.get();
-        assertThat(responseBinding, is(notNullValue()));
-        assertThat(responseBinding.getMetadata(), is(notNullValue()));
-        assertThat(responseBinding.getMetadata().getId(), is(notNullValue()));
-        assertThat(responseBinding.getEntity(), is(notNullValue()));
+		final AtomicInteger count = new AtomicInteger();
+		final CountDownLatch latch = new CountDownLatch(1);
+		final AtomicLong newestTimestamp = new AtomicLong();
+		Flux<Envelope> publisher = loggregatorClient.recentLogs(RecentLogsRequest.builder()
+				.applicationId(applicationId)
+				.build())
+				.filter(envelope ->
+						envelope.getTimestamp() != null && envelope.getEventType() != null && envelope.getLogMessage() != null);
+		publisher.subscribe(envelope -> {
+					log.debug("eventType={}", envelope.getEventType());
+					log.debug("logMessage is null?={}", envelope.getLogMessage() == null);
+					log.debug("logMessage.message={}", envelope.getLogMessage().getMessage());
+					long messageTimestamp = envelope.getTimestamp();
+					if (newestTimestamp.get() < messageTimestamp) {
+						newestTimestamp.set(messageTimestamp);
+					}
+					count.incrementAndGet();
+					log.debug("{} - {}", envelope.getEventType(), envelope.getLogMessage().getMessage());
+				},
+				throwable -> {
+					log.error("Error got", throwable);
+					latch.countDown();
+				},
+				latch::countDown);
 
-        Mono<Void> response = client.serviceBindings().delete(DeleteServiceBindingRequest.builder().serviceBindingId
-                (responseBinding.getMetadata().getId()).build());
-        //will block until response ?
-        response.get();
+		if (!latch.await(10, TimeUnit.SECONDS)) {
+			throw new IllegalStateException("Subscriber timed out");
+		} else {
+			log.error("end - newestTimestamp={} - count={}", newestTimestamp.get(), count.get());
+		}
+	}
 
-        //List to check that it works
-        Mono<ListServiceBindingsResponse> publisherList = client.serviceBindings().list(ListServiceBindingsRequest
-                .builder()
-                .applicationId(applicationId)
-                .serviceInstanceId(serviceInstanceId).build());
-        ListServiceBindingsResponse listBinding = publisherList.get();
-        assertThat(listBinding, is(notNullValue()));
-        assertThat(listBinding.getResources(), is(notNullValue()));
-        assertThat(listBinding.getResources().size(), is(equalTo(0)));
-    }
+	@Test
+	public void get_last_events() throws InterruptedException {
+		TestSubscriber<ListEventsResponse> subscriber = new TestSubscriber<>();
+		subscriber.assertThat(response -> {
+			assertThat(response, is(notNullValue()));
+			assertThat(response.getResources(), is(notNullValue()));
+			response.getResources().stream()
+					.map(eventResource -> eventResource.getEntity().getTimestamp())
+					.forEach(log::debug);
+			if (response.getResources().size() > 0) {
+				Instant time = Instant.parse(response.getResources().get(response.getResources().size() - 1).getEntity().getTimestamp());
+				log.debug("This is my timestamp {}", time);
+			}
+		});
 
-    @Test
-    public void test_get_app_routes() throws InterruptedException {
+		Mono<ListEventsResponse> publisher = this.client
+				.events().list(ListEventsRequest.builder().actee(applicationId).build());
+		publisher.subscribe(subscriber);
+		subscriber.verify(Duration.ofSeconds(DEFAULT_TIMEOUT_IN_SECONDS));
+	}
 
-        TestSubscriber<ListApplicationRoutesResponse> subscriber = new TestSubscriber<>();
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getResources(), is(notNullValue()));
-            response.getResources().stream()
-                    .map(routeResource -> routeResource.getMetadata().getUrl())
-                    .forEach(log::debug);
-        });
+	@Test
+	public void test_get_service_instance() throws InterruptedException {
+		TestSubscriber<GetServiceInstanceResponse> subscriber = new TestSubscriber<>();
+		subscriber.assertThat(response -> {
+			assertThat(response, is(notNullValue()));
+			assertThat(response.getMetadata().getId(), is(equalTo(serviceInstanceId)));
+		});
+		Mono<GetServiceInstanceResponse> publisher = this.client.serviceInstances()
+				.get(GetServiceInstanceRequest.builder().serviceInstanceId(serviceInstanceId).build());
+		publisher.subscribe(subscriber);
+		subscriber.verify(Duration.ofSeconds(DEFAULT_TIMEOUT_IN_SECONDS));
+	}
 
-        Mono<ListApplicationRoutesResponse> publisher = this.client.applicationsV2().listRoutes(
-                ListApplicationRoutesRequest.builder().applicationId(applicationId).build());
-        publisher.subscribe(subscriber);
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-    }
+	@Test
+	public void test_bind_unbind_application() {
+		Mono<CreateServiceBindingResponse> publisherBinding = client.serviceBindingsV2().create
+				(CreateServiceBindingRequest
+						.builder()
+						.applicationId(applicationId)
+						.serviceInstanceId(serviceInstanceId).build());
+		CreateServiceBindingResponse responseBinding = publisherBinding.block();
+		assertThat(responseBinding, is(notNullValue()));
+		assertThat(responseBinding.getMetadata(), is(notNullValue()));
+		assertThat(responseBinding.getEntity(), is(notNullValue()));
+		assertThat(responseBinding.getEntity().getApplicationId(), is(equalTo(applicationId)));
+		assertThat(responseBinding.getEntity().getServiceInstanceId(), is(equalTo(serviceInstanceId)));
 
-    @Test
-    public void test_get_service_instance() throws InterruptedException {
-        TestSubscriber<GetServiceInstanceResponse> subscriber = new TestSubscriber<>();
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getMetadata().getId(), is(equalTo(serviceInstanceId)));
-        });
-        Mono<GetServiceInstanceResponse> publisher = this.client.serviceInstances()
-                .get(GetServiceInstanceRequest.builder().serviceInstanceId(serviceInstanceId).build());
-        publisher.subscribe(subscriber);
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-    }
+		Mono<DeleteServiceBindingResponse> response = client.serviceBindingsV2().delete(DeleteServiceBindingRequest.builder()
+				.serviceBindingId(responseBinding.getMetadata().getId()).build());
+		//will block until response ?
+		response.block();
 
-    @Test
-    public void test_list_by_space() throws InterruptedException {
+		//List to check that it works
+		Mono<ListServiceBindingsResponse> publisherList = client.serviceBindingsV2().list(ListServiceBindingsRequest
+				.builder()
+				.applicationId(applicationId)
+				.serviceInstanceId(serviceInstanceId).build());
+		ListServiceBindingsResponse listBinding = publisherList.block();
+		assertThat(listBinding, is(notNullValue()));
+		assertThat(listBinding.getResources(), is(notNullValue()));
+		assertThat(listBinding.getResources().size(), is(equalTo(0)));
 
-        TestSubscriber<ListApplicationsResponse> subscriber = new TestSubscriber<>();
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getResources(), is(notNullValue()));
-            response.getResources().stream()
-                    .map(applicationResource -> applicationResource.getEntity().getName())
-                    .forEach(log::debug);
-        });
+	}
 
-        Mono<ListApplicationsResponse> publisher = this.client
-                .applicationsV2()
-                .list(org.cloudfoundry.client.v2.applications.ListApplicationsRequest.builder()
-                        .spaceId(spaceId).build());
-        publisher.subscribe(subscriber);
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+	@Test
+	public void test_get_app_routes() throws InterruptedException {
 
-    }
+		TestSubscriber<ListApplicationRoutesResponse> subscriber = new TestSubscriber<>();
+		subscriber.assertThat(response -> {
+			assertThat(response, is(notNullValue()));
+			assertThat(response.getResources(), is(notNullValue()));
+			response.getResources().stream()
+					.map(routeResource -> routeResource.getMetadata().getUrl())
+					.forEach(log::debug);
+		});
 
-    @Test
-    public void test_start() throws InterruptedException {
-        log.debug("test_start - start");
-        log.debug("Starting application {}", applicationId);
-        TestSubscriber<UpdateApplicationResponse> subscriber = new TestSubscriber<>();
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getMetadata(), is(notNullValue()));
-            assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
-            log.debug("application started - {}", response.getEntity().getName());
-            log.debug("test_start - end");
-        });
-        Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
-                (UpdateApplicationRequest.builder().applicationId(applicationId).state("STARTED").build());
-        publisherStart.subscribe(subscriber);
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-    }
+		Mono<ListApplicationRoutesResponse> publisher = this.client.applicationsV2().listRoutes(
+				ListApplicationRoutesRequest.builder().applicationId(applicationId).build());
+		publisher.subscribe(subscriber);
+		subscriber.verify(Duration.ofSeconds(DEFAULT_TIMEOUT_IN_SECONDS));
+	}
 
-    @Test
-    public void test_stop() throws InterruptedException {
-        log.debug("test_stop - start");
-        log.debug("Stopping application {}", applicationId);
-        TestSubscriber<UpdateApplicationResponse> subscriber = new TestSubscriber<>();
-        subscriber.assertThat(response -> {
-            assertThat(response, is(notNullValue()));
-            assertThat(response.getMetadata(), is(notNullValue()));
-            assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
-            log.debug("application stopped - {}", response.getEntity().getName());
-            log.debug("test_stop - end");
-        });
-        Mono<UpdateApplicationResponse> publisherStart = client.applicationsV2().update
-                (UpdateApplicationRequest.builder().applicationId(applicationId).state("STOPPED").build());
-        publisherStart.subscribe(subscriber);
+	@Test
+	public void test_bind_unbind_route() {
+		Mono<BindServiceInstanceToRouteResponse> publisherBinding = client.serviceInstances().bindToRoute(
+				BindServiceInstanceToRouteRequest
+						.builder()
+						.serviceInstanceId(serviceInstanceId)
+						.routeId(routeId).build());
+		BindServiceInstanceToRouteResponse responseBinding = publisherBinding.block();
+		assertThat(responseBinding, is(notNullValue()));
+		assertThat(responseBinding.getMetadata(), is(notNullValue()));
+		assertThat(responseBinding.getMetadata().getId(), is(notNullValue()));
+		assertThat(responseBinding.getEntity(), is(notNullValue()));
 
-        subscriber.verify(DEFAULT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+		Mono<DeleteServiceBindingResponse> response = client.serviceBindingsV2().delete(DeleteServiceBindingRequest.builder()
+				.serviceBindingId(responseBinding.getMetadata().getId())
+				.build());
+		//will block until response ?
+		response.block();
 
-    }
-
-    @PropertySource("classpath:test.properties")
-    public static class SandboxConfiguration {
-
-        @Bean
-        public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
-            return new PropertySourcesPlaceholderConfigurer();
-        }
-    }
+		//List to check that it works
+		Mono<ListServiceBindingsResponse> publisherList = client.serviceBindingsV2().list(ListServiceBindingsRequest
+				.builder()
+				.applicationId(applicationId)
+				.serviceInstanceId(serviceInstanceId).build());
+		ListServiceBindingsResponse listBinding = publisherList.block();
+		assertThat(listBinding, is(notNullValue()));
+		assertThat(listBinding.getResources(), is(notNullValue()));
+		assertThat(listBinding.getResources().size(), is(equalTo(0)));
+	}
 
 }
