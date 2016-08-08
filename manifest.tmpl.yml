@@ -1,19 +1,20 @@
 domain: cf.ns.nd-paas.itn.ftgroup
 buildpack: java_buildpack
 env:
+  security.user.name: <security username>
+  security.user.password: <security password>
+  cf.client.target.host: <hostname>
+  cf.client.skip.ssl.validation: false
+  cf.client.username: <username>
+  cf.client.password: <password>
+  cf.client.clientId: <client_id>
+  cf.client.clientSecret: <client_secret>
+  cf.security.password.encodingSecret: <password_encoding_secret>
+  cf.service.broker.id: <service_broker_id>
+  cf.service.plan.id: <service_plan_id>
   JAVA_OPTS: >
     -Dlogging.level.org.springframework.web.filter.CommonsRequestLoggingFilter=ERROR
-    -Dsecurity.user.name=<security username>
-    -Dsecurity.user.password=<security password>
-    -Dcf.client.target.host=<hostname>
-    -Dcf.client.skip.ssl.validation=false
-    -Dcf.client.username=<username>
-    -Dcf.client.password=<password>
-    -Dcf.client.clientId=<client_id>
-    -Dcf.client.clientSecret=<client_secret>
-    -Dcf.security.password.encodingSecret=<password_encoding_secret>
-    -Dcf.service.broker.id=<service_broker_id>
-    -Dcf.service.plan.id=<service_plan_id>
+
 services:
   - mysql
 applications:
