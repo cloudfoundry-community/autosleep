@@ -37,7 +37,7 @@ Autosleep service needs properties to work . The properties that are used are:
 There are two ways of providing these properties to autosleep:
 
 1. In _manifest.yml_: by giving these informations in the _manifest.yml_, in the _JAVA_OPTS_ section.
-2. By providing them with the command `cf  set-env <application name> <property name>  <property value>`. Keep in mind that dot characters are forbidden by cloudfoundry and must be replaced by underscores. For example, you may provide the username like this `cf  set-env my-autosleep-service cf_client_username  bobby`
+2. By providing them directly in  the _env_ section of the _manifest.yml_. Note that [acccording to the documentation](http://docs.cloudfoundry.org/devguide/deploy-apps/manifest.html#env-block), you will be able to update them afer the first deployment with the command `cf  set-env <application name> <property name>  <property value>`. Keep in mind that dot characters are forbidden by cloudfoundry cli and must be replaced by underscores. For example, you may provide the username like this `cf  set-env my-autosleep-service cf_client_username  bobby`
 
 ### Deploy autosleep app
 
