@@ -129,7 +129,8 @@ Feature: public paas service provider org and space autoenrollment
     And the manual urls states:
     """
       Autosleep service instance is internally used by SAP to optimize resources. While new service instances may be created
-      it is not possible to increase the idle duration without contacting SAP sales
+      it is not possible to increase the idle duration without contacting SAP sales.
+      Use the service dashboard to get more details (such as on when the application will be put to sleep, collected last activity...)
     """
 
 
@@ -269,7 +270,7 @@ Feature: public paas service provider org and space autoenrollment
       | team-a-dev | portal | curious-app | autosleep-autoenrolled                                                      |
 
 
-  Scenario: transient opt out from space enrollment (enrollspace.mode=forced)
+  Scenario: transient opt out from space enrollment (enrollspace.mode=transient-opt-outs)
 
     Given a CF instance with the following orgs, spaces (visible to the autosleep user)
       | org        | spaces |
@@ -293,7 +294,7 @@ Feature: public paas service provider org and space autoenrollment
       | team-a-dev | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=transient-opt-outs) |
 
 
-  Scenario: app opts out are transient
+  Scenario: app opts out are transient (enrollspace.mode=transient-opt-outs)
     Given a CF instance with the following orgs, spaces (visible to the autosleep user)
       | org        | spaces |
       | team-a-dev | portal |
