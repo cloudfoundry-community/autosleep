@@ -3,7 +3,9 @@ How to build the application yourself.
 
 ## Edit sources
 
-The project relies on the Lombok code generation. Install the corresponding plugin in your IDE to edit sources with valid syntax
+The project relies on the Lombok code generation. Install the corresponding plugin in your IDE to edit sources with valid syntax.
+
+Note that for intellij, the lambok plugin requires to [enable to code preprocessor](http://stackoverflow.com/questions/9424364/cant-compile-project-when-im-using-lombok-under-intellij-idea)
 
 ## Launch build and unit tests
 
