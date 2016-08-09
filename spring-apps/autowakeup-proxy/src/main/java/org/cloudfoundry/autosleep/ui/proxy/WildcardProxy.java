@@ -60,9 +60,7 @@ public class WildcardProxy {
 
     private final RestOperations restOperations;
 
-    protected String proxySignature;
-
-    private String autosleepHost;
+    private String proxySignature;
 
     @Autowired
     private CloudFoundryApi cfApi;
@@ -93,8 +91,7 @@ public class WildcardProxy {
     void init() throws Exception {
         //not stored in Config, because this impl is temporary
         String securityPass = env.getProperty("security.user.password");
-        autosleepHost = null;
-        autosleepHost = InetAddress.getLocalHost().getHostName();
+        String autosleepHost = InetAddress.getLocalHost().getHostName();
         this.proxySignature = Arrays.toString(MessageDigest.getInstance("MD5").digest((autosleepHost
                 + securityPass).getBytes("UTF-8")));
 
@@ -129,6 +126,7 @@ public class WildcardProxy {
                 try {
                     String appId = mapEntry.getAppId();
                     if (!CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {
+                        log.info("Stopping app [{}]", appId);
                         cfApi.startApplication(appId);
                         timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
                     }

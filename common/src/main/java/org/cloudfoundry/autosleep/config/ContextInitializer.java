@@ -61,7 +61,7 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
 
     private String[] createProfileNames(String baseName, String suffix) {
         String[] profileNames = {baseName, baseName + "-" + suffix};
-        log.info("Setting profile names: " + StringUtils.arrayToCommaDelimitedString(profileNames));
+        log.debug("Setting profile names: " + StringUtils.arrayToCommaDelimitedString(profileNames));
         return profileNames;
     }
 
@@ -84,7 +84,7 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
         } else if (serviceProfiles.size() > 0) {
             return createProfileNames(serviceProfiles.get(0), "local");
         } else {
-            return null;
+            return new String[]{};
         }
     }
 
@@ -104,7 +104,7 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
      */
     private String[] getCloudProfile(Cloud cloud) {
         List<ServiceInfo> availableServices = cloud.getServiceInfos();
-        log.info("Found serviceInfos: " + StringUtils.collectionToCommaDelimitedString(availableServices));
+        log.debug("Found serviceInfos: " + StringUtils.collectionToCommaDelimitedString(availableServices));
         List<String> availableProfiles = availableServices.stream()
                 .map(Object::getClass)
                 .filter(authorizedPersistenceProfiles::containsKey)
@@ -120,7 +120,7 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
         } else if (availableProfiles.size() > 0) {
             return createProfileNames(availableProfiles.get(0), "cloud");
         } else {
-            return null;
+            return new String[]{};
         }
     }
 
