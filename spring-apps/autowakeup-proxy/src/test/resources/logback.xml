@@ -4,7 +4,7 @@
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <Target>System.out</Target>
         <encoder>
-            <pattern>%-5level %logger{30}\(%line\) - %message%n</pattern>
+            <pattern>%-5level - %thread - %logger\(%line\) - %message%n</pattern>
         </encoder>
     </appender>
     <logger name="org.cloudfoundry.autosleep" >
@@ -14,7 +14,7 @@
         <level value="WARN" />
     </logger>
     <logger name="org.apache.http.wire">
-        <level value="INFO" />
+        <level value="WARN" />
     </logger>
 
     <root>
