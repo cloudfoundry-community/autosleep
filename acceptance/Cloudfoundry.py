@@ -1,7 +1,7 @@
 import httplib
 import json
 import logging
-
+import requests
 from cloudfoundry_client import CloudFoundryClient, InvalidStatusCode
 
 
@@ -233,19 +233,16 @@ class Cloudfoundry(object):
         uri_found = None
         logging.info(json.dumps(routes))
         for route in routes:
-            if route.get('host') is not None and routes.get('domain') is not None:
-                uri_found = '%s.%s' % (routes[0]['host'], routes[0]['domain']['name'])
+            if route.get('host') is not None and route.get('domain') is not None:
+                uri_found = '%s.%s' % (route['host'], route['domain']['name'])
                 break
         if uri_found is None:
             raise AssertionError('No uri found for application %s', self.application_guid)
         logging.info('ping_application - requesting %s', uri_found)
-        conn = httplib.HTTPConnection(uri_found, 80)
-        conn.request("GET", path)
-        response = conn.getresponse()
-        status = response.status
-        logging.info('ping_application - response - %d - %s', status, response.read())
-        if status != httplib.OK:
-            raise AssertionError('Invalid status code %d' % response.status)
+        response = requests.get('http://%s%s' % (uri_found, path), timeout=2.0)
+        logging.info('ping_application - response - %d - %s', response.status_code, response.text)
+        if response.status_code != httplib.OK:
+            raise AssertionError('Invalid status code %d' % response.status_code)
         else:
             logging.info('ping_application - ok')
 
