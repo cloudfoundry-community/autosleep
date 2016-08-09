@@ -64,11 +64,11 @@ class Cloudfoundry(object):
                         pass
                     elif ex.status_code == httplib.BAD_GATEWAY and type(ex.body) == dict and \
                             " can't be deleted during forced enrollment" in ex.body['description']:
-                        logging.info('%s is in forced mode. Updating it as standard' % self.instance_guid)
+                        logging.info('%s is in forced mode. Updating it as standard' %  instance['metadata']['guid'])
                         parameters = dict()
                         parameters['auto-enrollment'] = 'standard'
                         parameters['secret'] = self.service_broker_auth_password
-                        self.client.service_instance.update(instance['metadata']['guid'], parameters)
+                        self.client.service_instance.update(instance['metadata']['guid'], parameters=parameters)
                     else:
                         raise
             logging.info('clean_all_service_data - instance deleted')
@@ -79,9 +79,11 @@ class Cloudfoundry(object):
         if self.broker_guid is not None:
             raise AssertionError('Please delete service broker before creating a new one')
         else:
-            service_broker = self.client.service_broker.create(self.service_broker_endpoint, self.service_broker_name,
-                                                               self.service_broker_auth_user,
-                                                               self.service_broker_auth_password, self.space_guid)
+            service_broker = self.client.service_broker.create(broker_url=self.service_broker_endpoint,
+                                                               broker_name=self.service_broker_name,
+                                                               auth_username=self.service_broker_auth_user,
+                                                               auth_password=self.service_broker_auth_password,
+                                                               space_guid=self.space_guid)
             self.broker_guid = service_broker['metadata']['guid']
             logging.info('create_service_broker - broker created')
             self._set_plan_from_broker()
@@ -125,8 +127,10 @@ class Cloudfoundry(object):
                 else self.default_create_instance_parameters if self.default_create_instance_parameters is not None \
                 else {}
             logging.info('create_service_instance - parameters - %s', json.dumps(parameters_sent))
-            instance = self.client.service_instance.create(self.space_guid, self.instance_name, self.plan_guid,
-                                                           parameters_sent)
+            instance = self.client.service_instance.create(space_guid=self.space_guid,
+                                                           instance_name=self.instance_name,
+                                                           plan_guid=self.plan_guid,
+                                                           parameters=parameters_sent)
             self.instance_guid = instance['metadata']['guid']
             logging.info('create_service_instance - %s', self.instance_guid)
 
@@ -135,7 +139,7 @@ class Cloudfoundry(object):
             raise AssertionError('Please create service instance before deleting it')
         else:
             logging.info('update_service_instance - parameters - %s', json.dumps(parameters))
-            self.client.service_instance.update(self.instance_guid, parameters)
+            self.client.service_instance.update(self.instance_guid, parameters=parameters)
             logging.info('update_service_instance - ok')
 
     def delete_service_instance(self):
@@ -151,7 +155,8 @@ class Cloudfoundry(object):
         if self.instance_guid is None:
             raise AssertionError('Please create service instance before binding it')
         else:
-            binding = self.client.service_binding.create(self.application_guid, self.instance_guid)
+            binding = self.client.service_binding.create(app_guid=self.application_guid,
+                                                         instance_guid=self.instance_guid)
             self.binding_guid = binding['metadata']['guid']
             logging.info('bind_application - %s', self.binding_guid)
 
@@ -220,16 +225,17 @@ class Cloudfoundry(object):
         logging.info('stop_application - ok')
 
     def ping_application(self, path="/"):
-        instance_stats = self.client.application.get_stats(self.application_guid)
-        if len(instance_stats) == 0:
-            raise AssertionError('No stats found for application %s', self.application_guid)
+        application_summary = self.client.application.get_summary(self.application_guid)
+        routes = application_summary.get('routes')
+        if routes is None or len(routes) == 0:
+            raise AssertionError('No route found for application %s', self.application_guid)
+
         uri_found = None
-        logging.info(json.dumps(instance_stats))
-        for _, instance_stat in instance_stats.items():
-            if instance_stat.get('stats', None) is not None:
-                if len(instance_stat['stats'].get('uris', [])) > 0:
-                    uri_found = instance_stat['stats']['uris'][0]
-                    break
+        logging.info(json.dumps(routes))
+        for route in routes:
+            if route.get('host') is not None and routes.get('domain') is not None:
+                uri_found = '%s.%s' % (routes[0]['host'], routes[0]['domain']['name'])
+                break
         if uri_found is None:
             raise AssertionError('No uri found for application %s', self.application_guid)
         logging.info('ping_application - requesting %s', uri_found)
