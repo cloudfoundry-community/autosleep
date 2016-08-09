@@ -62,8 +62,6 @@ public class WildcardProxy {
 
     protected String proxySignature;
 
-    private String autosleepHost;
-
     @Autowired
     private CloudFoundryApi cfApi;
 
@@ -93,8 +91,7 @@ public class WildcardProxy {
     void init() throws Exception {
         //not stored in Config, because this impl is temporary
         String securityPass = env.getProperty("security.user.password");
-        autosleepHost = null;
-        autosleepHost = InetAddress.getLocalHost().getHostName();
+        String autosleepHost = InetAddress.getLocalHost().getHostName();
         this.proxySignature = Arrays.toString(MessageDigest.getInstance("MD5").digest((autosleepHost
                 + securityPass).getBytes("UTF-8")));
 
@@ -109,18 +106,18 @@ public class WildcardProxy {
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
         String protocol = incoming.getHeaders().get(HEADER_PROTOCOL).get(0);
 
-        log.info("Incoming Request for route : {} path: {}", targetHost, path);
+        log.debug("Incoming Request for route : {} path: {}", targetHost, path);
 
         if (alreadyForwardedHeader != null && proxySignature.equals(alreadyForwardedHeader.get(0))) {
             log.error("We've already forwarded this traffic, this should not happen");
-            return new ResponseEntity<Object>("Infinite loop forwarding error", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Infinite loop forwarding error", HttpStatus.INTERNAL_SERVER_ERROR);
         } else {
             ProxyMapEntry mapEntry = proxyMap.findOne(targetHost);
 
             if (mapEntry == null) {
-                return new ResponseEntity<Object>("Sorry, but this page doesn't exist!", HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Sorry, but this page doesn't exist!", HttpStatus.NOT_FOUND);
             } else if (mapEntry.isRestarting()) {
-                return new ResponseEntity<Object>("Autosleep is restarting, please retry in few seconds",
+                return new ResponseEntity<>("Autosleep is restarting, please retry in few seconds",
                         HttpStatus.SERVICE_UNAVAILABLE);
             } else {
                 mapEntry.setRestarting(true);
@@ -129,6 +126,7 @@ public class WildcardProxy {
                 try {
                     String appId = mapEntry.getAppId();
                     if (!CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {
+                        log.info("Stopping app [{}]", appId);
                         cfApi.startApplication(appId);
                         timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
                     }
@@ -149,7 +147,7 @@ public class WildcardProxy {
 
         URI uri = URI.create(protocol + "://" + targetHost + path);
         RequestEntity<?> outgoing = getOutgoingRequest(incoming, uri);
-        log.info("Outgoing Request: {}", outgoing);
+        log.debug("Outgoing Request: {}", outgoing);
 
         //if "outgoing" point to a 404, this will trigger a 500. Is this really a pb?
         return this.restOperations.exchange(outgoing, byte[].class);
