@@ -2,7 +2,7 @@
 apply plugin: 'jacoco'
 apply plugin: "com.github.kt3k.coveralls"
 
-def analysableProjects = subprojects.findAll { it.name != 'spring-apps' }
+def analysableProjects = subprojects.findAll { it.name != 'spring-apps' && it.name != 'acceptance' }
 
 task jacocoRootReport(type: JacocoReport, group: 'Coverage reports') {
     description = 'Generates an aggregate report from all subprojects'

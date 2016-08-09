@@ -1,11 +1,18 @@
-# autosleep [![Build Status](https://travis-ci.org/Orange-OpenSource/autosleep.svg?branch=develop)](https://travis-ci.org/Orange-OpenSource/autosleep) [![Coverage Status](https://coveralls.io/repos/github/Orange-OpenSource/autosleep/badge.svg?branch=develop)](https://coveralls.io/github/Orange-OpenSource/autosleep?branch=develop)
+# Autosleep 
+[![Build Status](https://travis-ci.org/Orange-OpenSource/autosleep.svg?branch=develop)](https://travis-ci.org/Orange-OpenSource/autosleep) 
+[![Coverage Status](https://coveralls.io/repos/github/Orange-OpenSource/autosleep/badge.svg?branch=develop)](https://coveralls.io/github/Orange-OpenSource/autosleep?branch=develop) 
+[![](https://img.shields.io/github/issues/Orange-OpenSource/autosleep.svg)](https://github.com/Orange-OpenSource/autosleep/issues)
+
+[![license](https://img.shields.io/github/license/Orange-OpenSource/autosleep.svg)](https://github.com/Orange-OpenSource/autosleep/blob/develop/LICENSE) 
+[![releases](https://img.shields.io/github/release/Orange-OpenSource/autosleep.svg)](https://github.com/Orange-OpenSource/autosleep/releases)
+
 
 # Goal
 The aim of the auto-sleep project is to give the ability for Cloud Foundry users to automatically have their app stopped after a given period of inactivity, and then automatically started when accessed through traffic received on their routes.
 
 # Status
 This is a work in progress. 
-You can check the [full specifications](https://docs.google.com/document/d/1tMhIBX3tw7kPEOMCzKhUgmtmr26GVxyXwUTwMO71THI/) and the currently supported features in the [acceptance tests](acceptance/).
+You can check the [full specifications](https://docs.google.com/document/d/1tMhIBX3tw7kPEOMCzKhUgmtmr26GVxyXwUTwMO71THI/) and the currently supported features in the [acceptance tests](doc/acceptance.md).
 
 Get a deeper introduction in the Autosleep talk at Cf Summit Santa Clata 2016 ( [slides](http://fr.slideshare.net/gberche/autosleep-inactive-apps-get-automatically-put-to-sleep-and-restarted-on-incoming-traffic),  [youtube video recording](https://www.youtube.com/watch?v=fQQRGxqkM-4&index=29&list=PLhuMOCWn4P9gGrKEtCBKYpEl5BXGBCsQZ), and [high-res demo](https://drive.google.com/open?id=0B_RQz82RzSUndnd4TFJOODFkTU0) )
 
@@ -121,4 +128,4 @@ If you wish to build the app yourself, go to [build documentation](doc/build.md)
 Once you built the application or if you got it from [latest release](https://github.com/Orange-OpenSource/autosleep/releases/), go to [publish documentation](doc/publish.md).
 
 # How to test
-Acceptance tests are available in the source code, as robotframework tests. More information [here](doc/test.md).
+Acceptance tests are available in the source code, as robotframework tests. More information [here](doc/acceptance.md).
