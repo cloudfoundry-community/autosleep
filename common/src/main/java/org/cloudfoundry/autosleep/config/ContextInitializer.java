@@ -30,7 +30,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.StringUtils;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +53,7 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
     private static final Map<Class<? extends ServiceInfo>, String> authorizedPersistenceProfiles =
             new HashMap<>();
 
-    private static final List<String> validLocalProfiles = Arrays.asList("mysql");
+    private static final List<String> validLocalProfiles = Collections.singletonList("mysql");
 
     static {
         authorizedPersistenceProfiles.put(MysqlServiceInfo.class, "mysql");
@@ -61,7 +61,7 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
 
     private String[] createProfileNames(String baseName, String suffix) {
         String[] profileNames = {baseName, baseName + "-" + suffix};
-        log.info("Setting profile names: " + StringUtils.arrayToCommaDelimitedString(profileNames));
+        log.debug("Setting profile names: " + StringUtils.arrayToCommaDelimitedString(profileNames));
         return profileNames;
     }
 
@@ -81,10 +81,10 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
                     + validLocalProfiles.toString() + ". "
                     + "These profiles are active: ["
                     + StringUtils.collectionToCommaDelimitedString(serviceProfiles) + "]");
-        } else if (serviceProfiles.size() > 0) {
+        } else if (!serviceProfiles.isEmpty()) {
             return createProfileNames(serviceProfiles.get(0), "local");
         } else {
-            return null;
+            return new String[]{};
         }
     }
 
@@ -104,7 +104,7 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
      */
     private String[] getCloudProfile(Cloud cloud) {
         List<ServiceInfo> availableServices = cloud.getServiceInfos();
-        log.info("Found serviceInfos: " + StringUtils.collectionToCommaDelimitedString(availableServices));
+        log.debug("Found serviceInfos: " + StringUtils.collectionToCommaDelimitedString(availableServices));
         List<String> availableProfiles = availableServices.stream()
                 .map(Object::getClass)
                 .filter(authorizedPersistenceProfiles::containsKey)
@@ -117,10 +117,10 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
                             + authorizedPersistenceProfiles.values().toString() + ". "
                             + "These services are bound to the application: ["
                             + StringUtils.collectionToCommaDelimitedString(availableProfiles) + "]");
-        } else if (availableProfiles.size() > 0) {
+        } else if (!availableProfiles.isEmpty()) {
             return createProfileNames(availableProfiles.get(0), "cloud");
         } else {
-            return null;
+            return new String[]{};
         }
     }
 
@@ -141,7 +141,7 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
             persistenceProfiles = getActiveProfile(appEnvironment);
         }
 
-        if (persistenceProfiles == null) {
+        if (persistenceProfiles.length == 0) {
             log.debug("\t -> No profile given or no available service -> setting default profile");
             persistenceProfiles = new String[]{DEFAULT_PROFILE};
         }
