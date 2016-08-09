@@ -65,7 +65,7 @@ public class ApplicationInfo {
         @Embeddable
         @EqualsAndHashCode
         @NoArgsConstructor(access = AccessLevel.PRIVATE)
-        @ToString(of={"timestamp", "type"})
+        @ToString(of = {"timestamp", "type"})
         public static class ApplicationEvent {
 
             @JsonSerialize
@@ -109,7 +109,7 @@ public class ApplicationInfo {
         @Embeddable
         @EqualsAndHashCode
         @NoArgsConstructor(access = AccessLevel.PRIVATE)
-        @ToString(of={"timestamp", "messageType", "sourceId", "sourceName"})
+        @ToString(of = {"timestamp", "messageType", "sourceId", "sourceName"})
         public static class ApplicationLog {
 
             @JsonSerialize

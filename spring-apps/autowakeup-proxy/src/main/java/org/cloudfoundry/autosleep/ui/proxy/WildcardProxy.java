@@ -60,7 +60,7 @@ public class WildcardProxy {
 
     private final RestOperations restOperations;
 
-    private String proxySignature;
+    protected String proxySignature;
 
     @Autowired
     private CloudFoundryApi cfApi;
