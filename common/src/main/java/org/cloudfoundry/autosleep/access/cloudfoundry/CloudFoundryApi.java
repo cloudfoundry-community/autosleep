@@ -200,14 +200,14 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 .filter(envelope -> envelope.getLogMessage() != null)
                 .map(Envelope::getLogMessage)
                 .subscribe(logMessage -> {
-                            //logs are not ordered, must find the most recent
-                            if (lastLogReference.get() == null ||
-                                    lastLogReference.get().getTimestamp() < logMessage.getTimestamp()) {
-                                lastLogReference.set(logMessage);
-                            }
-                        },
-                        errorConsumer,
-                        latch::countDown);
+                    //logs are not ordered, must find the most recent
+                    if (lastLogReference.get() == null
+                            || lastLogReference.get().getTimestamp() < logMessage.getTimestamp()) {
+                        lastLogReference.set(logMessage);
+                    }
+                },
+                errorConsumer,
+                latch::countDown);
 
         return waitForResult(latch,
                 errorEncountered,
@@ -250,9 +250,8 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         String route = routeEntity.getHost() + routeEntity.getPath();
         log.debug("route =  {}", route);
 
-        GetDomainResponse domainResponse = cloudFoundryClient.domains().get(GetDomainRequest.builder().domainId
-                (routeEntity
-                        .getDomainId()).build()).block(Config.CF_API_TIMEOUT);
+        GetDomainResponse domainResponse = cloudFoundryClient.domains().get(GetDomainRequest.builder().domainId(
+                routeEntity.getDomainId()).build()).block(Config.CF_API_TIMEOUT);
         log.debug("domain = {}", domainResponse.getEntity());
         return route + "." + domainResponse.getEntity().getName();
     }
