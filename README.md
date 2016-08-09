@@ -50,7 +50,10 @@ Optionally the autosleep service broker accepts the following parameters during 
 - [`exclude-from-auto-enrollment `](#exclude-from-auto-enrollment)
 - [`auto-enrollment `](#lockauto-enrollment)
 - [`secret `](#secret)
+
+<!--
 - [`autosleep-despite-route-services-error`](#autosleep-despite-route-services-error)
+-->
 
 Only the `auto-enrollment ` field is is mutable, i.e. is accepted on service updates, e.g.
 `
@@ -95,6 +98,8 @@ Provide a secret if you wish to set/change a protected parameter. Please save it
 - *Example:*`'{"secret": "Th1s1zg00dP@$$w0rd"}'`
 - *Default value :* `null`
 
+
+<!--
 #### *autosleep-despite-route-services-error*
 
 On some application, *cloudfoundry api* may refuse to bind *autosleep service instance* (exposing itself as a route service) to the application's routes (we need to do this operation to reroute all application flow to *autosleep* in order to restart the application if requested). Since we perform these binding operations **before** stopping application, if *api* refuse the operation, the application will never be stopped. 
@@ -102,6 +107,10 @@ By setting the value of this parameter to `true`, you skip the errors sent by *r
 
 * Example `'{"autosleep-despite-route-services-error" : true}'`
 * *Default value*: `false`
+
+-->
+
+
 
 # Usage by platform teams
 
