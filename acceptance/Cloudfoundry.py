@@ -2,9 +2,7 @@ import httplib
 import json
 import logging
 
-import requests
 from cloudfoundry_client import CloudFoundryClient, InvalidStatusCode
-from requests.auth import HTTPBasicAuth
 
 
 class Cloudfoundry(object):
@@ -15,7 +13,7 @@ class Cloudfoundry(object):
                  service_broker_auth_password, instance_name, default_create_instance_parameters):
         Cloudfoundry._check_parameters(default_create_instance_parameters)
         self.client = CloudFoundryClient(target_endpoint, skip_verification=skip_verification)
-        self.client.credentials_manager.init_with_credentials(login, password)
+        self.client.init_with_credentials(login, password)
         organization = self.client.organization.get_first(name=organization_name)
         if organization is None:
             raise AssertionError('Unknown organization %s' % organization_name)

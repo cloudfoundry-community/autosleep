@@ -25,7 +25,7 @@ allprojects {
 
 subprojects {
 
-    if (name == 'spring-apps') {
+    if (name == 'spring-apps' || name == 'acceptance') {
         //prevent parent folder from building an empty jar
         return
     }
