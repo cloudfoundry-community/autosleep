@@ -1,4 +1,11 @@
-# Autosleep [![Build Status](https://travis-ci.org/Orange-OpenSource/autosleep.svg?branch=develop)](https://travis-ci.org/Orange-OpenSource/autosleep) [![Coverage Status](https://coveralls.io/repos/github/Orange-OpenSource/autosleep/badge.svg?branch=develop)](https://coveralls.io/github/Orange-OpenSource/autosleep?branch=develop) [![license](https://img.shields.io/github/license/Orange-OpenSource/autosleep.svg)]() [![issues](https://img.shields.io/github/issues/Orange-OpenSource/autosleep.svg)]()
+# Autosleep 
+[![Build Status](https://travis-ci.org/Orange-OpenSource/autosleep.svg?branch=develop)](https://travis-ci.org/Orange-OpenSource/autosleep) 
+[![Coverage Status](https://coveralls.io/repos/github/Orange-OpenSource/autosleep/badge.svg?branch=develop)](https://coveralls.io/github/Orange-OpenSource/autosleep?branch=develop) 
+[![](https://img.shields.io/github/issues/Orange-OpenSource/autosleep.svg)](https://github.com/Orange-OpenSource/autosleep/issues)
+
+[![license](https://img.shields.io/github/license/Orange-OpenSource/autosleep.svg)](https://github.com/Orange-OpenSource/autosleep/blob/develop/LICENSE) 
+[![releases](https://img.shields.io/github/release/Orange-OpenSource/autosleep.svg)](https://github.com/Orange-OpenSource/autosleep/releases)
+
 
 # Goal
 The aim of the auto-sleep project is to give the ability for Cloud Foundry users to automatically have their app stopped after a given period of inactivity, and then automatically started when accessed through traffic received on their routes.
