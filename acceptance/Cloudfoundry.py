@@ -1,6 +1,7 @@
 import httplib
 import json
 import logging
+import os
 import requests
 from cloudfoundry_client import CloudFoundryClient, InvalidStatusCode
 
@@ -12,7 +13,8 @@ class Cloudfoundry(object):
                  application_name, service_broker_endpoint, service_broker_name, service_broker_auth_user,
                  service_broker_auth_password, instance_name, default_create_instance_parameters):
         Cloudfoundry._check_parameters(default_create_instance_parameters)
-        self.client = CloudFoundryClient(target_endpoint, skip_verification=skip_verification)
+        self.proxies = dict(http=os.environ.get('HTTP_PROXY', ''), https=os.environ.get('HTTPS_PROXY', ''))
+        self.client = CloudFoundryClient(target_endpoint, skip_verification=skip_verification, proxy=self.proxies)
         self.client.init_with_credentials(login, password)
         organization = self.client.organization.get_first(name=organization_name)
         if organization is None:
@@ -239,7 +241,7 @@ class Cloudfoundry(object):
         if uri_found is None:
             raise AssertionError('No uri found for application %s', self.application_guid)
         logging.info('ping_application - requesting %s', uri_found)
-        response = requests.get('http://%s%s' % (uri_found, path), timeout=2.0)
+        response = requests.get('http://%s%s' % (uri_found, path), timeout=2.0, proxies=self.proxies)
         logging.info('ping_application - response - %d - %s', response.status_code, response.text)
         if response.status_code != httplib.OK:
             raise AssertionError('Invalid status code %d' % response.status_code)
