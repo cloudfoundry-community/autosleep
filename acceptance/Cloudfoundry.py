@@ -241,7 +241,7 @@ class Cloudfoundry(object):
         if uri_found is None:
             raise AssertionError('No uri found for application %s', self.application_guid)
         logging.info('ping_application - requesting %s', uri_found)
-        response = requests.get('http://%s%s' % (uri_found, path), timeout=2.0, proxies=self.proxies)
+        response = requests.get('http://%s%s' % (uri_found, path), timeout=10.0, proxies=self.proxies, headers={"Cache-Control" : "no-cache"})
         logging.info('ping_application - response - %d - %s', response.status_code, response.text)
         if response.status_code != httplib.OK:
             raise AssertionError('Invalid status code %d' % response.status_code)
