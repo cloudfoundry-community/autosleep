@@ -4,7 +4,8 @@ How to run the acceptance tests.
 ## Preconditions
 
 ### What you need on your computer to run the test
-- Retrieve the content of the __acceptance folder
+- Retrieve the content of the __acceptance__ folder
+- python 2.7 (versions 3.X  of python have not been tested so far)
 - Install all the requirements listed by the __acceptance/requirements.txt__ file: `pip install -r acceptance/requirements.txt` (we advise you to use a dedicated environment. Take a look at [virtualenv](https://pypi.python.org/pypi/virtualenv) for that).
 
 
