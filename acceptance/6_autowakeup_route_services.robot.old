@@ -5,7 +5,6 @@ Force Tags      Route service
 
 #TODO remove all "autosleep-despite-route-services-error=true" from the other test once route binding available
 
-
 *** Test Cases ***
 Auto-Stopped app should be bound to a route service
     #copy inactivity detection test, and test if route service binded at the end
