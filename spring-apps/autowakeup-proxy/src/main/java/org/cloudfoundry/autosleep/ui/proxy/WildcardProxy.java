@@ -104,47 +104,46 @@ public class WildcardProxy {
 
         List<String> alreadyForwardedHeader = incoming.getHeaders().get(HEADER_FORWARDED);
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-        String protocol = incoming.getHeaders().get(HEADER_PROTOCOL).get(0);
 
         log.debug("Incoming Request for route : {} path: {}", targetHost, path);
 
         if (alreadyForwardedHeader != null && proxySignature.equals(alreadyForwardedHeader.get(0))) {
             log.error("We've already forwarded this traffic, this should not happen");
             return new ResponseEntity<>("Infinite loop forwarding error", HttpStatus.INTERNAL_SERVER_ERROR);
-        } else {
-            ProxyMapEntry mapEntry = proxyMap.findOne(targetHost);
+        }
+        ProxyMapEntry mapEntry = proxyMap.findOne(targetHost);
 
-            if (mapEntry == null) {
-                return new ResponseEntity<>("Sorry, but this page doesn't exist!", HttpStatus.NOT_FOUND);
-            } else if (mapEntry.isRestarting()) {
-                return new ResponseEntity<>("Autosleep is restarting, please retry in few seconds",
-                        HttpStatus.SERVICE_UNAVAILABLE);
-            } else {
-                mapEntry.setRestarting(true);
-
-                proxyMap.save(mapEntry);
-                try {
-                    String appId = mapEntry.getAppId();
-                    if (!CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {
-                        log.info("Stopping app [{}]", appId);
-                        cfApi.startApplication(appId);
-                        timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
-                    }
-                    while (!CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId))) {
-                        log.debug("waiting for app {} restart...", appId);
-                        timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
-                        //TODO add timeout that would log error and reset mapEntry.isStarting to false
-                    }
-                    proxyMap.delete(mapEntry);
-
-                } catch (CloudFoundryException e) {
-                    log.error("Couldn't launch app restart", e);
-                    mapEntry.setRestarting(false);
-                    proxyMap.save(mapEntry);
-                }
-            }
+        if (mapEntry == null) {
+            return new ResponseEntity<>("Sorry, but this page doesn't exist! ", HttpStatus.NOT_FOUND);
+        }
+        if (mapEntry.isRestarting()) {
+            return new ResponseEntity<>("Autosleep is restarting, please retry in few seconds", HttpStatus
+                    .SERVICE_UNAVAILABLE);
         }
 
+        mapEntry.setRestarting(true);
+        proxyMap.save(mapEntry);
+        try {
+            String appId = mapEntry.getAppId();
+            if (CloudFoundryAppState.STOPPED.equals(cfApi.getApplicationState(appId))) {
+                log.info("Starting app [{}]", appId);
+                cfApi.startApplication(appId);
+                timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
+            }
+            while (!cfApi.isAppRunning(appId)) {
+                log.debug("waiting for app {} restart...", appId);
+                timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
+                //TODO add timeout that would log error and reset mapEntry.isStarting to false
+            }
+            proxyMap.delete(mapEntry);
+
+        } catch (CloudFoundryException e) {
+            log.error("Couldn't launch app restart", e);
+            mapEntry.setRestarting(false);
+            proxyMap.save(mapEntry);
+        }
+
+        String protocol = incoming.getHeaders().get(HEADER_PROTOCOL).get(0);
         URI uri = URI.create(protocol + "://" + targetHost + path);
         RequestEntity<?> outgoing = getOutgoingRequest(incoming, uri);
         log.debug("Outgoing Request: {}", outgoing);
