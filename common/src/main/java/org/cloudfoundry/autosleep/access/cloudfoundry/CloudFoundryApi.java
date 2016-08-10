@@ -26,6 +26,8 @@ import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.applications.ApplicationInstancesRequest;
+import org.cloudfoundry.client.v2.applications.ApplicationInstancesResponse;
 import org.cloudfoundry.client.v2.applications.GetApplicationRequest;
 import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
 import org.cloudfoundry.client.v2.applications.ListApplicationRoutesRequest;
@@ -70,6 +72,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class CloudFoundryApi implements CloudFoundryApiService {
+
+    static final int CF_INSTANCES_ERROR = 220001;
+    static final int CF_STAGING_NOT_FINISHED = 170002;
 
     private static class BaseSubscriber<T> implements Subscriber<T> {
 
@@ -282,6 +287,33 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                 .getDomainId()).build()).get(Config.CF_API_TIMEOUT);
         log.debug("domain = {}", domainResponse.getEntity());
         return route + "." + domainResponse.getEntity().getName();
+    }
+
+    @Override
+    public boolean isAppRunning(String appUid) throws CloudFoundryException {
+        log.debug("isAppRunning");
+
+
+        try {
+            ApplicationInstancesResponse response =
+                    cfClient.applicationsV2().instances(ApplicationInstancesRequest.builder()
+                            .applicationId(appUid)
+                            .build())
+                            .get(Config.CF_API_TIMEOUT);
+            return response.entrySet()
+                    .stream()
+                    .filter(entry -> "RUNNING".equals(entry.getValue().getState()))
+                    .findFirst()
+                    .isPresent();
+        } catch (org.cloudfoundry.client.v2.CloudFoundryException c) {
+            if (c.getCode() == CF_INSTANCES_ERROR || c.getCode() == CF_STAGING_NOT_FINISHED) {
+                return false;
+            } else {
+                throw new CloudFoundryException(c);
+            }
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException(r);
+        }
     }
 
     @Override
