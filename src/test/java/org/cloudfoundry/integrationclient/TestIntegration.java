@@ -16,6 +16,8 @@ package org.cloudfoundry.integrationclient;/*
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.applications.ApplicationInstancesRequest;
+import org.cloudfoundry.client.v2.applications.ApplicationInstancesResponse;
 import org.cloudfoundry.client.v2.applications.GetApplicationRequest;
 import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
 import org.cloudfoundry.client.v2.applications.ListApplicationRoutesRequest;
@@ -37,6 +39,7 @@ import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.doppler.DopplerClient;
 import org.cloudfoundry.doppler.Envelope;
+import org.cloudfoundry.doppler.LogMessage;
 import org.cloudfoundry.doppler.RecentLogsRequest;
 import org.cloudfoundry.reactor.ConnectionContext;
 import org.cloudfoundry.reactor.DefaultConnectionContext;
@@ -69,8 +72,8 @@ import static org.junit.Assert.assertThat;
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = Sandbox.SandboxConfiguration.class)
-public class Sandbox {
+@ContextConfiguration(classes = TestIntegration.SandboxConfiguration.class)
+public class TestIntegration {
 
 	private static final long DEFAULT_TIMEOUT_IN_SECONDS = 2;
 
@@ -245,21 +248,23 @@ public class Sandbox {
 		final AtomicInteger count = new AtomicInteger();
 		final CountDownLatch latch = new CountDownLatch(1);
 		final AtomicLong newestTimestamp = new AtomicLong();
-		Flux<Envelope> publisher = loggregatorClient.recentLogs(RecentLogsRequest.builder()
+		Flux<LogMessage> publisher = loggregatorClient.recentLogs(RecentLogsRequest.builder()
 				.applicationId(applicationId)
 				.build())
-				.filter(envelope ->
-						envelope.getTimestamp() != null && envelope.getEventType() != null && envelope.getLogMessage() != null);
-		publisher.subscribe(envelope -> {
-					log.debug("eventType={}", envelope.getEventType());
-					log.debug("logMessage is null?={}", envelope.getLogMessage() == null);
-					log.debug("logMessage.message={}", envelope.getLogMessage().getMessage());
-					long messageTimestamp = envelope.getTimestamp();
+				.filter(envelope -> envelope.getLogMessage() != null)
+				.map(Envelope::getLogMessage);
+
+		publisher.subscribe(message -> {
+					long messageTimestamp = message.getTimestamp();
 					if (newestTimestamp.get() < messageTimestamp) {
 						newestTimestamp.set(messageTimestamp);
 					}
 					count.incrementAndGet();
-					log.debug("{} - {}", envelope.getEventType(), envelope.getLogMessage().getMessage());
+					log.debug("{} - {} - {} - {}",
+							message.getSourceType(),
+							message.getSourceInstance(),
+							message.getMessageType(),
+							message.getMessage());
 				},
 				throwable -> {
 					log.error("Error got", throwable);
@@ -271,6 +276,30 @@ public class Sandbox {
 			throw new IllegalStateException("Subscriber timed out");
 		} else {
 			log.error("end - newestTimestamp={} - count={}", newestTimestamp.get(), count.get());
+		}
+	}
+
+	@Test
+	public void get_instances() throws InterruptedException {
+		final CountDownLatch latch = new CountDownLatch(1);
+		Mono<ApplicationInstancesResponse> publisher = this.client.applicationsV2()
+				.instances(ApplicationInstancesRequest.builder()
+						.applicationId(applicationId)
+						.build());
+		publisher.subscribe(response -> {
+					response.getInstances().entrySet().forEach(entry -> {
+						log.debug("{} - {}", entry.getKey(), entry.getValue().getState());
+					});
+				},
+				throwable -> {
+					log.error("error", throwable);
+					latch.countDown();
+				},
+				latch::countDown);
+		if (!latch.await(10, TimeUnit.SECONDS)) {
+			throw new IllegalStateException("Subscriber timed out");
+		} else {
+			log.error("end - get_instances");
 		}
 	}
 

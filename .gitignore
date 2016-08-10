@@ -7,3 +7,4 @@ gradle/
 src/test/resources/test.properties
 
 
+src/test/java/org/cloudfoundry/integrationclient/Sandbox.java
