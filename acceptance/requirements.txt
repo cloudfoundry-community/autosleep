@@ -1,2 +1,2 @@
-cloudfoundry-client==0.0.11
+cloudfoundry-client==0.0.13
 robotframework==2.9.2
