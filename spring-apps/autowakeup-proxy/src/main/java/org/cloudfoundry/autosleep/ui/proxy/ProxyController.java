@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 
@@ -66,7 +67,7 @@ public class ProxyController {
     CloudFoundryApi cfApi;
 
     @Autowired
-    RestOperations restOperations;
+    RestTemplate restTemplate;
 
     @Autowired
     private TimeManager timeManager;
@@ -94,7 +95,7 @@ public class ProxyController {
         log.debug("forwarding traffic to {}", request.getHeaders().get(HEADER_FORWARD_URL));
         log.debug("Outgoing Request: {}", outgoing);
 
-        return this.restOperations.exchange(outgoing, byte[].class);
+        return this.restTemplate.exchange(outgoing, byte[].class);
     }
 
 }
