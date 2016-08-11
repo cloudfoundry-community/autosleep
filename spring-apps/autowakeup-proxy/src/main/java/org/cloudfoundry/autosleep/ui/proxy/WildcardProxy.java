@@ -33,6 +33,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,6 +51,7 @@ import java.util.List;
 
 @RestController
 @Slf4j
+@Transactional
 public class WildcardProxy {
 
     static final String HEADER_FORWARDED = "CF-Autosleep-Proxy-Signature";
@@ -135,7 +137,8 @@ public class WildcardProxy {
                 timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
                 //TODO add timeout that would log error and reset mapEntry.isStarting to false
             }
-            proxyMap.delete(mapEntry);
+            //if exist, to prevent exception when two instances started the app in //
+            proxyMap.deleteIfExist(mapEntry.getHost());
 
         } catch (CloudFoundryException e) {
             log.error("Couldn't launch app restart", e);

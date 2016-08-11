@@ -20,8 +20,18 @@
 package org.cloudfoundry.autosleep.access.dao.repositories;
 
 import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
+
 
 public interface ProxyMapEntryRepository extends CrudRepository<ProxyMapEntry, String> {
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM ProxyMapEntry e WHERE e.host = :host")
+    void deleteIfExist(@Param("host") String host);
 
 }
