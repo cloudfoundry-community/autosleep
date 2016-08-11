@@ -20,17 +20,21 @@
 package org.cloudfoundry.autosleep.ui.web.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.access.dao.model.Binding;
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo.ApplicationInfoBuilder;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo.DiagnosticInfo;
+import org.cloudfoundry.autosleep.access.dao.model.Binding;
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
+import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.ui.security.SecurityManager;
+import org.cloudfoundry.autosleep.ui.security.SecurityManager.Authority;
 import org.cloudfoundry.autosleep.ui.web.model.ServerResponse;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
-import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -58,6 +62,9 @@ public class ApiController {
     private ApplicationRepository applicationRepository;
 
     @Autowired
+    private SecurityManager securityManager;
+
+    @Autowired
     private SpaceEnrollerConfigRepository spaceEnrollerConfigRepository;
 
     @RequestMapping(value = Config.Path.APPLICATIONS_SUB_PATH + "{applicationId}", method = RequestMethod.DELETE)
@@ -73,6 +80,24 @@ public class ApiController {
         return new ResponseEntity<>("{}", HttpStatus.NO_CONTENT);
     }
 
+    private ApplicationInfo filterApplicationInformations(ApplicationInfo applicationInfo, boolean sendLogAndEvent) {
+        ApplicationInfoBuilder builder = ApplicationInfo.builder()
+                .name(applicationInfo.getName())
+                .uuid(applicationInfo.getUuid())
+                .enrollmentState(applicationInfo.getEnrollmentState());
+        DiagnosticInfo diagnosticInfo = applicationInfo.getDiagnosticInfo();
+        DiagnosticInfo.DiagnosticInfoBuilder diagnosticInfoBuilder = DiagnosticInfo.builder()
+                .appState(diagnosticInfo.getAppState())
+                .lastCheck(diagnosticInfo.getLastCheck().toEpochMilli())
+                .nextCheck(diagnosticInfo.getNextCheck().toEpochMilli());
+        if (sendLogAndEvent) {
+            diagnosticInfoBuilder.lastLog(diagnosticInfo.getLastLog())
+                    .lastEvent(diagnosticInfo.getLastEvent());
+        }
+        builder.diagnosticInfo(diagnosticInfoBuilder.build());
+        return builder.build();
+    }
+
     @RequestMapping(value = Config.Path.APPLICATIONS_SUB_PATH)
     @ResponseBody
     public ServerResponse<List<ApplicationInfo>> listApplications() {
@@ -84,14 +109,15 @@ public class ApiController {
 
     @RequestMapping(value = Config.Path.SERVICES_SUB_PATH + "{instanceId}/applications/")
     @ResponseBody
-    public ServerResponse<List<ApplicationInfo>> listApplicationsById(@PathVariable("instanceId") String
-                                                                              serviceInstanceId) {
-        log.debug("listApplications");
+    public ServerResponse<List<ApplicationInfo>> listApplicationsById(
+            @PathVariable("instanceId") String serviceInstanceId) {
         List<ApplicationInfo> result = new ArrayList<>();
+        boolean sendLogAndEvent = securityManager.hasAuthority(Authority.Admin);
+        log.debug("listApplicationsById - isAdmin={}", sendLogAndEvent);
         applicationRepository.findAll()
                 .forEach(app -> {
                     if (app.getEnrollmentState().getStates().keySet().contains(serviceInstanceId)) {
-                        result.add(app);
+                        result.add(filterApplicationInformations(app, sendLogAndEvent));
                     }
                 });
         return new ServerResponse<>(result, Instant.now());
