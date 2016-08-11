@@ -33,6 +33,7 @@ Autosleep service needs properties to work . The properties that are used are:
 - __cf.security.password.encodingSecret__: the secret used to hash password (optional). If none provided, it will use ```""```.
 - __cf.service.broker.id__: the service broker id that is used as a "service offering name" and will appear in the marketplace. If none provided, it will use ```"autosleep"```. Must be unique in the CF instance across all brokers.
 - __cf.service.plan.id__: the service plan id. If none provided, it will use ```"default"```. Must be unique in the CF instance across all brokers.
+- __autosleep.debug__: a list too enable `DEBUG` logs. So far, the available keys are `autosleep` to turn applicative logs in `DEBUG`, and `spring`for the spring part.
 
 There are two ways of providing these properties to autosleep:
 
