@@ -55,7 +55,11 @@ public interface Config {
 
         String CF_SERVICE_BROKER_ID = "cf.service.broker.id";
 
+        String CF_SERVICE_BROKER_NAME = "cf.service.broker.name";
+
         String CF_SERVICE_PLAN_ID = "cf.service.plan.id";
+
+        String CF_SERVICE_PLAN_NAME = "cf.service.plan.name";
 
         String CF_SKIP_SSL_VALIDATION = "cf.client.skip.ssl.validation";
 
@@ -85,7 +89,11 @@ public interface Config {
 
         String DEFAULT_SERVICE_BROKER_ID = "autosleep";
 
+        String DEFAULT_SERVICE_BROKER_NAME = "autosleep";
+
         String DEFAULT_SERVICE_PLAN_ID = "default";
+
+        String DEFAULT_SERVICE_PLAN_NAME = "default";
     }
 
     interface ServiceInstanceParameters {
@@ -100,17 +108,17 @@ public interface Config {
 
         String IDLE_DURATION = "idle-duration";
 
-        String SECRET = "secret";
-
         String IGNORE_ROUTE_SERVICE_ERROR = "autosleep-despite-route-services-error";
+
+        String SECRET = "secret";
 
     }
 
     Duration CF_API_TIMEOUT = Duration.ofSeconds(8);
 
-    Duration DEFAULT_INACTIVITY_PERIOD = Duration.ofDays(1);
-
     Boolean DEFAULT_IGNORE_SERVICE_ERROR = Boolean.FALSE;
+
+    Duration DEFAULT_INACTIVITY_PERIOD = Duration.ofDays(1);
 
     Duration DELAY_BEFORE_FIRST_SERVICE_CHECK = Duration.ofSeconds(10);
 
