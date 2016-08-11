@@ -13,6 +13,7 @@ Acceptance tests are currently using [robotframework](http://robotframework.org)
 
 ### What you need in your cloudfoundry environment
 - A test application (a [static website](https://github.com/cloudfoundry/staticfile-buildpack) for instance)
+    which is reacheable from where tests execute 
 - Autosleep applications deployed as an application in a space where you are allowed to deploy private service brokers.
 
 ## Run the tests
