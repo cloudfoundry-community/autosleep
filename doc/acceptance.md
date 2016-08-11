@@ -1,6 +1,8 @@
 #Acceptance test 
 How to run the acceptance tests.
 
+Acceptance tests are currently using [robotframework](http://robotframework.org). See http://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html for an introduction and background
+
 ## Preconditions
 
 ### What you need on your computer to run the test
