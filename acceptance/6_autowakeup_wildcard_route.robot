@@ -19,7 +19,7 @@ Test Teardown   Run Keywords  Clean all service data
     Create service instance
     Bind application
     Stop Application
-	Start application
+    Start application
     Should be started
     Wait Until Keyword Succeeds     ${maxToWait}  10s  Should be stopped
 
