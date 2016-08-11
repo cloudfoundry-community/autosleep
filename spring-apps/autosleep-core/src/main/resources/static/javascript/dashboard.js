@@ -66,52 +66,58 @@ function listApplications (id){
                     stateElement.addClass("glyphicon-eye-open");
                 }
                 row.append(stateElement);
-
-                var logElement = $("<a>").attr("data-toggle","tooltip")
-                    .attr("title", "Last log")
-                    .addClass("col-xs-1 text-center glyphicon glyphicon-list-alt");
-                var dialogContent = "No last log known...";
+                var dialogContent;
                 if(application.diagnosticInfo.lastLog != null) {
-                    var time = new Date(application.diagnosticInfo.lastLog.timestamp);
+                    var logElement = $("<a>").attr("data-toggle","tooltip")
+                        .attr("title", "Last log")
+                        .addClass("col-xs-1 text-center glyphicon glyphicon-list-alt");
+
                     dialogContent = '<dl class="dl-horizontal">' +
-                        '<dt>Timestamp: </dt><dd>'+time+'</dd>' +
+                        '<dt>Timestamp: </dt><dd>'+(new Date(application.diagnosticInfo.lastLog.timestamp))+'</dd>' +
                         '<dt>Type: </dt><dd>'+application.diagnosticInfo.lastLog.messageType +'</dd>' +
                         '<dt>Message: </dt><dd>'+application.diagnosticInfo.lastLog.message +'</dd>' +
                         '<dt>Source: </dt><dd>'+application.diagnosticInfo.lastLog.sourceName +'</dd>' +
                         '</dl>';
+                    logElement.click(
+                        function(dialogContent){
+                            return function(){
+                                bootbox.dialog({
+                                    title: "Last application log: ",
+                                    message: dialogContent
+                                });
+                            }}(dialogContent));
+                    row.append(logElement);
+                } else {
+                    row.append($("<div>")
+                        .addClass("col-xs-1"));
                 }
-                logElement.click(
-                    function(dialogContent){
-                        return function(){
-                            bootbox.dialog({
-                                title: "Last application log: ",
-                                message: dialogContent
-                            });
-                        }}(dialogContent));
-                row.append(logElement);
 
-                var eventElement = $("<a>").attr("data-toggle","tooltip")
-                    .attr("title", "Last cloud event")
-                    .addClass("col-xs-1 text-center glyphicon glyphicon-cloud");
-                dialogContent = "No cloud event known...";
+
+
                 if(application.diagnosticInfo.lastEvent != null) {
-                    var time = new Date(application.diagnosticInfo.lastEvent.timestamp);
+                    var eventElement = $("<a>").attr("data-toggle","tooltip")
+                        .attr("title", "Last cloud event")
+                        .addClass("col-xs-1 text-center glyphicon glyphicon-cloud");
                     dialogContent = '<dl class="dl-horizontal">' +
-                        '<dt>Timestamp: </dt><dd>'+time+'</dd>' +
+                        '<dt>Timestamp: </dt><dd>'+(new Date(application.diagnosticInfo.lastEvent.timestamp))+'</dd>' +
                         '<dt>Name: </dt><dd>'+application.diagnosticInfo.lastEvent.name +'</dd>' +
                         '<dt>Type: </dt><dd>'+application.diagnosticInfo.lastEvent.type +'</dd>' +
                         '<dt>Actor: </dt><dd>'+application.diagnosticInfo.lastEvent.actor +'</dd>' +
                     '</dl>';
+                    eventElement.click(
+                        function(dialogContent){
+                            return function(){
+                                bootbox.dialog({
+                                    title: "Last cloud event: ",
+                                    message: dialogContent
+                                });
+                            }}(dialogContent));
+                    row.append(eventElement);
+                } else {
+                    row.append($("<div>")
+                        .addClass("col-xs-1"));
                 }
-                eventElement.click(
-                    function(dialogContent){
-                        return function(){
-                            bootbox.dialog({
-                                title: "Last cloud event: ",
-                                message: dialogContent
-                            });
-                        }}(dialogContent));
-                row.append(eventElement);
+
                 container.append(row);
             });
 

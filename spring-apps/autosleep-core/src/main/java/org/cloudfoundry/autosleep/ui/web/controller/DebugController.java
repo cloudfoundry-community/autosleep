@@ -21,14 +21,15 @@ package org.cloudfoundry.autosleep.ui.web.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.servicebroker.model.Catalog;
 import org.springframework.cloud.servicebroker.model.ServiceDefinition;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,7 +65,7 @@ public class DebugController {
     }
 
     @RequestMapping("/")
-    public ModelAndView serviceInstances() {
+    public ModelAndView serviceInstances(HttpServletRequest request) {
         log.debug("serviceInstances - rendering view");
         Map<String, Object> parameters = new HashMap<>();
         ServiceDefinition serviceDefinition = catalog.getServiceDefinitions().get(0);
