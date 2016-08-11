@@ -1,6 +1,6 @@
 *** Settings ***
 Resource        Keywords.robot
-Documentation   Test no-optout option, and secret parameter
+Documentation   Users can only transiently opt-out
 Force Tags      Service broker
 Test Setup      Run Keywords  Clean all service data  Check broker is published
 Test Teardown   Run Keywords  Clean all service data
@@ -12,13 +12,14 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
 
 *** Test Cases ***
 1) No forced auto-enrollment without secret
-    [Documentation]              Check that we can not create a service with no-optout option without providing a secret
+    [Documentation]              Check that we can not create a service with auto-enrollment=forced option without providing a secret
     ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}   auto-enrollment=forced   autosleep-despite-route-services-error=true
     Run Keyword And Expect Error    InvalidStatusCode: 502*Service broker error: \'auto-enrollment\': *     Create service instance  ${parameters}
 
 
-2) Forced auto-enrollment can unbind, but will be rebound
-    [Documentation]     Check that we can not unbind an app from a service with auto-enrollment option set to true
+2) app opt-opt outs are transient
+    [Documentation]     In forced auto-enrollment, check that we can not permamently unbind an app from a service:
+    ...                 Applications will be automatically rebound
     # create service instance with noptout
     ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}	secret=${DEFAULT_SECRET}   auto-enrollment=forced
     Create service instance      ${parameters}
@@ -34,7 +35,7 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
     Wait Until Keyword Succeeds     ${longPeriod}s  3s  Should be bound
 
 
-3) Forced auto-enrollment mode can not delete autosleep service instance
+3) can not delete autosleep service instance
     [Documentation]        Check that during forced auto-enrollment mode, a service instance can't be deleted to escape from autoenrolling apps within the space
     # create service instance  with noptout
     ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}   auto-enrollment=forced  secret=${DEFAULT_SECRET}
@@ -74,7 +75,7 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
     # check unbind -> accept
     Unbind application
 
-6) Auto-enrollment service can change with admin secret
+6) Auto-enrollment mode can change with admin secret
     [Documentation]        Check that the auto-enrollment option can be changed if the admin secret is provided
     # create service instance with noptout
     ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}   auto-enrollment=forced  secret=${DEFAULT_SECRET}

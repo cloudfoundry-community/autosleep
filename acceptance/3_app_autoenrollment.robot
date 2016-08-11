@@ -1,6 +1,6 @@
 *** Settings ***
 Resource        Keywords.robot
-Documentation   Test if application autobound is stopped
+Documentation   Test apps get automatically bound in standard enrollment mode
 Force Tags      Service broker
 Test Teardown   Run Keywords  Clean all service data
 
@@ -10,7 +10,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
 
 *** Test Cases ***
 
-1) Automatically bind application by service instance
+1) Eligible app get automatically enrolled
     [Documentation]     Check that app is automatically bound by service instance
     Clean all service data
     Check broker is published
@@ -20,7 +20,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
     Wait Until Keyword Succeeds     ${INACTIVITY_IN_S}s  3s  Should be bound
 
 
-2) Service does not bind ignored applications
+2) Excluded app don't get automatically enrolled
     [Documentation]        Check that no application is bound by the service instance
     Clean all service data
     Check broker is published
