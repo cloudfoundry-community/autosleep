@@ -32,6 +32,6 @@ public interface ProxyMapEntryRepository extends CrudRepository<ProxyMapEntry, S
     @Modifying
     @Transactional
     @Query("DELETE FROM ProxyMapEntry e WHERE e.host = :host")
-    void deleteIfExist(@Param("host") String host);
+    void deleteIfExists(@Param("host") String host);
 
 }
