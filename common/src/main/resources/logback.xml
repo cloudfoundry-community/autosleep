@@ -26,19 +26,26 @@
             <pattern>%-5level - %thread - %logger{5}\(%line\) - %message%n</pattern>
         </encoder>
     </appender>
-    <logger name="org.cloudfoundry.autosleep" >
-        <level value="INFO" />
+    <logger name="org.cloudfoundry.autosleep">
+        <if condition='property("autosleep.debug").contains("true")'>
+            <then>
+                <level value="DEBUG"/>
+            </then>
+            <else>
+                <level value="INFO"/>
+            </else>
+        </if>
     </logger>
-    <logger name="org.springframework" >
-        <level value="WARN" />
+    <logger name="org.springframework">
+        <level value="WARN"/>
     </logger>
     <logger name="org.apache.http.wire">
-        <level value="WARN" />
+        <level value="WARN"/>
     </logger>
 
     <root>
-        <appender-ref ref="stdout" />
+        <appender-ref ref="stdout"/>
         <!--<level value="OFF" />-->
-        <level value="INFO" />
+        <level value="INFO"/>
     </root>
 </configuration>
