@@ -20,10 +20,11 @@
 package org.cloudfoundry.autosleep.ui.servicebroker.configuration;
 
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.EnvKey;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.servicebroker.model.Catalog;
 import org.springframework.cloud.servicebroker.model.Plan;
 import org.springframework.cloud.servicebroker.model.ServiceDefinition;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.servicebroker.model.ServiceDefinitionRequires;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,21 +43,28 @@ public class AutosleepCatalogBuilder {
 
     @Bean
     public Catalog buildCatalog() {
+
         String serviceBrokerId = environment.getProperty(Config.EnvKey.CF_SERVICE_BROKER_ID,
                 Config.ServiceCatalog.DEFAULT_SERVICE_BROKER_ID);
+
+        String serviceBrokerName = environment.getProperty(EnvKey.CF_SERVICE_BROKER_NAME,
+                Config.ServiceCatalog.DEFAULT_SERVICE_BROKER_NAME);
 
         String servicePlanId = environment.getProperty(Config.EnvKey.CF_SERVICE_PLAN_ID,
                 Config.ServiceCatalog.DEFAULT_SERVICE_PLAN_ID);
 
+        String servicePlanName = environment.getProperty(EnvKey.CF_SERVICE_PLAN_NAME,
+                Config.ServiceCatalog.DEFAULT_SERVICE_PLAN_NAME);
+
         return new Catalog(Collections.singletonList(new ServiceDefinition(
                 serviceBrokerId,
-                serviceBrokerId,
+                serviceBrokerName,
                 "Automatically stops inactive apps",
                 true,
                 false,
                 Collections.singletonList(
                         new Plan(servicePlanId,
-                                "default",
+                                servicePlanName,
                                 "Autosleep default plan",
                                 null,
                                 true)),
