@@ -138,7 +138,7 @@ public class WildcardProxy {
                 //TODO add timeout that would log error and reset mapEntry.isStarting to false
             }
             //if exist, to prevent exception when two instances started the app in //
-            proxyMap.deleteIfExist(mapEntry.getHost());
+            proxyMap.deleteIfExists(mapEntry.getHost());
 
         } catch (CloudFoundryException e) {
             log.error("Couldn't launch app restart", e);
