@@ -37,6 +37,9 @@ subprojects {
         //Spring boot
         compile "org.springframework.boot:spring-boot-starter-web"
 
+        //for conditionnal in logback.xml
+        compile "org.codehaus.janino:janino:2.7.8"
+
         providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
     }
 
