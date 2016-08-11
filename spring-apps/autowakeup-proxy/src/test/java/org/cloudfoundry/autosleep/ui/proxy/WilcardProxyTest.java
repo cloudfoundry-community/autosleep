@@ -88,8 +88,7 @@ public class WilcardProxyTest {
     public void should_forward_traffic_if_in_route_map() throws Exception {
         //GIVEN that we have a map route in database (for an app which restart isn't in progress
         routeMap.save(ProxyMapEntry.builder().host(HOST_TEST_VALUE)
-                .appId("ANYAPPID")
-                .isRestarting(false).build());
+                .appId("ANYAPPID").build());
 
         this.mockServer
                 .expect(method(GET))

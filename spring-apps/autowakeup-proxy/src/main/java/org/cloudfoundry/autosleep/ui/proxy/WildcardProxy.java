@@ -116,15 +116,15 @@ public class WildcardProxy {
         if (mapEntry == null) {
             return new ResponseEntity<>("Sorry, but this page doesn't exist! ", HttpStatus.NOT_FOUND);
         }
-        if (mapEntry.isRestarting()) {
-            return new ResponseEntity<>("Autosleep is restarting, please retry in few seconds", HttpStatus
-                    .SERVICE_UNAVAILABLE);
-        }
 
-        mapEntry.setRestarting(true);
-        proxyMap.save(mapEntry);
         try {
             String appId = mapEntry.getAppId();
+
+            if (CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId)) && !cfApi.isAppRunning(appId)) {
+                return new ResponseEntity<>("Autosleep is restarting, please retry in few seconds", HttpStatus
+                        .SERVICE_UNAVAILABLE);
+            }
+
             if (CloudFoundryAppState.STOPPED.equals(cfApi.getApplicationState(appId))) {
                 log.info("Starting app [{}]", appId);
                 cfApi.startApplication(appId);
@@ -139,8 +139,6 @@ public class WildcardProxy {
 
         } catch (CloudFoundryException e) {
             log.error("Couldn't launch app restart", e);
-            mapEntry.setRestarting(false);
-            proxyMap.save(mapEntry);
         }
 
         String protocol = incoming.getHeaders().get(HEADER_PROTOCOL).get(0);

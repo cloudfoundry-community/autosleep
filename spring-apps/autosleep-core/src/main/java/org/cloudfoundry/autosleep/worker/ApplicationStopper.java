@@ -175,7 +175,7 @@ class ApplicationStopper extends AbstractPeriodicTask {
             try {
                 String host = cloudFoundryApi.getHost(id);
                 log.debug("Got host {}", host);
-                proxyMap.save(new ProxyMapEntry(host, appUid, false));
+                proxyMap.save(new ProxyMapEntry(host, appUid));
             } catch (CloudFoundryException e) {
                 log.error("Couldn't get host corresponding to a route ", e);
             }

@@ -159,3 +159,11 @@ databaseChangeLog:
             type: BIT(1)
             constraints:
                 nullable: false
+#getting rid of unecessary field "isRestarting"
+- changeSet:
+    id: 4
+    author: Arnaud Ruffin
+    changes:
+    - dropColumn:
+        tableName: RouteMap
+        columnName: isRestarting
