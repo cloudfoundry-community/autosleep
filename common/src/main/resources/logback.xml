@@ -27,7 +27,7 @@
         </encoder>
     </appender>
     <logger name="org.cloudfoundry.autosleep">
-        <if condition='property("autosleep.debug").contains("true")'>
+        <if condition='property("autosleep.debug").contains("autosleep")'>
             <then>
                 <level value="DEBUG"/>
             </then>
@@ -37,15 +37,18 @@
         </if>
     </logger>
     <logger name="org.springframework">
-        <level value="WARN"/>
+        <if condition='property("autosleep.debug").contains("spring")'>
+            <then>
+                <level value="DEBUG"/>
+            </then>
+            <else>
+                <level value="WARN"/>
+            </else>
+        </if>
     </logger>
-    <logger name="org.apache.http.wire">
-        <level value="WARN"/>
-    </logger>
-
     <root>
         <appender-ref ref="stdout"/>
         <!--<level value="OFF" />-->
-        <level value="INFO"/>
+        <level value="WARN"/>
     </root>
 </configuration>
