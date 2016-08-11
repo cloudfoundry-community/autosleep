@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
+import org.cloudfoundry.autosleep.ui.security.SecurityManager;
 import org.cloudfoundry.autosleep.ui.web.controller.ApiController;
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.access.dao.model.Binding;
@@ -96,6 +97,9 @@ public class ApiControllerTest {
 
     @Mock
     private Catalog catalog;
+
+    @Mock
+    private SecurityManager securityManager;
 
     private MockMvc mockMvc;
 
