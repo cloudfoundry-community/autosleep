@@ -37,7 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.HandlerMapping;
 
 import javax.annotation.PostConstruct;
@@ -60,7 +60,7 @@ public class WildcardProxy {
 
     static final String HEADER_PROTOCOL = "x-forwarded-proto";
 
-    private final RestOperations restOperations;
+    private final RestTemplate restTemplate;
 
     protected String proxySignature;
 
@@ -77,8 +77,8 @@ public class WildcardProxy {
     private TimeManager timeManager;
 
     @Autowired
-    WildcardProxy(RestOperations restOperations) {
-        this.restOperations = restOperations;
+    WildcardProxy(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
 
     private RequestEntity<?> getOutgoingRequest(RequestEntity<?> incoming, URI destination) {
@@ -152,7 +152,7 @@ public class WildcardProxy {
         log.debug("Outgoing Request: {}", outgoing);
 
         //if "outgoing" point to a 404, this will trigger a 500. Is this really a pb?
-        return this.restOperations.exchange(outgoing, byte[].class);
+        return this.restTemplate.exchange(outgoing, byte[].class);
     }
 
 }

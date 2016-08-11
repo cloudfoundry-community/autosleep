@@ -29,3 +29,5 @@ applications:
   instances: 1
   host: autosleep
   path: spring-apps/autosleep-core/build/libs/org.cloudfoundry.autosleep.autosleep-core-0.3.0.war
+  env:
+    autowakeup.skip.ssl.validation: false
