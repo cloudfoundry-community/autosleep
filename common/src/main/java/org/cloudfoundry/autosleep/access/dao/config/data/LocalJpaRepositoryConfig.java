@@ -20,27 +20,31 @@
 package org.cloudfoundry.autosleep.access.dao.config.data;
 
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.dialect.H2Dialect;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
 import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
 
 @Slf4j
 @Configuration
 @Profile("default")
-@EnableJpaRepositories("org.cloudfoundry.autosleep.access.dao.repositories.jpa")
-public class LocalJpaRepositoryConfig extends AbstractJpaRepositoryConfig {
+public class LocalJpaRepositoryConfig  {
 
-    @Override
-    protected String getHibernateDialect() {
-        return H2Dialect.class.getName();
+
+    @Bean
+    public DataSource dataSource() {
+        return new EmbeddedDatabaseBuilder()
+                .setType(EmbeddedDatabaseType.H2)
+                .build();
     }
 
     @PostConstruct
     public void logProfile() {
-        log.warn("<<<<<<<<<<<  Warning: loading IN MEMORY persistance profile >>>>>>>>>>>>>>>>>>");
+        log.warn("<<<<<<<<<<<  Warning: loading IN MEMORY persistence profile >>>>>>>>>>>>>>>>>>");
     }
 
 }

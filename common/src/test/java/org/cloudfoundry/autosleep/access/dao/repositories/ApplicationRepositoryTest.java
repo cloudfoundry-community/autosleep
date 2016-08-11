@@ -20,9 +20,9 @@
 package org.cloudfoundry.autosleep.access.dao.repositories;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.access.dao.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.util.ApplicationConfiguration;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.junit.After;
@@ -44,7 +44,7 @@ import static org.junit.Assert.assertThat;
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {ApplicationConfiguration.class, RepositoryConfig.class})
+@ContextConfiguration(classes = {ApplicationConfiguration.class, RepositoryConfig.class, EnableJpaConfiguration.class})
 public abstract class ApplicationRepositoryTest extends CrudRepositoryTest<ApplicationInfo> {
 
     @Autowired

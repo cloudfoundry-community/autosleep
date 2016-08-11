@@ -22,6 +22,7 @@ package org.cloudfoundry.autosleep.ui.proxy;
 import javassist.NotFoundException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.WakeUpApplication;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.client.CloudFoundryClient;
@@ -40,7 +41,7 @@ import java.util.UUID;
 import static org.mockito.Mockito.mock;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {ApplicationTest.MockClientConfiguration.class, Application.class})
+@ContextConfiguration(classes = {ApplicationTest.MockClientConfiguration.class, WakeUpApplication.class})
 @WebAppConfiguration
 public class ApplicationTest {
 

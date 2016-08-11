@@ -84,7 +84,7 @@ subprojects {
     tasks.withType(Jar) { // includes War and Jar
         manifest {
             attributes( "Implementation-Title": baseName,
-                        "Implementation-Version": version)
+                    "Implementation-Version": version)
         }
     }
 

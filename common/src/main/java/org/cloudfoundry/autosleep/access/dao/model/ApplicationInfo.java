@@ -82,7 +82,7 @@ public class ApplicationInfo {
 
             @JsonSerialize(using = InstantSerializer.class)
             @JsonDeserialize(using = InstantDeserializer.class)
-            @Column(name = "event_time")
+            @Column(name = "event_time",columnDefinition = "BLOB")
             private Instant timestamp;
 
             @JsonSerialize
@@ -130,7 +130,7 @@ public class ApplicationInfo {
 
             @JsonSerialize(using = InstantSerializer.class)
             @JsonDeserialize(using = InstantDeserializer.class)
-            @Column(name = "log_time")
+            @Column(name = "log_time",columnDefinition = "BLOB")
             private Instant timestamp;
 
             @Builder
@@ -160,6 +160,7 @@ public class ApplicationInfo {
 
         @JsonSerialize(using = InstantSerializer.class)
         @JsonDeserialize(using = InstantDeserializer.class)
+        @Column(columnDefinition = "BLOB")
         private Instant lastCheck;
 
         @Embedded
@@ -172,6 +173,7 @@ public class ApplicationInfo {
 
         @JsonSerialize(using = InstantSerializer.class)
         @JsonDeserialize(using = InstantDeserializer.class)
+        @Column(columnDefinition = "BLOB")
         private Instant nextCheck;
 
         @Builder
@@ -207,7 +209,7 @@ public class ApplicationInfo {
 
         }
 
-        @Column(length = 300) //to force BLOB type and not TINYBLOB
+        @Column(length = 300, columnDefinition = "BLOB") //to force BLOB type and not TINYBLOB
         private HashMap<String /**serviceId.**/, EnrollmentState.State> states;
 
         private EnrollmentState() {
