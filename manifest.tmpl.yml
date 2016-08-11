@@ -11,7 +11,9 @@ env:
   cf.client.clientSecret: <client_secret>
   cf.security.password.encodingSecret: <password_encoding_secret>
   cf.service.broker.id: <service_broker_id>
+  cf.service.broker.name: <service_broker_name>
   cf.service.plan.id: <service_plan_id>
+  cf.service.plan.name: <service_plan_name>
   autosleep.debug: <autosleep, spring, ....>
   JAVA_OPTS: >
     -Dlogging.level.org.springframework.web.filter.CommonsRequestLoggingFilter=ERROR
