@@ -8,7 +8,7 @@ Test Teardown   Run Keywords  Clean all service data
 
 *** Test Cases ***
 
-1) Incoming traffic will trigger app restart on application stop by autosleep
+1) Incoming traffic will trigger app restart a sleeping appl
     [Documentation]
     ...     = Automatic restart tests =
     ...     *This test needs to be run on a multi-instances autowakeup (at least 2) to succeed*
@@ -47,7 +47,8 @@ Test Teardown   Run Keywords  Clean all service data
 
 
 
-2) Incoming traffic on other stopped app don't trigger a restart
+2) Incoming traffic on other unbound stopped app doesn't trigger a restart
+    [Documentation]        Check that orphan traffic received on non-enrolled apps does not trigger a restart
     Stop Application
     Run Keyword And Expect Error  	Invalid status code 404     Ping Application
     Should be stopped
