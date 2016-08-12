@@ -36,7 +36,7 @@ public class H2DataSourceConfig {
     @Bean
     public DataSource dataSource() {
         return new EmbeddedDatabaseBuilder()
-                .setName("autosleep")
+           //     .setName("autosleep")
                 .setType(EmbeddedDatabaseType.H2)
                 .build();
     }

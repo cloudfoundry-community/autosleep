@@ -19,10 +19,8 @@
 
 package org.cloudfoundry.autosleep.access.dao.config.data;
 
-import liquibase.integration.spring.SpringLiquibase;
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.hibernate.jpa.HibernatePersistenceProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -56,14 +54,14 @@ public abstract class AbstractJpaRepositoryConfig {
 
     protected abstract String getHibernateDialect();
 
-    @Bean
+  /*  @Bean
     @Autowired
     public SpringLiquibase liquibase(DataSource dataSource) {
         SpringLiquibase liquibase = new SpringLiquibase();
         liquibase.setChangeLog("classpath:/db/changelog/db.changelog-master.yaml");
         liquibase.setDataSource(dataSource);
         return liquibase;
-    }
+    }*/
 
     @Bean
     public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {

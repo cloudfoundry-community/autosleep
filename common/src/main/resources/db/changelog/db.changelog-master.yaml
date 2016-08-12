@@ -40,7 +40,7 @@ databaseChangeLog:
                 nullable: false
         - column:
             name: lastCheck
-            type: TINYBLOB
+            type: BLOB
         - column:
             name: event_actee
             type: VARCHAR(255)
@@ -52,7 +52,7 @@ databaseChangeLog:
             type: VARCHAR(255)
         - column:
             name: event_time
-            type: TINYBLOB
+            type: BLOB
         - column:
             name: event_type
             type: VARCHAR(255)
@@ -70,10 +70,10 @@ databaseChangeLog:
             type: VARCHAR(255)
         - column:
             name: log_time
-            type: TINYBLOB
+            type: BLOB
         - column:
             name: nextCheck
-            type: TINYBLOB
+            type: BLOB
         - column:
             name: states
             type: BLOB
@@ -91,7 +91,7 @@ databaseChangeLog:
                 nullable: false
         - column:
             name: excludeFromAutoEnrollment
-            type: TINYBLOB
+            type: BLOB
         - column:
             name: forcedAutoEnrollment
             type: BIT(1)
@@ -100,7 +100,7 @@ databaseChangeLog:
                 nullable: false
         - column:
             name: idleDuration
-            type: TINYBLOB
+            type: BLOB
         - column:
             name: organizationId
             type: VARCHAR(255)
@@ -122,11 +122,6 @@ databaseChangeLog:
             defaultValueBoolean: false
             constraints:
                 nullable: false
-#adding temporary table for wildcard routing
-- changeSet:
-    id: 3
-    author: Arnaud Ruffin
-    changes:
     - createTable:
         tableName: ProxyMapEntry
         columns:
