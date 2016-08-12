@@ -86,7 +86,7 @@ class SpaceEnroller extends AbstractPeriodicTask {
                 log.debug("{} known applications (already enrolled, or blacklisted)",
                         watchedOrIgnoredApplications.size());
                 List<ApplicationIdentity> applicationIdentities = cloudFoundryApi
-                        .listApplications(serviceInstance.getSpaceId(),
+                        .listAliveApplications(serviceInstance.getSpaceId(),
                                 serviceInstance.getExcludeFromAutoEnrollment());
                 List<ApplicationIdentity> newApplications = applicationIdentities.stream()
                         .filter(application ->

@@ -36,16 +36,16 @@ import java.util.Collection;
 @Slf4j
 public class SecurityManager {
 
-    public enum Authority{
+    public enum Authority {
         Admin("ROLE_ADMIN"), User("ROLE_USER"), ROLE_ANONYMOUS("ROLE_ANONYMOUS");
 
         private String value;
 
-        Authority(String value){
+        Authority(String value) {
             this.value = value;
         }
 
-        public String value(){
+        public String value() {
             return value;
         }
 
