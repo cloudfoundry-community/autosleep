@@ -19,8 +19,10 @@
 
 package org.cloudfoundry.autosleep.access.dao.config.data;
 
+import liquibase.integration.spring.SpringLiquibase;
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -32,11 +34,10 @@ import java.util.Map;
 
 public abstract class AbstractJpaRepositoryConfig {
 
-    protected LocalContainerEntityManagerFactoryBean createEntityManagerFactoryBean(DataSource dataSource,
-                                                                                    String dialectClassName) {
+    protected LocalContainerEntityManagerFactoryBean createEntityManagerFactoryBean(DataSource dataSource) {
         Map<String, String> properties = new HashMap<>();
-        properties.put(org.hibernate.cfg.Environment.HBM2DDL_AUTO, "update");
-        properties.put(org.hibernate.cfg.Environment.DIALECT, dialectClassName);
+        properties.put(org.hibernate.cfg.Environment.HBM2DDL_AUTO, "validate");
+        properties.put(org.hibernate.cfg.Environment.DIALECT, getHibernateDialect());
         properties.put(org.hibernate.cfg.Environment.SHOW_SQL, "false");
 
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
@@ -50,10 +51,19 @@ public abstract class AbstractJpaRepositoryConfig {
 
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-        return createEntityManagerFactoryBean(dataSource, getHibernateDialect());
+        return createEntityManagerFactoryBean(dataSource);
     }
 
     protected abstract String getHibernateDialect();
+
+    @Bean
+    @Autowired
+    public SpringLiquibase liquibase(DataSource dataSource) {
+        SpringLiquibase liquibase = new SpringLiquibase();
+        liquibase.setChangeLog("classpath:/db/changelog/db.changelog-master.yaml");
+        liquibase.setDataSource(dataSource);
+        return liquibase;
+    }
 
     @Bean
     public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {

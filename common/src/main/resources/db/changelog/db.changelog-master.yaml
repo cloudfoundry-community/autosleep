@@ -17,7 +17,7 @@ databaseChangeLog:
             type: VARCHAR(255)
         - column:
             name: resourceType
-            type: VARCHAR(255)
+            type: INT
         - column:
             name: serviceInstanceId
             type: VARCHAR(255)
@@ -25,11 +25,11 @@ databaseChangeLog:
         tableName: ApplicationInfo
         columns:
         - column:
-          name: uuid
-          type: VARCHAR(40)
-          constraints:
-              primaryKey: true
-              nullable: false
+            name: uuid
+            type: VARCHAR(40)
+            constraints:
+                primaryKey: true
+                nullable: false
         - column:
             name: appState
             type: VARCHAR(255)
@@ -80,7 +80,6 @@ databaseChangeLog:
         - column:
             name: name
             type: VARCHAR(255)
-    changes:
     - createTable:
         tableName: SpaceEnrollerConfig
         columns:
@@ -117,33 +116,19 @@ databaseChangeLog:
         - column:
             name: spaceId
             type: VARCHAR(255)
-- changeSet:
-#adding column for new feature "ignoreRouteServiceError"
-#remove unwanted index on forcedEnrollment
-    id: 2
-    author: Arnaud Ruffin
-    changes:
-    - addColumn:
-        tableName: SpaceEnrollerConfig
-        columns:
         - column:
             name: ignoreRouteServiceError
             type: BIT(1)
             defaultValueBoolean: false
             constraints:
-              nullable: false
-    - dropPrimaryKey:
-        tableName: SpaceEnrollerConfig
-    - addPrimaryKey:
-        tableName: SpaceEnrollerConfig
-        columnNames: id
+                nullable: false
 #adding temporary table for wildcard routing
 - changeSet:
     id: 3
     author: Arnaud Ruffin
     changes:
     - createTable:
-        tableName: RouteMap
+        tableName: ProxyMapEntry
         columns:
         - column:
             name: host
@@ -154,16 +139,3 @@ databaseChangeLog:
         - column:
             name: appId
             type: VARCHAR(255)
-        - column:
-            name: isRestarting
-            type: BIT(1)
-            constraints:
-                nullable: false
-#getting rid of unecessary field "isRestarting"
-- changeSet:
-    id: 4
-    author: Arnaud Ruffin
-    changes:
-    - dropColumn:
-        tableName: RouteMap
-        columnName: isRestarting
