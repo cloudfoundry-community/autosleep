@@ -19,6 +19,7 @@
 
 package org.cloudfoundry.autosleep.ui.proxy;
 
+import org.cloudfoundry.autosleep.WakeUpApplication;
 import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
 import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepository;
 import org.junit.Before;
@@ -49,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Application.class)
+@SpringApplicationConfiguration(classes = WakeUpApplication.class)
 @WebAppConfiguration
 public class WilcardProxyTest {
 
@@ -88,8 +89,7 @@ public class WilcardProxyTest {
     public void should_forward_traffic_if_in_route_map() throws Exception {
         //GIVEN that we have a map route in database (for an app which restart isn't in progress
         routeMap.save(ProxyMapEntry.builder().host(HOST_TEST_VALUE)
-                .appId("ANYAPPID")
-                .isRestarting(false).build());
+                .appId("ANYAPPID").build());
 
         this.mockServer
                 .expect(method(GET))

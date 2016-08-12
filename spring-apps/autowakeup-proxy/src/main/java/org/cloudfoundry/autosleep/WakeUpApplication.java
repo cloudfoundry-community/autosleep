@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.cloudfoundry.autosleep.ui.proxy;
+package org.cloudfoundry.autosleep;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.access.cloudfoundry.config.CloudfoundryClientBuilder;
@@ -33,11 +33,11 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @ComponentScan(basePackages = {"org.cloudfoundry.autosleep"})
 @EnableWebMvc
 @Slf4j
-public class Application {
+public class WakeUpApplication {
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(CloudfoundryClientBuilder.class)
-                .child(Application.class)
+                .child(WakeUpApplication.class)
                 .initializers(new ContextInitializer())
                 .run(args);
         log.debug("Autosleep - PROXY - app started");

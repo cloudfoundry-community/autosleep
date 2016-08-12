@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {ApplicationConfiguration.class, RepositoryConfig.class})
+@ContextConfiguration(classes = {ApplicationConfiguration.class, RepositoryConfig.class, EnableJpaConfiguration.class})
 public abstract class BindingRepositoryTest extends CrudRepositoryTest<Binding> {
 
     private static final String APP_GUID = "2F5A0947-6468-401B-B12A-963405121937";
