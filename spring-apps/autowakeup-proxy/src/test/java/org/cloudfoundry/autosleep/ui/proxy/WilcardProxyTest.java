@@ -19,6 +19,7 @@
 
 package org.cloudfoundry.autosleep.ui.proxy;
 
+import org.cloudfoundry.autosleep.WakeUpApplication;
 import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
 import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepository;
 import org.junit.Before;
@@ -49,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Application.class)
+@SpringApplicationConfiguration(classes = WakeUpApplication.class)
 @WebAppConfiguration
 public class WilcardProxyTest {
 
