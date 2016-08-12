@@ -21,6 +21,7 @@ package org.cloudfoundry.autosleep.access.dao.config.data;
 
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -32,7 +33,9 @@ import java.util.Map;
 
 public abstract class AbstractJpaRepositoryConfig {
 
-    protected LocalContainerEntityManagerFactoryBean createEntityManagerFactoryBean(DataSource dataSource) {
+    @Bean
+    @Autowired
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
         Map<String, String> properties = new HashMap<>();
         properties.put(org.hibernate.cfg.Environment.HBM2DDL_AUTO, "validate");
         properties.put(org.hibernate.cfg.Environment.DIALECT, getHibernateDialect());
@@ -47,11 +50,6 @@ public abstract class AbstractJpaRepositoryConfig {
         return em;
     }
 
-    @Bean
-    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-        return createEntityManagerFactoryBean(dataSource);
-    }
-
     protected abstract String getHibernateDialect();
 
   /*  @Bean
@@ -64,6 +62,7 @@ public abstract class AbstractJpaRepositoryConfig {
     }*/
 
     @Bean
+    @Autowired
     public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
     }

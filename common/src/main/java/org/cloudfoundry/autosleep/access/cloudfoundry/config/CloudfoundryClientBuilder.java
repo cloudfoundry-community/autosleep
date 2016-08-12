@@ -29,7 +29,6 @@ import org.cloudfoundry.logging.LoggingClient;
 import org.cloudfoundry.spring.client.SpringCloudFoundryClient;
 import org.cloudfoundry.spring.logging.SpringLoggingClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContextException;
 import org.springframework.context.annotation.Bean;
@@ -39,7 +38,6 @@ import org.springframework.core.env.Environment;
 
 @Configuration
 @PropertySource(value = "classpath:cloudfoundry_client.properties", ignoreResourceNotFound = true)
-@EnableAutoConfiguration
 @Slf4j
 public class CloudfoundryClientBuilder {
 
