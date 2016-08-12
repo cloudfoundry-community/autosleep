@@ -34,19 +34,10 @@ import javax.sql.DataSource;
 @Profile("mysql-local")
 public class MySqlLocalDataSourceConfig {
 
-    /*@Bean
-    @ConfigurationProperties(prefix = "local.mysql")
-    public DataSource dataSource() {
-        return DataSourceBuilder.create().build();
-    }*/
-
     @PostConstruct
     public void logProfile() {
-        log.warn("<<<<<<<<<<< loading MYSQL persistance profile >>>>>>>>>>>>>>>>>>");
+        log.warn("<<<<<<<<<<< loading MYSQL persistence profile >>>>>>>>>>>>>>>>>>");
     }
-
-
-
 
     @Value("${mysql.driver}")
     private String driver;

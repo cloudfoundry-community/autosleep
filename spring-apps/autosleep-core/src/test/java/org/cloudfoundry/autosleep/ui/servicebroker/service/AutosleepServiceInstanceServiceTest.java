@@ -20,15 +20,13 @@
 package org.cloudfoundry.autosleep.ui.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
-import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
-import org.cloudfoundry.autosleep.ui.servicebroker.service.AutosleepServiceInstanceService;
-import org.cloudfoundry.autosleep.ui.servicebroker.service.InvalidParameterException;
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
+import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
+import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReaderFactory;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
@@ -220,7 +218,7 @@ public class AutosleepServiceInstanceServiceTest {
                 BeanGenerator.createAppInfoLinkedToService("lkv nàç ")
         ).stream().collect(Collectors.toMap(ApplicationInfo::getUuid,
                 applicationInfo -> applicationInfo));
-        when(applicationRepository.findAll()).thenReturn(applicationInfos.values());
+        when(applicationRepository.findAll()).then(invocationOnMock ->  new ArrayList(applicationInfos.values()));
 
         when(applicationRepository.findOne(anyString()))
                 .then(invocationOnMock -> applicationInfos.get((String) invocationOnMock.getArguments()[0]));

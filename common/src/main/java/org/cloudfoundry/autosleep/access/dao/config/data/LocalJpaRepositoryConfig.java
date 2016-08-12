@@ -44,7 +44,7 @@ public class LocalJpaRepositoryConfig  {
 
     @PostConstruct
     public void logProfile() {
-        log.warn("<<<<<<<<<<<  Warning: loading IN MEMORY persistance profile >>>>>>>>>>>>>>>>>>");
+        log.warn("<<<<<<<<<<<  Warning: loading IN MEMORY persistence profile >>>>>>>>>>>>>>>>>>");
     }
 
 }

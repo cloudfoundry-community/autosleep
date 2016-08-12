@@ -29,7 +29,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
 public interface BindingRepository extends JpaRepository<Binding, String> {
 
     List<Binding> findAllByResourceType(ResourceType resourceType);
