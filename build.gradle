@@ -2,20 +2,15 @@ buildscript {
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
         classpath("org.kt3k.gradle.plugin:coveralls-gradle-plugin:$gradleCoverallsVersion")
-
     }
     repositories {
         mavenLocal()
         jcenter()
-        maven { url 'http://repo.spring.io/release' }
-        maven { url 'http://repo.spring.io/milestone' }
-        maven { url 'http://repo.spring.io/snapshot' }
-        mavenCentral()
     }
 }
 
 plugins {
-    id "io.spring.dependency-management" version "0.6.0.RELEASE"
+    id "io.spring.dependency-management" version "0.5.6.RELEASE"
     id "com.github.hierynomus.license" version "0.12.1"
 }
 
@@ -25,10 +20,6 @@ allprojects {
         jcenter()
         //needed for cf-java-client M release
         maven { url 'http://repo.spring.io/libs-snapshot' }
-        maven { url 'http://repo.spring.io/release' }
-        maven { url 'http://repo.spring.io/milestone' }
-        maven { url 'http://repo.spring.io/snapshot' }
-        mavenCentral()
     }
 }
 
@@ -59,7 +50,6 @@ subprojects {
     }
 
     dependencies {
-
         // Lombok
         compileOnly "org.projectlombok:lombok:$lombokVersion"
 
@@ -94,7 +84,7 @@ subprojects {
     tasks.withType(Jar) { // includes War and Jar
         manifest {
             attributes( "Implementation-Title": baseName,
-                        "Implementation-Version": version)
+                    "Implementation-Version": version)
         }
     }
 
