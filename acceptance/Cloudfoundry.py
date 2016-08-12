@@ -2,6 +2,7 @@ import httplib
 import json
 import logging
 import os
+
 import requests
 from cloudfoundry_client import CloudFoundryClient, InvalidStatusCode
 
@@ -65,8 +66,8 @@ class Cloudfoundry(object):
                         logging.debug('some binding appeared in the meantime. looping again')
                         pass
                     elif ex.status_code == httplib.BAD_GATEWAY and type(ex.body) == dict and \
-                            " can't be deleted during forced enrollment" in ex.body['description']:
-                        logging.info('%s is in forced mode. Updating it as standard' %  instance['metadata']['guid'])
+                                    " can't be deleted during forced enrollment" in ex.body['description']:
+                        logging.info('%s is in forced mode. Updating it as standard' % instance['metadata']['guid'])
                         parameters = dict()
                         parameters['auto-enrollment'] = 'standard'
                         parameters['secret'] = self.service_broker_auth_password
@@ -171,25 +172,28 @@ class Cloudfoundry(object):
             logging.info('unbind_application - ok')
 
     def should_be_bound(self):
+        if self._get_application_binding() is None:
+            raise AssertionError('Application should be bound to service %s' % self.instance_name)
+        else:
+            logging.info('should_be_bound - ok')
+
+    def should_not_be_bound(self):
+        if self._get_application_binding() is not None:
+            raise AssertionError('Application should not be bound to service %s' % self.instance_name)
+        else:
+            logging.info('should_not_be_bound - ok')
+
+    def is_application_bound(self):
+        result = self._get_application_binding() is not None
+        logging.info('is_application_bound - %s', json.dumps(result))
+        return result
+
+    def _get_application_binding(self):
         if self.instance_guid is None:
             raise AssertionError('Please create service instance before testing if bound')
         else:
-            binding = self.client.service_binding.get_first(service_instance_guid=self.instance_guid,
-                                                            app_guid=self.application_guid)
-            if binding is None:
-                raise AssertionError('Application should be bound to service %s' % self.instance_name)
-            else:
-                logging.info('should_be_bound - ok')
-
-    def is_application_bound(self):
-        if self.instance_guid is not None:
-            raise AssertionError('Please create service instance before testing if bound')
-        else:
-            binding = self.client.service_binding.get_first(service_instance_guid=self.instance_guid,
-                                                            app_guid=self.application_guid)
-            result = binding is not None
-            logging.info('is_application_bound - %s', json.dumps(result))
-            return result
+            return self.client.service_binding.get_first(service_instance_guid=self.instance_guid,
+                                                         app_guid=self.application_guid)
 
     def get_bound_applications(self):
         if self.instance_guid is None:
@@ -241,7 +245,8 @@ class Cloudfoundry(object):
         if uri_found is None:
             raise AssertionError('No uri found for application %s', self.application_guid)
         logging.info('ping_application - requesting %s', uri_found)
-        response = requests.get('http://%s%s' % (uri_found, path), timeout=10.0, proxies=self.proxies, headers={"Cache-Control" : "no-cache"})
+        response = requests.get('http://%s%s' % (uri_found, path), timeout=10.0, proxies=self.proxies,
+                                headers={"Cache-Control": "no-cache"})
         logging.info('ping_application - response - %d - %s', response.status_code, response.text)
         if response.status_code != httplib.OK:
             raise AssertionError('Invalid status code %d' % response.status_code)
