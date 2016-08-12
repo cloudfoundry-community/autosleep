@@ -26,8 +26,9 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ProxyMapEntryRepository extends CrudRepository<ProxyMapEntry, String> {
+public interface ProxyMapEntryRepository extends JpaRepository<ProxyMapEntry, String> {
 
     @Modifying
     @Transactional
