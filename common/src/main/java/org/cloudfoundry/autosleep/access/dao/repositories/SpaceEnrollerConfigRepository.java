@@ -20,8 +20,10 @@
 package org.cloudfoundry.autosleep.access.dao.repositories;
 
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface SpaceEnrollerConfigRepository extends CrudRepository<SpaceEnrollerConfig, String> {
+@Repository
+public interface SpaceEnrollerConfigRepository extends JpaRepository<SpaceEnrollerConfig, String> {
 
 }

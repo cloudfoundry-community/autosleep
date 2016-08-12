@@ -20,8 +20,10 @@
 package org.cloudfoundry.autosleep.access.dao.repositories;
 
 import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface ProxyMapEntryRepository extends CrudRepository<ProxyMapEntry, String> {
+@Repository
+public interface ProxyMapEntryRepository extends JpaRepository<ProxyMapEntry, String> {
 
 }
