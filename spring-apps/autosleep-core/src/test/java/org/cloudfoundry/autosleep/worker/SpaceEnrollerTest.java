@@ -20,7 +20,6 @@
 package org.cloudfoundry.autosleep.worker;
 
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
-import org.cloudfoundry.autosleep.worker.SpaceEnroller;
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
@@ -139,7 +138,7 @@ public class SpaceEnrollerTest {
                         SERVICE_ID + "-other"))
                 .collect(Collectors.toList()));
         //And cloudfoundry applications contain the same applications
-        when(cloudFoundryApi.listApplications(eq(SPACE_ID), eq(null)))
+        when(cloudFoundryApi.listAliveApplications(eq(SPACE_ID), eq(null)))
                 .thenReturn(remoteApplicationIds.stream()
                         .map(applicationId -> ApplicationIdentity.builder()
                                 .guid(applicationId)
@@ -171,7 +170,7 @@ public class SpaceEnrollerTest {
                         SERVICE_ID))
                 .collect(Collectors.toList()));
         //And cloudfoundry applications contain the all applications
-        when(cloudFoundryApi.listApplications(eq(SPACE_ID), eq(null)))
+        when(cloudFoundryApi.listAliveApplications(eq(SPACE_ID), eq(null)))
                 .thenReturn(remoteApplicationIds.stream()
                         .map(applicationId -> ApplicationIdentity.builder()
                                 .guid(applicationId)
@@ -212,7 +211,7 @@ public class SpaceEnrollerTest {
                         SERVICE_ID))
                 .collect(Collectors.toList()));
         //And cloudfoundry applications contain the all applications
-        when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
+        when(cloudFoundryApi.listAliveApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenReturn(remoteApplicationIds.stream()
                         .map(applicationId -> ApplicationIdentity.builder()
                                 .guid(applicationId)
@@ -237,7 +236,7 @@ public class SpaceEnrollerTest {
         //And local repository is empty
         when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
         //And list of application returns some applications
-        when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
+        when(cloudFoundryApi.listAliveApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenReturn(remoteApplicationIds.stream()
                         .map(applicationId -> ApplicationIdentity.builder()
                                 .guid(applicationId)
@@ -263,7 +262,7 @@ public class SpaceEnrollerTest {
         //And local repository is empty
         when(applicationRepository.findAll()).thenReturn(Collections.emptyList());
         //And list of application will fail
-        when(cloudFoundryApi.listApplications(eq(SPACE_ID), any(Pattern.class)))
+        when(cloudFoundryApi.listAliveApplications(eq(SPACE_ID), any(Pattern.class)))
                 .thenThrow(new CloudFoundryException(null));
         //When task is run
         spaceEnroller.run();

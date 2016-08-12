@@ -22,9 +22,6 @@ package org.cloudfoundry.autosleep.worker;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
-import org.cloudfoundry.autosleep.worker.ApplicationStopper;
-import org.cloudfoundry.autosleep.worker.SpaceEnroller;
-import org.cloudfoundry.autosleep.worker.WorkerManager;
 import org.cloudfoundry.autosleep.access.dao.model.Binding;
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
@@ -127,7 +124,7 @@ public class WorkerManagerTest {
                 .collect(Collectors.toList());
         when(mockServiceRepo.findAll()).thenReturn(fakeServices);
 
-        when(cloudFoundryApi.listApplications(any(String.class), any(Pattern.class)))
+        when(cloudFoundryApi.listAliveApplications(any(String.class), any(Pattern.class)))
                 .thenReturn(remoteApplications.stream()
                         .map(id -> ApplicationIdentity.builder()
                                 .guid(id.toString())

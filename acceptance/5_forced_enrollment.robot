@@ -28,6 +28,8 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
 
     ## unbind service instance
     Unbind application
+    #Start application cause stopped are ignored
+    Start application
 
 
     ${longPeriod}=      Evaluate  ${DEFAULT_INACTIVITY_IN_S}*3
