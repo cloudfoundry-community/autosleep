@@ -50,7 +50,7 @@ public class EnableJpaConfiguration {
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource, String dialectClassName) {
 
         Map<String, String> properties = new HashMap<>();
-        properties.put(org.hibernate.cfg.Environment.HBM2DDL_AUTO, "update");
+        properties.put(org.hibernate.cfg.Environment.HBM2DDL_AUTO, "validate");
         properties.put(org.hibernate.cfg.Environment.DIALECT, dialectClassName);
         properties.put(org.hibernate.cfg.Environment.SHOW_SQL, "false");
 
