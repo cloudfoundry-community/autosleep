@@ -33,7 +33,7 @@ Test Teardown   Run Keywords  Clean all service data
     ${handle}  async run   Ping Application
     ${handle2}  async run   Ping Application
 
-    Sleep  50 ms  Wait a little so that next call won't arrive in parallel with the other
+    Sleep  400 ms  Wait a little so that next call won't arrive in parallel with the other
 
     #second one will get a 503 error because restart is in progress
     Run Keyword And Expect Error  	Invalid status code 503     Ping Application
