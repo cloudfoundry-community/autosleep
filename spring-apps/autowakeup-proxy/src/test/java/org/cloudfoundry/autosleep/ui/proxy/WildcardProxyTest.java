@@ -52,7 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = WakeUpApplication.class)
 @WebAppConfiguration
-public class WilcardProxyTest {
+public class WildcardProxyTest {
 
     private static final String BODY_VALUE = "test-body";
 
