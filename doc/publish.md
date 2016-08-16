@@ -42,9 +42,9 @@ The properties that are used are:
 For this section, we advice you to take a look at the [documentation](http://docs.cloudfoundry.org/services/api.html#catalog-mgmt)
 
 - __cf.service.broker.id__: the service broker id that is used as a "service unique id". If none provided, it will use ```"autosleep"```. Must be unique in the CF instance across all brokers.
-- __cf.service.broker.name__: the service broker name that is used as a "service offering name" and will appear in the marketplace. If none provided, it will use ```"autosleep"```.
+- __cf.service.broker.name__: the service broker name that is used as a "service offering name" and will appear in the marketplace. If none provided, it will use ```"autosleep"```. Must be unique in the CF instance across all brokers.
 - __cf.service.plan.id__: the service plan id. If none provided, it will use ```"default"```. Must be unique in the CF plans across all brokers.
-- __cf.service.plan.name__: the service plan name that is used and will appear in the marketplace. If none provided, it will use ```"default"```.
+- __cf.service.plan.name__: the service plan name that is used and will appear in the marketplace. If none provided, it will use ```"default"```. Must be unique in the CF instance across all brokers.
 
 #### _Other properties_
 - __cf.security.password.encodingSecret__: the secret used to hash password (optional). If none provided, it will use ```""```.

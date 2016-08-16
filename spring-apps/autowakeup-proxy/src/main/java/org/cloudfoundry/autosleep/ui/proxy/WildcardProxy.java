@@ -20,7 +20,7 @@
 package org.cloudfoundry.autosleep.ui.proxy;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApi;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
 import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
 import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepository;
@@ -34,6 +34,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,9 +43,12 @@ import org.springframework.web.servlet.HandlerMapping;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -60,12 +64,10 @@ public class WildcardProxy {
 
     static final String HEADER_PROTOCOL = "x-forwarded-proto";
 
-    private final RestTemplate restTemplate;
-
-    protected String proxySignature;
+    String proxySignature;
 
     @Autowired
-    private CloudFoundryApi cfApi;
+    private CloudFoundryApiService cfApi;
 
     @Autowired
     private Environment env;
@@ -74,12 +76,10 @@ public class WildcardProxy {
     private ProxyMapEntryRepository proxyMap;
 
     @Autowired
-    private TimeManager timeManager;
+    private RestTemplate restTemplate;
 
     @Autowired
-    WildcardProxy(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
+    private TimeManager timeManager;
 
     private RequestEntity<?> getOutgoingRequest(RequestEntity<?> incoming, URI destination) {
         HttpHeaders headers = new HttpHeaders();
@@ -89,20 +89,31 @@ public class WildcardProxy {
         return new RequestEntity<>(incoming.getBody(), headers, incoming.getMethod(), destination);
     }
 
+    @ExceptionHandler(CloudFoundryException.class)
+    ResponseEntity<String> handleCloudfoundryException(CloudFoundryException error) {
+        log.error("cloudfoundry error", error);
+        return new ResponseEntity<>("Error while calling remote api", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(InterruptedException.class)
+    ResponseEntity<String> handleCloudfoundryException(InterruptedException error) {
+        return new ResponseEntity<>("Internal server error: " + error.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     @PostConstruct
-    void init() throws Exception {
+    void init() throws UnknownHostException, NoSuchAlgorithmException, UnsupportedEncodingException {
         //not stored in Config, because this impl is temporary
         String securityPass = env.getProperty("security.user.password");
         String autosleepHost = InetAddress.getLocalHost().getHostName();
-        this.proxySignature = Arrays.toString(MessageDigest.getInstance("MD5").digest((autosleepHost
-                + securityPass).getBytes("UTF-8")));
+        this.proxySignature = Arrays.toString(MessageDigest.getInstance("MD5")
+                .digest((autosleepHost + securityPass).getBytes("UTF-8")));
 
     }
 
     @RequestMapping(headers = {HEADER_PROTOCOL, HEADER_HOST})
     ResponseEntity<?> proxify(@RequestHeader(HEADER_HOST) String targetHost,
                               RequestEntity<byte[]> incoming,
-                              HttpServletRequest request) throws InterruptedException {
+                              HttpServletRequest request) throws InterruptedException, CloudFoundryException {
 
         List<String> alreadyForwardedHeader = incoming.getHeaders().get(HEADER_FORWARDED);
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
@@ -119,31 +130,24 @@ public class WildcardProxy {
             return new ResponseEntity<>("Sorry, but this page doesn't exist! ", HttpStatus.NOT_FOUND);
         }
 
-        try {
-            String appId = mapEntry.getAppId();
+        String appId = mapEntry.getAppId();
 
-            if (CloudFoundryAppState.STARTED.equals(cfApi.getApplicationState(appId)) && !cfApi.isAppRunning(appId)) {
-                return new ResponseEntity<>("Autosleep is restarting, please retry in few seconds", HttpStatus
-                        .SERVICE_UNAVAILABLE);
-            }
-
-            if (CloudFoundryAppState.STOPPED.equals(cfApi.getApplicationState(appId))) {
-                log.info("Starting app [{}]", appId);
-                cfApi.startApplication(appId);
-                timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
-            }
-            while (!cfApi.isAppRunning(appId)) {
-                log.debug("waiting for app {} restart...", appId);
-                timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
-                //TODO add timeout that would log error and reset mapEntry.isStarting to false
-            }
-            //if exist, to prevent exception when two instances started the app in //
-            proxyMap.deleteIfExists(mapEntry.getHost());
-
-        } catch (CloudFoundryException e) {
-            log.error("Couldn't launch app restart", e);
+        String applicationState = cfApi.getApplicationState(appId);
+        if (CloudFoundryAppState.STARTED.equals(applicationState) && !cfApi.isAppRunning(appId)) {
+            return new ResponseEntity<>("Autosleep is restarting, please retry in few seconds", HttpStatus
+                    .SERVICE_UNAVAILABLE);
+        } else if (CloudFoundryAppState.STOPPED.equals(applicationState)) {
+            log.info("Starting app [{}]", appId);
+            cfApi.startApplication(appId);
+            timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
         }
-
+        while (!cfApi.isAppRunning(appId)) {
+            log.debug("waiting for app {} restart...", appId);
+            timeManager.sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
+            //TODO add timeout that would log error and reset mapEntry.isStarting to false
+        }
+        //if exist, to prevent exception when two instances started the app in //
+        proxyMap.deleteIfExists(mapEntry.getHost());
         String protocol = incoming.getHeaders().get(HEADER_PROTOCOL).get(0);
         URI uri = URI.create(protocol + "://" + targetHost + path);
         RequestEntity<?> outgoing = getOutgoingRequest(incoming, uri);
@@ -151,6 +155,7 @@ public class WildcardProxy {
 
         //if "outgoing" point to a 404, this will trigger a 500. Is this really a pb?
         return this.restTemplate.exchange(outgoing, byte[].class);
+
     }
 
 }
