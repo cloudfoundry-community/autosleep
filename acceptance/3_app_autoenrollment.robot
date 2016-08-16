@@ -38,7 +38,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
 3) Service does not bind stopped applications
     [Documentation]     Check that stopped applications are not bound
     Stop application
-    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	autosleep-despite-route-services-error=true
+    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES} autosleep-despite-route-services-error=true
     Create service instance      ${parameters}
     Sleep                    ${INACTIVITY_IN_S}
     Should not be bound
