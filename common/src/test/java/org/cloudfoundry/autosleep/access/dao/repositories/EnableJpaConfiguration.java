@@ -23,6 +23,7 @@ import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.MySQL5Dialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -39,20 +40,20 @@ import java.util.Map;
 @EnableJpaRepositories(basePackageClasses = SpaceEnrollerConfigRepository.class)
 public class EnableJpaConfiguration {
 
+    @Value("${hibernate.hbm2ddl.auto:validate}")
+    private String hbmdllMode;
+
     @Bean
     public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
     }
 
-
-
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource, String dialectClassName) {
 
         Map<String, String> properties = new HashMap<>();
-        properties.put(org.hibernate.cfg.Environment.HBM2DDL_AUTO, "validate");
+        properties.put(org.hibernate.cfg.Environment.HBM2DDL_AUTO, hbmdllMode);
         properties.put(org.hibernate.cfg.Environment.DIALECT, dialectClassName);
-        properties.put(org.hibernate.cfg.Environment.SHOW_SQL, "false");
 
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
