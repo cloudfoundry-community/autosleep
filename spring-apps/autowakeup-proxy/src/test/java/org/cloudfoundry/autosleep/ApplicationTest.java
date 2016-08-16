@@ -17,12 +17,11 @@
  * limitations under the License.
  */
 
-package org.cloudfoundry.autosleep.ui.proxy;
+package org.cloudfoundry.autosleep;
 
 import javassist.NotFoundException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.WakeUpApplication;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.client.CloudFoundryClient;
@@ -50,19 +49,19 @@ public class ApplicationTest {
     public static class MockClientConfiguration {
 
         @Getter(onMethod = @__(@Bean))
-        private CloudFoundryClient cloudFoundryClient;
+        private CloudFoundryClient cfClient;
 
         @Getter(onMethod = @__(@Bean))
         private LoggingClient logClient;
 
         @PostConstruct
         public void initClientEnvironment() throws NotFoundException {
-            cloudFoundryClient = mock(CloudFoundryClient.class);
+            cfClient = mock(CloudFoundryClient.class);
             logClient = mock(LoggingClient.class);
             System.setProperty(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY,
                     BeanGenerator.getSampleVcapApplication(UUID.randomUUID(), "autosleep",
                             "http://somewhere-else.org"));
-            System.setProperty(Config.EnvKey.CF_ENCODING_SECRET,"thisisthekey");
+            System.setProperty(Config.EnvKey.CF_ENCODING_SECRET, "thisisthekey");
         }
 
     }
