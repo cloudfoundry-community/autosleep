@@ -35,10 +35,12 @@ task jacocoRootReport(type: JacocoReport, group: 'Coverage reports') {
                               'org/cloudfoundry/autosleep/util/**',
                               'org/cloudfoundry/autosleep/util/serializer/**',
                               'org/cloudfoundry/autosleep/access/dao/model/**',  //won't test pojo
-                              'org/cloudfoundry/autosleep/access/dao/config/data/RelationalCloudDataSourceConfig.java', //cloud config
+                              'org/cloudfoundry/autosleep/access/dao/config/data/RelationalCloudDataSourceConfig.class', //cloud config
                               'org/cloudfoundry/autosleep/config/ContextInitializer.class', //won't test cloud context init
                               'org/cloudfoundry/autosleep/Application.class', //skip main
                               'org/cloudfoundry/autosleep/WakeUpApplication.class', //skip main
+                              'org/cloudfoundry/autosleep/ui/security/SecurityManager.class',
+                              'org/cloudfoundry/autosleep/ui/proxy/HttpClientConfiguration.class',
                               'org/cloudfoundry/autosleep/ui/proxy/ProxyController.class' //not implemented for now
              ])
         })
