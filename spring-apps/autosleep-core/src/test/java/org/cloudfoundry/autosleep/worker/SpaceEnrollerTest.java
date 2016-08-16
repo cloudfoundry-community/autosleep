@@ -19,16 +19,14 @@
 
 package org.cloudfoundry.autosleep.worker;
 
-import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
+import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
+import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
-import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
-import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
-import org.cloudfoundry.autosleep.access.cloudfoundry.EntityNotFoundException;
-import org.cloudfoundry.autosleep.access.cloudfoundry.EntityNotFoundException.EntityType;
-import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.junit.Before;
 import org.junit.Test;
@@ -230,7 +228,7 @@ public class SpaceEnrollerTest {
 
     @Test
     public void test_enroller_reschedule_itself_when_remote_error_occurs_on_binding()
-            throws CloudFoundryException, EntityNotFoundException {
+            throws CloudFoundryException {
         //Given the service exist
         when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
         //And local repository is empty
@@ -245,7 +243,7 @@ public class SpaceEnrollerTest {
                         .collect(Collectors.toList()));
         //And binding will throw an error
         doThrow(new CloudFoundryException(
-                new EntityNotFoundException(EntityType.service, SERVICE_ID)))
+                new org.cloudfoundry.client.v2.CloudFoundryException(666, "", "")))
                 .when(cloudFoundryApi)
                 .bindApplications(eq(SERVICE_ID), anyListOf(ApplicationIdentity.class));
         //When task is run
@@ -256,7 +254,7 @@ public class SpaceEnrollerTest {
 
     @Test
     public void test_enroller_reschedule_itself_when_remote_error_occurs_on_remote_application_list()
-            throws CloudFoundryException, EntityNotFoundException {
+            throws CloudFoundryException {
         //Given the service exist
         when(spaceEnrollerConfigRepository.findOne(eq(SERVICE_ID))).thenReturn(spaceEnrollerConfig);
         //And local repository is empty

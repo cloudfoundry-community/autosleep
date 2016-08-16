@@ -20,20 +20,17 @@
 package org.cloudfoundry.autosleep.worker;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.worker.ApplicationStopper;
-import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
-import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepository;
-import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
-import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
-import org.cloudfoundry.autosleep.util.ApplicationLocker;
-import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
-import org.cloudfoundry.autosleep.access.cloudfoundry.EntityNotFoundException;
-import org.cloudfoundry.autosleep.access.cloudfoundry.EntityNotFoundException.EntityType;
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.access.dao.model.ProxyMapEntry;
+import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
+import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepository;
+import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
+import org.cloudfoundry.autosleep.util.ApplicationLocker;
+import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.autosleep.worker.scheduling.Clock;
 import org.junit.Before;
 import org.junit.Test;
@@ -101,7 +98,7 @@ public class ApplicationStopperTest {
      * Build mocks.
      */
     @Before
-    public void buildMocks() throws EntityNotFoundException, CloudFoundryException {
+    public void buildMocks() throws  CloudFoundryException {
         //default
 
         when(application.getGuid()).thenReturn(APP_UID);
@@ -292,7 +289,7 @@ public class ApplicationStopperTest {
         when(cloudFoundryApi.getApplicationActivity(APP_UID))
                 .thenThrow(
                         new CloudFoundryException(
-                                new EntityNotFoundException(EntityType.application, APP_UID)));
+                                new org.cloudfoundry.client.v2.CloudFoundryException(666 , "", "")));
         //when task is run
         applicationStopper.run();
         //then it never stopped application
