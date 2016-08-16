@@ -115,9 +115,9 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         }
     }
 
-    static final int CF_INSTANCES_ERROR = 220001;
+    static final int CF_INSTANCES_ERROR = 220_001;
 
-    static final int CF_STAGING_NOT_FINISHED = 170002;
+    static final int CF_STAGING_NOT_FINISHED = 170_002;
 
     @Autowired
     private CloudFoundryClient cfClient;
@@ -271,10 +271,8 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                     if (throwable instanceof org.cloudfoundry.client.v2.CloudFoundryException
                             && isNoInstanceFoundError((org.cloudfoundry.client.v2.CloudFoundryException) throwable)) {
                         return Mono.just(ApplicationInstancesResponse.builder().build());
-                    } else if (throwable instanceof RuntimeException) {
-                        throw (RuntimeException) throwable;
                     } else {
-                        throw new RuntimeException(throwable);
+                        return Mono.error(throwable);
                     }
                 });
     }
@@ -298,17 +296,27 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
     @Override
     public String getHost(String routeId) throws CloudFoundryException {
-        log.debug("getHost");
-        GetRouteResponse response = cfClient.routes().get(GetRouteRequest.builder().routeId(routeId).build())
-                .get(Config.CF_API_TIMEOUT);
-        RouteEntity routeEntity = response.getEntity();
-        String route = routeEntity.getHost() + routeEntity.getPath();
-        log.debug("route =  {}", route);
+        try {
+            log.debug("getHost");
+            GetRouteResponse response = cfClient.routes()
+                    .get(GetRouteRequest.builder()
+                            .routeId(routeId)
+                            .build())
+                    .get(Config.CF_API_TIMEOUT);
+            RouteEntity routeEntity = response.getEntity();
+            String route = routeEntity.getHost() + routeEntity.getPath();
+            log.debug("route =  {}", route);
 
-        GetDomainResponse domainResponse = cfClient.domains().get(GetDomainRequest.builder().domainId(routeEntity
-                .getDomainId()).build()).get(Config.CF_API_TIMEOUT);
-        log.debug("domain = {}", domainResponse.getEntity());
-        return route + "." + domainResponse.getEntity().getName();
+            GetDomainResponse domainResponse = cfClient.domains()
+                    .get(GetDomainRequest.builder()
+                            .domainId(routeEntity.getDomainId())
+                            .build())
+                    .get(Config.CF_API_TIMEOUT);
+            log.debug("domain = {}", domainResponse.getEntity());
+            return route + "." + domainResponse.getEntity().getName();
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException(r);
+        }
     }
 
     @Override
@@ -413,12 +421,15 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
     @Override
     public void unbind(String bindingId) throws CloudFoundryException {
-        cfClient.serviceBindings()
-                .delete(DeleteServiceBindingRequest.builder()
-                        .serviceBindingId(bindingId)
-                        .build())
-                .get(Config.CF_API_TIMEOUT);
-
+        try {
+            cfClient.serviceBindings()
+                    .delete(DeleteServiceBindingRequest.builder()
+                            .serviceBindingId(bindingId)
+                            .build())
+                    .get(Config.CF_API_TIMEOUT);
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException(r);
+        }
     }
 
     private <T> T waitForResult(CountDownLatch latch, AtomicReference<Throwable> errorEncountered,

@@ -31,8 +31,7 @@ task jacocoRootReport(type: JacocoReport, group: 'Coverage reports') {
     afterEvaluate {
         classDirectories = files(classDirectories.files.collect {
             fileTree(dir: it,
-                    exclude: ['org/cloudfoundry/autosleep/access/cloudfoundry/**', //won't test cf-java-client
-                              'org/cloudfoundry/autosleep/access/cloudfoundry/model/**', //won't test pojo
+                    exclude: ['org/cloudfoundry/autosleep/access/cloudfoundry/model/**', //won't test pojo
                               'org/cloudfoundry/autosleep/access/cloudfoundry/config/**', //won't test config
                               'org/cloudfoundry/autosleep/util/TimeManager.class',
                               'org/cloudfoundry/autosleep/access/dao/model/**',  //won't test pojo
