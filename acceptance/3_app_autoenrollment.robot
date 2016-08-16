@@ -16,7 +16,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
     Check broker is published
     Start application
 	${regex}					Catenate   SEPARATOR=      ^(?:(?!    ${TESTED_APP_NAME}   ).)*$
-    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${regex}	autosleep-despite-route-services-error=true
+    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY} 	exclude-from-auto-enrollment=${regex}	autosleep-despite-route-services-error=true
     Create service instance      ${parameters}
     Wait Until Keyword Succeeds     ${INACTIVITY_IN_S}s  3s  Should be bound
 
@@ -26,7 +26,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
     Clean all service data
     Check broker is published
     Start application
-    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}	autosleep-despite-route-services-error=true
+    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY} 	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}	autosleep-despite-route-services-error=true
     Create service instance      ${parameters}
     ${halfPeriod}=      Evaluate  ${INACTIVITY_IN_S}/2
     Sleep                    ${halfPeriod}
@@ -38,7 +38,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
 3) Service does not bind stopped applications
     [Documentation]     Check that stopped applications are not bound
     Stop application
-    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY}	autosleep-despite-route-services-error=true
+    ${parameters}				Create Dictionary	idle-duration=${INACTIVITY} 	exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}   autosleep-despite-route-services-error=true
     Create service instance      ${parameters}
     Sleep                    ${INACTIVITY_IN_S}
     Should not be bound
