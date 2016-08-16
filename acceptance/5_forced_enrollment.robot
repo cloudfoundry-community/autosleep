@@ -21,7 +21,8 @@ ${DEFAULT_INACTIVITY}  PT${DEFAULT_INACTIVITY_IN_S}S
     [Documentation]     In forced auto-enrollment, check that we can not permamently unbind an app from a service:
     ...                 Applications will be automatically rebound
     # create service instance with noptout
-    ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}  exclude-from-auto-enrollment=${EXCLUDE_ALL_APP_NAMES}  secret=${DEFAULT_SECRET}   auto-enrollment=forced
+    ${regex}					Catenate   SEPARATOR=      ^(?:(?!    ${TESTED_APP_NAME}   ).)*$
+    ${parameters}                Create Dictionary	idle-duration=${DEFAULT_INACTIVITY}  exclude-from-auto-enrollment=${regex}  secret=${DEFAULT_SECRET}   auto-enrollment=forced
     Create service instance      ${parameters}
 
     Bind application
