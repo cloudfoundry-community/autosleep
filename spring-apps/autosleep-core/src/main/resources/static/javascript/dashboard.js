@@ -76,7 +76,7 @@ function listApplications (id){
                         '<dt>Timestamp: </dt><dd>'+(new Date(application.diagnosticInfo.lastLog.timestamp))+'</dd>' +
                         '<dt>Type: </dt><dd>'+application.diagnosticInfo.lastLog.messageType +'</dd>' +
                         '<dt>Message: </dt><dd>'+application.diagnosticInfo.lastLog.message +'</dd>' +
-                        '<dt>Source: </dt><dd>'+application.diagnosticInfo.lastLog.sourceName +'</dd>' +
+                        '<dt>Source: </dt><dd>'+application.diagnosticInfo.lastLog.sourceType +'</dd>' +
                         '</dl>';
                     logElement.click(
                         function(dialogContent){

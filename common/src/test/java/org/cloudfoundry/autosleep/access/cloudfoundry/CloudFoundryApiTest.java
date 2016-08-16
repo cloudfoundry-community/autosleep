@@ -22,7 +22,7 @@ package org.cloudfoundry.autosleep.access.cloudfoundry;
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
 import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.v2.Resource.Metadata;
+import org.cloudfoundry.client.v2.Metadata;
 import org.cloudfoundry.client.v2.applications.ApplicationEntity;
 import org.cloudfoundry.client.v2.applications.ApplicationInstanceInfo;
 import org.cloudfoundry.client.v2.applications.ApplicationInstancesRequest;
@@ -57,15 +57,17 @@ import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
 import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingResponse;
 import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
 import org.cloudfoundry.client.v2.servicebindings.ServiceBindingEntity;
-import org.cloudfoundry.client.v2.servicebindings.ServiceBindings;
+import org.cloudfoundry.client.v2.servicebindings.ServiceBindingsV2;
 import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceToRouteRequest;
 import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceToRouteResponse;
 import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
 import org.cloudfoundry.client.v2.serviceinstances.ServiceInstances;
-import org.cloudfoundry.logging.LogMessage;
-import org.cloudfoundry.logging.LogMessage.MessageType;
-import org.cloudfoundry.logging.LoggingClient;
-import org.cloudfoundry.logging.RecentLogsRequest;
+import org.cloudfoundry.doppler.DopplerClient;
+import org.cloudfoundry.doppler.Envelope;
+import org.cloudfoundry.doppler.EventType;
+import org.cloudfoundry.doppler.LogMessage;
+import org.cloudfoundry.doppler.MessageType;
+import org.cloudfoundry.doppler.RecentLogsRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -78,7 +80,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -105,7 +106,7 @@ public class CloudFoundryApiTest {
     private CloudFoundryApi cloudFoundryApi;
 
     @Mock
-    private LoggingClient logClient;
+    private DopplerClient dopplerClient;
 
     private void mockGetApplication(ApplicationsV2 mockApplications, String name, String applicationState) {
         when(mockApplications.get(any(GetApplicationRequest.class)))
@@ -120,8 +121,8 @@ public class CloudFoundryApiTest {
 
     @Test
     public void test_bind_applications_should_fail() throws CloudFoundryException {
-        ServiceBindings serviceBindings = mock(ServiceBindings.class);
-        when(cfClient.serviceBindings()).thenReturn(serviceBindings);
+        ServiceBindingsV2 serviceBindings = mock(ServiceBindingsV2.class);
+        when(cfClient.serviceBindingsV2()).thenReturn(serviceBindings);
         when(serviceBindings.create(any(CreateServiceBindingRequest.class)))
                 .thenReturn(Mono.error(new RuntimeException("some error")));
         verifyThrown(() -> cloudFoundryApi.bindApplications("service-instance-id",
@@ -134,8 +135,8 @@ public class CloudFoundryApiTest {
 
     @Test
     public void test_bind_applications_should_succeed() throws CloudFoundryException {
-        ServiceBindings serviceBindings = mock(ServiceBindings.class);
-        when(cfClient.serviceBindings()).thenReturn(serviceBindings);
+        ServiceBindingsV2 serviceBindings = mock(ServiceBindingsV2.class);
+        when(cfClient.serviceBindingsV2()).thenReturn(serviceBindings);
         when(serviceBindings.create(any(CreateServiceBindingRequest.class)))
                 .thenReturn(Mono.just(CreateServiceBindingResponse.builder()
                         .metadata(Metadata.builder()
@@ -208,22 +209,26 @@ public class CloudFoundryApiTest {
                         .build()));
 
         long lastTimestamp = System.currentTimeMillis();
-        Function<Integer, LogMessage> logMessageBuilder = diff -> LogMessage.builder()
-                .timestamp(new Date(lastTimestamp - diff))
-                .message("message-" + diff)
-                .applicationId("application-id")
-                .messageType(MessageType.ERR)
-                .sourceId("source-id")
-                .sourceName("source-name")
-                .build();
+        Function<Integer, Envelope> envelopeBuilder = diff -> Envelope.builder()
+                .eventType(EventType.CONTAINER_METRIC)
+                .origin("test-origin")
+                .logMessage(LogMessage.builder()
+                        .timestamp(lastTimestamp - diff)
+                        .message("message-" + diff)
+                        .applicationId("application-id")
+                        .messageType(MessageType.ERR)
+                        .sourceInstance("source-id")
+                        .sourceInstance("source-instance")
+                        .build())
+                .build()     ;
 
-        when(logClient.recent(any(RecentLogsRequest.class)))
+        when(dopplerClient.recentLogs(any(RecentLogsRequest.class)))
                 .thenReturn(Flux.fromIterable(
-                        Arrays.asList(logMessageBuilder.apply(1),
-                                logMessageBuilder.apply(2),
-                                logMessageBuilder.apply(3),
-                                logMessageBuilder.apply(0),
-                                logMessageBuilder.apply(4))
+                        Arrays.asList(envelopeBuilder.apply(1),
+                                envelopeBuilder.apply(2),
+                                envelopeBuilder.apply(3),
+                                envelopeBuilder.apply(0),
+                                envelopeBuilder.apply(4))
                 ));
 
         ApplicationActivity activity = cloudFoundryApi.getApplicationActivity(applicationId);
@@ -580,8 +585,8 @@ public class CloudFoundryApiTest {
 
     @Test
     public void test_unbind_application_should_fail() throws CloudFoundryException {
-        ServiceBindings serviceBindings = mock(ServiceBindings.class);
-        when(cfClient.serviceBindings()).thenReturn(serviceBindings);
+        ServiceBindingsV2 serviceBindings = mock(ServiceBindingsV2.class);
+        when(cfClient.serviceBindingsV2()).thenReturn(serviceBindings);
         when(serviceBindings.delete(any(DeleteServiceBindingRequest.class)))
                 .thenReturn(Mono.error(new RuntimeException("some error")));
         verifyThrown(() -> cloudFoundryApi.unbind("service-binding-id"),
@@ -590,8 +595,8 @@ public class CloudFoundryApiTest {
 
     @Test
     public void test_unbind_application_should_succeed() throws CloudFoundryException {
-        ServiceBindings serviceBindings = mock(ServiceBindings.class);
-        when(cfClient.serviceBindings()).thenReturn(serviceBindings);
+        ServiceBindingsV2 serviceBindings = mock(ServiceBindingsV2.class);
+        when(cfClient.serviceBindingsV2()).thenReturn(serviceBindings);
         when(serviceBindings.delete(any(DeleteServiceBindingRequest.class)))
                 .thenReturn(Mono.empty());
         cloudFoundryApi.unbind("service-binding-id");

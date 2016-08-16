@@ -2,9 +2,10 @@ package org.cloudfoundry.autosleep.access.dao.model;
 
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 public class ApplicationLogTest {
 
@@ -17,8 +18,14 @@ public class ApplicationLogTest {
     @Test
     public void long_messages_get_truncated() {
         String message = generateRandomString(255);
-        ApplicationInfo.DiagnosticInfo.ApplicationLog applicationLog = new ApplicationInfo.DiagnosticInfo
-                .ApplicationLog(message, "sourcetype", "sourceid", "sourceName", 0L);
+        ApplicationInfo.DiagnosticInfo.ApplicationLog applicationLog = ApplicationInfo.DiagnosticInfo
+                .ApplicationLog.builder()
+                .message(message)
+                .messageType("messageType")
+                .sourceInstance("sourceInstance")
+                .sourceType("sourceType")
+                .timestamp(Instant.EPOCH)
+                .build();
         assertTrue(applicationLog.getMessage().length() == 254);
     }
 

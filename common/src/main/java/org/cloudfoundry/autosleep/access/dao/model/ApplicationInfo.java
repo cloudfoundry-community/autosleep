@@ -112,7 +112,7 @@ public class ApplicationInfo {
         @Embeddable
         @EqualsAndHashCode
         @NoArgsConstructor(access = AccessLevel.PRIVATE)
-        @ToString(of = {"timestamp", "messageType", "sourceId", "sourceName"})
+        @ToString(of = {"timestamp", "messageType", "sourceInstance", "sourceType"})
         public static class ApplicationLog {
 
             @JsonSerialize
@@ -125,11 +125,11 @@ public class ApplicationInfo {
 
             @JsonSerialize
             @Column(name = "log_source_id")
-            private String sourceId;
+            private String sourceInstance;
 
             @JsonSerialize
             @Column(name = "log_source_name")
-            private String sourceName;
+            private String sourceType;
 
             @JsonSerialize(using = InstantSerializer.class)
             @JsonDeserialize(using = InstantDeserializer.class)
@@ -140,14 +140,14 @@ public class ApplicationInfo {
             @Builder
             ApplicationLog(String message,
                            String messageType,
-                           String sourceId,
-                           String sourceName,
-                           long timestamp) {
+                           String sourceInstance,
+                           String sourceType,
+                           Instant timestamp) {
                 this.setMessage(message);
                 this.messageType = messageType;
-                this.sourceId = sourceId;
-                this.sourceName = sourceName;
-                this.timestamp = Instant.ofEpochMilli(timestamp);
+                this.sourceInstance = sourceInstance;
+                this.sourceType = sourceType;
+                this.timestamp = timestamp;
             }
 
             private void setMessage(String message) {

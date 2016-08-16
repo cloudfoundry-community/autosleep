@@ -54,10 +54,8 @@ subprojects {
         compileOnly "org.projectlombok:lombok:$lombokVersion"
 
         //CF java client library and dependencies
-        compile("org.cloudfoundry:cloudfoundry-client-spring:$cfClientLibVersion")
-
+        compile("org.cloudfoundry:cloudfoundry-client-reactor:$cfClientLibVersion")
         compile("io.projectreactor:reactor-core:$reactorCoreVersion")
-        compile "com.google.protobuf:protobuf-java:$protobufVersion"
 
         //Logs
         compile "org.slf4j:slf4j-api"

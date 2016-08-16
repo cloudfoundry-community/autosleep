@@ -118,7 +118,13 @@ class ApplicationStopper extends AbstractPeriodicTask {
         Duration rescheduleDelta = null;
         try {
             ApplicationActivity applicationActivity = cloudFoundryApi.getApplicationActivity(appUid);
-            log.debug("Checking on app {} state", appUid);
+            if (applicationActivity.getLastLog() == null) {
+                log.debug("Checking on app {} state - no log found", appUid);
+            } else {
+                log.debug("Checking on app {} state - last log timestamp={}, message={}", appUid,
+                        applicationActivity.getLastLog().getTimestamp(),
+                        applicationActivity.getLastLog().getMessage());
+            }
 
             applicationInfo.updateDiagnosticInfo(
                     applicationActivity.getLastLog(),
