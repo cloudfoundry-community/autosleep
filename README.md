@@ -1,10 +1,10 @@
 # Autosleep 
-[![Build Status](https://travis-ci.org/Orange-OpenSource/autosleep.svg?branch=develop)](https://travis-ci.org/Orange-OpenSource/autosleep) 
-[![Coverage Status](https://coveralls.io/repos/github/Orange-OpenSource/autosleep/badge.svg?branch=develop)](https://coveralls.io/github/Orange-OpenSource/autosleep?branch=develop) 
-[![](https://img.shields.io/github/issues/Orange-OpenSource/autosleep.svg)](https://github.com/Orange-OpenSource/autosleep/issues)
+[![Build Status](https://travis-ci.org/cloudfoundry-community/autosleep.svg?branch=develop)](https://travis-ci.org/cloudfoundry-community/autosleep) 
+[![Coverage Status](https://coveralls.io/repos/github/cloudfoundry-community/autosleep/badge.svg?branch=develop)](https://coveralls.io/github/cloudfoundry-community/autosleep?branch=develop)
+[![](https://img.shields.io/github/issues/cloudfoundry-community/autosleep.svg)](https://github.com/cloudfoundry-community/autosleep/issues)
 
-[![license](https://img.shields.io/github/license/Orange-OpenSource/autosleep.svg)](https://github.com/Orange-OpenSource/autosleep/blob/develop/LICENSE) 
-[![releases](https://img.shields.io/github/release/Orange-OpenSource/autosleep.svg)](https://github.com/Orange-OpenSource/autosleep/releases)
+[![license](https://img.shields.io/github/license/cloudfoundry-community/autosleep.svg)](https://github.com/cloudfoundry-community/autosleep/blob/develop/LICENSE) 
+[![releases](https://img.shields.io/github/release/cloudfoundry-community/autosleep.svg)](https://github.com/cloudfoundry-community/autosleep/releases)
 
 
 # Goal
@@ -26,7 +26,7 @@ For now we provide a [service broker](https://docs.cloudfoundry.org/services/man
 * a service dashboard for users to understand behavior of the service (such as time to sleep or current enrollment status)
 * automatic restart on incoming HTTP trafic 
 
-Download [latest release](https://github.com/Orange-OpenSource/autosleep/releases/) if you want to give it a try, or [build from sources](/doc/build.md)
+Download [latest release](https://github.com/cloudfoundry-community/autosleep/releases/) if you want to give it a try, or [build from sources](/doc/build.md)
 
 ### What we are working on:
 
@@ -129,7 +129,7 @@ By setting the value of this parameter to `true`, you skip the errors sent by *r
 If you wish to build the app yourself, go to [build documentation](doc/build.md).
 
 ## How to deploy and publish
-Once you built the application or if you got it from [latest release](https://github.com/Orange-OpenSource/autosleep/releases/), go to [publish documentation](doc/publish.md).
+Once you built the application or if you got it from [latest release](https://github.com/cloudfoundry-community/autosleep/releases/), go to [publish documentation](doc/publish.md).
 
 # How to test
 Acceptance tests are available in the source code, as robotframework tests. More information [here](doc/acceptance.md).
