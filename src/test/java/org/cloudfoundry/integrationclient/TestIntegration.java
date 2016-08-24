@@ -169,7 +169,7 @@ public class TestIntegration {
 		log.debug("get_application_subscribe");
 		TestSubscriber<GetApplicationResponse> subscriber = new TestSubscriber<>();
 
-		subscriber.assertThat(response -> {
+		subscriber.expectThat(response -> {
 			assertThat(response, is(notNullValue()));
 			assertThat(response.getMetadata(), is(notNullValue()));
 			assertThat(response.getEntity(), is(notNullValue()));
@@ -188,7 +188,7 @@ public class TestIntegration {
 		log.debug("test_stop - start");
 		log.debug("Stopping application {}", applicationId);
 		TestSubscriber<UpdateApplicationResponse> subscriber = new TestSubscriber<>();
-		subscriber.assertThat(response -> {
+		subscriber.expectThat(response -> {
 			assertThat(response, is(notNullValue()));
 			assertThat(response.getMetadata(), is(notNullValue()));
 			assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
@@ -208,7 +208,7 @@ public class TestIntegration {
 		log.debug("test_start - start");
 		log.debug("Starting application {}", applicationId);
 		TestSubscriber<UpdateApplicationResponse> subscriber = new TestSubscriber<>();
-		subscriber.assertThat(response -> {
+		subscriber.expectThat(response -> {
 			assertThat(response, is(notNullValue()));
 			assertThat(response.getMetadata(), is(notNullValue()));
 			assertThat(response.getMetadata().getId(), is(equalTo(applicationId)));
@@ -225,7 +225,7 @@ public class TestIntegration {
 	public void test_list_by_space() throws InterruptedException {
 
 		TestSubscriber<ListApplicationsResponse> subscriber = new TestSubscriber<>();
-		subscriber.assertThat(response -> {
+		subscriber.expectThat(response -> {
 			assertThat(response, is(notNullValue()));
 			assertThat(response.getResources(), is(notNullValue()));
 			response.getResources().stream()
@@ -306,7 +306,7 @@ public class TestIntegration {
 	@Test
 	public void get_last_events() throws InterruptedException {
 		TestSubscriber<ListEventsResponse> subscriber = new TestSubscriber<>();
-		subscriber.assertThat(response -> {
+		subscriber.expectThat(response -> {
 			assertThat(response, is(notNullValue()));
 			assertThat(response.getResources(), is(notNullValue()));
 			response.getResources().stream()
@@ -327,7 +327,7 @@ public class TestIntegration {
 	@Test
 	public void test_get_service_instance() throws InterruptedException {
 		TestSubscriber<GetServiceInstanceResponse> subscriber = new TestSubscriber<>();
-		subscriber.assertThat(response -> {
+		subscriber.expectThat(response -> {
 			assertThat(response, is(notNullValue()));
 			assertThat(response.getMetadata().getId(), is(equalTo(serviceInstanceId)));
 		});
@@ -372,7 +372,7 @@ public class TestIntegration {
 	public void test_get_app_routes() throws InterruptedException {
 
 		TestSubscriber<ListApplicationRoutesResponse> subscriber = new TestSubscriber<>();
-		subscriber.assertThat(response -> {
+		subscriber.expectThat(response -> {
 			assertThat(response, is(notNullValue()));
 			assertThat(response.getResources(), is(notNullValue()));
 			response.getResources().stream()
