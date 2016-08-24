@@ -23,4 +23,6 @@ Acceptance tests are currently using [robotframework](http://robotframework.org)
 
 `pybot {ACCEPTANCE_TEST_DIRECTORY}`
 
+## Sample test report
 
+See http://cloudfoundry-community.github.io/autosleep/
