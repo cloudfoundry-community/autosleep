@@ -5,7 +5,7 @@
 
 [![license](https://img.shields.io/github/license/cloudfoundry-community/autosleep.svg)](https://github.com/cloudfoundry-community/autosleep/blob/develop/LICENSE) 
 [![releases](https://img.shields.io/github/release/cloudfoundry-community/autosleep.svg)](https://github.com/cloudfoundry-community/autosleep/releases)
-
+[Slack channel](https://cloudfoundry.slack.com/messages/autosleep/) 
 
 # Goal
 The aim of the auto-sleep project is to give the ability for Cloud Foundry users to automatically have their app stopped after a given period of inactivity, and then automatically started when accessed through traffic received on their routes.
