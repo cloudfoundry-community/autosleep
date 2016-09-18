@@ -1,4 +1,18 @@
 databaseChangeLog:
+- objectQuotingStrategy: QUOTE_ALL_OBJECTS
+- property:
+    name: boolean.type
+    value: BOOLEAN
+    dbms: postgresql
+- property:
+    name: boolean.type
+    value: BIT(1)
+    dbms: mysql
+- property:
+    name: boolean.type
+    value: BIT(1)
+    dbms: h2
+
 - changeSet:
     id: 1
     author: Arnaud Ruffin
@@ -94,7 +108,7 @@ databaseChangeLog:
             type: BLOB
         - column:
             name: forcedAutoEnrollment
-            type: BIT(1)
+            type: ${boolean.type}
             constraints:
                 primaryKey: true
                 nullable: false
@@ -118,7 +132,7 @@ databaseChangeLog:
             type: VARCHAR(255)
         - column:
             name: ignoreRouteServiceError
-            type: BIT(1)
+            type: ${boolean.type}
             defaultValueBoolean: false
             constraints:
                 nullable: false
@@ -134,3 +148,105 @@ databaseChangeLog:
         - column:
             name: appId
             type: VARCHAR(255)
+- changeSet:
+    id: 2
+    author: SAP
+    changes:
+    - renameColumn:
+        tableName: Binding
+        oldColumnName: serviceBindingId
+        newColumnName: service_binding_id
+        columnDataType: VARCHAR(255)
+    - renameColumn:
+        tableName: Binding
+        oldColumnName: resourceId
+        newColumnName: resource_id
+        columnDataType: VARCHAR(255)
+    - renameColumn:
+        tableName: Binding
+        oldColumnName: resourceType
+        newColumnName: resource_type
+        columnDataType: INT
+    - renameColumn:
+        tableName: Binding
+        oldColumnName: serviceInstanceId
+        newColumnName: service_instance_id
+        columnDataType: VARCHAR(255)
+    - renameColumn:
+        tableName: ApplicationInfo
+        oldColumnName: appState
+        newColumnName: app_state
+        columnDataType: VARCHAR(255)
+    - renameColumn:
+        tableName: ApplicationInfo
+        oldColumnName: hibernateWorkaround
+        newColumnName: hibernate_workaround
+        columnDataType: INT
+    - renameColumn:
+        tableName: ApplicationInfo
+        oldColumnName: lastCheck
+        newColumnName: last_check
+        columnDataType: BLOB
+    - renameColumn:
+        tableName: ApplicationInfo
+        oldColumnName: nextCheck
+        newColumnName: next_check
+        columnDataType: BLOB
+    - renameColumn:
+        tableName: SpaceEnrollerConfig
+        oldColumnName: excludeFromAutoEnrollment
+        newColumnName: exclude_from_auto_enrollment
+        columnDataType: BLOB
+    - renameColumn:
+        tableName: SpaceEnrollerConfig
+        oldColumnName: forcedAutoEnrollment
+        newColumnName: forced_auto_enrollment
+        columnDataType: ${boolean.type}
+    - renameColumn:
+        tableName: SpaceEnrollerConfig
+        oldColumnName: idleDuration
+        newColumnName: idle_duration
+        columnDataType: BLOB
+    - renameColumn:
+        tableName: SpaceEnrollerConfig
+        oldColumnName: organizationId
+        newColumnName: organization_id
+        columnDataType: VARCHAR(255)
+    - renameColumn:
+        tableName: SpaceEnrollerConfig
+        oldColumnName: planId
+        newColumnName: plan_id
+        columnDataType: VARCHAR(255)
+    - renameColumn:
+        tableName: SpaceEnrollerConfig
+        oldColumnName: serviceDefinitionId
+        newColumnName: service_definition_id
+        columnDataType: VARCHAR(255)
+    - renameColumn:
+        tableName: SpaceEnrollerConfig
+        oldColumnName: spaceId
+        newColumnName: space_id
+        columnDataType: VARCHAR(255)
+    - renameColumn:
+        tableName: SpaceEnrollerConfig
+        oldColumnName: ignoreRouteServiceError
+        newColumnName: ignore_route_service_error
+        columnDataType: ${boolean.type}
+    - renameColumn:
+        tableName: ProxyMapEntry
+        oldColumnName: appId
+        newColumnName: app_id
+        columnDataType: VARCHAR(255)
+    - renameTable:
+        oldTableName: Binding
+        newTableName: binding
+    - renameTable:
+        oldTableName: ApplicationInfo
+        newTableName: application_info
+    - renameTable:
+        oldTableName: SpaceEnrollerConfig
+        newTableName: space_enroller_config
+    - renameTable:
+        oldTableName: ProxyMapEntry
+        newTableName: proxy_map_entry
+                
