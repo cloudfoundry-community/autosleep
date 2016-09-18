@@ -15,7 +15,9 @@ Prerequisites:
    * on public CF instances: favor a user with cloudcontroller.read and cloudcontroller.write scopes, and role "SpaceDevelopper" on each the enrolleable autosleep space.
    * on private CF instance: favor an admin user with cloudcontroller.admin scope
 * (optional) a UAA OAuth client, with cloudcontroller.read and cloudcontroller.write scopes
-* a mysql service instance (with min 10 connections see [related issue 200](https://github.com/Orange-OpenSource/autosleep/issues/200))
+* a supported DB service instance which could be either,
+   * a mysql service instance (with min 10 connections see [related issue 200](https://github.com/Orange-OpenSource/autosleep/issues/200)), or
+   * a postgresql service instance
 * a wildcard route for each of the domains with routes that will trigger autowake up of apps.
 * (optional) a dedicated space to deploy autosleep and autowakeup apps on which CF users don't have acces.s
 

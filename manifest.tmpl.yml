@@ -19,7 +19,7 @@ env:
     -Dlogging.level.org.springframework.web.filter.CommonsRequestLoggingFilter=ERROR
 
 services:
-  - mysql
+  - <mysql or postgresql>
 applications:
 - name: autowakeup-app
   memory: 1G
