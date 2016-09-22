@@ -25,11 +25,13 @@ import org.springframework.cloud.CloudException;
 import org.springframework.cloud.CloudFactory;
 import org.springframework.cloud.service.ServiceInfo;
 import org.springframework.cloud.service.common.MysqlServiceInfo;
+import org.springframework.cloud.service.common.PostgresqlServiceInfo;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -53,10 +55,11 @@ public class ContextInitializer implements ApplicationContextInitializer<Generic
     private static final Map<Class<? extends ServiceInfo>, String> authorizedPersistenceProfiles =
             new HashMap<>();
 
-    private static final List<String> validLocalProfiles = Collections.singletonList("mysql");
+    private static final List<String> validLocalProfiles = Arrays.asList("mysql", "postgresql");
 
     static {
         authorizedPersistenceProfiles.put(MysqlServiceInfo.class, "mysql");
+        authorizedPersistenceProfiles.put(PostgresqlServiceInfo.class, "postgresql");
     }
 
     private String[] createProfileNames(String baseName, String suffix) {
