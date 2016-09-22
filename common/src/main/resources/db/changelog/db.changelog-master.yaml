@@ -1,18 +1,5 @@
 databaseChangeLog:
 - objectQuotingStrategy: QUOTE_ALL_OBJECTS
-- property:
-    name: boolean.type
-    value: BOOLEAN
-    dbms: postgresql
-- property:
-    name: boolean.type
-    value: BIT(1)
-    dbms: mysql
-- property:
-    name: boolean.type
-    value: BIT(1)
-    dbms: h2
-
 - changeSet:
     id: 1
     author: Arnaud Ruffin
@@ -108,7 +95,7 @@ databaseChangeLog:
             type: BLOB
         - column:
             name: forcedAutoEnrollment
-            type: ${boolean.type}
+            type: BOOLEAN
             constraints:
                 primaryKey: true
                 nullable: false
@@ -132,7 +119,7 @@ databaseChangeLog:
             type: VARCHAR(255)
         - column:
             name: ignoreRouteServiceError
-            type: ${boolean.type}
+            type: BOOLEAN
             defaultValueBoolean: false
             constraints:
                 nullable: false
@@ -201,7 +188,7 @@ databaseChangeLog:
         tableName: SpaceEnrollerConfig
         oldColumnName: forcedAutoEnrollment
         newColumnName: forced_auto_enrollment
-        columnDataType: ${boolean.type}
+        columnDataType: BOOLEAN
     - renameColumn:
         tableName: SpaceEnrollerConfig
         oldColumnName: idleDuration
@@ -231,7 +218,7 @@ databaseChangeLog:
         tableName: SpaceEnrollerConfig
         oldColumnName: ignoreRouteServiceError
         newColumnName: ignore_route_service_error
-        columnDataType: ${boolean.type}
+        columnDataType: BOOLEAN
     - renameColumn:
         tableName: ProxyMapEntry
         oldColumnName: appId
