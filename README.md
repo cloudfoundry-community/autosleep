@@ -83,7 +83,7 @@ Duration after which bound applications will be considered as inactive. The time
 #### *exclude-from-auto-enrollment* 
 If you don't want all the application to be automatically bound, you can set this parameter with a regular expression to filter on application names.
 
-- *Example:*`'{"excludeAppNameRegExp": ".*"}'`
+- *Example:*`'{"exclude-from-auto-enrollment": ".*"}'`
  wouldn't automatically bind any application in the space. Application would have to be bound manually.
 - *Default value :*  none (every app in space will be bound).
 
