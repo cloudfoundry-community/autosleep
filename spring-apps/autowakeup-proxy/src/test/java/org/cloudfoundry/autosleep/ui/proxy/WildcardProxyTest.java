@@ -141,7 +141,7 @@ public class WildcardProxyTest {
     }
 
     @Test
-    public void should_forward_traffic_is_applications_restarted() throws Exception {
+    public void should_forward_traffic_if_application_restarted() throws Exception {
         //GIVEN that we have a map route in database (for stopped app)
         when(proxyMap.findOne(HOST_TEST_VALUE)).thenReturn(ProxyMapEntry.builder()
                 .appId(APP_ID)
@@ -167,7 +167,7 @@ public class WildcardProxyTest {
 
         // and start was not called
         verify(cfApi, never()).startApplication(APP_ID);
-        // and swe never wait for aanything
+        // and we never wait for anything
         verify(timeManager, never()).sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
         //and we removed the application from repository
         verify(proxyMap, times(1)).deleteIfExists(HOST_TEST_VALUE);
