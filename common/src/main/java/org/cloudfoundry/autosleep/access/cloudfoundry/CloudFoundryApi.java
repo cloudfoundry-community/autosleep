@@ -343,7 +343,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     @Override
     public List<ApplicationIdentity> listAliveApplications(String spaceUuid, Pattern excludeNames) throws
             CloudFoundryException {
-        log.debug("listAliveApplications");
+        log.debug("listAliveApplications from space_guid:" + spaceUuid);
         try {
             return Mono.just(spaceUuid)
                     .then(spaceId -> this.cfClient
@@ -367,7 +367,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                     .collect(ArrayList<ApplicationIdentity>::new, ArrayList::add)
                     .get(Config.CF_API_TIMEOUT);
         } catch (RuntimeException r) {
-            throw new CloudFoundryException(r);
+            throw new CloudFoundryException("failed listing applications from space_id: " + spaceUuid, r);
         }
     }
 
