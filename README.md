@@ -5,7 +5,7 @@
 
 [![license](https://img.shields.io/github/license/cloudfoundry-community/autosleep.svg)](https://github.com/cloudfoundry-community/autosleep/blob/develop/LICENSE) 
 [![releases](https://img.shields.io/github/release/cloudfoundry-community/autosleep.svg)](https://github.com/cloudfoundry-community/autosleep/releases)
-
+[Slack channel](https://cloudfoundry.slack.com/messages/autosleep/) 
 
 # Goal
 The aim of the auto-sleep project is to give the ability for Cloud Foundry users to automatically have their app stopped after a given period of inactivity, and then automatically started when accessed through traffic received on their routes.
@@ -83,7 +83,7 @@ Duration after which bound applications will be considered as inactive. The time
 #### *exclude-from-auto-enrollment* 
 If you don't want all the application to be automatically bound, you can set this parameter with a regular expression to filter on application names.
 
-- *Example:*`'{"excludeAppNameRegExp": ".*"}'`
+- *Example:*`'{"exclude-from-auto-enrollment": ".*"}'`
  wouldn't automatically bind any application in the space. Application would have to be bound manually.
 - *Default value :*  none (every app in space will be bound).
 

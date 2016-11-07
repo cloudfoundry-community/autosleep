@@ -134,7 +134,8 @@ public class WildcardProxy {
 
         String applicationState = cfApi.getApplicationState(appId);
         if (CloudFoundryAppState.STARTED.equals(applicationState) && !cfApi.isAppRunning(appId)) {
-            return new ResponseEntity<>("Autosleep is restarting, please retry in few seconds", HttpStatus
+            log.info("Rejecting traffic for starting app [{}]", appId);
+            return new ResponseEntity<>("The app is starting, please retry in few seconds", HttpStatus
                     .SERVICE_UNAVAILABLE);
         } else if (CloudFoundryAppState.STOPPED.equals(applicationState)) {
             log.info("Starting app [{}]", appId);
