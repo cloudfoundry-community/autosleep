@@ -10,8 +10,10 @@ cache:
     - $HOME/.gradle/wrapper/
 services:
   - mysql
+  - postgresql
 before_script:
   - mysql -e "create database IF NOT EXISTS autosleep;" -uroot
+  - psql -c 'create database autosleep;' -U postgres
 script:
   - ./gradlew check -Dintegration-test=true
 branches:
