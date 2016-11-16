@@ -71,7 +71,7 @@ subprojects {
         runtime "com.h2database:h2"
         compile "commons-dbcp:commons-dbcp"
         compile "org.hibernate:hibernate-entitymanager"
-        compile "org.liquibase:liquibase-core:3.5.3"
+        compile "org.liquibase:liquibase-core:${liquibaseCoreVersion}"
 
         //org.springframework.boot.autoconfigure needed in common for now... TODO move to spring-apps
         compile "org.springframework.boot:spring-boot-starter-actuator"
