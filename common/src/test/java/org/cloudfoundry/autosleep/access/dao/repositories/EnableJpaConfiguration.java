@@ -19,9 +19,16 @@
 
 package org.cloudfoundry.autosleep.access.dao.repositories;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+
 import org.cloudfoundry.autosleep.access.dao.model.SpaceEnrollerConfig;
 import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.MySQL5Dialect;
+import org.hibernate.dialect.PostgreSQL9Dialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,10 +38,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 
-import javax.persistence.EntityManagerFactory;
-import javax.sql.DataSource;
-import java.util.HashMap;
-import java.util.Map;
 
 @Configuration
 @EnableJpaRepositories(basePackageClasses = SpaceEnrollerConfigRepository.class)
@@ -83,4 +86,15 @@ public class EnableJpaConfiguration {
             return MySQL5Dialect.class.getName();
         }
     }
+
+    @Configuration
+    @Profile("postgresql")
+    static class PostgresqlDialectLoader {
+
+        @Bean
+        String dialectClassName() {
+            return PostgreSQL9Dialect.class.getName();
+        }
+    }
+        
 }
