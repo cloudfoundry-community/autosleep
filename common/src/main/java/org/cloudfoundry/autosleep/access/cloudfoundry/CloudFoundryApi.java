@@ -159,7 +159,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     private ApplicationInfo.DiagnosticInfo.ApplicationLog buildAppLog(Envelope envelope) {
         return ApplicationInfo.DiagnosticInfo.ApplicationLog.builder()
                 .message(envelope.getLogMessage().getMessage())
-                .timestamp(Instant.ofEpochMilli(getEnvelopeTimestamp(envelope)))
+                .timestamp(Instant.ofEpochSecond(0, getEnvelopeTimestampNanos(envelope)))
                 .messageType(envelope.getLogMessage().getMessageType() != null ?
                         envelope.getLogMessage().getMessageType().name() : null)
                 .sourceType(envelope.getLogMessage().getSourceType())
@@ -287,9 +287,9 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         }
     }
 
-    private Long getEnvelopeTimestamp(Envelope envelope) {
+    private Long getEnvelopeTimestampNanos(Envelope envelope) {
         return (envelope.getLogMessage().getTimestamp() != null ? envelope.getLogMessage().getTimestamp()
-                : envelope.getTimestamp()) / 1_000_000;
+                : envelope.getTimestamp()) ;
     }
 
     @Override
@@ -319,7 +319,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
     private Envelope getNewestEnvelope(Envelope previous, Envelope current) {
         //for first iteration
-        if (getEnvelopeTimestamp(previous) < getEnvelopeTimestamp(current)) {
+        if (getEnvelopeTimestampNanos(previous) < getEnvelopeTimestampNanos(current)) {
             return current;
         } else {
             return previous;

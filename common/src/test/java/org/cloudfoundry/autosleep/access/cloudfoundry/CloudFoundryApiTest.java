@@ -208,18 +208,19 @@ public class CloudFoundryApiTest {
                                 .build())
                         .build()));
 
-        long lastTimestamp = System.currentTimeMillis();
+        long lastTimestampNanos = System.nanoTime();
         Function<Integer, Envelope> envelopeBuilder = diff -> Envelope.builder()
                 .eventType(EventType.CONTAINER_METRIC)
                 .origin("test-origin")
                 .logMessage(LogMessage.builder()
-                        .timestamp(lastTimestamp - diff)
+                        .timestamp(lastTimestampNanos - diff) //timestamp at which the log event was written by the app
                         .message("message-" + diff)
                         .applicationId("application-id")
                         .messageType(MessageType.ERR)
                         .sourceInstance("source-id")
                         .sourceInstance("source-instance")
                         .build())
+                .timestamp(lastTimestampNanos - diff) //envelope timestamp
                 .build()     ;
 
         when(dopplerClient.recentLogs(any(RecentLogsRequest.class)))
@@ -239,7 +240,7 @@ public class CloudFoundryApiTest {
         assertNotNull(activity.getLastEvent());
         assertEquals(eventTimestamp, activity.getLastEvent().getTimestamp());
         assertNotNull(activity.getLastLog());
-        assertEquals(Instant.ofEpochMilli(lastTimestamp), activity.getLastLog().getTimestamp());
+        assertEquals(Instant.ofEpochSecond(0, lastTimestampNanos), activity.getLastLog().getTimestamp());
     }
 
     @Test
