@@ -19,11 +19,11 @@
   ~ limitations under the License.
   -->
 
-<configuration debug="true">
+<configuration debug="true" packagingData="true">
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <Target>System.out</Target>
         <encoder>
-            <pattern>%-5level - %thread - %logger{5}\(%line\) - %message%n</pattern>
+            <pattern>%-5level - %thread - %logger{5}\(%line\) - %message%n %rEx{full}</pattern>
         </encoder>
     </appender>
     <logger name="org.cloudfoundry.autosleep">
