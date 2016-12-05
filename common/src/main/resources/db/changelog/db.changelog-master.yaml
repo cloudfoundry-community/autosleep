@@ -236,4 +236,28 @@ databaseChangeLog:
     - renameTable:
         oldTableName: ProxyMapEntry
         newTableName: proxy_map_entry
-                
+- changeSet:
+    id: 3
+    author: SAP
+    changes:
+    - createTable:
+        tableName: enrolled_organization_config
+        columns:
+        - column:
+            name: organization_id
+            type: VARCHAR(255)
+            constraints:
+                primaryKey: true
+        - column:
+            name: idle_duration
+            type: BLOB
+        - column:
+            name: exclude_from_auto_enrollment
+            type: BLOB
+        - column:
+            name: auto_enrollment
+            type: INT
+        - column:
+            name: state
+            type: INT
+            
