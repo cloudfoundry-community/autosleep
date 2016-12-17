@@ -241,10 +241,10 @@ databaseChangeLog:
     author: SAP
     changes:
     - createTable:
-        tableName: enrolled_organization_config
+        tableName: org_enrollment_config
         columns:
         - column:
-            name: organization_id
+            name: organization_guid
             type: VARCHAR(255)
             constraints:
                 primaryKey: true
@@ -252,7 +252,7 @@ databaseChangeLog:
             name: idle_duration
             type: BLOB
         - column:
-            name: exclude_from_auto_enrollment
+            name: exclude_spaces_from_auto_enrollment
             type: BLOB
         - column:
             name: auto_enrollment

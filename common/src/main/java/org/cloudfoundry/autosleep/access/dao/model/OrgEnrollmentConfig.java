@@ -10,8 +10,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Lob;
 
-import org.cloudfoundry.autosleep.config.Config.OrgEnrollmentParameters;
 import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
+import org.cloudfoundry.autosleep.config.EnrollmentConfig.EnrollmentParameters;
 import org.cloudfoundry.autosleep.util.serializer.PatternDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.PatternSerializer;
 
@@ -35,29 +35,29 @@ import lombok.ToString;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString
-@EqualsAndHashCode(of = {"organizationId"})
+@EqualsAndHashCode(of = {"organizationGuid"})
 @Entity
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class EnrolledOrganizationConfig {
-    
+public class OrgEnrollmentConfig {
+
     @Id
     @JsonProperty
-    private String organizationId;
-    
+    private String organizationGuid;
+
     @JsonProperty
     private Duration idleDuration;
-    
+
     @JsonSerialize(using = PatternSerializer.class)
     @JsonDeserialize(using = PatternDeserializer.class)
     @Lob
     @Column
     @JsonProperty
-    private Pattern excludeFromAutoEnrollment;
-    
+    private Pattern excludeSpacesFromAutoEnrollment;
+
     @Enumerated(EnumType.ORDINAL)
-    private OrgEnrollmentParameters.EnrolledState state;
-    
+    private EnrollmentParameters.EnrollmentState state;
+
     @Enumerated(EnumType.ORDINAL)
     private ServiceInstanceParameters.Enrollment autoEnrollment;
-    
+
 }

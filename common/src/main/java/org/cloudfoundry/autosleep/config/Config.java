@@ -113,12 +113,6 @@ public interface Config {
         String SECRET = "secret";
 
     }
-    
-    interface OrgEnrollmentParameters {
-        enum EnrolledState {
-            backoffice_enrolled, backoffice_opted_out
-        }
-    }
 
     Duration CF_API_TIMEOUT = Duration.ofSeconds(8);
 
