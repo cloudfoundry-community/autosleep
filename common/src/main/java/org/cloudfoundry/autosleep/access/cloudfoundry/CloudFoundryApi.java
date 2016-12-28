@@ -19,7 +19,18 @@
 
 package org.cloudfoundry.autosleep.access.cloudfoundry;
 
-import lombok.extern.slf4j.Slf4j;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
@@ -41,6 +52,7 @@ import org.cloudfoundry.client.v2.events.EventEntity;
 import org.cloudfoundry.client.v2.events.EventResource;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
+import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
 import org.cloudfoundry.client.v2.routes.GetRouteRequest;
 import org.cloudfoundry.client.v2.routes.GetRouteResponse;
 import org.cloudfoundry.client.v2.routes.ListRouteApplicationsRequest;
@@ -56,20 +68,10 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -449,6 +451,16 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         } catch (InterruptedException e) {
             log.error(e.getMessage());
             return null;
+        }
+    }
+
+    public boolean isValidOrganization(String organizationGuid) throws CloudFoundryException {
+        try {
+            return cfClient.organizations()
+                    .get(GetOrganizationRequest.builder().organizationId(organizationGuid).build())
+                    .get() != null;
+        } catch (RuntimeException e) {
+            throw new CloudFoundryException(e);
         }
     }
 
