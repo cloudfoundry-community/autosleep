@@ -19,6 +19,27 @@
 
 package org.cloudfoundry.autosleep.access.cloudfoundry;
 
+import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
 import org.cloudfoundry.client.CloudFoundryClient;
@@ -46,6 +67,9 @@ import org.cloudfoundry.client.v2.events.EventResource;
 import org.cloudfoundry.client.v2.events.Events;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
+import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
+import org.cloudfoundry.client.v2.organizations.GetOrganizationResponse;
+import org.cloudfoundry.client.v2.organizations.Organizations;
 import org.cloudfoundry.client.v2.routes.GetRouteRequest;
 import org.cloudfoundry.client.v2.routes.GetRouteResponse;
 import org.cloudfoundry.client.v2.routes.ListRouteApplicationsRequest;
@@ -71,29 +95,9 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-
-import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CloudFoundryApiTest {
@@ -596,6 +600,34 @@ public class CloudFoundryApiTest {
                 .thenReturn(Mono.empty());
         cloudFoundryApi.unbind("service-binding-id");
         verify(serviceBindings, times(1)).delete(any(DeleteServiceBindingRequest.class));
+    }
+
+    @Test
+    public void test_isValidOrganization_should_return_true_for_valid_organization()
+            throws CloudFoundryException {
+        String fakeOrgId = "organization-guid";
+        Organizations organizations = mock(Organizations.class);
+        when(cfClient.organizations()).thenReturn(organizations);
+        GetOrganizationRequest request = GetOrganizationRequest.builder().organizationId(fakeOrgId)
+                .build();
+        GetOrganizationResponse response = GetOrganizationResponse.builder()
+                .metadata(Metadata.builder().id(fakeOrgId).build()).build();
+        when(organizations.get(request)).thenReturn(Mono.just(response));
+
+        assertTrue(cloudFoundryApi.isValidOrganization(fakeOrgId));
+    }
+
+    public void test_isValidOrganization_should_return_false_for_valid_organization()
+            throws CloudFoundryException {
+        String fakeOrgId = "incorrect-organization-guid";
+        Organizations organizations = mock(Organizations.class);
+        when(cfClient.organizations()).thenReturn(organizations);
+        GetOrganizationRequest request = GetOrganizationRequest.builder().organizationId(fakeOrgId)
+                .build();
+        when(organizations.get(request)).thenReturn(null)
+                .thenReturn(Mono.error(new RuntimeException()));
+
+        assertTrue(cloudFoundryApi.isValidOrganization(fakeOrgId));
     }
 
 }
