@@ -617,7 +617,8 @@ public class CloudFoundryApiTest {
         assertTrue(cloudFoundryApi.isValidOrganization(fakeOrgId));
     }
 
-    public void test_isValidOrganization_should_return_false_for_valid_organization()
+    @Test
+    public void test_isValidOrganization_should_throw_exception_for_invalid_organization()
             throws CloudFoundryException {
         String fakeOrgId = "incorrect-organization-guid";
         Organizations organizations = mock(Organizations.class);
@@ -625,9 +626,10 @@ public class CloudFoundryApiTest {
         GetOrganizationRequest request = GetOrganizationRequest.builder().organizationId(fakeOrgId)
                 .build();
         when(organizations.get(request)).thenReturn(null)
-                .thenReturn(Mono.error(new RuntimeException()));
+                .thenReturn(Mono.error(new RuntimeException("some-error")));
 
-        assertTrue(cloudFoundryApi.isValidOrganization(fakeOrgId));
+        verifyThrown(() -> cloudFoundryApi.isValidOrganization(fakeOrgId),
+                CloudFoundryException.class);
     }
 
 }

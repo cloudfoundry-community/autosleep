@@ -22,6 +22,7 @@ package org.cloudfoundry.autosleep.ui.servicebroker.service.parameters;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
 import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters.Enrollment;
+import org.cloudfoundry.autosleep.config.EnrollmentConfig;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.InvalidParameterException;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReaderFactory;
@@ -325,6 +326,69 @@ public class ParameterReaderFactoryTest {
         String withoutDefault = secretReader.readParameter(null, true);
         //Then it returns null
         assertThat(withoutDefault, is(nullValue()));
+    }
+
+    @Test
+    public void test_enrollment_state_returns_default_when_null_submitted_with_default() {
+        // Given the parameter reader for enrollment state
+        ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState> stateReader = factory
+                .buildEnrollmentStateReader();
+        // When we ask to read null with default
+        EnrollmentConfig.EnrollmentParameters.EnrollmentState withDefault = stateReader
+                .readParameter(null, true);
+        // Then it returns the value from config
+        assertThat(withDefault, is(equalTo(
+                EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_enrolled)));
+    }
+
+    @Test
+    public void test_enrollment_state_returns_null_when_null_submitted_without_default() {
+        // Given the parameter reader for enrollment state
+        ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState> stateReader = factory
+                .buildEnrollmentStateReader();
+        // When we ask to read null without default
+        EnrollmentConfig.EnrollmentParameters.EnrollmentState withoutDefault = stateReader
+                .readParameter(null, false);
+        // Then it returns null
+        assertThat(withoutDefault, is(nullValue()));
+    }
+
+    @Test
+    public void test_enrollment_state_read_parameter() {
+        // Given the parameter reader for enrollment state
+        ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState> stateReader = factory
+                .buildEnrollmentStateReader();
+        // When we read a correct value
+        EnrollmentConfig.EnrollmentParameters.EnrollmentState backofficeEnrolled = stateReader
+                .readParameter(
+                        EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_enrolled
+                                .name(),
+                        true);
+        EnrollmentConfig.EnrollmentParameters.EnrollmentState backofficeOptedOut = stateReader
+                .readParameter(
+                        EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_opted_out
+                                .name(),
+                        true);
+        // Then we obtained the values from enum
+        assertThat(backofficeEnrolled, is(equalTo(
+                EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_enrolled)));
+        assertThat(backofficeOptedOut, is(equalTo(
+                EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_opted_out)));
+
+    }
+
+    @Test
+    public void test_enrollment_state_fails_to_read_incorrect_value() {
+        // Given the parameter reader for enrollment state
+        ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState> stateReader = factory
+                .buildEnrollmentStateReader();
+        assertThat(stateReader.getParameterName(), is(EnrollmentConfig.EnrollmentParameters.STATE));
+        // When we submit a wrong enum state value
+        // Then it fails
+        verifyThrown(() -> stateReader.readParameter("incorrect_enrollment_state_value", true),
+                InvalidParameterException.class,
+                parameterChecked -> assertThat(parameterChecked.getParameterName(),
+                        is(equalTo(EnrollmentConfig.EnrollmentParameters.STATE))));
     }
 
 }
