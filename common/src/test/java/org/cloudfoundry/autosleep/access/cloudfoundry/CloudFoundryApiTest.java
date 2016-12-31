@@ -637,7 +637,7 @@ public class CloudFoundryApiTest {
     }
 
     @Test
-    public void test_isValidOrganization_should_throw_exception_for_invalid_organization()
+    public void test_isValidOrganization_should_return_false_for_invalid_organization()
             throws CloudFoundryException {
         String fakeOrgId = "incorrect-organization-guid";
         Organizations organizations = mock(Organizations.class);
@@ -648,7 +648,7 @@ public class CloudFoundryApiTest {
                 .thenReturn(Mono.error(new org.cloudfoundry.client.v2.CloudFoundryException(
                         cloudFoundryApi.CF_ORGANIZATION_NOT_FOUND, fakeOrgId, fakeOrgId)));
 
-        assertTrue(!cloudFoundryApi.isValidOrganization(fakeOrgId));
+        assertFalse(cloudFoundryApi.isValidOrganization(fakeOrgId));
     }
 
 }
