@@ -127,7 +127,7 @@ public class AutoEnrollmentControllerTest {
 
         assertTrue(response.getStatusCode() == HttpStatus.CREATED);
         assertTrue(response.getHeaders().getFirst("Location")
-                .equals(EnrollmentConfig.PATH.ORG_AUTO_ENROLMENT_BASE_PATH + fakeOrgGuid));
+                .equals(EnrollmentConfig.Path.ORG_AUTO_ENROLMENT_BASE_PATH + fakeOrgGuid));
     }
 
     @Test
@@ -147,7 +147,7 @@ public class AutoEnrollmentControllerTest {
 
         assertTrue(response.getStatusCode() == HttpStatus.CREATED);
         assertTrue(response.getHeaders().getFirst("Location")
-                .equals(EnrollmentConfig.PATH.ORG_AUTO_ENROLMENT_BASE_PATH + fakeOrgGuid));
+                .equals(EnrollmentConfig.Path.ORG_AUTO_ENROLMENT_BASE_PATH + fakeOrgGuid));
     }
 
     @Test

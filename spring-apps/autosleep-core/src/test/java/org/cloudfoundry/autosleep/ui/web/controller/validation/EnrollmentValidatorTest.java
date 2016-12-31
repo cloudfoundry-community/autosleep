@@ -14,6 +14,7 @@ import org.cloudfoundry.autosleep.ui.servicebroker.service.InvalidParameterExcep
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.ui.web.model.OrgEnrollmentConfigRequest;
 import org.junit.Test;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -42,6 +43,13 @@ public class EnrollmentValidatorTest {
     @Mock
     private OrgEnrollmentConfigRequest request;
 
+    private Errors errors = null;
+
+    @Before
+    public void init() {
+        errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
+    }
+
     @Test
     public void test_supports_returns_true_for_correct_class() throws Exception {
         assertTrue(enrollmentValidator.supports(OrgEnrollmentConfigRequest.class));
@@ -55,7 +63,7 @@ public class EnrollmentValidatorTest {
 
     @Test
     public void test_validate_idle_duration_to_throw_an_error_with_wrong_input() throws Exception {
-        Errors errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
+        errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
         when(request.getIdleDuration()).thenReturn("PT_invalid_idle_duration");
         when(idleDurationReader.readParameter("PT_invalid_idle_duration", false)).thenThrow(
                 new InvalidParameterException(Config.ServiceInstanceParameters.IDLE_DURATION,
@@ -66,7 +74,7 @@ public class EnrollmentValidatorTest {
 
     @Test
     public void test_validate_exclude_spaces_to_throw_an_error_with_wrong_input() throws Exception {
-        Errors errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
+        errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
         when(request.getExcludeSpacesFromAutoEnrollment()).thenReturn("*_invalid_space_pattern");
         when(excludeFromAutoEnrollmentReader.readParameter("*_invalid_space_pattern", false))
                 .thenThrow(new InvalidParameterException("exclude-spaces-from-auto-enrollment",
@@ -78,7 +86,7 @@ public class EnrollmentValidatorTest {
     @Test
     public void test_validate_auto_enrollment_to_throw_an_error_with_wrong_input()
             throws Exception {
-        Errors errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
+        errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
         when(request.getAutoEnrollment()).thenReturn("not_standard");
         when(autoEnrollmentReader.readParameter("not_standard", false))
                 .thenThrow(new InvalidParameterException("auto-enrollment", "Error"));
@@ -89,7 +97,7 @@ public class EnrollmentValidatorTest {
     @Test
     public void test_validate_enrollment_state_to_throw_an_error_with_wrong_input()
             throws Exception {
-        Errors errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
+        errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
         when(request.getState()).thenReturn("not_backoffice_enrolled");
         when(stateReader.readParameter("not_backoffice_enrolled", false))
                 .thenThrow(new InvalidParameterException("state", "Error"));
@@ -99,7 +107,7 @@ public class EnrollmentValidatorTest {
 
     @Test
     public void test_validate_all_properties_with_no_errors() throws Exception {
-        Errors errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
+        errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
         when(request.getIdleDuration()).thenReturn("PT2M");
         when(request.getExcludeSpacesFromAutoEnrollment()).thenReturn(".*correct_space");
         when(request.getAutoEnrollment()).thenReturn("standard");
@@ -110,7 +118,7 @@ public class EnrollmentValidatorTest {
 
     @Test
     public void test_validate_all_properties_with_all_errors() throws Exception {
-        Errors errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
+        errors = new MapBindingResult(new HashMap<>(), "OrgEnrollmentConfig");
 
         when(request.getIdleDuration()).thenReturn("PT_invalid_idle_duration");
         when(idleDurationReader.readParameter("PT_invalid_idle_duration", false)).thenThrow(
