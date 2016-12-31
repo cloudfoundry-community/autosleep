@@ -17,7 +17,7 @@ public interface EnrollmentConfig {
         String STATE = "state";
     }
 
-    interface PATH {
+    interface Path {
         String ORG_AUTO_ENROLMENT_BASE_PATH = "/v1/enrolled-orgs/";
     }
 }

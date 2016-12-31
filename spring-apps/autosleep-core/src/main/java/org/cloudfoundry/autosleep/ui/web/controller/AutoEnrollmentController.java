@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RequestMapping(EnrollmentConfig.PATH.ORG_AUTO_ENROLMENT_BASE_PATH)
+@RequestMapping(EnrollmentConfig.Path.ORG_AUTO_ENROLMENT_BASE_PATH)
 @RestController
 public class AutoEnrollmentController {
 
@@ -87,8 +87,9 @@ public class AutoEnrollmentController {
             throws CloudFoundryException, BindException {
 
         log.debug("enrolOrganization - {}", organizationId);
-        if (!cloudfoundryApi.isValidOrganization(organizationId))
+        if (!cloudfoundryApi.isValidOrganization(organizationId)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
 
         validator.validate(orgEnrollerConfigRequest, result);
         if (result.hasErrors()) {
@@ -122,7 +123,7 @@ public class AutoEnrollmentController {
         } else {
             HttpHeaders headers = new HttpHeaders();
             headers.add("Location",
-                    EnrollmentConfig.PATH.ORG_AUTO_ENROLMENT_BASE_PATH + organizationId);
+                    EnrollmentConfig.Path.ORG_AUTO_ENROLMENT_BASE_PATH + organizationId);
             return new ResponseEntity<OrgEnrollmentConfig>(orgEnrollerConfig, headers,
                     HttpStatus.CREATED);
         }
