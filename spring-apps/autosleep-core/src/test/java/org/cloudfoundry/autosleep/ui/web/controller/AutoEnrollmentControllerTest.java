@@ -118,6 +118,7 @@ public class AutoEnrollmentControllerTest {
         String fakeOrgGuid = "fake-organization-guid";
         OrgEnrollmentConfigRequest request = OrgEnrollmentConfigRequest.builder().build();
 
+        when(cloudFoundryApi.isValidOrganization(fakeOrgGuid)).thenReturn(true);
         ResponseEntity<OrgEnrollmentConfig> response = autoEnrollmentController
                 .enrolOrganization(fakeOrgGuid, request, result);
 
@@ -126,7 +127,7 @@ public class AutoEnrollmentControllerTest {
 
         assertTrue(response.getStatusCode() == HttpStatus.CREATED);
         assertTrue(response.getHeaders().getFirst("Location")
-                .equals("/v1/enrolled-orgs/" + fakeOrgGuid));
+                .equals(EnrollmentConfig.PATH.ORG_AUTO_ENROLMENT_BASE_PATH + fakeOrgGuid));
     }
 
     @Test
@@ -136,6 +137,7 @@ public class AutoEnrollmentControllerTest {
         OrgEnrollmentConfigRequest request = OrgEnrollmentConfigRequest.builder()
                 .idleDuration("PT2M").autoEnrollment("standard")
                 .excludeSpacesFromAutoEnrollment(".*space").state("backoffice_enrolled").build();
+        when(cloudFoundryApi.isValidOrganization(fakeOrgGuid)).thenReturn(true);
 
         ResponseEntity<OrgEnrollmentConfig> response = autoEnrollmentController
                 .enrolOrganization(fakeOrgGuid, request, result);
@@ -145,7 +147,7 @@ public class AutoEnrollmentControllerTest {
 
         assertTrue(response.getStatusCode() == HttpStatus.CREATED);
         assertTrue(response.getHeaders().getFirst("Location")
-                .equals("/v1/enrolled-orgs/" + fakeOrgGuid));
+                .equals(EnrollmentConfig.PATH.ORG_AUTO_ENROLMENT_BASE_PATH + fakeOrgGuid));
     }
 
     @Test
@@ -154,6 +156,7 @@ public class AutoEnrollmentControllerTest {
         OrgEnrollmentConfigRequest request = OrgEnrollmentConfigRequest.builder()
                 .idleDuration("PT2M").autoEnrollment("standard")
                 .excludeSpacesFromAutoEnrollment(".*space").state("backoffice_enrolled").build();
+        when(cloudFoundryApi.isValidOrganization(fakeOrgGuid)).thenReturn(true);
         when(orgEnrollmentConfigRepository.exists(fakeOrgGuid)).thenReturn(true);
         ResponseEntity<OrgEnrollmentConfig> response = autoEnrollmentController
                 .enrolOrganization(fakeOrgGuid, request, result);
@@ -168,9 +171,21 @@ public class AutoEnrollmentControllerTest {
             throws CloudFoundryException, BindException {
         String fakeOrgGuid = "fake-organization-guid";
         OrgEnrollmentConfigRequest request = OrgEnrollmentConfigRequest.builder().build();
+        when(cloudFoundryApi.isValidOrganization(fakeOrgGuid)).thenReturn(true);
         when(result.hasErrors()).thenReturn(true);
         verifyThrown(() -> autoEnrollmentController.enrolOrganization(fakeOrgGuid, request, result),
                 BindException.class);
+    }
+
+    @Test
+    public void test_enrolOrganization_returns_not_found_for_invalid_org()
+            throws CloudFoundryException, BindException {
+        String fakeOrgGuid = "fake-organization-guid";
+        OrgEnrollmentConfigRequest request = OrgEnrollmentConfigRequest.builder().build();
+        when(cloudFoundryApi.isValidOrganization(fakeOrgGuid)).thenReturn(false);
+        ResponseEntity<?> response = autoEnrollmentController.enrolOrganization(fakeOrgGuid,
+                request, result);
+        assertTrue(response.getStatusCode() == HttpStatus.NOT_FOUND);
     }
 
     @Test
@@ -193,7 +208,7 @@ public class AutoEnrollmentControllerTest {
         HttpServletResponse response = mock(HttpServletResponse.class);
         ResponseEntity<Object> errorResponseEntity = autoEnrollmentController
                 .handleCloudFoundryException(cfe, response);
-        assertTrue(errorResponseEntity.getStatusCode() == HttpStatus.NOT_FOUND);
+        assertTrue(errorResponseEntity.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR);
 
     }
 }

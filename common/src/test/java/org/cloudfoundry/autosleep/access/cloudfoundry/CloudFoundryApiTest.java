@@ -69,6 +69,8 @@ import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationResponse;
+import org.cloudfoundry.client.v2.organizations.OrganizationEntity;
+import org.cloudfoundry.client.v2.organizations.OrganizationEntity.OrganizationEntityBuilder;
 import org.cloudfoundry.client.v2.organizations.Organizations;
 import org.cloudfoundry.client.v2.routes.GetRouteRequest;
 import org.cloudfoundry.client.v2.routes.GetRouteResponse;
@@ -611,10 +613,27 @@ public class CloudFoundryApiTest {
         GetOrganizationRequest request = GetOrganizationRequest.builder().organizationId(fakeOrgId)
                 .build();
         GetOrganizationResponse response = GetOrganizationResponse.builder()
-                .metadata(Metadata.builder().id(fakeOrgId).build()).build();
+                .metadata(Metadata.builder().id(fakeOrgId).build())
+                .entity(OrganizationEntity.builder().name("organization-name").build()).build();
         when(organizations.get(request)).thenReturn(Mono.just(response));
-
         assertTrue(cloudFoundryApi.isValidOrganization(fakeOrgId));
+    }
+
+    @Test
+    public void test_isValidOrganization_should_throw_exception_for_any_other_error()
+            throws CloudFoundryException {
+        String fakeOrgId = "incorrect-organization-guid";
+        int anyOtherErrorCode = 30004;
+        Organizations organizations = mock(Organizations.class);
+        when(cfClient.organizations()).thenReturn(organizations);
+        GetOrganizationRequest request = GetOrganizationRequest.builder().organizationId(fakeOrgId)
+                .build();
+        when(organizations.get(request)).thenReturn(
+                Mono.error(new org.cloudfoundry.client.v2.CloudFoundryException(anyOtherErrorCode,
+                        fakeOrgId, fakeOrgId)));
+
+        verifyThrown(() -> cloudFoundryApi.isValidOrganization(fakeOrgId),
+                Throwable.class);
     }
 
     @Test
@@ -625,11 +644,11 @@ public class CloudFoundryApiTest {
         when(cfClient.organizations()).thenReturn(organizations);
         GetOrganizationRequest request = GetOrganizationRequest.builder().organizationId(fakeOrgId)
                 .build();
-        when(organizations.get(request)).thenReturn(null)
-                .thenReturn(Mono.error(new RuntimeException("some-error")));
+        when(organizations.get(request))
+                .thenReturn(Mono.error(new org.cloudfoundry.client.v2.CloudFoundryException(
+                        cloudFoundryApi.CF_ORGANIZATION_NOT_FOUND, fakeOrgId, fakeOrgId)));
 
-        verifyThrown(() -> cloudFoundryApi.isValidOrganization(fakeOrgId),
-                CloudFoundryException.class);
+        assertTrue(!cloudFoundryApi.isValidOrganization(fakeOrgId));
     }
 
 }
