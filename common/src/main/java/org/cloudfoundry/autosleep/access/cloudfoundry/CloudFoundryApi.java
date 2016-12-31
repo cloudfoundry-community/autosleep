@@ -53,6 +53,7 @@ import org.cloudfoundry.client.v2.events.EventResource;
 import org.cloudfoundry.client.v2.events.ListEventsRequest;
 import org.cloudfoundry.client.v2.events.ListEventsResponse;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
+import org.cloudfoundry.client.v2.organizations.GetOrganizationResponse;
 import org.cloudfoundry.client.v2.routes.GetRouteRequest;
 import org.cloudfoundry.client.v2.routes.GetRouteResponse;
 import org.cloudfoundry.client.v2.routes.ListRouteApplicationsRequest;
@@ -120,6 +121,8 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     static final int CF_INSTANCES_ERROR = 220_001;
 
     static final int CF_STAGING_NOT_FINISHED = 170_002;
+
+    static final int CF_ORGANIZATION_NOT_FOUND = 30_003;
 
     @Autowired
     private CloudFoundryClient cfClient;
@@ -455,13 +458,24 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     }
 
     public boolean isValidOrganization(String organizationGuid) throws CloudFoundryException {
-        try {
-            return cfClient.organizations()
-                    .get(GetOrganizationRequest.builder().organizationId(organizationGuid).build())
-                    .get() != null;
-        } catch (RuntimeException e) {
-            throw new CloudFoundryException(e);
-        }
+
+        GetOrganizationResponse response = cfClient.organizations()
+                .get(GetOrganizationRequest.builder().organizationId(organizationGuid).build())
+                .otherwise(throwable -> {
+                    if (throwable instanceof org.cloudfoundry.client.v2.CloudFoundryException
+                            && isNoOrganizationFoundError(
+                                    (org.cloudfoundry.client.v2.CloudFoundryException) throwable)) {
+                        return Mono.just(GetOrganizationResponse.builder().build());
+                    } else {
+                        return Mono.error(throwable);
+                    }
+                }).get();
+        return response.getEntity() != null;
+    }
+
+    private boolean isNoOrganizationFoundError(
+            org.cloudfoundry.client.v2.CloudFoundryException cloudfoundryException) {
+        return cloudfoundryException.getCode() == CF_ORGANIZATION_NOT_FOUND;
     }
 
 }
