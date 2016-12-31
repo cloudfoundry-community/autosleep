@@ -53,7 +53,6 @@ public class EnrollmentValidatorTest {
     @Test
     public void test_supports_returns_true_for_correct_class() throws Exception {
         assertTrue(enrollmentValidator.supports(OrgEnrollmentConfigRequest.class));
-        assertFalse(enrollmentValidator.supports(this.getClass()));
     }
 
     @Test
