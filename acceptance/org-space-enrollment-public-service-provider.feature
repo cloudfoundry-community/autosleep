@@ -215,24 +215,24 @@ Feature: public paas service provider org and space autoenrollment
 
     When a backoffice change is made through
       | endpoint       | method | body |
-      | enrolled-org/3 | PUT    |      |
+      | enrolled-org/3 | PUT    | idle-duration=T50H, exclude-from-auto-enrollment=, auto-enrollment=transient-opt-outs     |
     Then the autosleep service instances in each space are
       | org         | space  | autosleep service instances (arbitrary params)                                 |
       | team-a-prod | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=transient-opt-outs) |
-      | premium     | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=transient-opt-outs) |
+      | premium     | portal | autosleep-autoenrolled(idle-duration=T50H, auto-enrollment=transient-opt-outs) |
     When the clock reaches the scan date
     Then autosleep periodically automatically scans orgs and spaces
     And the autosleep service instances in each space are
       | org         | space  | autosleep service instances (arbitrary params)                                 |
       | team-a-prod | portal | autosleep-autoenrolled(idle-duration=T48H, auto-enrollment=transient-opt-outs) |
-      | premium     | portal | autosleep-autoenrolled(idle-duration=T10H, auto-enrollment=transient-opt-outs) |
+      | premium     | portal | autosleep-autoenrolled(idle-duration=T50H, auto-enrollment=transient-opt-outs) |
     And the backoffice REST API returns
       | endpoint           | method | body                                                                                                                                                          |
       | orgs               | GET    | {[org guid=1 state=enrolled, href=/enrolled-orgs/1], [org guid=2 state=enrolled, href=/enrolled-orgs/2] , [org guid=3 state=enrolled, href=/enrolled-orgs/3]} |
       | spaces             | GET    | { [space guid=100 state=enrolled, href=/enrolled-space/100], [space guid=101 state=opted-out], [space guid=102 state=enrolled, href=/enrolled-space/102]}     |
       | enrolled-orgs/1    | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=transient-opt-outs }                                                                      |
       | enrolled-orgs/2    | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=transient-opt-outs }                                                                      |
-      | enrolled-orgs/3    | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=transient-opt-outs }                                                                      |
+      | enrolled-orgs/3    | GET    | {idle-duration=T50H, exclude-from-auto-enrollment=, auto-enrollment=transient-opt-outs }                                                                      |
       | enrolled-space/100 | GET    | {idle-duration=T48H, exclude-from-auto-enrollment=, auto-enrollment=transient-opt-outs }                                                                      |
       | enrolled-space/102 | GET    | {idle-duration=T10H, exclude-from-auto-enrollment=, auto-enrollment=transient-opt-outs }                                                                      |
 
