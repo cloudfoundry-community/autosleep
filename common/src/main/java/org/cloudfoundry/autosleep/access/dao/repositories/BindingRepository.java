@@ -21,13 +21,15 @@ package org.cloudfoundry.autosleep.access.dao.repositories;
 
 import org.cloudfoundry.autosleep.access.dao.model.Binding;
 import org.cloudfoundry.autosleep.access.dao.model.Binding.ResourceType;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-public interface BindingRepository extends CrudRepository<Binding, String> {
+public interface BindingRepository extends JpaRepository<Binding, String> {
 
     List<Binding> findAllByResourceType(ResourceType resourceType);
 

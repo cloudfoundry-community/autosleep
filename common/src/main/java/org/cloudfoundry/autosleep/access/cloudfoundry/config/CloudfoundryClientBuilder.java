@@ -29,17 +29,13 @@ import org.cloudfoundry.logging.LoggingClient;
 import org.cloudfoundry.spring.client.SpringCloudFoundryClient;
 import org.cloudfoundry.spring.logging.SpringLoggingClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContextException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 
 @Configuration
-@PropertySource(value = "classpath:cloudfoundry_client.properties", ignoreResourceNotFound = true)
-@EnableAutoConfiguration
 @Slf4j
 public class CloudfoundryClientBuilder {
 
@@ -70,13 +66,12 @@ public class CloudfoundryClientBuilder {
         if (clientContainer == null && initializationError == null) {
             final String targetHost = env.getProperty(Config.EnvKey.CF_HOST);
             final boolean skipSslValidation = Boolean.parseBoolean(env.getProperty(
-                    Config.EnvKey.CF_SKIP_SSL_VALIDATION,
-                    Boolean.FALSE.toString()));
+                    Config.EnvKey.CF_SKIP_SSL_VALIDATION, Boolean.FALSE.toString()));
             final String username = env.getProperty(Config.EnvKey.CF_USERNAME);
             final String password = env.getProperty(Config.EnvKey.CF_PASSWORD);
             final String clientId = env.getProperty(Config.EnvKey.CF_CLIENT_ID, DefaultClientIdentification.ID);
-            final String clientSecret = env.getProperty(Config.EnvKey.CF_CLIENT_SECRET, DefaultClientIdentification
-                    .SECRET);
+            final String clientSecret = env.getProperty(Config.EnvKey.CF_CLIENT_SECRET,
+                    DefaultClientIdentification.SECRET);
             try {
 
                 log.debug("buildClient - targetHost={}", targetHost);

@@ -50,8 +50,5 @@ public class ProxyMapEntry {
 
     @JsonProperty
     private String appId;
-
-    @JsonProperty
-    private boolean isRestarting = false;
     
 }

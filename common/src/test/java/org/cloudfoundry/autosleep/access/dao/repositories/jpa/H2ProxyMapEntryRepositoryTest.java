@@ -17,27 +17,12 @@
  * limitations under the License.
  */
 
-package org.cloudfoundry.autosleep.access.cloudfoundry;
+package org.cloudfoundry.autosleep.access.dao.repositories.jpa;
 
-import lombok.Getter;
+import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepositoryTest;
+import org.springframework.test.context.ActiveProfiles;
 
-@Getter
-public class EntityNotFoundException extends Exception {
-
-    public enum EntityType {application, service}
-
-    private String entityId;
-
-    private EntityType entityType;
-
-    public EntityNotFoundException(EntityType entityType, String entityId) {
-        this(entityType, entityId, null);
-    }
-
-    public EntityNotFoundException(EntityType entityType, String entityId, Throwable cause) {
-        super(entityType.name() + "  - " + entityId, cause);
-        this.entityType = entityType;
-        this.entityId = entityId;
-    }
+@ActiveProfiles({"default"})
+public class H2ProxyMapEntryRepositoryTest extends ProxyMapEntryRepositoryTest {
 
 }

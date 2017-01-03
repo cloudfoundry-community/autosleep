@@ -1,6 +1,6 @@
 *** Settings ***
 Resource        Keywords.robot
-Documentation   Test if application unbinded is not stopped
+Documentation   Test users can permanently opt out in standard enrollment mode
 Force Tags      Service broker
 Test Teardown   Run Keywords  Clean all service data
 
@@ -11,7 +11,7 @@ ${INACTIVITY}  PT${INACTIVITY_IN_S}S
 
 *** Test Cases ***
 
-1) Unbound application should remain started
+1) Unbound application should not be put to sleep
     [Documentation]     Check that app are still started ${DEFAULT_INACTIVITY} after their last http activity
 
 	Clean all service data

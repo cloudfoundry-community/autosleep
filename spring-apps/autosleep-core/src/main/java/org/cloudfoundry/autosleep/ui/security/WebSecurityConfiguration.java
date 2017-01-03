@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.cloudfoundry.autosleep.ui.web.configuration;
+package org.cloudfoundry.autosleep.ui.security;
 
 import org.cloudfoundry.autosleep.config.Config;
 import org.springframework.context.annotation.Configuration;
@@ -29,11 +29,17 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.antMatcher("/**").authorizeRequests().anyRequest().authenticated();
-        http.requestMatchers().antMatchers(Config.Path.DASHBOARD_CONTEXT + "/**",
-                Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + "/*/applications/",
-                "/css/**", "/fonts/**",
-                "/javascript/**").and().authorizeRequests().anyRequest().anonymous();
+        http.authorizeRequests()
+                .antMatchers(Config.Path.DASHBOARD_CONTEXT + "/**",
+                        Config.Path.API_CONTEXT + Config.Path.SERVICES_SUB_PATH + "*/applications/",
+                        "/css/**", "/fonts/**",
+                        "/javascript/**")
+                .permitAll()
+                .and()
+                .authorizeRequests()
+                .anyRequest()
+                .authenticated().and().httpBasic()
+                .and().csrf().disable();
     }
 
 }

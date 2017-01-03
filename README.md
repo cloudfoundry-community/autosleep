@@ -1,11 +1,22 @@
-# autosleep [![Build Status](https://travis-ci.org/Orange-OpenSource/autosleep.svg?branch=develop)](https://travis-ci.org/Orange-OpenSource/autosleep) [![Coverage Status](https://coveralls.io/repos/github/Orange-OpenSource/autosleep/badge.svg?branch=develop)](https://coveralls.io/github/Orange-OpenSource/autosleep?branch=develop)
+# Autosleep 
+[![Build Status](https://travis-ci.org/cloudfoundry-community/autosleep.svg?branch=develop)](https://travis-ci.org/cloudfoundry-community/autosleep) 
+[![Coverage Status](https://coveralls.io/repos/github/cloudfoundry-community/autosleep/badge.svg?branch=develop)](https://coveralls.io/github/cloudfoundry-community/autosleep?branch=develop)
+[![](https://img.shields.io/github/issues/cloudfoundry-community/autosleep.svg)](https://github.com/cloudfoundry-community/autosleep/issues)
+
+[![license](https://img.shields.io/github/license/cloudfoundry-community/autosleep.svg)](https://github.com/cloudfoundry-community/autosleep/blob/develop/LICENSE) 
+[![releases](https://img.shields.io/github/release/cloudfoundry-community/autosleep.svg)](https://github.com/cloudfoundry-community/autosleep/releases)
+[Slack channel](https://cloudfoundry.slack.com/messages/autosleep/) 
 
 # Goal
 The aim of the auto-sleep project is to give the ability for Cloud Foundry users to automatically have their app stopped after a given period of inactivity, and then automatically started when accessed through traffic received on their routes.
 
 # Status
-This is a work in progress. 
-You can check the [full specifications](https://docs.google.com/document/d/1tMhIBX3tw7kPEOMCzKhUgmtmr26GVxyXwUTwMO71THI/) and the currently supported features in the [acceptance tests](https://github.com/Orange-OpenSource/autosleep/tree/develop/acceptance).
+
+You can check the [full specifications](https://docs.google.com/document/d/1tMhIBX3tw7kPEOMCzKhUgmtmr26GVxyXwUTwMO71THI/) and the currently supported features in the [acceptance tests](doc/acceptance.md).
+
+Get a deeper introduction in the Autosleep talk at Cf Summit Santa Clata 2016 ( [slides](http://fr.slideshare.net/gberche/autosleep-inactive-apps-get-automatically-put-to-sleep-and-restarted-on-incoming-traffic),  [youtube video recording](https://www.youtube.com/watch?v=fQQRGxqkM-4&index=29&list=PLhuMOCWn4P9gGrKEtCBKYpEl5BXGBCsQZ), and [high-res demo](https://drive.google.com/open?id=0B_RQz82RzSUndnd4TFJOODFkTU0) )
+
+[![Autosleep Cf Summit Santa Clata 2016 talk](https://cloud.githubusercontent.com/assets/4748380/16609625/d3367eba-4355-11e6-9392-25e6958d59d8.png)](http://fr.slideshare.net/gberche/autosleep-inactive-apps-get-automatically-put-to-sleep-and-restarted-on-incoming-traffic)
 
 ### What's already working:
 For now we provide a [service broker](https://docs.cloudfoundry.org/services/managing-service-brokers.html) which instances will:
@@ -13,11 +24,15 @@ For now we provide a [service broker](https://docs.cloudfoundry.org/services/man
 * automatically bind applications in space (filtering out applications whose name matches a regexp).
 * watch every bound application, measure inactivity (based on **https logs** and **redeploy/restart events**) and stop the application when an inactivity threshold is reached.
 * a service dashboard for users to understand behavior of the service (such as time to sleep or current enrollment status)
+* automatic restart on incoming HTTP trafic 
 
-Download [latest release](https://github.com/Orange-OpenSource/autosleep/releases/) if you want to give it a try.
+Download [latest release](https://github.com/cloudfoundry-community/autosleep/releases/) if you want to give it a try, or [build from sources](/doc/build.md)
 
 ### What we are working on:
-* automatic restart on incoming HTTP trafic (see early work in the [develop](https://github.com/Orange-OpenSource/autosleep/tree/develop) branch)
+
+We manage our roadmap as github issues, following is however an overview of planned short-term work:
+* Hardening, optimizations
+* Automatic enrollemnt of new spaces and orgs
 
 # Usage by CloudFoundry users
 
@@ -46,7 +61,10 @@ Optionally the autosleep service broker accepts the following parameters during 
 - [`exclude-from-auto-enrollment `](#exclude-from-auto-enrollment)
 - [`auto-enrollment `](#lockauto-enrollment)
 - [`secret `](#secret)
+
+<!--
 - [`autosleep-despite-route-services-error`](#autosleep-despite-route-services-error)
+-->
 
 Only the `auto-enrollment ` field is is mutable, i.e. is accepted on service updates, e.g.
 `
@@ -65,7 +83,7 @@ Duration after which bound applications will be considered as inactive. The time
 #### *exclude-from-auto-enrollment* 
 If you don't want all the application to be automatically bound, you can set this parameter with a regular expression to filter on application names.
 
-- *Example:*`'{"excludeAppNameRegExp": ".*"}'`
+- *Example:*`'{"exclude-from-auto-enrollment": ".*"}'`
  wouldn't automatically bind any application in the space. Application would have to be bound manually.
 - *Default value :*  none (every app in space will be bound).
 
@@ -91,6 +109,8 @@ Provide a secret if you wish to set/change a protected parameter. Please save it
 - *Example:*`'{"secret": "Th1s1zg00dP@$$w0rd"}'`
 - *Default value :* `null`
 
+
+<!--
 #### *autosleep-despite-route-services-error*
 
 On some application, *cloudfoundry api* may refuse to bind *autosleep service instance* (exposing itself as a route service) to the application's routes (we need to do this operation to reroute all application flow to *autosleep* in order to restart the application if requested). Since we perform these binding operations **before** stopping application, if *api* refuse the operation, the application will never be stopped. 
@@ -99,13 +119,17 @@ By setting the value of this parameter to `true`, you skip the errors sent by *r
 * Example `'{"autosleep-despite-route-services-error" : true}'`
 * *Default value*: `false`
 
+-->
+
+
+
 # Usage by platform teams
 
 ## How to build
 If you wish to build the app yourself, go to [build documentation](doc/build.md).
 
 ## How to deploy and publish
-Once you built the application or if you got it from [latest release](https://github.com/Orange-OpenSource/autosleep/releases/), go to [publish documentation](doc/publish.md).
+Once you built the application or if you got it from [latest release](https://github.com/cloudfoundry-community/autosleep/releases/), go to [publish documentation](doc/publish.md).
 
 # How to test
-Acceptance tests are available in the source code, as robotframework tests. More information [here](doc/test.md).
+Acceptance tests are available in the source code, as robotframework tests. More information [here](doc/acceptance.md).

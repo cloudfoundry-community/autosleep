@@ -1,8 +1,7 @@
-//fork from https://github.com/springfox/springfox/blob/fb780ee1f14627b239fba95730a69900b9b2313a/gradle/coverage.gradle
 apply plugin: 'jacoco'
 apply plugin: "com.github.kt3k.coveralls"
 
-def analysableProjects = subprojects.findAll { it.name != 'spring-apps' }
+def analysableProjects = subprojects.findAll { it.name != 'spring-apps' && it.name != 'acceptance' }
 
 task jacocoRootReport(type: JacocoReport, group: 'Coverage reports') {
     description = 'Generates an aggregate report from all subprojects'
@@ -31,15 +30,17 @@ task jacocoRootReport(type: JacocoReport, group: 'Coverage reports') {
     afterEvaluate {
         classDirectories = files(classDirectories.files.collect {
             fileTree(dir: it,
-                    exclude: ['org/cloudfoundry/autosleep/access/cloudfoundry/**', //won't test cf-java-client
-                              'org/cloudfoundry/autosleep/access/cloudfoundry/model/**', //won't test pojo
+                    exclude: ['org/cloudfoundry/autosleep/access/cloudfoundry/model/**', //won't test pojo
                               'org/cloudfoundry/autosleep/access/cloudfoundry/config/**', //won't test config
-                              'org/cloudfoundry/autosleep/util/TimeManager.class',
+                              'org/cloudfoundry/autosleep/util/**',
+                              'org/cloudfoundry/autosleep/util/serializer/**',
                               'org/cloudfoundry/autosleep/access/dao/model/**',  //won't test pojo
-                              'org/cloudfoundry/autosleep/access/dao/config/data/RelationalCloudDataSourceConfig.java', //cloud config
+                              'org/cloudfoundry/autosleep/access/dao/config/data/RelationalCloudDataSourceConfig.class', //cloud config
                               'org/cloudfoundry/autosleep/config/ContextInitializer.class', //won't test cloud context init
                               'org/cloudfoundry/autosleep/Application.class', //skip main
-                              'org/cloudfoundry/autosleep/ui/proxy/Application.class', //skip main
+                              'org/cloudfoundry/autosleep/WakeUpApplication.class', //skip main
+                              'org/cloudfoundry/autosleep/ui/security/SecurityManager.class',
+                              'org/cloudfoundry/autosleep/ui/proxy/HttpClientConfiguration.class',
                               'org/cloudfoundry/autosleep/ui/proxy/ProxyController.class' //not implemented for now
              ])
         })

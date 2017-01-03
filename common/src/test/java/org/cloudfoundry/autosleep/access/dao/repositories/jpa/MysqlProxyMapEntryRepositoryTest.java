@@ -17,19 +17,14 @@
  * limitations under the License.
  */
 
-package org.cloudfoundry.autosleep.config;
+package org.cloudfoundry.autosleep.access.dao.repositories.jpa;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.client.RestOperations;
-import org.springframework.web.client.RestTemplate;
+import org.cloudfoundry.autosleep.access.dao.repositories.ProxyMapEntryRepositoryTest;
+import org.springframework.test.annotation.IfProfileValue;
+import org.springframework.test.context.ActiveProfiles;
 
-@Configuration
-public class RestConfig {
-
-    @Bean
-    RestOperations restOperations() {
-        return new RestTemplate();
-    }
+@IfProfileValue(name = "integration-test", value = "true")
+@ActiveProfiles({"mysql", "mysql-local"})
+public class MysqlProxyMapEntryRepositoryTest extends ProxyMapEntryRepositoryTest {
 
 }

@@ -1,0 +1,3 @@
+cloudfoundry-client==0.0.13
+robotframework==2.9.2
+robotframework-async==1.0.3

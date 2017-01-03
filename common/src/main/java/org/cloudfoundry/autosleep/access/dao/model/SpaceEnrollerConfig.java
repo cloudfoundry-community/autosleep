@@ -36,8 +36,11 @@ import org.cloudfoundry.autosleep.util.serializer.IntervalSerializer;
 import org.cloudfoundry.autosleep.util.serializer.PatternDeserializer;
 import org.cloudfoundry.autosleep.util.serializer.PatternSerializer;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Lob;
+
 import java.time.Duration;
 import java.util.regex.Pattern;
 
@@ -54,6 +57,8 @@ public class SpaceEnrollerConfig {
 
     @JsonSerialize(using = PatternSerializer.class)
     @JsonDeserialize(using = PatternDeserializer.class)
+    @Lob
+    @Column
     private Pattern excludeFromAutoEnrollment;
 
     @JsonProperty
@@ -65,6 +70,8 @@ public class SpaceEnrollerConfig {
 
     @JsonSerialize(using = IntervalSerializer.class)
     @JsonDeserialize(using = IntervalDeserializer.class)
+    @Lob
+    @Column
     private Duration idleDuration;
 
     @JsonProperty

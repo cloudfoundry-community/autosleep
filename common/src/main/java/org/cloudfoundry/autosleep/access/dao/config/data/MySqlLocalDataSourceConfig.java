@@ -19,17 +19,25 @@
 
 package org.cloudfoundry.autosleep.access.dao.config.data;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
 @Configuration
+@Slf4j
 @Profile("mysql-local")
 public class MySqlLocalDataSourceConfig {
+
+    @PostConstruct
+    public void logProfile() {
+        log.warn("<<<<<<<<<<< loading MYSQL persistence profile >>>>>>>>>>>>>>>>>>");
+    }
 
     @Value("${mysql.driver}")
     private String driver;
@@ -52,5 +60,4 @@ public class MySqlLocalDataSourceConfig {
         dataSource.setPassword(password);
         return dataSource;
     }
-
 }

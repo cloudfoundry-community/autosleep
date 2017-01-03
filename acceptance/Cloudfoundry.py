@@ -1,10 +1,10 @@
 import httplib
 import json
 import logging
+import os
 
 import requests
 from cloudfoundry_client import CloudFoundryClient, InvalidStatusCode
-from requests.auth import HTTPBasicAuth
 
 
 class Cloudfoundry(object):
@@ -14,8 +14,9 @@ class Cloudfoundry(object):
                  application_name, service_broker_endpoint, service_broker_name, service_broker_auth_user,
                  service_broker_auth_password, instance_name, default_create_instance_parameters):
         Cloudfoundry._check_parameters(default_create_instance_parameters)
-        self.client = CloudFoundryClient(target_endpoint, skip_verification=skip_verification)
-        self.client.credentials_manager.init_with_credentials(login, password)
+        self.proxies = dict(http=os.environ.get('HTTP_PROXY', ''), https=os.environ.get('HTTPS_PROXY', ''))
+        self.client = CloudFoundryClient(target_endpoint, skip_verification=skip_verification, proxy=self.proxies)
+        self.client.init_with_credentials(login, password)
         organization = self.client.organization.get_first(name=organization_name)
         if organization is None:
             raise AssertionError('Unknown organization %s' % organization_name)
@@ -65,12 +66,12 @@ class Cloudfoundry(object):
                         logging.debug('some binding appeared in the meantime. looping again')
                         pass
                     elif ex.status_code == httplib.BAD_GATEWAY and type(ex.body) == dict and \
-                            " can't be deleted during forced enrollment" in ex.body['description']:
-                        logging.info('%s is in forced mode. Updating it as standard' % self.instance_guid)
+                                    " can't be deleted during forced enrollment" in ex.body['description']:
+                        logging.info('%s is in forced mode. Updating it as standard' % instance['metadata']['guid'])
                         parameters = dict()
                         parameters['auto-enrollment'] = 'standard'
                         parameters['secret'] = self.service_broker_auth_password
-                        self.client.service_instance.update(instance['metadata']['guid'], parameters)
+                        self.client.service_instance.update(instance['metadata']['guid'], parameters=parameters)
                     else:
                         raise
             logging.info('clean_all_service_data - instance deleted')
@@ -81,9 +82,11 @@ class Cloudfoundry(object):
         if self.broker_guid is not None:
             raise AssertionError('Please delete service broker before creating a new one')
         else:
-            service_broker = self.client.service_broker.create(self.service_broker_endpoint, self.service_broker_name,
-                                                               self.service_broker_auth_user,
-                                                               self.service_broker_auth_password, self.space_guid)
+            service_broker = self.client.service_broker.create(broker_url=self.service_broker_endpoint,
+                                                               broker_name=self.service_broker_name,
+                                                               auth_username=self.service_broker_auth_user,
+                                                               auth_password=self.service_broker_auth_password,
+                                                               space_guid=self.space_guid)
             self.broker_guid = service_broker['metadata']['guid']
             logging.info('create_service_broker - broker created')
             self._set_plan_from_broker()
@@ -127,8 +130,10 @@ class Cloudfoundry(object):
                 else self.default_create_instance_parameters if self.default_create_instance_parameters is not None \
                 else {}
             logging.info('create_service_instance - parameters - %s', json.dumps(parameters_sent))
-            instance = self.client.service_instance.create(self.space_guid, self.instance_name, self.plan_guid,
-                                                           parameters_sent)
+            instance = self.client.service_instance.create(space_guid=self.space_guid,
+                                                           instance_name=self.instance_name,
+                                                           plan_guid=self.plan_guid,
+                                                           parameters=parameters_sent)
             self.instance_guid = instance['metadata']['guid']
             logging.info('create_service_instance - %s', self.instance_guid)
 
@@ -137,7 +142,7 @@ class Cloudfoundry(object):
             raise AssertionError('Please create service instance before deleting it')
         else:
             logging.info('update_service_instance - parameters - %s', json.dumps(parameters))
-            self.client.service_instance.update(self.instance_guid, parameters)
+            self.client.service_instance.update(self.instance_guid, parameters=parameters)
             logging.info('update_service_instance - ok')
 
     def delete_service_instance(self):
@@ -153,7 +158,8 @@ class Cloudfoundry(object):
         if self.instance_guid is None:
             raise AssertionError('Please create service instance before binding it')
         else:
-            binding = self.client.service_binding.create(self.application_guid, self.instance_guid)
+            binding = self.client.service_binding.create(app_guid=self.application_guid,
+                                                         instance_guid=self.instance_guid)
             self.binding_guid = binding['metadata']['guid']
             logging.info('bind_application - %s', self.binding_guid)
 
@@ -166,25 +172,28 @@ class Cloudfoundry(object):
             logging.info('unbind_application - ok')
 
     def should_be_bound(self):
+        if self._get_application_binding() is None:
+            raise AssertionError('Application should be bound to service %s' % self.instance_name)
+        else:
+            logging.info('should_be_bound - ok')
+
+    def should_not_be_bound(self):
+        if self._get_application_binding() is not None:
+            raise AssertionError('Application should not be bound to service %s' % self.instance_name)
+        else:
+            logging.info('should_not_be_bound - ok')
+
+    def is_application_bound(self):
+        result = self._get_application_binding() is not None
+        logging.info('is_application_bound - %s', json.dumps(result))
+        return result
+
+    def _get_application_binding(self):
         if self.instance_guid is None:
             raise AssertionError('Please create service instance before testing if bound')
         else:
-            binding = self.client.service_binding.get_first(service_instance_guid=self.instance_guid,
-                                                            app_guid=self.application_guid)
-            if binding is None:
-                raise AssertionError('Application should be bound to service %s' % self.instance_name)
-            else:
-                logging.info('should_be_bound - ok')
-
-    def is_application_bound(self):
-        if self.instance_guid is not None:
-            raise AssertionError('Please create service instance before testing if bound')
-        else:
-            binding = self.client.service_binding.get_first(service_instance_guid=self.instance_guid,
-                                                            app_guid=self.application_guid)
-            result = binding is not None
-            logging.info('is_application_bound - %s', json.dumps(result))
-            return result
+            return self.client.service_binding.get_first(service_instance_guid=self.instance_guid,
+                                                         app_guid=self.application_guid)
 
     def get_bound_applications(self):
         if self.instance_guid is None:
@@ -222,26 +231,25 @@ class Cloudfoundry(object):
         logging.info('stop_application - ok')
 
     def ping_application(self, path="/"):
-        instance_stats = self.client.application.get_stats(self.application_guid)
-        if len(instance_stats) == 0:
-            raise AssertionError('No stats found for application %s', self.application_guid)
+        application_summary = self.client.application.get_summary(self.application_guid)
+        routes = application_summary.get('routes')
+        if routes is None or len(routes) == 0:
+            raise AssertionError('No route found for application %s', self.application_guid)
+
         uri_found = None
-        logging.info(json.dumps(instance_stats))
-        for _, instance_stat in instance_stats.items():
-            if instance_stat.get('stats', None) is not None:
-                if len(instance_stat['stats'].get('uris', [])) > 0:
-                    uri_found = instance_stat['stats']['uris'][0]
-                    break
+        logging.info(json.dumps(routes))
+        for route in routes:
+            if route.get('host') is not None and route.get('domain') is not None:
+                uri_found = '%s.%s' % (route['host'], route['domain']['name'])
+                break
         if uri_found is None:
             raise AssertionError('No uri found for application %s', self.application_guid)
         logging.info('ping_application - requesting %s', uri_found)
-        conn = httplib.HTTPConnection(uri_found, 80)
-        conn.request("GET", path)
-        response = conn.getresponse()
-        status = response.status
-        logging.info('ping_application - response - %d - %s', status, response.read())
-        if status != httplib.OK:
-            raise AssertionError('Invalid status code %d' % response.status)
+        response = requests.get('http://%s%s' % (uri_found, path), timeout=10.0, proxies=self.proxies,
+                                headers={"Cache-Control": "no-cache"})
+        logging.info('ping_application - response - %d - %s', response.status_code, response.text)
+        if response.status_code != httplib.OK:
+            raise AssertionError('Invalid status code %d' % response.status_code)
         else:
             logging.info('ping_application - ok')
 

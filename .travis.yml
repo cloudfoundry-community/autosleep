@@ -2,15 +2,18 @@ language: java
 jdk:
   - oraclejdk8
 before_cache:
-  - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 services:
   - mysql
+  - postgresql
 before_script:
   - mysql -e "create database IF NOT EXISTS autosleep;" -uroot
+  - psql -c 'create database autosleep;' -U postgres
 script:
   - ./gradlew check -Dintegration-test=true
 branches:
@@ -23,3 +26,4 @@ after_success:
   - ./gradlew jacocoRootReport coveralls
 notifications:
   slack: autosleep:eY0VgmPawVzYa7tWKhmnBdES
+  slack: cloudfoundry:CxDiILV5x3kUYhJFfM2dCKxt

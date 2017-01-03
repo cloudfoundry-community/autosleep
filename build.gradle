@@ -25,7 +25,7 @@ allprojects {
 
 subprojects {
 
-    if (name == 'spring-apps') {
+    if (name == 'spring-apps' || name == 'acceptance') {
         //prevent parent folder from building an empty jar
         return
     }
@@ -67,10 +67,11 @@ subprojects {
         compile "org.springframework.cloud:spring-cloud-spring-service-connector"
         // Persistence
         runtime "mysql:mysql-connector-java"
+        runtime "org.postgresql:postgresql"
         runtime "com.h2database:h2"
         compile "commons-dbcp:commons-dbcp"
         compile "org.hibernate:hibernate-entitymanager"
-        compile "org.liquibase:liquibase-core"
+        compile "org.liquibase:liquibase-core:${liquibaseCoreVersion}"
 
         //org.springframework.boot.autoconfigure needed in common for now... TODO move to spring-apps
         compile "org.springframework.boot:spring-boot-starter-actuator"
@@ -84,7 +85,7 @@ subprojects {
     tasks.withType(Jar) { // includes War and Jar
         manifest {
             attributes( "Implementation-Title": baseName,
-                        "Implementation-Version": version)
+                    "Implementation-Version": version)
         }
     }
 

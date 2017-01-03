@@ -20,13 +20,13 @@
 package org.cloudfoundry.autosleep.access.dao.repositories;
 
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface ApplicationRepository extends CrudRepository<ApplicationInfo, String> {
+public interface ApplicationRepository extends JpaRepository<ApplicationInfo, String> {
 
     @Query("select count(a) from ApplicationInfo a where a.uuid in (:ids)")
     Long countByApplicationIds(@Param("ids") List<String> ids);

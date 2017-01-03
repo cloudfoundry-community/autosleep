@@ -1,5 +1,6 @@
-#Publish
-How to make autosleep service broker available in your market place.
+#Publish manually
+
+This section describes how to maunally make autosleep service broker available in your market place.
 
 ## Deploy autosleep application
 This is how to deploy autosleep application in cloudfoundry. If you wish to run it elsewhere you're on your own.
@@ -14,29 +15,45 @@ Prerequisites:
    * on public CF instances: favor a user with cloudcontroller.read and cloudcontroller.write scopes, and role "SpaceDevelopper" on each the enrolleable autosleep space.
    * on private CF instance: favor an admin user with cloudcontroller.admin scope
 * (optional) a UAA OAuth client, with cloudcontroller.read and cloudcontroller.write scopes
-* a mysql service instance (with min 10 connections see [related issue 200](https://github.com/Orange-OpenSource/autosleep/issues/200))
+* a supported DB service instance which could be either,
+   * a mysql service instance (with min 10 connections see [related issue 200](https://github.com/Orange-OpenSource/autosleep/issues/200)), or
+   * a postgresql service instance
 * a wildcard route for each of the domains with routes that will trigger autowake up of apps.
 * (optional) a dedicated space to deploy autosleep and autowakeup apps on which CF users don't have acces.s
 
 
-Autosleep service needs properties to work . The properties that are used are:
+Autosleep service needs properties to work . 
+There are two ways of providing these properties to autosleep:
 
+1. In _manifest.yml_: by giving these informations in the _manifest.yml_, in the _JAVA_OPTS_ section.
+2. By providing them directly in  the _env_ section of the _manifest.yml_. Note that [acccording to the documentation](http://docs.cloudfoundry.org/devguide/deploy-apps/manifest.html#env-block), you will be able to update them afer the first deployment with the command `cf  set-env <application name> <property name>  <property value>`. Keep in mind that dot characters are forbidden by cloudfoundry cli and must be replaced by underscores. For example, you may provide the username like this `cf  set-env my-autosleep-service cf_client_username  bobby`.
+
+The properties that are used are:
+
+##### _Basic authentication_
 - __security.user.name__: the basic auth username that protects access to the service broker.
 - __security.user.password__: the basic auth password that protects access to the service broker.
+##### _Cloudfoundry client_
 - __cf.client.target.host__: the expected **hostname** of cloudfoundry CC api endpoint (port is always 443)
 - __cf.client.skip.ssl.validation__: set this property to _true_ if the current cloudfoundry CC API endpoint uses self-signed certificates.
 - __cf.client.username__: the username of the pre-requisite CC API user that will be used in by the autosleep service to list/stop/start apps.
 - __cf.client.password__: the password of the pre-requisite CC API user that will be used in by the autosleep service to list/stop/start apps.
 - __cf.client.clientId__: the (optional) client id of the application used to perform CC API calls. If none provided, it will used ```"cf"```.
 - __cf.client.clientSecret__: the optional client secret of the application (optional) used to perform CC API calls. If none provided, it will used ```""```.
+#### _Service broker_
+For this section, we advice you to take a look at the [documentation](http://docs.cloudfoundry.org/services/api.html#catalog-mgmt)
+
+- __cf.service.broker.id__: the service broker id that is used as a "service unique id". If none provided, it will use ```"autosleep"```. Must be unique in the CF instance across all brokers.
+- __cf.service.broker.name__: the service broker name that is used as a "service offering name" and will appear in the marketplace. If none provided, it will use ```"autosleep"```. Must be unique in the CF instance across all brokers.
+- __cf.service.plan.id__: the service plan id. If none provided, it will use ```"default"```. Must be unique in the CF plans across all brokers.
+- __cf.service.plan.name__: the service plan name that is used and will appear in the marketplace. If none provided, it will use ```"default"```. Must be unique in the CF instance across all brokers.
+
+#### _Other properties_
 - __cf.security.password.encodingSecret__: the secret used to hash password (optional). If none provided, it will use ```""```.
-- __cf.service.broker.id__: the service broker id that is used as a "service offering name" and will appear in the marketplace. If none provided, it will use ```"autosleep"```. Must be unique in the CF instance across all brokers.
-- __cf.service.plan.id__: the service plan id. If none provided, it will use ```"default"```. Must be unique in the CF instance across all brokers.
 
-There are two ways of providing these properties to autosleep:
+- __autosleep.debug__: a list to enable `DEBUG` logs. So far, the available keys are `autosleep` to turn applicative logs in `DEBUG`, and `spring` for the spring part.
+- __autowakeup.skip.ssl.validation__: set this property to _true_ if the applications that need to be restarted by _autowakeup_ use self-signed certificates.
 
-1. In _manifest.yml_: by giving these informations in the _manifest.yml_, in the _JAVA_OPTS_ section.
-2. By providing them with the command `cf  set-env <application name> <property name>  <property value>`. Keep in mind that dot characters are forbidden by cloudfoundry and must be replaced by underscores. For example, you may provide the username like this `cf  set-env my-autosleep-service cf_client_username  bobby`
 
 ### Deploy autosleep app
 
@@ -74,3 +91,12 @@ where:
 ## Publish as a private broker
 
 `cf create-service-broker <name> <login <password> <url> --space-scoped`
+
+## Access the backoffice UI
+
+The /admin/debug/ endpoint provides the list of all service instances, and bound applications in a central place. It is protected by basic auth credentials (the service broker credentials). 
+
+
+#Publish automatically
+
+Alternatively, you may use https://github.com/Orange-OpenSource/cloudfoundry-operators-tools-boshrelease#orange-autosleep-service-for-cloudfoundry to automatically install autosleep from a bosh CLI using packaged bosh errands.

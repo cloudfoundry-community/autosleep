@@ -21,6 +21,10 @@ package org.cloudfoundry.autosleep.access.cloudfoundry;
 
 public class CloudFoundryException extends Exception {
 
+    public CloudFoundryException(String message, Throwable throwable) {
+        super(message, throwable);
+    }
+
     public CloudFoundryException(Throwable cause) {
         super(cause);
     }

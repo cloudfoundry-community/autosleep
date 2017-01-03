@@ -41,6 +41,8 @@ import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Lob;
+
 import java.time.Instant;
 import java.util.HashMap;
 
@@ -48,7 +50,7 @@ import java.util.HashMap;
 @Slf4j
 @Entity
 @EqualsAndHashCode
-@ToString
+@ToString(of = {"uuid", "name", "diagnosticInfo"})
 public class ApplicationInfo {
 
     @Getter
@@ -56,6 +58,7 @@ public class ApplicationInfo {
     @Embeddable
     @EqualsAndHashCode
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    @ToString(of = {"appState", "lastCheck", "lastEvent", "lastLog", "nextCheck"})
     public static class DiagnosticInfo {
 
         @Getter
@@ -64,6 +67,7 @@ public class ApplicationInfo {
         @Embeddable
         @EqualsAndHashCode
         @NoArgsConstructor(access = AccessLevel.PRIVATE)
+        @ToString(of = {"timestamp", "type"})
         public static class ApplicationEvent {
 
             @JsonSerialize
@@ -80,6 +84,7 @@ public class ApplicationInfo {
 
             @JsonSerialize(using = InstantSerializer.class)
             @JsonDeserialize(using = InstantDeserializer.class)
+            @Lob
             @Column(name = "event_time")
             private Instant timestamp;
 
@@ -107,6 +112,7 @@ public class ApplicationInfo {
         @Embeddable
         @EqualsAndHashCode
         @NoArgsConstructor(access = AccessLevel.PRIVATE)
+        @ToString(of = {"timestamp", "messageType", "sourceId", "sourceName"})
         public static class ApplicationLog {
 
             @JsonSerialize
@@ -127,6 +133,7 @@ public class ApplicationInfo {
 
             @JsonSerialize(using = InstantSerializer.class)
             @JsonDeserialize(using = InstantDeserializer.class)
+            @Lob
             @Column(name = "log_time")
             private Instant timestamp;
 
@@ -157,6 +164,8 @@ public class ApplicationInfo {
 
         @JsonSerialize(using = InstantSerializer.class)
         @JsonDeserialize(using = InstantDeserializer.class)
+        @Lob
+        @Column
         private Instant lastCheck;
 
         @Embedded
@@ -169,6 +178,8 @@ public class ApplicationInfo {
 
         @JsonSerialize(using = InstantSerializer.class)
         @JsonDeserialize(using = InstantDeserializer.class)
+        @Lob
+        @Column
         private Instant nextCheck;
 
         @Builder
@@ -204,6 +215,7 @@ public class ApplicationInfo {
 
         }
 
+        @Lob
         @Column(length = 300) //to force BLOB type and not TINYBLOB
         private HashMap<String /**serviceId.**/, EnrollmentState.State> states;
 

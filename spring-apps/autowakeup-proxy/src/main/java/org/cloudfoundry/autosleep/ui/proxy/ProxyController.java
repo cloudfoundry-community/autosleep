@@ -20,9 +20,8 @@
 package org.cloudfoundry.autosleep.ui.proxy;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApi;
+import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
-import org.cloudfoundry.autosleep.access.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.autosleep.config.Config.Path;
@@ -35,7 +34,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 
@@ -60,17 +59,13 @@ public class ProxyController {
     }
 
     @Autowired
-    BindingRepository bindingRepository;
+    CloudFoundryApiService cfApi;
 
     @Autowired
-    CloudFoundryApi cfApi;
-
-    @Autowired
-    RestOperations restOperations;
+    RestTemplate restTemplate;
 
     @Autowired
     private TimeManager timeManager;
-
 
     @RequestMapping(value = "/{appGuidToRestart}", headers = {HEADER_FORWARD_URL})
     @ResponseBody
@@ -94,7 +89,7 @@ public class ProxyController {
         log.debug("forwarding traffic to {}", request.getHeaders().get(HEADER_FORWARD_URL));
         log.debug("Outgoing Request: {}", outgoing);
 
-        return this.restOperations.exchange(outgoing, byte[].class);
+        return this.restTemplate.exchange(outgoing, byte[].class);
     }
 
 }

@@ -37,9 +37,12 @@ public interface CloudFoundryApiService {
 
     String getHost(String routeId) throws CloudFoundryException;
 
-    List<String/**ids**/> listApplicationRoutes(String applicationUuid) throws CloudFoundryException;
+    boolean isAppRunning(String appUid) throws CloudFoundryException;
 
-    List<ApplicationIdentity> listApplications(String spaceUuid, Pattern excludeNames) throws CloudFoundryException;
+    List<ApplicationIdentity> listAliveApplications(String spaceUuid, Pattern excludeNames)
+            throws CloudFoundryException;
+
+    List<String/**ids**/> listApplicationRoutes(String applicationUuid) throws CloudFoundryException;
 
     List<String/**ids**/> listRouteApplications(String routeUuid) throws CloudFoundryException;
 

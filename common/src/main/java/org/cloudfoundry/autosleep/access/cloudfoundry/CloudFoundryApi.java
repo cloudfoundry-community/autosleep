@@ -26,12 +26,14 @@ import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.applications.ApplicationInstanceInfo;
+import org.cloudfoundry.client.v2.applications.ApplicationInstancesRequest;
+import org.cloudfoundry.client.v2.applications.ApplicationInstancesResponse;
 import org.cloudfoundry.client.v2.applications.GetApplicationRequest;
 import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
 import org.cloudfoundry.client.v2.applications.ListApplicationRoutesRequest;
 import org.cloudfoundry.client.v2.applications.ListApplicationRoutesResponse;
 import org.cloudfoundry.client.v2.applications.ListApplicationsRequest;
-import org.cloudfoundry.client.v2.applications.ListApplicationsResponse;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
 import org.cloudfoundry.client.v2.domains.GetDomainRequest;
 import org.cloudfoundry.client.v2.domains.GetDomainResponse;
@@ -54,9 +56,11 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -110,6 +114,10 @@ public class CloudFoundryApi implements CloudFoundryApiService {
             subscription.request(Long.MAX_VALUE);
         }
     }
+
+    static final int CF_INSTANCES_ERROR = 220_001;
+
+    static final int CF_STAGING_NOT_FINISHED = 170_002;
 
     @Autowired
     private CloudFoundryClient cfClient;
@@ -252,6 +260,23 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                         .build());
     }
 
+    private Mono<ApplicationInstancesResponse> getApplicationInstances(String applicationUuid) {
+        log.debug("listApplicationRoutes");
+        return cfClient.applicationsV2()
+                .instances(
+                        ApplicationInstancesRequest.builder()
+                                .applicationId(applicationUuid)
+                                .build())
+                .otherwise(throwable -> {
+                    if (throwable instanceof org.cloudfoundry.client.v2.CloudFoundryException
+                            && isNoInstanceFoundError((org.cloudfoundry.client.v2.CloudFoundryException) throwable)) {
+                        return Mono.just(ApplicationInstancesResponse.builder().build());
+                    } else {
+                        return Mono.error(throwable);
+                    }
+                });
+    }
+
     @Override
     public String getApplicationState(String applicationUuid) throws CloudFoundryException {
         log.debug("getApplicationState");
@@ -271,17 +296,79 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
     @Override
     public String getHost(String routeId) throws CloudFoundryException {
-        log.debug("getHost");
-        GetRouteResponse response = cfClient.routes().get(GetRouteRequest.builder().routeId(routeId).build())
-                .get(Config.CF_API_TIMEOUT);
-        RouteEntity routeEntity = response.getEntity();
-        String route = routeEntity.getHost() + routeEntity.getPath();
-        log.debug("route =  {}", route);
+        try {
+            log.debug("getHost");
+            GetRouteResponse response = cfClient.routes()
+                    .get(GetRouteRequest.builder()
+                            .routeId(routeId)
+                            .build())
+                    .get(Config.CF_API_TIMEOUT);
+            RouteEntity routeEntity = response.getEntity();
+            String route = routeEntity.getHost() + routeEntity.getPath();
+            log.debug("route =  {}", route);
 
-        GetDomainResponse domainResponse = cfClient.domains().get(GetDomainRequest.builder().domainId(routeEntity
-                .getDomainId()).build()).get(Config.CF_API_TIMEOUT);
-        log.debug("domain = {}", domainResponse.getEntity());
-        return route + "." + domainResponse.getEntity().getName();
+            GetDomainResponse domainResponse = cfClient.domains()
+                    .get(GetDomainRequest.builder()
+                            .domainId(routeEntity.getDomainId())
+                            .build())
+                    .get(Config.CF_API_TIMEOUT);
+            log.debug("domain = {}", domainResponse.getEntity());
+            return route + "." + domainResponse.getEntity().getName();
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException(r);
+        }
+    }
+
+    @Override
+    public boolean isAppRunning(String appUid) throws CloudFoundryException {
+        log.debug("isAppRunning");
+        try {
+            return !getApplicationInstances(appUid)
+                    .flatMap(response -> Flux.fromIterable(response.values()))
+                    .filter(instanceInfo -> "RUNNING".equals(instanceInfo.getState()))
+                    .collect(ArrayList<ApplicationInstanceInfo>::new, ArrayList::add)
+                    .get(Config.CF_API_TIMEOUT)
+                    .isEmpty();
+
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException(r);
+        }
+    }
+
+    private boolean isNoInstanceFoundError(org.cloudfoundry.client.v2.CloudFoundryException cloudfoundryException) {
+        return cloudfoundryException.getCode() == CF_INSTANCES_ERROR
+                || cloudfoundryException.getCode() == CF_STAGING_NOT_FINISHED;
+    }
+
+    @Override
+    public List<ApplicationIdentity> listAliveApplications(String spaceUuid, Pattern excludeNames) throws
+            CloudFoundryException {
+        log.debug("listAliveApplications from space_guid:" + spaceUuid);
+        try {
+            return Mono.just(spaceUuid)
+                    .then(spaceId -> this.cfClient
+                            .applicationsV2()
+                            .list(ListApplicationsRequest.builder()
+                                    .spaceId(spaceUuid)
+                                    .build()))
+                    .flatMap(listApplicationsResponse -> Flux.fromIterable(listApplicationsResponse.getResources()))
+                    //remove all filtered applications
+                    .filter(applicationResource -> excludeNames == null
+                            || !excludeNames.matcher(applicationResource.getEntity().getName()).matches())
+                    //get instances
+                    .flatMap(applicationResource -> Mono.when(Mono.just(applicationResource),
+                            getApplicationInstances(applicationResource.getMetadata().getId())))
+                    //filter the one that has no instances (ie. STOPPED)
+                    .filter(tuple -> !tuple.getT2().isEmpty())
+                    .map(tuple -> ApplicationIdentity.builder()
+                            .guid(tuple.getT1().getMetadata().getId())
+                            .name(tuple.getT1().getEntity().getName())
+                            .build())
+                    .collect(ArrayList<ApplicationIdentity>::new, ArrayList::add)
+                    .get(Config.CF_API_TIMEOUT);
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException("failed listing applications from space_id: " + spaceUuid, r);
+        }
     }
 
     @Override
@@ -296,36 +383,6 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                     .get(Config.CF_API_TIMEOUT);
             return response.getResources().stream()
                     .map(routeResource -> routeResource.getMetadata().getId())
-                    .collect(Collectors.toList());
-        } catch (RuntimeException r) {
-            throw new CloudFoundryException(r);
-        }
-    }
-
-    @Override
-    public List<ApplicationIdentity> listApplications(String spaceUuid, Pattern excludeNames) throws
-            CloudFoundryException {
-        log.debug("listApplications");
-        try {
-            ListApplicationsResponse response = this.cfClient
-                    .applicationsV2()
-                    .list(ListApplicationsRequest.builder()
-                            .spaceId(spaceUuid)
-                            .build())
-                    .get(Config.CF_API_TIMEOUT);
-            return response.getResources().stream().filter(
-                    cloudApplication -> (
-                            spaceUuid == null
-                                    || spaceUuid.equals(cloudApplication.getEntity().getSpaceId()))
-                            && (
-                            excludeNames == null
-                                    || !excludeNames.matcher(cloudApplication.getEntity().getName()).matches()))
-                    .map(
-                            cloudApplication ->
-                                    ApplicationIdentity.builder()
-                                            .guid(cloudApplication.getMetadata().getId())
-                                            .name(cloudApplication.getEntity().getName())
-                                            .build())
                     .collect(Collectors.toList());
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
@@ -364,12 +421,15 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
     @Override
     public void unbind(String bindingId) throws CloudFoundryException {
-        cfClient.serviceBindings()
-                .delete(DeleteServiceBindingRequest.builder()
-                        .serviceBindingId(bindingId)
-                        .build())
-                .get(Config.CF_API_TIMEOUT);
-
+        try {
+            cfClient.serviceBindings()
+                    .delete(DeleteServiceBindingRequest.builder()
+                            .serviceBindingId(bindingId)
+                            .build())
+                    .get(Config.CF_API_TIMEOUT);
+        } catch (RuntimeException r) {
+            throw new CloudFoundryException(r);
+        }
     }
 
     private <T> T waitForResult(CountDownLatch latch, AtomicReference<Throwable> errorEncountered,
