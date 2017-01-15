@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
@@ -23,7 +24,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -92,10 +95,14 @@ public class AutoEnrollmentController {
     @RequestMapping(method = RequestMethod.PUT, value = "{organizationId}")
     public ResponseEntity<OrgEnrollmentConfig> enrolOrganization(
             @PathVariable String organizationId,
-            @RequestBody OrgEnrollmentConfigRequest orgEnrollerConfigRequest, BindingResult result)
-            throws CloudFoundryException, BindException {
+            @Valid @RequestBody OrgEnrollmentConfigRequest orgEnrollerConfigRequest,
+            BindingResult result) throws CloudFoundryException, BindException {
 
         log.debug("enrolOrganization - {}", organizationId);
+
+        if (result.hasErrors()) {
+            throw new BindException(result);
+        }
 
         if (!cloudfoundryApi.isValidOrganization(organizationId)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -105,11 +112,6 @@ public class AutoEnrollmentController {
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.ALLOW, RequestMethod.PATCH.name());
             return new ResponseEntity<>(headers, HttpStatus.METHOD_NOT_ALLOWED);
-        }
-
-        validator.validate(orgEnrollerConfigRequest, result);
-        if (result.hasErrors()) {
-            throw new BindException(result);
         }
 
         OrgEnrollmentConfig orgEnrollerConfig = OrgEnrollmentConfig.builder()
@@ -138,6 +140,11 @@ public class AutoEnrollmentController {
                 EnrollmentConfig.Path.ORG_AUTO_ENROLMENT_BASE_PATH + organizationId);
         return new ResponseEntity<OrgEnrollmentConfig>(orgEnrollerConfig, headers,
                 HttpStatus.CREATED);
+    }
+
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        binder.addValidators(validator);
     }
 
     @ExceptionHandler({ CloudFoundryException.class })
