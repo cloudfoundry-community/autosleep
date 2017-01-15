@@ -7,11 +7,16 @@ public interface EnrollmentConfig {
             // unless
             // individually overridden either via SpaceEnrollmentConfig or
             // specific service instance
-            backoffice_enrolled,
+            enrolled,
             // All spaces and apps within the org or space are excluded from
             // autosleep even if explicitly
             // enrolled via SpaceEnrollmentConfig or specific service instance
-            backoffice_opted_out
+            backoffice_recursive_opted_out,
+            // All explicitly created space level service instances continue to
+            // function according
+            // to their own configuration. The organization will not be auto
+            // enrolled
+            backoffice_opted_out,
         }
 
         String STATE = "state";

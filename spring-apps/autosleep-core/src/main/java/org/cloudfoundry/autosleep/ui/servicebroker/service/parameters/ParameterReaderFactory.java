@@ -224,7 +224,7 @@ public class ParameterReaderFactory {
                                 "choose one between: " + availableValues);
                     }
                 } else if (withDefault) {
-                    return EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_enrolled;
+                    return EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled;
                 } else {
                     return null;
                 }

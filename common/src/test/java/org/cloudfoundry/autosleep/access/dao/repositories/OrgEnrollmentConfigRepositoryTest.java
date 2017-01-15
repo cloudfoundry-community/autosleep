@@ -39,7 +39,7 @@ public abstract class OrgEnrollmentConfigRepositoryTest extends CrudRepositoryTe
                 .organizationGuid(orgId)
                 .excludeSpacesFromAutoEnrollment(excludePattern)
                 .idleDuration(duration)
-                .state(EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_enrolled)
+                .state(EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled)
                 .autoEnrollment(Config.ServiceInstanceParameters.Enrollment.standard)
                 .build();
     }
