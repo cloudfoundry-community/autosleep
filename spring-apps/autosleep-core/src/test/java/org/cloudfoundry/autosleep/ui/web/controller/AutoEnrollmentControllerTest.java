@@ -4,6 +4,7 @@ import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo.EnrollmentState;
 import org.cloudfoundry.autosleep.access.dao.model.OrgEnrollmentConfig;
 import org.cloudfoundry.autosleep.access.dao.repositories.OrgEnrollmentConfigRepository;
 import org.cloudfoundry.autosleep.config.Config;
@@ -30,11 +32,13 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AutoEnrollmentControllerTest {
@@ -93,13 +97,15 @@ public class AutoEnrollmentControllerTest {
     public void test_deleteOrganization_ok() throws CloudFoundryException {
         String fakeOrgGuid = "fake-organization-guid";
         OrgEnrollmentConfig orgConfig = OrgEnrollmentConfig.builder().organizationGuid(fakeOrgGuid)
-                .build();
+                .state(EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled).build();
         when(orgEnrollmentConfigRepository.findOne(fakeOrgGuid)).thenReturn(orgConfig);
         ResponseEntity<OrgEnrollmentConfig> response = autoEnrollmentController
                 .deleteOrganization(fakeOrgGuid);
 
         assertTrue(response.getStatusCode() == HttpStatus.OK);
-        verify(orgEnrollmentConfigRepository, times(1)).delete(fakeOrgGuid);
+        verify(orgEnrollmentConfigRepository, times(1)).save(any(OrgEnrollmentConfig.class));
+        assertTrue(orgConfig
+                .getState() == EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_opted_out);
     }
 
     @Test
@@ -119,6 +125,8 @@ public class AutoEnrollmentControllerTest {
         OrgEnrollmentConfigRequest request = OrgEnrollmentConfigRequest.builder().build();
 
         when(cloudFoundryApi.isValidOrganization(fakeOrgGuid)).thenReturn(true);
+        when(orgEnrollmentConfigRepository.exists(fakeOrgGuid)).thenReturn(false);
+        when(result.hasErrors()).thenReturn(false);
         ResponseEntity<OrgEnrollmentConfig> response = autoEnrollmentController
                 .enrolOrganization(fakeOrgGuid, request, result);
 
@@ -151,19 +159,25 @@ public class AutoEnrollmentControllerTest {
     }
 
     @Test
-    public void test_enrolOrganization_updated_ok() throws CloudFoundryException, BindException {
+    public void test_enrolOrganization_returns_405_if_org_already_enrolled()
+            throws CloudFoundryException, BindException {
+
         String fakeOrgGuid = "fake-organization-guid";
-        OrgEnrollmentConfigRequest request = OrgEnrollmentConfigRequest.builder()
-                .idleDuration("PT2M").autoEnrollment("standard")
-                .excludeSpacesFromAutoEnrollment(".*space").state("backoffice_enrolled").build();
+        OrgEnrollmentConfigRequest request = OrgEnrollmentConfigRequest.builder().build();
+
         when(cloudFoundryApi.isValidOrganization(fakeOrgGuid)).thenReturn(true);
         when(orgEnrollmentConfigRepository.exists(fakeOrgGuid)).thenReturn(true);
+        when(result.hasErrors()).thenReturn(false);
         ResponseEntity<OrgEnrollmentConfig> response = autoEnrollmentController
                 .enrolOrganization(fakeOrgGuid, request, result);
 
         verify(orgEnrollmentConfigRepository, times(1)).exists(fakeOrgGuid);
-        verify(orgEnrollmentConfigRepository, times(1)).save(any(OrgEnrollmentConfig.class));
-        assertTrue(response.getStatusCode() == HttpStatus.OK);
+        verify(orgEnrollmentConfigRepository, never()).save(any(OrgEnrollmentConfig.class));
+
+        assertTrue(response.getStatusCode() == HttpStatus.METHOD_NOT_ALLOWED);
+        assertTrue(response.getHeaders().getFirst(HttpHeaders.ALLOW)
+                .equals(RequestMethod.PATCH.name()));
+
     }
 
     @Test

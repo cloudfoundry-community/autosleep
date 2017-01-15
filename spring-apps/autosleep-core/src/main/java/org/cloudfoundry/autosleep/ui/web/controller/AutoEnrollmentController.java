@@ -16,6 +16,7 @@ import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterR
 import org.cloudfoundry.autosleep.ui.web.controller.validation.EnrollmentValidator;
 import org.cloudfoundry.autosleep.ui.web.model.OrgEnrollmentConfigRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,15 +47,19 @@ public class AutoEnrollmentController {
     private CloudFoundryApiService cloudfoundryApi;
 
     @Autowired
+    @Qualifier(Config.ServiceInstanceParameters.AUTO_ENROLLMENT)
     private ParameterReader<Config.ServiceInstanceParameters.Enrollment> autoEnrollmentReader;
 
     @Autowired
+    @Qualifier(Config.ServiceInstanceParameters.EXCLUDE_FROM_AUTO_ENROLLMENT)
     private ParameterReader<Pattern> excludeFromAutoEnrollmentReader;
 
     @Autowired
+    @Qualifier(Config.ServiceInstanceParameters.IDLE_DURATION)
     private ParameterReader<Duration> idleDurationReader;
 
     @Autowired
+    @Qualifier(EnrollmentConfig.EnrollmentParameters.STATE)
     private ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState> stateReader;
 
     @RequestMapping(method = RequestMethod.GET, value = "/{organizationId}")
@@ -72,12 +77,16 @@ public class AutoEnrollmentController {
     public ResponseEntity<OrgEnrollmentConfig> deleteOrganization(
             @PathVariable String organizationId) {
         log.debug("deleteEnrolledOrganization - {}", organizationId);
+
         OrgEnrollmentConfig orgConfig = orgEnrollmentRepository.findOne(organizationId);
         if (orgConfig == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        orgEnrollmentRepository.delete(organizationId);
-        return new ResponseEntity<>(HttpStatus.OK);
+
+        orgConfig.setState(
+                EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_opted_out);
+        orgConfig = orgEnrollmentRepository.save(orgConfig);
+        return new ResponseEntity<OrgEnrollmentConfig>(orgConfig, HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "{organizationId}")
@@ -87,8 +96,15 @@ public class AutoEnrollmentController {
             throws CloudFoundryException, BindException {
 
         log.debug("enrolOrganization - {}", organizationId);
+
         if (!cloudfoundryApi.isValidOrganization(organizationId)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        if (orgEnrollmentRepository.exists(organizationId)) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.ALLOW, RequestMethod.PATCH.name());
+            return new ResponseEntity<>(headers, HttpStatus.METHOD_NOT_ALLOWED);
         }
 
         validator.validate(orgEnrollerConfigRequest, result);
@@ -115,18 +131,13 @@ public class AutoEnrollmentController {
                         : stateReader.readParameter(orgEnrollerConfigRequest.getState(), false))
                 .build();
 
-        boolean isAlreadyRegistered = orgEnrollmentRepository.exists(organizationId);
-        orgEnrollerConfig = orgEnrollmentRepository.save(orgEnrollerConfig);
+        orgEnrollmentRepository.save(orgEnrollerConfig);
 
-        if (isAlreadyRegistered) {
-            return new ResponseEntity<OrgEnrollmentConfig>(orgEnrollerConfig, HttpStatus.OK);
-        } else {
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("Location",
-                    EnrollmentConfig.Path.ORG_AUTO_ENROLMENT_BASE_PATH + organizationId);
-            return new ResponseEntity<OrgEnrollmentConfig>(orgEnrollerConfig, headers,
-                    HttpStatus.CREATED);
-        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Location",
+                EnrollmentConfig.Path.ORG_AUTO_ENROLMENT_BASE_PATH + organizationId);
+        return new ResponseEntity<OrgEnrollmentConfig>(orgEnrollerConfig, headers,
+                HttpStatus.CREATED);
     }
 
     @ExceptionHandler({ CloudFoundryException.class })

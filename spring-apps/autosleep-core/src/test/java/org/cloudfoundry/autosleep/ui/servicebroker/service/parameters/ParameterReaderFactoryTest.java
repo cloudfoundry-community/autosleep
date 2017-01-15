@@ -338,7 +338,7 @@ public class ParameterReaderFactoryTest {
                 .readParameter(null, true);
         // Then it returns the value from config
         assertThat(withDefault, is(equalTo(
-                EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_enrolled)));
+                EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled)));
     }
 
     @Test
@@ -361,7 +361,7 @@ public class ParameterReaderFactoryTest {
         // When we read a correct value
         EnrollmentConfig.EnrollmentParameters.EnrollmentState backofficeEnrolled = stateReader
                 .readParameter(
-                        EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_enrolled
+                        EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled
                                 .name(),
                         true);
         EnrollmentConfig.EnrollmentParameters.EnrollmentState backofficeOptedOut = stateReader
@@ -369,11 +369,18 @@ public class ParameterReaderFactoryTest {
                         EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_opted_out
                                 .name(),
                         true);
+        EnrollmentConfig.EnrollmentParameters.EnrollmentState backofficeRecursiveOptedOut = stateReader
+                .readParameter(
+                        EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_recursive_opted_out
+                                .name(),
+                        true);
         // Then we obtained the values from enum
         assertThat(backofficeEnrolled, is(equalTo(
-                EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_enrolled)));
+                EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled)));
         assertThat(backofficeOptedOut, is(equalTo(
                 EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_opted_out)));
+        assertThat(backofficeRecursiveOptedOut, is(equalTo(
+                EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_recursive_opted_out)));
 
     }
 
