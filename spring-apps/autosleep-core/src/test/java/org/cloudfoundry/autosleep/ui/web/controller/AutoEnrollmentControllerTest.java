@@ -19,7 +19,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryApiService;
 import org.cloudfoundry.autosleep.access.cloudfoundry.CloudFoundryException;
-import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo.EnrollmentState;
 import org.cloudfoundry.autosleep.access.dao.model.OrgEnrollmentConfig;
 import org.cloudfoundry.autosleep.access.dao.repositories.OrgEnrollmentConfigRepository;
 import org.cloudfoundry.autosleep.config.Config;
@@ -38,6 +37,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -214,6 +214,13 @@ public class AutoEnrollmentControllerTest {
                 response);
         assertTrue(errors.getBody() != null && errors.getBody().size() == 2);
         assertTrue(errors.getStatusCode() == HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void test_initBinder() {
+        WebDataBinder binder = new WebDataBinder(null);
+        autoEnrollmentController.initBinder(binder);
+        assertTrue(binder.getValidators().size() == 1 && binder.getValidator().equals(validator));
     }
 
     @Test
