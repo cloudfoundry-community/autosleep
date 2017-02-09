@@ -483,7 +483,7 @@ public class AutosleepServiceInstanceServiceTest {
 
     @Test
     public void test_update_fails_when_transient_auto_enrollment_without_secret() throws Exception {
-        // given service exists
+        // given transient service with secret exists
         transient_service_with_secret_exist_in_database();
 
         // when user gives auto enrollment without secret

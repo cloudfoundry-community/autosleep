@@ -218,7 +218,7 @@ public class AutosleepBindingServiceTest {
         String serviceId = "testDelBindingtransientEnrollment";
         final DeleteServiceInstanceBindingRequest deleteRequest = prepareDeleteAppBindingTest(serviceId, bindingId);
 
-        // given that autoEnrollment is forced
+        // given that autoEnrollment is transient
         when(spaceEnrollerConfig.getEnrollment())
                 .thenReturn(Config.ServiceInstanceParameters.Enrollment.transient_opt_out);
 
