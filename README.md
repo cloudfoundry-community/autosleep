@@ -30,7 +30,7 @@ Download [latest release](https://github.com/cloudfoundry-community/autosleep/re
 
 ### What we are working on:
 
-We manage our roadmap as github issues, following is however an overview of planned short-term work:
+We manage our roadmap as github issues (also displayed as milestones in [huboard](https://huboard.com/cloudfoundry-community/autosleep). Detailed breakdown of org enrollement is in [pivotal tracker](https://www.pivotaltracker.com/n/projects/1891357), following is however an overview of planned short-term work:
 * Hardening, optimizations
 * Automatic enrollemnt of new spaces and orgs
 
