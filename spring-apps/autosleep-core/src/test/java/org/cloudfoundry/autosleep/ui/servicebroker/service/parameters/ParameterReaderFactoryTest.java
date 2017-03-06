@@ -76,9 +76,12 @@ public class ParameterReaderFactoryTest {
                 .readParameter(Enrollment.standard.name(), true);
         Enrollment forced = enrollmentParameterReader
                 .readParameter(Enrollment.forced.name(), false);
+        Enrollment transientOptOut = enrollmentParameterReader
+                .readParameter(Enrollment.transient_opt_out.name(), false);
         //Then we obtained the values from enum
         assertThat(standard, is(equalTo(Enrollment.standard)));
         assertThat(forced, is(equalTo(Enrollment.forced)));
+        assertThat(transientOptOut, is(equalTo(Enrollment.transient_opt_out)));
 
     }
 

@@ -35,7 +35,7 @@ layout 'layouts/main.tpl',
                         }
                         li {
                             span {
-                                yield "forcedAutoEnrollment : $forcedAutoEnrollment"
+                                yield "enrollment : $enrollment"
                             }
                         }
                         li {
