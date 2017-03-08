@@ -52,4 +52,6 @@ public interface CloudFoundryApiService {
 
     void unbind(String bindingId) throws CloudFoundryException;
 
+    boolean isValidOrganization(String organizationGuid) throws CloudFoundryException;
+
 }
