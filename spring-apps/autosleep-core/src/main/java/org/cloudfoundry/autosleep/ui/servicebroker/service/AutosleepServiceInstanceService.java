@@ -20,6 +20,7 @@
 package org.cloudfoundry.autosleep.ui.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters.Enrollment;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.InvalidParameterException;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
@@ -68,7 +69,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
 
     @Autowired
     @Qualifier(Config.ServiceInstanceParameters.AUTO_ENROLLMENT)
-    private ParameterReader<Config.ServiceInstanceParameters.Enrollment> autoEnrollmentReader;
+    private ParameterReader<Enrollment> autoEnrollmentReader;
 
     @Autowired
     private DeployedApplicationConfig.Deployment deployment;
@@ -129,7 +130,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                     .ofNullable(request.getParameters())
                     .orElse(Collections.emptyMap());
 
-            Config.ServiceInstanceParameters.Enrollment autoEnrollment = consumeParameter(createParameters,
+            Enrollment autoEnrollment = consumeParameter(createParameters,
                     true, autoEnrollmentReader);
             String secret = consumeParameter(createParameters, true, secretReader);
             Duration idleDuration = consumeParameter(createParameters, true, idleDurationReader);
@@ -141,8 +142,8 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                 String parameterNames = String.join(", ", createParameters.keySet().iterator().next());
                 log.debug("createServiceInstance - extra parameters are not accepted: {}", parameterNames);
                 throw new InvalidParameterException(parameterNames, "Unknown parameters for creation");
-            } else if (autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced
-                    || autoEnrollment == Config.ServiceInstanceParameters.Enrollment.transient_opt_out) {
+            } else if (autoEnrollment == Enrollment.forced
+                    || autoEnrollment == Enrollment.transient_opt_out) {
                 checkSecuredParameter(autoEnrollmentReader.getParameterName(), secret);
             }
 
@@ -181,7 +182,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
         log.debug("deleteServiceInstance - {}", spaceEnrollerConfigId);
         SpaceEnrollerConfig config = spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId);
         if (config != null) {
-            if (config.getEnrollment() == Config.ServiceInstanceParameters.Enrollment.forced) {
+            if (config.getEnrollment() == Enrollment.forced) {
                 log.debug("deleteServiceInstance - {} - forced enrollment. Denied", spaceEnrollerConfigId);
                 throw new ServiceBrokerException("this autosleep service instance can't be deleted during forced "
                         + "enrollment mode. Switch back to normal enrollment mode to allow its deletion.");
@@ -241,7 +242,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                     .ofNullable(request.getParameters())
                     .orElse(Collections.emptyMap());
 
-            Config.ServiceInstanceParameters.Enrollment autoEnrollment = consumeParameter(updateParameters,
+            Enrollment autoEnrollment = consumeParameter(updateParameters,
                     false, autoEnrollmentReader);
             String secret = consumeParameter(updateParameters, false, secretReader);
 
