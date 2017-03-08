@@ -65,7 +65,8 @@ public class DashboardController {
             parameters.put("planId", serviceDefinition.getPlans().get(0).getId());
             parameters.put("serviceInstance", serviceInstanceId);
 
-            parameters.put("forcedAutoEnrollment", serviceInstance.isForcedAutoEnrollment());
+            parameters.put("enrollment",
+                    serviceInstance.getEnrollment());
             parameters.put("idleDuration", serviceInstance.getIdleDuration().toString());
             if (serviceInstance.getExcludeFromAutoEnrollment() != null) {
                 parameters.put("excludeFromAutoEnrollment",

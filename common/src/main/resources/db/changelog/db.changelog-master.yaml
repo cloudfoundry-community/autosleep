@@ -260,3 +260,16 @@ databaseChangeLog:
         - column:
             name: state
             type: INT
+- changeSet:
+    id: 4
+    author: SAP
+    changes:
+    - renameColumn:
+        tableName: space_enroller_config
+        oldColumnName: forced_auto_enrollment
+        newColumnName: enrollment
+        columnDataType: BOOLEAN
+    - modifyDataType:
+        columnName: enrollment
+        newDataType: INT
+        tableName: space_enroller_config
