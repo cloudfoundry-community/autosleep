@@ -80,7 +80,7 @@ public class DashboardControllerTest {
 
         return SpaceEnrollerConfig.builder()
                 .idleDuration(Duration.parse("PT1M"))
-                .forcedAutoEnrollment(true)
+                .enrollment(Config.ServiceInstanceParameters.Enrollment.forced)
                 .secret("Pa$$w0rd")
                 .serviceDefinitionId(serviceDefinitionId)
                 .planId(planId)

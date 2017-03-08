@@ -99,7 +99,7 @@ public interface Config {
     interface ServiceInstanceParameters {
 
         enum Enrollment {
-            standard, forced
+            standard, forced, transient_opt_out
         }
 
         String AUTO_ENROLLMENT = "auto-enrollment";
