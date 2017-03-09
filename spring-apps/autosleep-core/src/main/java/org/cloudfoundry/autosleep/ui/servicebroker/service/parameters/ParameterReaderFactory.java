@@ -30,6 +30,7 @@ import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
 import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters.Enrollment;
 import org.cloudfoundry.autosleep.config.EnrollmentConfig;
+import org.cloudfoundry.autosleep.config.EnrollmentConfig.EnrollmentParameters.EnrollmentState;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.InvalidParameterException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,7 +43,7 @@ public class ParameterReaderFactory {
 
     @Bean(name = Config.ServiceInstanceParameters.AUTO_ENROLLMENT)
     public ParameterReader<Enrollment> buildAutoEnrollmentReader() {
-        return new ParameterReader<Config.ServiceInstanceParameters.Enrollment>() {
+        return new ParameterReader<Enrollment>() {
 
             @Override
             public String getParameterName() {
@@ -50,25 +51,25 @@ public class ParameterReaderFactory {
             }
 
             @Override
-            public Config.ServiceInstanceParameters.Enrollment readParameter(Object parameter,
+            public Enrollment readParameter(Object parameter,
                                                                              boolean withDefault)
                     throws InvalidParameterException {
                 if (parameter != null) {
                     String autoEnrollment = (String) parameter;
                     log.debug("forcedAutoEnrollment " + autoEnrollment);
                     try {
-                        return Config.ServiceInstanceParameters.Enrollment.valueOf(autoEnrollment);
+                        return Enrollment.valueOf(autoEnrollment);
                     } catch (IllegalArgumentException i) {
                         String availableValues = String.join(", ",
-                                Arrays.asList(Config.ServiceInstanceParameters.Enrollment.values()).stream()
-                                        .map(Config.ServiceInstanceParameters.Enrollment::name)
+                                Arrays.asList(Enrollment.values()).stream()
+                                        .map(Enrollment::name)
                                         .collect(Collectors.toList()));
                         log.error("Wrong value for auto enrollment  - choose one between [{}]", availableValues);
                         throw new InvalidParameterException(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
                                 "choose one between: " + availableValues);
                     }
                 } else if (withDefault) {
-                    return Config.ServiceInstanceParameters.Enrollment.standard;
+                    return Enrollment.standard;
                 } else {
                     return null;
                 }
@@ -197,8 +198,8 @@ public class ParameterReaderFactory {
     }
     
     @Bean(name = EnrollmentConfig.EnrollmentParameters.STATE)
-    public ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState> buildEnrollmentStateReader() {
-        return new ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState>() {
+    public ParameterReader<EnrollmentState> buildEnrollmentStateReader() {
+        return new ParameterReader<EnrollmentState>() {
 
             @Override
             public String getParameterName() {
@@ -206,25 +207,25 @@ public class ParameterReaderFactory {
             }
 
             @Override
-            public EnrollmentConfig.EnrollmentParameters.EnrollmentState readParameter(Object parameter,
+            public EnrollmentState readParameter(Object parameter,
                                                                              boolean withDefault)
                     throws InvalidParameterException {
                 if (parameter != null) {
                     String state = (String) parameter;
                     log.debug("state " + state);
                     try {
-                        return EnrollmentConfig.EnrollmentParameters.EnrollmentState.valueOf(state);
+                        return EnrollmentState.valueOf(state);
                     } catch (IllegalArgumentException i) {
                         String availableValues = String.join(", ",
-                                Arrays.asList(EnrollmentConfig.EnrollmentParameters.EnrollmentState.values()).stream()
-                                        .map(EnrollmentConfig.EnrollmentParameters.EnrollmentState::name)
+                                Arrays.asList(EnrollmentState.values()).stream()
+                                        .map(EnrollmentState::name)
                                         .collect(Collectors.toList()));
                         log.error("Wrong value for state  - choose one between [{}]", availableValues);
                         throw new InvalidParameterException(EnrollmentConfig.EnrollmentParameters.STATE,
                                 "choose one between: " + availableValues);
                     }
                 } else if (withDefault) {
-                    return EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled;
+                    return EnrollmentState.enrolled;
                 } else {
                     return null;
                 }

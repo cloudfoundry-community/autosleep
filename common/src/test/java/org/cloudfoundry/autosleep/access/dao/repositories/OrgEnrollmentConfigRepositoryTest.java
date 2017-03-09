@@ -11,7 +11,9 @@ import java.util.regex.Pattern;
 import org.cloudfoundry.autosleep.access.dao.config.RepositoryConfig;
 import org.cloudfoundry.autosleep.access.dao.model.OrgEnrollmentConfig;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters.Enrollment;
 import org.cloudfoundry.autosleep.config.EnrollmentConfig;
+import org.cloudfoundry.autosleep.config.EnrollmentConfig.EnrollmentParameters.EnrollmentState;
 import org.cloudfoundry.autosleep.util.ApplicationConfiguration;
 import org.junit.After;
 import org.junit.Before;
@@ -39,8 +41,8 @@ public abstract class OrgEnrollmentConfigRepositoryTest extends CrudRepositoryTe
                 .organizationGuid(orgId)
                 .excludeSpacesFromAutoEnrollment(excludePattern)
                 .idleDuration(duration)
-                .state(EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled)
-                .autoEnrollment(Config.ServiceInstanceParameters.Enrollment.standard)
+                .state(EnrollmentState.enrolled)
+                .autoEnrollment(Enrollment.standard)
                 .build();
     }
 

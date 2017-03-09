@@ -23,6 +23,7 @@ import org.cloudfoundry.autosleep.access.dao.model.OrgEnrollmentConfig;
 import org.cloudfoundry.autosleep.access.dao.repositories.OrgEnrollmentConfigRepository;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.EnrollmentConfig;
+import org.cloudfoundry.autosleep.config.EnrollmentConfig.EnrollmentParameters.EnrollmentState;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.ui.web.controller.validation.EnrollmentValidator;
 import org.cloudfoundry.autosleep.ui.web.model.OrgEnrollmentConfigRequest;
@@ -62,7 +63,7 @@ public class AutoEnrollmentControllerTest {
     private ParameterReader<Config.ServiceInstanceParameters.Enrollment> autoEnrollmentReader;
 
     @Mock
-    private ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState> stateReader;
+    private ParameterReader<EnrollmentState> stateReader;
 
     @Mock
     private ParameterReader<Pattern> excludeFromAutoEnrollmentReader;
@@ -97,7 +98,7 @@ public class AutoEnrollmentControllerTest {
     public void test_deleteOrganization_ok() throws CloudFoundryException {
         String fakeOrgGuid = "fake-organization-guid";
         OrgEnrollmentConfig orgConfig = OrgEnrollmentConfig.builder().organizationGuid(fakeOrgGuid)
-                .state(EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled).build();
+                .state(EnrollmentState.enrolled).build();
         when(orgEnrollmentConfigRepository.findOne(fakeOrgGuid)).thenReturn(orgConfig);
         ResponseEntity<OrgEnrollmentConfig> response = autoEnrollmentController
                 .deleteOrganization(fakeOrgGuid);
@@ -105,7 +106,7 @@ public class AutoEnrollmentControllerTest {
         assertTrue(response.getStatusCode() == HttpStatus.OK);
         verify(orgEnrollmentConfigRepository, times(1)).save(any(OrgEnrollmentConfig.class));
         assertTrue(orgConfig
-                .getState() == EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_opted_out);
+                .getState() == EnrollmentState.backoffice_opted_out);
     }
 
     @Test

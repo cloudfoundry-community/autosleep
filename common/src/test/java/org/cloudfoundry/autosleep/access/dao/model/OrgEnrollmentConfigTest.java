@@ -6,7 +6,9 @@ import java.time.Duration;
 import java.util.regex.Pattern;
 
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters.Enrollment;
 import org.cloudfoundry.autosleep.config.EnrollmentConfig;
+import org.cloudfoundry.autosleep.config.EnrollmentConfig.EnrollmentParameters.EnrollmentState;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -32,8 +34,8 @@ public class OrgEnrollmentConfigTest {
         OrgEnrollmentConfig enrolledOrg = OrgEnrollmentConfig.builder()
                 .organizationGuid(FAKE_ORG_ID).idleDuration(DURATION)
                 .excludeSpacesFromAutoEnrollment(PATTERN)
-                .autoEnrollment(Config.ServiceInstanceParameters.Enrollment.standard)
-                .state(EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled).build();
+                .autoEnrollment(Enrollment.standard)
+                .state(EnrollmentState.enrolled).build();
         assertTrue(enrolledOrg != null);
     }
 
@@ -42,14 +44,14 @@ public class OrgEnrollmentConfigTest {
         OrgEnrollmentConfig enrolledOrg = OrgEnrollmentConfig.builder()
                 .organizationGuid(FAKE_ORG_ID).idleDuration(DURATION)
                 .excludeSpacesFromAutoEnrollment(PATTERN)
-                .autoEnrollment(Config.ServiceInstanceParameters.Enrollment.standard)
-                .state(EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled).build();
+                .autoEnrollment(Enrollment.standard)
+                .state(EnrollmentState.enrolled).build();
         assertTrue(enrolledOrg
-                .getState() == EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled);
+                .getState() == EnrollmentState.enrolled);
         enrolledOrg.setState(
-                EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_recursive_opted_out);
+                EnrollmentState.backoffice_recursive_opted_out);
         assertTrue(enrolledOrg
-                .getState() == EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_recursive_opted_out);
+                .getState() == EnrollmentState.backoffice_recursive_opted_out);
     }
 
     @Test
@@ -57,14 +59,14 @@ public class OrgEnrollmentConfigTest {
         OrgEnrollmentConfig enrolledOrg = OrgEnrollmentConfig.builder()
                 .organizationGuid(FAKE_ORG_ID).idleDuration(DURATION)
                 .excludeSpacesFromAutoEnrollment(PATTERN)
-                .autoEnrollment(Config.ServiceInstanceParameters.Enrollment.standard)
-                .state(EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled).build();
+                .autoEnrollment(Enrollment.standard)
+                .state(EnrollmentState.enrolled).build();
         assertTrue(enrolledOrg
-                .getState() == EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled);
+                .getState() == EnrollmentState.enrolled);
         enrolledOrg.setState(
-                EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_opted_out);
+                EnrollmentState.backoffice_opted_out);
         assertTrue(enrolledOrg
-                .getState() == EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_opted_out);
+                .getState() == EnrollmentState.backoffice_opted_out);
 
     }
 

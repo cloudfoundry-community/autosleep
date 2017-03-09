@@ -26,6 +26,7 @@ import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
+import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters.Enrollment;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReaderFactory;
@@ -122,7 +123,7 @@ public class AutosleepServiceInstanceServiceTest {
 
     @Spy
     @Qualifier(Config.ServiceInstanceParameters.AUTO_ENROLLMENT)
-    private ParameterReader<Config.ServiceInstanceParameters.Enrollment> autoEnrollmentReader
+    private ParameterReader<Enrollment> autoEnrollmentReader
             = parameterReaderFactory.buildAutoEnrollmentReader();
 
     @Spy
@@ -195,7 +196,7 @@ public class AutosleepServiceInstanceServiceTest {
                 .id(SERVICE_INSTANCE_ID)
                 .planId(PLAN_ID)
                 .secret("secret")
-                .enrollment(Config.ServiceInstanceParameters.Enrollment.forced).build();
+                .enrollment(Enrollment.forced).build();
 
         when(spaceEnrollerConfigRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(existingServiceInstance);
         return existingServiceInstance;
@@ -204,7 +205,7 @@ public class AutosleepServiceInstanceServiceTest {
     private SpaceEnrollerConfig transient_service_with_secret_exist_in_database() {
         SpaceEnrollerConfig existingServiceInstance = SpaceEnrollerConfig.builder().id(SERVICE_INSTANCE_ID)
                 .planId(PLAN_ID).secret("secret")
-                .enrollment(Config.ServiceInstanceParameters.Enrollment.transient_opt_out).build();
+                .enrollment(Enrollment.transient_opt_out).build();
 
         when(spaceEnrollerConfigRepository.findOne(SERVICE_INSTANCE_ID)).thenReturn(existingServiceInstance);
         return existingServiceInstance;
@@ -280,7 +281,7 @@ public class AutosleepServiceInstanceServiceTest {
         assertThat(serviceInstances.size(), is(equalTo(1)));
         SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
         //and default values are applied
-        assertFalse(serviceInstance.getEnrollment() == Config.ServiceInstanceParameters.Enrollment.forced);
+        assertFalse(serviceInstance.getEnrollment() == Enrollment.forced);
         assertThat(serviceInstance.getIdleDuration(), is(equalTo(Config.DEFAULT_INACTIVITY_PERIOD)));
         assertThat(serviceInstance.isIgnoreRouteServiceError(), is(equalTo(Boolean.FALSE)));
         assertThat(serviceInstance.getSecret(), is(nullValue()));
@@ -306,7 +307,7 @@ public class AutosleepServiceInstanceServiceTest {
     public void test_delete_service_instance_fails_when_service_in_forced() throws Exception {
         //a spaceEnrollerConfig in forced enrollment
         SpaceEnrollerConfig config = BeanGenerator.createServiceInstance(SERVICE_INSTANCE_ID);
-        config.setEnrollment(Config.ServiceInstanceParameters.Enrollment.forced);
+        config.setEnrollment(Enrollment.forced);
         when(spaceEnrollerConfigRepository.findOne(anyString()))
                 .thenReturn(config);
 
@@ -319,7 +320,7 @@ public class AutosleepServiceInstanceServiceTest {
     public void test_delete_service_instance_succeeds_when_service_in_transient_opt_out() throws Exception {
         // a spaceEnrollerConfig in transient_opt_out
         SpaceEnrollerConfig config = BeanGenerator.createServiceInstance(SERVICE_INSTANCE_ID);
-        config.setEnrollment(Config.ServiceInstanceParameters.Enrollment.transient_opt_out);
+        config.setEnrollment(Enrollment.transient_opt_out);
         config.setSecret("secret");
         when(spaceEnrollerConfigRepository.findOne(anyString())).thenReturn(config);
 
@@ -354,8 +355,7 @@ public class AutosleepServiceInstanceServiceTest {
         when(spaceEnrollerConfigRepository.exists(SERVICE_INSTANCE_ID)).thenReturn(false);
 
         //when user only gives forced auto enrollment
-        Map<String, Object> params = singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, Config
-                .ServiceInstanceParameters.Enrollment.forced.name());
+        Map<String, Object> params = singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, Enrollment.forced.name());
         CreateServiceInstanceRequest createRequest = getCreateRequestWithArbitraryParams(params);
         //then it fails with good parameter in the error
         verifyThrown(() -> instanceService.createServiceInstance(createRequest), InvalidParameterException.class,
@@ -373,7 +373,7 @@ public class AutosleepServiceInstanceServiceTest {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(Config.ServiceInstanceParameters.SECRET, "secret");
         parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
-                Config.ServiceInstanceParameters.Enrollment.forced.name());
+                Enrollment.forced.name());
 
         CreateServiceInstanceRequest createRequest = getCreateRequestWithArbitraryParams(parameters);
         CreateServiceInstanceResponse si = instanceService.createServiceInstance(createRequest);
@@ -382,7 +382,7 @@ public class AutosleepServiceInstanceServiceTest {
         assertThat(si, is(notNullValue()));
         assertThat(serviceInstances.size(), is(equalTo(1)));
         SpaceEnrollerConfig serviceInstance = serviceInstances.get(0);
-        assertTrue(serviceInstance.getEnrollment() == Config.ServiceInstanceParameters.Enrollment.forced);
+        assertTrue(serviceInstance.getEnrollment() == Enrollment.forced);
     }
 
     @Test
@@ -455,8 +455,7 @@ public class AutosleepServiceInstanceServiceTest {
 
         //when user gives auto enrollment with super secret
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
-                Config.ServiceInstanceParameters.Enrollment.standard.name());
+        parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT, Enrollment.standard.name());
         parameters.put(Config.ServiceInstanceParameters.SECRET, superPassword);
 
         UpdateServiceInstanceRequest updateRequest = getUpdateRequestWithArbitraryParams(parameters);
@@ -473,7 +472,7 @@ public class AutosleepServiceInstanceServiceTest {
         //when user gives auto enrollment without secret
         UpdateServiceInstanceRequest updateRequest = getUpdateRequestWithArbitraryParams(
                 singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
-                        Config.ServiceInstanceParameters.Enrollment.standard.name()));
+                        Enrollment.standard.name()));
 
         //then error is thrown
         verifyThrown(() -> instanceService.updateServiceInstance(updateRequest), InvalidParameterException.class,
@@ -489,7 +488,7 @@ public class AutosleepServiceInstanceServiceTest {
         // when user gives auto enrollment without secret
         UpdateServiceInstanceRequest updateRequest = getUpdateRequestWithArbitraryParams(
                 singletonMap(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
-                        Config.ServiceInstanceParameters.Enrollment.standard.name()));
+                        Enrollment.standard.name()));
 
         // then error is thrown
         verifyThrown(() -> instanceService.updateServiceInstance(updateRequest), InvalidParameterException.class,
@@ -566,7 +565,7 @@ public class AutosleepServiceInstanceServiceTest {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(Config.ServiceInstanceParameters.SECRET, "secret");
         parameters.put(Config.ServiceInstanceParameters.AUTO_ENROLLMENT,
-                Config.ServiceInstanceParameters.Enrollment.standard.name());
+                Enrollment.standard.name());
         UpdateServiceInstanceRequest updateRequest = getUpdateRequestWithArbitraryParams(parameters);
 
         UpdateServiceInstanceResponse response = instanceService.updateServiceInstance(updateRequest);
@@ -574,7 +573,7 @@ public class AutosleepServiceInstanceServiceTest {
         //then service is updated
         verify(spaceEnrollerConfigRepository, times(1)).save(any(SpaceEnrollerConfig.class));
         assertThat(response, is(notNullValue()));
-        assertFalse(existingServiceInstance.getEnrollment() == Config.ServiceInstanceParameters.Enrollment.forced);
+        assertFalse(existingServiceInstance.getEnrollment() == Enrollment.forced);
     }
 
 }

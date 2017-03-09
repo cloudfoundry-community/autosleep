@@ -23,6 +23,7 @@ import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
 import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters.Enrollment;
 import org.cloudfoundry.autosleep.config.EnrollmentConfig;
+import org.cloudfoundry.autosleep.config.EnrollmentConfig.EnrollmentParameters.EnrollmentState;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.InvalidParameterException;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReader;
 import org.cloudfoundry.autosleep.ui.servicebroker.service.parameters.ParameterReaderFactory;
@@ -334,23 +335,22 @@ public class ParameterReaderFactoryTest {
     @Test
     public void test_enrollment_state_returns_default_when_null_submitted_with_default() {
         // Given the parameter reader for enrollment state
-        ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState> stateReader = factory
+        ParameterReader<EnrollmentState> stateReader = factory
                 .buildEnrollmentStateReader();
         // When we ask to read null with default
-        EnrollmentConfig.EnrollmentParameters.EnrollmentState withDefault = stateReader
+        EnrollmentState withDefault = stateReader
                 .readParameter(null, true);
         // Then it returns the value from config
-        assertThat(withDefault, is(equalTo(
-                EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled)));
+        assertThat(withDefault, is(equalTo(EnrollmentState.enrolled)));
     }
 
     @Test
     public void test_enrollment_state_returns_null_when_null_submitted_without_default() {
         // Given the parameter reader for enrollment state
-        ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState> stateReader = factory
+        ParameterReader<EnrollmentState> stateReader = factory
                 .buildEnrollmentStateReader();
         // When we ask to read null without default
-        EnrollmentConfig.EnrollmentParameters.EnrollmentState withoutDefault = stateReader
+        EnrollmentState withoutDefault = stateReader
                 .readParameter(null, false);
         // Then it returns null
         assertThat(withoutDefault, is(nullValue()));
@@ -359,38 +359,38 @@ public class ParameterReaderFactoryTest {
     @Test
     public void test_enrollment_state_read_parameter() {
         // Given the parameter reader for enrollment state
-        ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState> stateReader = factory
+        ParameterReader<EnrollmentState> stateReader = factory
                 .buildEnrollmentStateReader();
         // When we read a correct value
-        EnrollmentConfig.EnrollmentParameters.EnrollmentState backofficeEnrolled = stateReader
+        EnrollmentState backofficeEnrolled = stateReader
                 .readParameter(
-                        EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled
+                        EnrollmentState.enrolled
                                 .name(),
                         true);
-        EnrollmentConfig.EnrollmentParameters.EnrollmentState backofficeOptedOut = stateReader
+        EnrollmentState backofficeOptedOut = stateReader
                 .readParameter(
-                        EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_opted_out
+                        EnrollmentState.backoffice_opted_out
                                 .name(),
                         true);
-        EnrollmentConfig.EnrollmentParameters.EnrollmentState backofficeRecursiveOptedOut = stateReader
+        EnrollmentState backofficeRecursiveOptedOut = stateReader
                 .readParameter(
-                        EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_recursive_opted_out
+                        EnrollmentState.backoffice_recursive_opted_out
                                 .name(),
                         true);
         // Then we obtained the values from enum
         assertThat(backofficeEnrolled, is(equalTo(
-                EnrollmentConfig.EnrollmentParameters.EnrollmentState.enrolled)));
+                EnrollmentState.enrolled)));
         assertThat(backofficeOptedOut, is(equalTo(
-                EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_opted_out)));
+                EnrollmentState.backoffice_opted_out)));
         assertThat(backofficeRecursiveOptedOut, is(equalTo(
-                EnrollmentConfig.EnrollmentParameters.EnrollmentState.backoffice_recursive_opted_out)));
+                EnrollmentState.backoffice_recursive_opted_out)));
 
     }
 
     @Test
     public void test_enrollment_state_fails_to_read_incorrect_value() {
         // Given the parameter reader for enrollment state
-        ParameterReader<EnrollmentConfig.EnrollmentParameters.EnrollmentState> stateReader = factory
+        ParameterReader<EnrollmentState> stateReader = factory
                 .buildEnrollmentStateReader();
         assertThat(stateReader.getParameterName(), is(EnrollmentConfig.EnrollmentParameters.STATE));
         // When we submit a wrong enum state value
