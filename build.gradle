@@ -20,6 +20,9 @@ allprojects {
         jcenter()
         //needed for cf-java-client M release
         maven { url 'http://repo.spring.io/libs-snapshot' }
+        maven { url 'http://repo.spring.io/release' }
+        maven { url 'http://repo.spring.io/milestone' }
+        maven { url 'http://repo.spring.io/snapshot' }
     }
 }
 
@@ -54,10 +57,12 @@ subprojects {
         compileOnly "org.projectlombok:lombok:$lombokVersion"
 
         //CF java client library and dependencies
-        compile("org.cloudfoundry:cloudfoundry-client-spring:$cfClientLibVersion")
 
+        compile("org.cloudfoundry:cloudfoundry-client-reactor:$cfClientLibVersion")
+        compile("org.cloudfoundry:cloudfoundry-operations:$cfClientLibVersion")
         compile("io.projectreactor:reactor-core:$reactorCoreVersion")
-        compile "com.google.protobuf:protobuf-java:$protobufVersion"
+        compile("io.projectreactor.ipc:reactor-netty:$reactorNettyVersion")
+        compile("io.projectreactor.addons:reactor-test:$reactorCoreVersion")
 
         //Logs
         compile "org.slf4j:slf4j-api"
