@@ -243,7 +243,7 @@ public class SpaceEnrollerTest {
                         .collect(Collectors.toList()));
         //And binding will throw an error
         doThrow(new CloudFoundryException(
-                new org.cloudfoundry.client.v2.CloudFoundryException(666, "", "")))
+                new org.cloudfoundry.client.v2.ClientV2Exception(null, 666, "", "")))
                 .when(cloudFoundryApi)
                 .bindApplications(eq(SERVICE_ID), anyListOf(ApplicationIdentity.class));
         //When task is run

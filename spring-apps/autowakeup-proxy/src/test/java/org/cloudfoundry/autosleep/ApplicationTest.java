@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.util.BeanGenerator;
 import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.logging.LoggingClient;
+import org.cloudfoundry.doppler.DopplerClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.context.annotation.Bean;
@@ -49,15 +49,15 @@ public class ApplicationTest {
     public static class MockClientConfiguration {
 
         @Getter(onMethod = @__(@Bean))
-        private CloudFoundryClient cfClient;
+        private CloudFoundryClient cloudFoundryClient;
 
         @Getter(onMethod = @__(@Bean))
-        private LoggingClient logClient;
+        private DopplerClient dopplerClient;
 
         @PostConstruct
         public void initClientEnvironment() throws NotFoundException {
-            cfClient = mock(CloudFoundryClient.class);
-            logClient = mock(LoggingClient.class);
+            cloudFoundryClient = mock(CloudFoundryClient.class);
+            dopplerClient = mock(DopplerClient.class);
             System.setProperty(Config.EnvKey.APPLICATION_DESCRIPTION_ENVIRONMENT_KEY,
                     BeanGenerator.getSampleVcapApplication(UUID.randomUUID(), "autosleep",
                             "http://somewhere-else.org"));

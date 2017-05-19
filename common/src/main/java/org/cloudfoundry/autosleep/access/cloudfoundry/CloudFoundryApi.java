@@ -19,6 +19,43 @@
 
 package org.cloudfoundry.autosleep.access.cloudfoundry;
 
+import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationActivity;
+import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
+import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
+import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
+import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.ClientV2Exception;
+import org.cloudfoundry.client.v2.applications.*;
+import org.cloudfoundry.client.v2.domains.GetDomainRequest;
+import org.cloudfoundry.client.v2.domains.GetDomainResponse;
+import org.cloudfoundry.client.v2.events.EventEntity;
+import org.cloudfoundry.client.v2.events.EventResource;
+import org.cloudfoundry.client.v2.events.ListEventsRequest;
+import org.cloudfoundry.client.v2.events.ListEventsResponse;
+import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
+import org.cloudfoundry.client.v2.organizations.GetOrganizationResponse;
+import org.cloudfoundry.client.v2.privatedomains.GetPrivateDomainRequest;
+import org.cloudfoundry.client.v2.privatedomains.GetPrivateDomainResponse;
+import org.cloudfoundry.client.v2.privatedomains.PrivateDomainEntity;
+import org.cloudfoundry.client.v2.routes.*;
+import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
+import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
+import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceRouteRequest;
+import org.cloudfoundry.client.v2.shareddomains.GetSharedDomainRequest;
+import org.cloudfoundry.client.v2.shareddomains.GetSharedDomainResponse;
+import org.cloudfoundry.client.v2.shareddomains.SharedDomainEntity;
+import org.cloudfoundry.doppler.DopplerClient;
+import org.cloudfoundry.doppler.LogMessage;
+import org.cloudfoundry.doppler.RecentLogsRequest;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,49 +67,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationActivity;
-import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
-import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
-import org.cloudfoundry.autosleep.config.Config;
-import org.cloudfoundry.autosleep.config.Config.CloudFoundryAppState;
-import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.v2.applications.ApplicationInstanceInfo;
-import org.cloudfoundry.client.v2.applications.ApplicationInstancesRequest;
-import org.cloudfoundry.client.v2.applications.ApplicationInstancesResponse;
-import org.cloudfoundry.client.v2.applications.GetApplicationRequest;
-import org.cloudfoundry.client.v2.applications.GetApplicationResponse;
-import org.cloudfoundry.client.v2.applications.ListApplicationRoutesRequest;
-import org.cloudfoundry.client.v2.applications.ListApplicationRoutesResponse;
-import org.cloudfoundry.client.v2.applications.ListApplicationsRequest;
-import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
-import org.cloudfoundry.client.v2.domains.GetDomainRequest;
-import org.cloudfoundry.client.v2.domains.GetDomainResponse;
-import org.cloudfoundry.client.v2.events.EventEntity;
-import org.cloudfoundry.client.v2.events.EventResource;
-import org.cloudfoundry.client.v2.events.ListEventsRequest;
-import org.cloudfoundry.client.v2.events.ListEventsResponse;
-import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
-import org.cloudfoundry.client.v2.organizations.GetOrganizationResponse;
-import org.cloudfoundry.client.v2.routes.GetRouteRequest;
-import org.cloudfoundry.client.v2.routes.GetRouteResponse;
-import org.cloudfoundry.client.v2.routes.ListRouteApplicationsRequest;
-import org.cloudfoundry.client.v2.routes.ListRouteApplicationsResponse;
-import org.cloudfoundry.client.v2.routes.RouteEntity;
-import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
-import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
-import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceToRouteRequest;
-import org.cloudfoundry.logging.LogMessage;
-import org.cloudfoundry.logging.LoggingClient;
-import org.cloudfoundry.logging.RecentLogsRequest;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
@@ -128,7 +122,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     private CloudFoundryClient cfClient;
 
     @Autowired
-    private LoggingClient logClient;
+    private DopplerClient dopplerClient;
 
     private <T, U> void bind(List<T> objectsToBind, Function<T, Mono<U>> caller)
             throws CloudFoundryException {
@@ -146,7 +140,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     public void bindApplications(String serviceInstanceId, List<ApplicationIdentity> applications) throws
             CloudFoundryException {
         bind(applications,
-                application -> cfClient.serviceBindings()
+                application -> cfClient.serviceBindingsV2()
                         .create(
                                 CreateServiceBindingRequest
                                         .builder()
@@ -158,8 +152,8 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     public void bindRoutes(String serviceInstanceId, List<String> routeIds) throws CloudFoundryException {
         bind(routeIds,
                 routeId -> cfClient.serviceInstances()
-                        .bindToRoute(
-                                BindServiceInstanceToRouteRequest.builder()
+                        .bindRoute(
+                                BindServiceInstanceRouteRequest.builder()
                                         .serviceInstanceId(serviceInstanceId)
                                         .routeId(routeId)
                                         .build()));
@@ -180,14 +174,19 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         }
     }
 
-    private ApplicationInfo.DiagnosticInfo.ApplicationLog buildAppLog(LogMessage cfLog) {
-        return cfLog == null ? null : ApplicationInfo.DiagnosticInfo.ApplicationLog.builder()
-                .message(cfLog.getMessage())
-                .timestamp(cfLog.getTimestamp().getTime())
-                .messageType(cfLog.getMessageType().toString())
-                .sourceId(cfLog.getSourceId())
-                .sourceName(cfLog.getSourceName())
+    private ApplicationInfo.DiagnosticInfo.ApplicationLog buildAppLog(LogMessage logMessage) {
+        return logMessage == null ? null :
+                ApplicationInfo.DiagnosticInfo.ApplicationLog.builder()
+                .message(logMessage.getMessage())
+                .timestampNanos(getLogMessageTimestampNanos(logMessage))
+                .messageType(getLogMessageType(logMessage))
+                .sourceId(logMessage.getSourceInstance())
+                .sourceName(logMessage.getSourceType())
                 .build();
+    }
+
+    private String getLogMessageType(LogMessage logMessage) {
+        return logMessage.getMessageType() != null ? logMessage.getMessageType().name() : null;
     }
 
     private boolean changeApplicationState(String applicationUuid, String targetState) throws CloudFoundryException {
@@ -200,7 +199,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                                         .applicationId(applicationUuid)
                                         .state(targetState)
                                         .build())
-                        .get(Config.CF_API_TIMEOUT);
+                        .block(Config.CF_API_TIMEOUT);
                 return true;
             } else {
                 log.warn("application {} already in state {}, nothing to do", applicationUuid, targetState);
@@ -235,23 +234,35 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                         .build())
                 .subscribe(new BaseSubscriber<>(latch, errorEncountered::set, lastEventsReference::set));
 
-        logClient.recent(RecentLogsRequest.builder()
+        dopplerClient.recentLogs(RecentLogsRequest.builder()
                 .applicationId(appUid)
                 .build())
                 .subscribe(new BaseSubscriber<>(
                         latch,
                         errorEncountered::set,
-                        logMessage -> {
+                        envelope -> {
+                            //Sometimes observed missing log envelope timestamp, rather relying on log message timestamp
+                            LogMessage logMessage = envelope.getLogMessage();
+                            if (logMessage == null) {
+                                log.warn("recent log without log message. Skipping. Envelope: {}", envelope);
+                                return;
+                            }
+                            Long timestamp = logMessage.getTimestamp();
+                            if (timestamp == null) {
+                                log.warn("recent log without log message timestamp. Skipping. Envelope: {}", envelope);
+                                return;
+                            }
+
                             //logs are not ordered, must find the most recent
-                            Instant msgInstant = logMessage.getTimestamp().toInstant();
+                            Instant msgInstant = getInstantFromLogMessageTimestamp(timestamp);
                             if (mostRecentLogInstant.get() == null || mostRecentLogInstant.get().isBefore(msgInstant)) {
                                 mostRecentLogInstant.set(msgInstant);
-                                lastLogReference.set(logMessage);
+                                lastLogReference.set(envelope.getLogMessage());
                             }
                         }
                 ));
 
-        return waitForResult(latch, errorEncountered,
+        ApplicationActivity applicationActivity = waitForResult(latch, errorEncountered,
                 () -> ApplicationActivity.builder()
                         .application(ApplicationIdentity.builder()
                                 .guid(appUid)
@@ -263,6 +274,13 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                         .lastLog(buildAppLog(lastLogReference.get()))
                         .state(appReference.get().getEntity().getState())
                         .build());
+
+        log.debug("getApplicationActivity -  {}  - resulted in {}", appUid, applicationActivity);
+        return applicationActivity;
+    }
+
+    public Instant getInstantFromLogMessageTimestamp(Long logMessageTimestamp) {
+        return Instant.ofEpochSecond(0, logMessageTimestamp);
     }
 
     private Mono<ApplicationInstancesResponse> getApplicationInstances(String applicationUuid) {
@@ -273,8 +291,8 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                                 .applicationId(applicationUuid)
                                 .build())
                 .otherwise(throwable -> {
-                    if (throwable instanceof org.cloudfoundry.client.v2.CloudFoundryException
-                            && isNoInstanceFoundError((org.cloudfoundry.client.v2.CloudFoundryException) throwable)) {
+                    if (throwable instanceof org.cloudfoundry.client.v2.ClientV2Exception
+                            && isNoInstanceFoundError((org.cloudfoundry.client.v2.ClientV2Exception) throwable)) {
                         return Mono.just(ApplicationInstancesResponse.builder().build());
                     } else {
                         return Mono.error(throwable);
@@ -291,12 +309,17 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                     .get(GetApplicationRequest.builder()
                             .applicationId(applicationUuid)
                             .build())
-                    .get(Config.CF_API_TIMEOUT)
+                    .block(Config.CF_API_TIMEOUT)
                     .getEntity().getState();
 
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
+    }
+
+    private Long getLogMessageTimestampNanos(LogMessage logMessage) {
+        Long timestamp = logMessage.getTimestamp();
+        return (timestamp != null ? timestamp : 0L);
     }
 
     @Override
@@ -307,21 +330,55 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                     .get(GetRouteRequest.builder()
                             .routeId(routeId)
                             .build())
-                    .get(Config.CF_API_TIMEOUT);
+                    .block(Config.CF_API_TIMEOUT);
             RouteEntity routeEntity = response.getEntity();
             String route = routeEntity.getHost() + routeEntity.getPath();
             log.debug("route =  {}", route);
-
-            GetDomainResponse domainResponse = cfClient.domains()
-                    .get(GetDomainRequest.builder()
-                            .domainId(routeEntity.getDomainId())
-                            .build())
-                    .get(Config.CF_API_TIMEOUT);
-            log.debug("domain = {}", domainResponse.getEntity());
-            return route + "." + domainResponse.getEntity().getName();
+            String domainId = routeEntity.getDomainId();
+            String domain = getDeprecatedDomain(domainId);
+            return route + "." + domain;
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
+    }
+
+    private String getDeprecatedDomain(String domainId) {
+        GetDomainResponse domainResponse = cfClient.domains()
+                .get(GetDomainRequest.builder()
+                        .domainId(domainId)
+                        .build())
+                .block(Config.CF_API_TIMEOUT);
+        log.debug("domain = {}", domainResponse.getEntity());
+        return domainResponse.getEntity().getName();
+    }
+
+    /**
+     * Draft attempt to remove usage of deprecated domain endpoint, now that
+     * domains were split among shared domains and private domains
+     */
+    private String getDomain(String domainId) {
+        GetSharedDomainResponse sharedDomainResponse = cfClient.sharedDomains()
+                .get(GetSharedDomainRequest.builder()
+                        .sharedDomainId(domainId)
+                        .build())
+                .block(Config.CF_API_TIMEOUT);
+        SharedDomainEntity sharedDomainEntity = sharedDomainResponse.getEntity();
+        log.debug("shared domain = {}", sharedDomainEntity);
+
+        String domain;
+        if (sharedDomainEntity != null) {
+            domain = sharedDomainEntity.getName();
+        } else { //Needs using reactor syntax instead of blocking
+            GetPrivateDomainResponse privateDomainResponse = cfClient.privateDomains()
+                    .get(GetPrivateDomainRequest.builder()
+                            .privateDomainId(domainId)
+                            .build())
+                    .block(Config.CF_API_TIMEOUT);
+            PrivateDomainEntity privateDomainEntity = privateDomainResponse.getEntity();
+            log.debug("private domain = {}", privateDomainEntity);
+            domain = privateDomainEntity.getName();
+        }
+        return domain;
     }
 
     @Override
@@ -329,10 +386,10 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         log.debug("isAppRunning");
         try {
             return !getApplicationInstances(appUid)
-                    .flatMap(response -> Flux.fromIterable(response.values()))
+                    .flatMap(response -> Flux.fromIterable(response.getInstances().values()))
                     .filter(instanceInfo -> "RUNNING".equals(instanceInfo.getState()))
                     .collect(ArrayList<ApplicationInstanceInfo>::new, ArrayList::add)
-                    .get(Config.CF_API_TIMEOUT)
+                    .block(Config.CF_API_TIMEOUT)
                     .isEmpty();
 
         } catch (RuntimeException r) {
@@ -340,7 +397,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         }
     }
 
-    private boolean isNoInstanceFoundError(org.cloudfoundry.client.v2.CloudFoundryException cloudfoundryException) {
+    private boolean isNoInstanceFoundError(ClientV2Exception cloudfoundryException) {
         return cloudfoundryException.getCode() == CF_INSTANCES_ERROR
                 || cloudfoundryException.getCode() == CF_STAGING_NOT_FINISHED;
     }
@@ -364,13 +421,13 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                     .flatMap(applicationResource -> Mono.when(Mono.just(applicationResource),
                             getApplicationInstances(applicationResource.getMetadata().getId())))
                     //filter the one that has no instances (ie. STOPPED)
-                    .filter(tuple -> !tuple.getT2().isEmpty())
+                    .filter(tuple -> !tuple.getT2().getInstances().isEmpty())
                     .map(tuple -> ApplicationIdentity.builder()
                             .guid(tuple.getT1().getMetadata().getId())
                             .name(tuple.getT1().getEntity().getName())
                             .build())
                     .collect(ArrayList<ApplicationIdentity>::new, ArrayList::add)
-                    .get(Config.CF_API_TIMEOUT);
+                    .block(Config.CF_API_TIMEOUT);
         } catch (RuntimeException r) {
             throw new CloudFoundryException("failed listing applications from space_id: " + spaceUuid, r);
         }
@@ -385,7 +442,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                             ListApplicationRoutesRequest.builder()
                                     .applicationId(applicationUuid)
                                     .build())
-                    .get(Config.CF_API_TIMEOUT);
+                    .block(Config.CF_API_TIMEOUT);
             return response.getResources().stream()
                     .map(routeResource -> routeResource.getMetadata().getId())
                     .collect(Collectors.toList());
@@ -403,7 +460,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                             ListRouteApplicationsRequest.builder()
                                     .routeId(routeUuid)
                                     .build())
-                    .get(Config.CF_API_TIMEOUT);
+                    .block(Config.CF_API_TIMEOUT);
             return response.getResources().stream()
                     .map(appResource -> appResource.getMetadata().getId())
                     .collect(Collectors.toList());
@@ -427,11 +484,11 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     @Override
     public void unbind(String bindingId) throws CloudFoundryException {
         try {
-            cfClient.serviceBindings()
+            cfClient.serviceBindingsV2()
                     .delete(DeleteServiceBindingRequest.builder()
                             .serviceBindingId(bindingId)
                             .build())
-                    .get(Config.CF_API_TIMEOUT);
+                    .block(Config.CF_API_TIMEOUT);
         } catch (RuntimeException r) {
             throw new CloudFoundryException(r);
         }
@@ -462,19 +519,19 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         GetOrganizationResponse response = cfClient.organizations()
                 .get(GetOrganizationRequest.builder().organizationId(organizationGuid).build())
                 .otherwise(throwable -> {
-                    if (throwable instanceof org.cloudfoundry.client.v2.CloudFoundryException
+                    if (throwable instanceof org.cloudfoundry.client.v2.ClientV2Exception
                             && isNoOrganizationFoundError(
-                                    (org.cloudfoundry.client.v2.CloudFoundryException) throwable)) {
+                                    (org.cloudfoundry.client.v2.ClientV2Exception) throwable)) {
                         return Mono.just(GetOrganizationResponse.builder().build());
                     } else {
                         return Mono.error(throwable);
                     }
-                }).get();
+                }).block(Config.CF_API_TIMEOUT);
         return response.getEntity() != null;
     }
 
     private boolean isNoOrganizationFoundError(
-            org.cloudfoundry.client.v2.CloudFoundryException cloudfoundryException) {
+            ClientV2Exception cloudfoundryException) {
         return cloudfoundryException.getCode() == CF_ORGANIZATION_NOT_FOUND;
     }
 

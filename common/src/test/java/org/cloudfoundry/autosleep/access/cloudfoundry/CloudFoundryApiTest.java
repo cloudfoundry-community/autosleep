@@ -19,31 +19,10 @@
 
 package org.cloudfoundry.autosleep.access.cloudfoundry;
 
-import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationActivity;
 import org.cloudfoundry.autosleep.access.cloudfoundry.model.ApplicationIdentity;
 import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.v2.Resource.Metadata;
+import org.cloudfoundry.client.v2.Metadata;
 import org.cloudfoundry.client.v2.applications.ApplicationEntity;
 import org.cloudfoundry.client.v2.applications.ApplicationInstanceInfo;
 import org.cloudfoundry.client.v2.applications.ApplicationInstancesRequest;
@@ -70,7 +49,6 @@ import org.cloudfoundry.client.v2.events.ListEventsResponse;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationResponse;
 import org.cloudfoundry.client.v2.organizations.OrganizationEntity;
-import org.cloudfoundry.client.v2.organizations.OrganizationEntity.OrganizationEntityBuilder;
 import org.cloudfoundry.client.v2.organizations.Organizations;
 import org.cloudfoundry.client.v2.routes.GetRouteRequest;
 import org.cloudfoundry.client.v2.routes.GetRouteResponse;
@@ -83,23 +61,42 @@ import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingRequest;
 import org.cloudfoundry.client.v2.servicebindings.CreateServiceBindingResponse;
 import org.cloudfoundry.client.v2.servicebindings.DeleteServiceBindingRequest;
 import org.cloudfoundry.client.v2.servicebindings.ServiceBindingEntity;
-import org.cloudfoundry.client.v2.servicebindings.ServiceBindings;
-import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceToRouteRequest;
-import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceToRouteResponse;
+import org.cloudfoundry.client.v2.servicebindings.ServiceBindingsV2;
+import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceRouteRequest;
+import org.cloudfoundry.client.v2.serviceinstances.BindServiceInstanceRouteResponse;
 import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
 import org.cloudfoundry.client.v2.serviceinstances.ServiceInstances;
-import org.cloudfoundry.logging.LogMessage;
-import org.cloudfoundry.logging.LogMessage.MessageType;
-import org.cloudfoundry.logging.LoggingClient;
-import org.cloudfoundry.logging.RecentLogsRequest;
+import org.cloudfoundry.doppler.DopplerClient;
+import org.cloudfoundry.doppler.Envelope;
+import org.cloudfoundry.doppler.EventType;
+import org.cloudfoundry.doppler.LogMessage;
+import org.cloudfoundry.doppler.MessageType;
+import org.cloudfoundry.doppler.RecentLogsRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+
+import static org.cloudfoundry.autosleep.util.TestUtils.verifyThrown;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CloudFoundryApiTest {
@@ -111,7 +108,7 @@ public class CloudFoundryApiTest {
     private CloudFoundryApi cloudFoundryApi;
 
     @Mock
-    private LoggingClient logClient;
+    private DopplerClient dopplerClient;
 
     private void mockGetApplication(ApplicationsV2 mockApplications, String name, String applicationState) {
         when(mockApplications.get(any(GetApplicationRequest.class)))
@@ -126,8 +123,8 @@ public class CloudFoundryApiTest {
 
     @Test
     public void test_bind_applications_should_fail() throws CloudFoundryException {
-        ServiceBindings serviceBindings = mock(ServiceBindings.class);
-        when(cfClient.serviceBindings()).thenReturn(serviceBindings);
+        ServiceBindingsV2 serviceBindings = mock(ServiceBindingsV2.class);
+        when(cfClient.serviceBindingsV2()).thenReturn(serviceBindings);
         when(serviceBindings.create(any(CreateServiceBindingRequest.class)))
                 .thenReturn(Mono.error(new RuntimeException("some error")));
         verifyThrown(() -> cloudFoundryApi.bindApplications("service-instance-id",
@@ -140,8 +137,8 @@ public class CloudFoundryApiTest {
 
     @Test
     public void test_bind_applications_should_succeed() throws CloudFoundryException {
-        ServiceBindings serviceBindings = mock(ServiceBindings.class);
-        when(cfClient.serviceBindings()).thenReturn(serviceBindings);
+        ServiceBindingsV2 serviceBindings = mock(ServiceBindingsV2.class);
+        when(cfClient.serviceBindingsV2()).thenReturn(serviceBindings);
         when(serviceBindings.create(any(CreateServiceBindingRequest.class)))
                 .thenReturn(Mono.just(CreateServiceBindingResponse.builder()
                         .metadata(Metadata.builder()
@@ -161,7 +158,7 @@ public class CloudFoundryApiTest {
     public void test_bind_routes_should_fail() throws CloudFoundryException {
         ServiceInstances serviceInstances = mock(ServiceInstances.class);
         when(cfClient.serviceInstances()).thenReturn(serviceInstances);
-        when(serviceInstances.bindToRoute(any(BindServiceInstanceToRouteRequest.class)))
+        when(serviceInstances.bindRoute(any(BindServiceInstanceRouteRequest.class)))
                 .thenReturn(Mono.error(new RuntimeException("some error")));
 
         verifyThrown(() -> cloudFoundryApi.bindRoutes("serviceInstanceId",
@@ -173,8 +170,8 @@ public class CloudFoundryApiTest {
     public void test_bind_routes_should_succeed() throws CloudFoundryException {
         ServiceInstances serviceInstances = mock(ServiceInstances.class);
         when(cfClient.serviceInstances()).thenReturn(serviceInstances);
-        when(serviceInstances.bindToRoute(any(BindServiceInstanceToRouteRequest.class)))
-                .thenReturn(Mono.just(BindServiceInstanceToRouteResponse.builder()
+        when(serviceInstances.bindRoute(any(BindServiceInstanceRouteRequest.class)))
+                .thenReturn(Mono.just(BindServiceInstanceRouteResponse.builder()
                         .metadata(Metadata.builder()
                                 .build())
                         .entity(ServiceInstanceEntity.builder()
@@ -182,10 +179,33 @@ public class CloudFoundryApiTest {
                         .build()));
         cloudFoundryApi.bindRoutes("serviceInstanceId",
                 Collections.singletonList("route-id"));
-        verify(serviceInstances, times(1)).bindToRoute(any(BindServiceInstanceToRouteRequest.class));
+        verify(serviceInstances, times(1)).bindRoute(any(BindServiceInstanceRouteRequest.class));
     }
 
     @Test
+    public void test_it_extracts_timestamps_from_log_messages() {
+        //Make sure we properly understand Java Instant API
+        Instant now = Instant.now();
+        long timestampNanos = now.getEpochSecond() * 1000000000 + now.getNano();
+        Instant instantFromNanos = Instant.ofEpochSecond(0, timestampNanos);
+        assertEquals(now, instantFromNanos);
+
+        //Then make sure the timestamp returned by CF is of the same format
+        //given a log message
+        //$ cf logs --recent hello-cf-java-client
+        // Connected, dumping recent logs for app hello-cf-java-client in org bercheg-org / space gberche-dev-box as
+        //  2017-05-19T15:32:52.63+0200 [APP/PROC/WEB/0]OUT 82.122.232.9, 10.10.66.216 - - - [19/May/2017:13:32:52 +0000] "GET / HTTP/1.1" 200 6
+        //   envelope timestamp                                                                log message timestamp
+        //   local time formatting                                                             UTC formatting
+        // for which the API returned the following timestamp long
+        long logMessageTimestamp = 1495200772630779308L;
+        //then extracted instant should match including timezone conversion
+        Instant instantFromLogMessage = cloudFoundryApi.getInstantFromLogMessageTimestamp(logMessageTimestamp);
+        assertEquals("2017-05-19T13:32:52.630779308Z", instantFromLogMessage.toString());
+    }
+
+    @Test
+    @SuppressWarnings("PMD.AvoidUsingHardCodedIP") // we document real-life IPs to illustrate returned CF API values
     public void test_get_application_activity() throws CloudFoundryException {
         final String applicationId = "application-id";
         final String applicationState = "RUNNING";
@@ -198,38 +218,65 @@ public class CloudFoundryApiTest {
         mockGetApplication(applications, applicationName, applicationState);
 
 
-        Instant eventTimestamp = Instant.now().minus(Duration.ofDays(3));
+        Instant now = Instant.now();
+        Instant eventTimestamp = now.minus(Duration.ofDays(3));
 
+        //given typical event request we make
+        //        ListEventsRequest eventsRequest = ListEventsRequest.builder()
+        //                .actee("43dc8103-6d62-46c7-8456-6dcebfa2f2d1") //app Guid
+        //                .build();
+        //CF is returning the following real-life recorded values
         when(events.list(any(ListEventsRequest.class)))
                 .thenReturn(Mono.just(ListEventsResponse.builder()
                         .resource(EventResource.builder()
                                 .metadata(Metadata.builder().build())
                                 .entity(EventEntity.builder()
-                                        .actee("event-actee-test")
-                                        .actor("event-actor-test")
-                                        .type("event-type-test")
-                                        .timestamp(eventTimestamp.toString())
+                                        .actee("43dc8103-6d62-46c7-8456-6dcebfa2f2d1") //app Guid
+                                        .acteeName("hello-cf-java-client") //app name
+                                        .acteeType("app")
+                                        .actor("526cc2f7-3d07-4e04-85b2-e3c96282541c") //user Guid
+                                        .actorName("user@email.com")
+                                        .acteeType("user")
+                                        .organizationId("37816bdf-a476-473d-9ae4-75d7cfefabca")
+                                        .spaceId("3518c030-0b99-4075-834e-1b47e6ec7909")
+                                        .timestamp(eventTimestamp.toString()) //String "2017-03-14T08:21:22Z" returned by PWS
+                                        .type("audit.app.create")
                                         .build())
                                 .build())
                         .build()));
 
-        long lastTimestamp = System.currentTimeMillis();
-        Function<Integer, LogMessage> logMessageBuilder = diff -> LogMessage.builder()
-                .timestamp(new Date(lastTimestamp - diff))
-                .message("message-" + diff)
-                .applicationId("application-id")
-                .messageType(MessageType.ERR)
-                .sourceId("source-id")
-                .sourceName("source-name")
+        long lastTimestampNanos = now.getEpochSecond() * 1000000000 + now.getNano();
+        Function<Integer, Envelope> envelopeBuilder = diff -> Envelope.builder()
+                .deployment("cf-cfapps-io2-diego") //bosh deployment name
+                .eventType(EventType.LOG_MESSAGE)
+                .index("3e49c9d7-8e67-4dc1-8672-ebc2299e261f") //log index
+                .ip("10.10.148.105") //diego cell IP
+                .job("cell_2xl_z2")  //diego cell job name
+                .logMessage(LogMessage.builder()
+                        .applicationId("application-id")
+                        .message("message-" + diff)
+                        .messageType(MessageType.OUT)
+                        .sourceInstance("0")
+                        .sourceType("CELL")
+                        .timestamp(lastTimestampNanos + diff) //timestamp at which the log event was written by the app
+                        //eg 1495195840768215528 for 2017-05-19T12:10:40.768215528Z
+                        .build())
+                .origin("rep") //diego rep component
+                .tags(new HashMap<>())
+                .timestamp(lastTimestampNanos + diff) //envelope timestamp
+                .valueMetric(null)
                 .build();
 
-        when(logClient.recent(any(RecentLogsRequest.class)))
+        //Given a recent log response with 5 logs, arriving out of order through the log pipeline
+        // w.r.t. their original enveloppe + log message timestamp
+        //and the most recent event by 4 ns
+                when(dopplerClient.recentLogs(any(RecentLogsRequest.class)))
                 .thenReturn(Flux.fromIterable(
-                        Arrays.asList(logMessageBuilder.apply(1),
-                                logMessageBuilder.apply(2),
-                                logMessageBuilder.apply(3),
-                                logMessageBuilder.apply(0),
-                                logMessageBuilder.apply(4))
+                        Arrays.asList(envelopeBuilder.apply(1),
+                                envelopeBuilder.apply(2),
+                                envelopeBuilder.apply(3),
+                                envelopeBuilder.apply(0),
+                                envelopeBuilder.apply(4))
                 ));
 
         ApplicationActivity activity = cloudFoundryApi.getApplicationActivity(applicationId);
@@ -240,7 +287,7 @@ public class CloudFoundryApiTest {
         assertNotNull(activity.getLastEvent());
         assertEquals(eventTimestamp, activity.getLastEvent().getTimestamp());
         assertNotNull(activity.getLastLog());
-        assertEquals(Instant.ofEpochMilli(lastTimestamp), activity.getLastLog().getTimestamp());
+        assertEquals("last event ordered by timestamp be the most recent by 4 nanosecs", Instant.ofEpochSecond(0, lastTimestampNanos +4), activity.getLastLog().getTimestamp());
     }
 
     @Test
@@ -317,14 +364,14 @@ public class CloudFoundryApiTest {
         ApplicationsV2 applications = mock(ApplicationsV2.class);
         when(cfClient.applicationsV2()).thenReturn(applications);
         when(applications.instances(any(ApplicationInstancesRequest.class)))
-                .thenReturn(Mono.error(new org.cloudfoundry.client.v2.CloudFoundryException(666, "", "")));
+                .thenReturn(Mono.error(new org.cloudfoundry.client.v2.ClientV2Exception(null, 666, "", "")));
     }
 
     private void test_is_app_running_should_return_false(int code) throws CloudFoundryException {
         ApplicationsV2 applications = mock(ApplicationsV2.class);
         when(cfClient.applicationsV2()).thenReturn(applications);
         when(applications.instances(any(ApplicationInstancesRequest.class)))
-                .thenReturn(Mono.error(new org.cloudfoundry.client.v2.CloudFoundryException(code, "", "")));
+                .thenReturn(Mono.error(new org.cloudfoundry.client.v2.ClientV2Exception(null, code, "", "")));
         assertFalse(cloudFoundryApi.isAppRunning("application-id"));
         verify(applications, times(1)).instances(any(ApplicationInstancesRequest.class));
     }
@@ -403,7 +450,8 @@ public class CloudFoundryApiTest {
                 .then(invocation -> {
                     ApplicationInstancesRequest request = (ApplicationInstancesRequest) invocation.getArguments()[0];
                     if (request.getApplicationId().equals(stoppedApplicationId)) {
-                        return Mono.error(new org.cloudfoundry.client.v2.CloudFoundryException(
+                        return Mono.error(new org.cloudfoundry.client.v2.ClientV2Exception(
+                                null,
                                 CloudFoundryApi.CF_INSTANCES_ERROR,
                                 "",
                                 ""));
@@ -586,8 +634,8 @@ public class CloudFoundryApiTest {
 
     @Test
     public void test_unbind_application_should_fail() throws CloudFoundryException {
-        ServiceBindings serviceBindings = mock(ServiceBindings.class);
-        when(cfClient.serviceBindings()).thenReturn(serviceBindings);
+        ServiceBindingsV2 serviceBindings = mock(ServiceBindingsV2.class);
+        when(cfClient.serviceBindingsV2()).thenReturn(serviceBindings);
         when(serviceBindings.delete(any(DeleteServiceBindingRequest.class)))
                 .thenReturn(Mono.error(new RuntimeException("some error")));
         verifyThrown(() -> cloudFoundryApi.unbind("service-binding-id"),
@@ -596,8 +644,8 @@ public class CloudFoundryApiTest {
 
     @Test
     public void test_unbind_application_should_succeed() throws CloudFoundryException {
-        ServiceBindings serviceBindings = mock(ServiceBindings.class);
-        when(cfClient.serviceBindings()).thenReturn(serviceBindings);
+        ServiceBindingsV2 serviceBindings = mock(ServiceBindingsV2.class);
+        when(cfClient.serviceBindingsV2()).thenReturn(serviceBindings);
         when(serviceBindings.delete(any(DeleteServiceBindingRequest.class)))
                 .thenReturn(Mono.empty());
         cloudFoundryApi.unbind("service-binding-id");
@@ -629,7 +677,7 @@ public class CloudFoundryApiTest {
         GetOrganizationRequest request = GetOrganizationRequest.builder().organizationId(fakeOrgId)
                 .build();
         when(organizations.get(request)).thenReturn(
-                Mono.error(new org.cloudfoundry.client.v2.CloudFoundryException(anyOtherErrorCode,
+                Mono.error(new org.cloudfoundry.client.v2.ClientV2Exception(null, anyOtherErrorCode,
                         fakeOrgId, fakeOrgId)));
 
         verifyThrown(() -> cloudFoundryApi.isValidOrganization(fakeOrgId),
@@ -645,7 +693,7 @@ public class CloudFoundryApiTest {
         GetOrganizationRequest request = GetOrganizationRequest.builder().organizationId(fakeOrgId)
                 .build();
         when(organizations.get(request))
-                .thenReturn(Mono.error(new org.cloudfoundry.client.v2.CloudFoundryException(
+                .thenReturn(Mono.error(new org.cloudfoundry.client.v2.ClientV2Exception(null,
                         cloudFoundryApi.CF_ORGANIZATION_NOT_FOUND, fakeOrgId, fakeOrgId)));
 
         assertFalse(cloudFoundryApi.isValidOrganization(fakeOrgId));
