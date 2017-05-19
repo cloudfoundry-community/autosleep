@@ -286,8 +286,8 @@ public class CloudFoundryApiTest {
         assertEquals(applicationName, activity.getApplication().getName());
         assertNotNull(activity.getLastEvent());
         assertEquals(eventTimestamp, activity.getLastEvent().getTimestamp());
-        assertNotNull(activity.getLastLog());
         assertEquals("last event ordered by timestamp be the most recent by 4 nanosecs", Instant.ofEpochSecond(0, lastTimestampNanos +4), activity.getLastLog().getTimestamp());
+        assertEquals("message-" + 4, activity.getLastLog().getMessage());
     }
 
     @Test

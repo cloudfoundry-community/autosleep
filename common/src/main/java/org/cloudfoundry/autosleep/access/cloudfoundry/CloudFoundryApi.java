@@ -352,35 +352,6 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         return domainResponse.getEntity().getName();
     }
 
-    /**
-     * Draft attempt to remove usage of deprecated domain endpoint, now that
-     * domains were split among shared domains and private domains
-     */
-    private String getDomain(String domainId) {
-        GetSharedDomainResponse sharedDomainResponse = cfClient.sharedDomains()
-                .get(GetSharedDomainRequest.builder()
-                        .sharedDomainId(domainId)
-                        .build())
-                .block(Config.CF_API_TIMEOUT);
-        SharedDomainEntity sharedDomainEntity = sharedDomainResponse.getEntity();
-        log.debug("shared domain = {}", sharedDomainEntity);
-
-        String domain;
-        if (sharedDomainEntity != null) {
-            domain = sharedDomainEntity.getName();
-        } else { //Needs using reactor syntax instead of blocking
-            GetPrivateDomainResponse privateDomainResponse = cfClient.privateDomains()
-                    .get(GetPrivateDomainRequest.builder()
-                            .privateDomainId(domainId)
-                            .build())
-                    .block(Config.CF_API_TIMEOUT);
-            PrivateDomainEntity privateDomainEntity = privateDomainResponse.getEntity();
-            log.debug("private domain = {}", privateDomainEntity);
-            domain = privateDomainEntity.getName();
-        }
-        return domain;
-    }
-
     @Override
     public boolean isAppRunning(String appUid) throws CloudFoundryException {
         log.debug("isAppRunning");
