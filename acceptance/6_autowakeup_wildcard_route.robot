@@ -35,7 +35,8 @@ Test Teardown   Run Keywords  Clean all service data
 
     Sleep  400 ms  Wait a little so that next call won't arrive in parallel with the other
 
-    #second one will get a 503 error because restart is in progress
+    #second one will get a 503 error because app start is in progress
+    #FIXME: sometimes triggers a false negative if start is too fast
     Run Keyword And Expect Error  	Invalid status code 503     Ping Application
 
     #check that app is successfully restarted
