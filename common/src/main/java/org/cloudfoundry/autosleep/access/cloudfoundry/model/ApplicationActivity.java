@@ -21,9 +21,11 @@ package org.cloudfoundry.autosleep.access.cloudfoundry.model;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 import org.cloudfoundry.autosleep.access.dao.model.ApplicationInfo;
 
 @Getter
+@ToString
 public class ApplicationActivity {
 
     private final ApplicationIdentity application;
