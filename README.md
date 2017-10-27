@@ -14,7 +14,7 @@ The aim of the auto-sleep project is to give the ability for Cloud Foundry users
 
 You can check the [full specifications](https://docs.google.com/document/d/1tMhIBX3tw7kPEOMCzKhUgmtmr26GVxyXwUTwMO71THI/) and the currently supported features in the [acceptance tests](doc/acceptance.md).
 
-Get a deeper introduction in the Autosleep talk at Cf Summit Santa Clata 2016 ( [slides](http://fr.slideshare.net/gberche/autosleep-inactive-apps-get-automatically-put-to-sleep-and-restarted-on-incoming-traffic),  [youtube video recording](https://www.youtube.com/watch?v=fQQRGxqkM-4&index=29&list=PLhuMOCWn4P9gGrKEtCBKYpEl5BXGBCsQZ), and [high-res demo](https://drive.google.com/open?id=0B_RQz82RzSUndnd4TFJOODFkTU0) )
+Get a deeper introduction in the Autosleep talk at Cf Summit Santa Clara 2016 ( [slides](http://fr.slideshare.net/gberche/autosleep-inactive-apps-get-automatically-put-to-sleep-and-restarted-on-incoming-traffic),  [youtube video recording](https://www.youtube.com/watch?v=fQQRGxqkM-4&index=29&list=PLhuMOCWn4P9gGrKEtCBKYpEl5BXGBCsQZ), and [high-res demo](https://drive.google.com/open?id=0B_RQz82RzSUndnd4TFJOODFkTU0) )
 
 [![Autosleep Cf Summit Santa Clata 2016 talk](https://cloud.githubusercontent.com/assets/4748380/16609625/d3367eba-4355-11e6-9392-25e6958d59d8.png)](http://fr.slideshare.net/gberche/autosleep-inactive-apps-get-automatically-put-to-sleep-and-restarted-on-incoming-traffic)
 
