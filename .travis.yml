@@ -24,6 +24,3 @@ branches:
     - /^fix-.*$/
 after_success:
   - ./gradlew jacocoRootReport coveralls
-notifications:
-  slack: autosleep:eY0VgmPawVzYa7tWKhmnBdES
-  slack: cloudfoundry:CxDiILV5x3kUYhJFfM2dCKxt

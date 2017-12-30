@@ -284,7 +284,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                         ApplicationInstancesRequest.builder()
                                 .applicationId(applicationUuid)
                                 .build())
-                .otherwise(throwable -> {
+                .onErrorResume(throwable -> {
                     if (throwable instanceof org.cloudfoundry.client.v2.ClientV2Exception
                             && isNoInstanceFoundError((org.cloudfoundry.client.v2.ClientV2Exception) throwable)) {
                         return Mono.just(ApplicationInstancesResponse.builder().build());
@@ -351,7 +351,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
         log.debug("isAppRunning");
         try {
             return !getApplicationInstances(appUid)
-                    .flatMap(response -> Flux.fromIterable(response.getInstances().values()))
+                    .flatMapMany(response -> Flux.fromIterable(response.getInstances().values()))
                     .filter(instanceInfo -> "RUNNING".equals(instanceInfo.getState()))
                     .collect(ArrayList<ApplicationInstanceInfo>::new, ArrayList::add)
                     .block(Config.CF_API_TIMEOUT)
@@ -371,9 +371,10 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     public List<ApplicationIdentity> listAliveApplications(String spaceUuid, Pattern excludeNames) throws
             CloudFoundryException {
         log.debug("listAliveApplications from space_guid:" + spaceUuid);
+
         try {
             return Mono.just(spaceUuid)
-                    .then(spaceId -> this.cfClient
+                    .flatMapMany(spaceId -> this.cfClient
                             .applicationsV2()
                             .list(ListApplicationsRequest.builder()
                                     .spaceId(spaceUuid)
@@ -383,7 +384,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                     .filter(applicationResource -> excludeNames == null
                             || !excludeNames.matcher(applicationResource.getEntity().getName()).matches())
                     //get instances
-                    .flatMap(applicationResource -> Mono.when(Mono.just(applicationResource),
+                    .flatMap(applicationResource -> Mono.zip(Mono.just(applicationResource),
                             getApplicationInstances(applicationResource.getMetadata().getId())))
                     //filter the one that has no instances (ie. STOPPED)
                     .filter(tuple -> !tuple.getT2().getInstances().isEmpty())
@@ -393,9 +394,11 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                             .build())
                     .collect(ArrayList<ApplicationIdentity>::new, ArrayList::add)
                     .block(Config.CF_API_TIMEOUT);
+
         } catch (RuntimeException r) {
             throw new CloudFoundryException("failed listing applications from space_id: " + spaceUuid, r);
         }
+
     }
 
     @Override
@@ -483,7 +486,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
 
         GetOrganizationResponse response = cfClient.organizations()
                 .get(GetOrganizationRequest.builder().organizationId(organizationGuid).build())
-                .otherwise(throwable -> {
+                .onErrorResume(throwable -> {
                     if (throwable instanceof org.cloudfoundry.client.v2.ClientV2Exception
                             && isNoOrganizationFoundError(
                                     (org.cloudfoundry.client.v2.ClientV2Exception) throwable)) {
