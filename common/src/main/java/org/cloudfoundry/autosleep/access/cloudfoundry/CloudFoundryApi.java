@@ -53,6 +53,7 @@ import reactor.core.publisher.Mono;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -298,12 +299,12 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     public String getApplicationState(String applicationUuid) throws CloudFoundryException {
         log.debug("getApplicationState");
         try {
-            return this.cfClient
+            return Optional.ofNullable(this.cfClient
                     .applicationsV2()
                     .get(GetApplicationRequest.builder()
                             .applicationId(applicationUuid)
                             .build())
-                    .block(Config.CF_API_TIMEOUT)
+                    .block(Config.CF_API_TIMEOUT)).get()
                     .getEntity().getState();
 
         } catch (RuntimeException r) {
@@ -325,7 +326,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                             .routeId(routeId)
                             .build())
                     .block(Config.CF_API_TIMEOUT);
-            RouteEntity routeEntity = response.getEntity();
+            RouteEntity routeEntity = Optional.ofNullable(response).get().getEntity();
             String route = routeEntity.getHost() + routeEntity.getPath();
             log.debug("route =  {}", route);
             String domainId = routeEntity.getDomainId();
@@ -342,19 +343,19 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                         .domainId(domainId)
                         .build())
                 .block(Config.CF_API_TIMEOUT);
-        log.debug("domain = {}", domainResponse.getEntity());
-        return domainResponse.getEntity().getName();
+        log.debug("domain = {}", Optional.ofNullable(domainResponse).get().getEntity());
+        return Optional.ofNullable(domainResponse).get().getEntity().getName();
     }
 
     @Override
     public boolean isAppRunning(String appUid) throws CloudFoundryException {
         log.debug("isAppRunning");
         try {
-            return !getApplicationInstances(appUid)
+            return !(Optional.ofNullable(getApplicationInstances(appUid)
                     .flatMapMany(response -> Flux.fromIterable(response.getInstances().values()))
                     .filter(instanceInfo -> "RUNNING".equals(instanceInfo.getState()))
                     .collect(ArrayList<ApplicationInstanceInfo>::new, ArrayList::add)
-                    .block(Config.CF_API_TIMEOUT)
+                    .block(Config.CF_API_TIMEOUT))).get()
                     .isEmpty();
 
         } catch (RuntimeException r) {
@@ -411,7 +412,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                                     .applicationId(applicationUuid)
                                     .build())
                     .block(Config.CF_API_TIMEOUT);
-            return response.getResources().stream()
+            return Optional.ofNullable(response).get().getResources().stream()
                     .map(routeResource -> routeResource.getMetadata().getId())
                     .collect(Collectors.toList());
         } catch (RuntimeException r) {
@@ -429,7 +430,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                                     .routeId(routeUuid)
                                     .build())
                     .block(Config.CF_API_TIMEOUT);
-            return response.getResources().stream()
+            return Optional.ofNullable(response).get().getResources().stream()
                     .map(appResource -> appResource.getMetadata().getId())
                     .collect(Collectors.toList());
         } catch (RuntimeException r) {
@@ -495,7 +496,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
                         return Mono.error(throwable);
                     }
                 }).block(Config.CF_API_TIMEOUT);
-        return response.getEntity() != null;
+        return Optional.ofNullable(response).get().getEntity() != null;
     }
 
     private boolean isNoOrganizationFoundError(
