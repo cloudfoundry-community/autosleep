@@ -371,7 +371,7 @@ public class CloudFoundryApi implements CloudFoundryApiService {
     @Override
     public List<ApplicationIdentity> listAliveApplications(String spaceUuid, Pattern excludeNames) throws
             CloudFoundryException {
-        log.debug("listAliveApplications from space_guid:" + spaceUuid);
+        log.debug("listAliveApplications from space_guid {} excluding the ones with name matching {}" , spaceUuid, excludeNames);
 
         try {
             return Mono.just(spaceUuid)

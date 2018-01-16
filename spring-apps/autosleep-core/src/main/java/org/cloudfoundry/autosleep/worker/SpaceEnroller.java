@@ -97,7 +97,7 @@ class SpaceEnroller extends AbstractPeriodicTask {
                     log.debug("{} - new applications", newApplications.size());
                     cloudFoundryApi.bindApplications(serviceInstance.getId(), newApplications);
                 } else {
-                    log.debug("No new app to bind (all already enrolled or filtered by regexp)");
+                    log.debug("No new started app to bind (all live apps are already enrolled or filtered out by regexp)");
                 }
             } catch (CloudFoundryException c) {
                 /*a 409 "conflict" error is possible (if someone tries to delete a service at the same time
