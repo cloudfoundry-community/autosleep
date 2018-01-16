@@ -62,7 +62,7 @@ subprojects {
         compile("org.cloudfoundry:cloudfoundry-operations:$cfClientLibVersion")
         compile("io.projectreactor:reactor-core:$reactorCoreVersion")
         compile("io.projectreactor.ipc:reactor-netty:$reactorNettyVersion")
-        compile("io.projectreactor.addons:reactor-test:$reactorCoreVersion")
+        compile("io.projectreactor:reactor-test:$reactorCoreVersion")
 
         //Logs
         compile "org.slf4j:slf4j-api"
