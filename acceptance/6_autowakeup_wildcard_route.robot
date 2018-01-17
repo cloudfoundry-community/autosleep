@@ -12,7 +12,7 @@ Test Teardown   Run Keywords  Clean all service data
     [Documentation]
     ...     = Automatic restart tests =
     ...     *This test needs to be run on a multi-instances autowakeup (at least 2) to succeed*
-    ...     - Check that app that are stopped by autosleep are restarted on incoming trafic
+    ...     - Check that apps that are stopped by autosleep are restarted on incoming trafic
     ...     - Check that two parallel calls will both trigger start on multiple instances, without causing error
     ...     - Check that traffic sent during restart will receive a 503 error
 
@@ -35,7 +35,8 @@ Test Teardown   Run Keywords  Clean all service data
 
     Sleep  400 ms  Wait a little so that next call won't arrive in parallel with the other
 
-    #second one will get a 503 error because restart is in progress
+    #second one will get a 503 error because app start is in progress
+    #FIXME: sometimes triggers a false negative if start is too fast
     Run Keyword And Expect Error  	Invalid status code 503     Ping Application
 
     #check that app is successfully restarted

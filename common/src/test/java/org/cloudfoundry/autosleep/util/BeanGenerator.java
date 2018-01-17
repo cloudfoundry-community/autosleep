@@ -87,9 +87,10 @@ public class BeanGenerator {
     }
 
     public static ApplicationInfo.DiagnosticInfo.ApplicationLog createAppLog(Instant instant) {
+        Instant nonNullInstant = instant != null ? instant : Instant.now();
         return ApplicationInfo.DiagnosticInfo.ApplicationLog.builder()
                 .message("fakelog")
-                .timestamp((instant != null ? instant : Instant.now()).toEpochMilli())
+                .timestampNanos(1000000000l*nonNullInstant.getEpochSecond() + nonNullInstant.getNano())
                 .messageType("STDOUT")
                 .sourceName("sourceName")
                 .sourceId("sourceId")

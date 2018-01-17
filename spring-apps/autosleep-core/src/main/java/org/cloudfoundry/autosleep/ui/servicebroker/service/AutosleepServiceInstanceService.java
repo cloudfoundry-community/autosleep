@@ -20,7 +20,7 @@
 package org.cloudfoundry.autosleep.ui.servicebroker.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cloudfoundry.autosleep.ui.servicebroker.service.InvalidParameterException;
+import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters.Enrollment;
 import org.cloudfoundry.autosleep.config.Config;
 import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
@@ -68,7 +68,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
 
     @Autowired
     @Qualifier(Config.ServiceInstanceParameters.AUTO_ENROLLMENT)
-    private ParameterReader<Config.ServiceInstanceParameters.Enrollment> autoEnrollmentReader;
+    private ParameterReader<Enrollment> autoEnrollmentReader;
 
     @Autowired
     private DeployedApplicationConfig.Deployment deployment;
@@ -119,59 +119,48 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
             ServiceInstanceExistsException, ServiceBrokerException {
         String serviceId = request.getServiceInstanceId();
         log.debug("createServiceInstance - {}", serviceId);
-        if (spaceEnrollerConfigRepository.exists(serviceId)) {
-            String serviceBrokerId = environment.getProperty(
-                    Config.EnvKey.CF_SERVICE_BROKER_ID,
-                    Config.ServiceCatalog.DEFAULT_SERVICE_BROKER_ID);
-            throw new ServiceInstanceExistsException(serviceId, serviceBrokerId);
-        } else {
-            Map<String, Object> createParameters = Optional
-                    .ofNullable(request.getParameters())
-                    .orElse(Collections.emptyMap());
+        rejectDuplicateServiceInstanceRequest(serviceId);
+        Map<String, Object> createParameters = Optional
+                .ofNullable(request.getParameters())
+                .orElse(Collections.emptyMap());
 
-            Config.ServiceInstanceParameters.Enrollment autoEnrollment = consumeParameter(createParameters,
-                    true, autoEnrollmentReader);
-            String secret = consumeParameter(createParameters, true, secretReader);
-            Duration idleDuration = consumeParameter(createParameters, true, idleDurationReader);
-            Pattern excludeFromAutoEnrollment = consumeParameter(createParameters, true,
-                    excludeFromAutoEnrollmentReader);
-            Boolean ignoreRouteServiceError = consumeParameter(createParameters, true, ignoreRouteServiceErrorReader);
+        Enrollment autoEnrollment = consumeParameter(createParameters, true, autoEnrollmentReader);
+        String secret = consumeParameter(createParameters, true, secretReader);
+        Duration idleDuration = consumeParameter(createParameters, true, idleDurationReader);
+        Pattern excludeFromAutoEnrollment = consumeParameter(createParameters, true,
+                excludeFromAutoEnrollmentReader);
+        Boolean ignoreRouteServiceError = consumeParameter(createParameters, true, ignoreRouteServiceErrorReader);
 
-            if (!createParameters.isEmpty()) {
-                String parameterNames = String.join(", ", createParameters.keySet().iterator().next());
-                log.debug("createServiceInstance - extra parameters are not accepted: {}", parameterNames);
-                throw new InvalidParameterException(parameterNames, "Unknown parameters for creation");
-            } else if (autoEnrollment == Config.ServiceInstanceParameters.Enrollment.forced
-                    || autoEnrollment == Config.ServiceInstanceParameters.Enrollment.transient_opt_out) {
-                checkSecuredParameter(autoEnrollmentReader.getParameterName(), secret);
-            }
-
-            SpaceEnrollerConfig spaceEnrollerConfig = SpaceEnrollerConfig.builder()
-                    .id(request.getServiceInstanceId())
-                    .serviceDefinitionId(request.getServiceDefinitionId())
-                    .planId(request.getPlanId())
-                    .organizationId(request.getOrganizationGuid())
-                    .spaceId(request.getSpaceGuid())
-                    .idleDuration(idleDuration)
-                    .ignoreRouteServiceError(ignoreRouteServiceError)
-                    .excludeFromAutoEnrollment(excludeFromAutoEnrollment)
-                    .enrollment(autoEnrollment)
-                    .secret(secret != null ? passwordEncoder.encode(secret) : null)
-                    .build();
-
-            // save in repository before calling cloudfoundry because otherwise local service binding controller will
-            // fail retrieving the service
-            spaceEnrollerConfigRepository.save(spaceEnrollerConfig);
-            workerManager.registerSpaceEnroller(spaceEnrollerConfig);
-
-            String firstUri = deployment == null ? null : deployment.getFirstUri();
-            if (firstUri == null) {
-                firstUri = "local-deployment";
-            }
-            return new CreateServiceInstanceResponse()
-                    .withDashboardUrl(firstUri + Config.Path.DASHBOARD_CONTEXT + "/" + serviceId)
-                    .withAsync(false);
+        rejectExtraUnknownParameters(createParameters);
+        if (autoEnrollment == Enrollment.forced || autoEnrollment == Enrollment.transient_opt_out) {
+            checkSecuredParameter(autoEnrollmentReader.getParameterName(), secret);
         }
+
+        SpaceEnrollerConfig spaceEnrollerConfig = SpaceEnrollerConfig.builder()
+                .id(request.getServiceInstanceId())
+                .serviceDefinitionId(request.getServiceDefinitionId())
+                .planId(request.getPlanId())
+                .organizationId(request.getOrganizationGuid())
+                .spaceId(request.getSpaceGuid())
+                .idleDuration(idleDuration)
+                .ignoreRouteServiceError(ignoreRouteServiceError)
+                .excludeFromAutoEnrollment(excludeFromAutoEnrollment)
+                .enrollment(autoEnrollment)
+                .secret(secret != null ? passwordEncoder.encode(secret) : null)
+                .build();
+
+        // save in repository before calling cloudfoundry because otherwise local service binding controller will
+        // fail retrieving the service
+        spaceEnrollerConfigRepository.save(spaceEnrollerConfig);
+        workerManager.registerSpaceEnroller(spaceEnrollerConfig);
+
+        String firstUri = deployment == null ? null : deployment.getFirstUri();
+        if (firstUri == null) {
+            firstUri = "local-deployment";
+        }
+        return new CreateServiceInstanceResponse()
+                .withDashboardUrl(firstUri + Config.Path.DASHBOARD_CONTEXT + "/" + serviceId)
+                .withAsync(false);
     }
 
     @Override
@@ -181,7 +170,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
         log.debug("deleteServiceInstance - {}", spaceEnrollerConfigId);
         SpaceEnrollerConfig config = spaceEnrollerConfigRepository.findOne(spaceEnrollerConfigId);
         if (config != null) {
-            if (config.getEnrollment() == Config.ServiceInstanceParameters.Enrollment.forced) {
+            if (config.getEnrollment() == Enrollment.forced) {
                 log.debug("deleteServiceInstance - {} - forced enrollment. Denied", spaceEnrollerConfigId);
                 throw new ServiceBrokerException("this autosleep service instance can't be deleted during forced "
                         + "enrollment mode. Switch back to normal enrollment mode to allow its deletion.");
@@ -241,7 +230,7 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                     .ofNullable(request.getParameters())
                     .orElse(Collections.emptyMap());
 
-            Config.ServiceInstanceParameters.Enrollment autoEnrollment = consumeParameter(updateParameters,
+            Enrollment autoEnrollment = consumeParameter(updateParameters,
                     false, autoEnrollmentReader);
             String secret = consumeParameter(updateParameters, false, secretReader);
 
@@ -267,6 +256,23 @@ public class AutosleepServiceInstanceService implements ServiceInstanceService {
                 spaceEnrollerConfigRepository.save(spaceEnrollerConfig);
             }
             return new UpdateServiceInstanceResponse().withAsync(false);
+        }
+    }
+
+    private void rejectExtraUnknownParameters(Map<String, Object> createParameters) {
+        if (!createParameters.isEmpty()) {
+            String parameterNames = String.join(", ", createParameters.keySet().iterator().next());
+            log.debug("createServiceInstance - extra parameters are not accepted: {}", parameterNames);
+            throw new InvalidParameterException(parameterNames, "Unknown parameters for creation");
+        }
+    }
+
+    private void rejectDuplicateServiceInstanceRequest(String serviceId) {
+        if (spaceEnrollerConfigRepository.exists(serviceId)) {
+            String serviceBrokerId = environment.getProperty(
+                    Config.EnvKey.CF_SERVICE_BROKER_ID,
+                    Config.ServiceCatalog.DEFAULT_SERVICE_BROKER_ID);
+            throw new ServiceInstanceExistsException(serviceId, serviceBrokerId);
         }
     }
 

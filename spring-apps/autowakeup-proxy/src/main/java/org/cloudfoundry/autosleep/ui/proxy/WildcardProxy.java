@@ -127,6 +127,7 @@ public class WildcardProxy {
         ProxyMapEntry mapEntry = proxyMap.findOne(targetHost);
 
         if (mapEntry == null) {
+            log.debug("No enrolled application associated with route : {}", targetHost);
             return new ResponseEntity<>("Sorry, but this page doesn't exist! ", HttpStatus.NOT_FOUND);
         }
 

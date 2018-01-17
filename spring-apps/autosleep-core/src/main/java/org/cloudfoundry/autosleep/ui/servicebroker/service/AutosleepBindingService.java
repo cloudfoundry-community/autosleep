@@ -29,6 +29,7 @@ import org.cloudfoundry.autosleep.access.dao.repositories.ApplicationRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.BindingRepository;
 import org.cloudfoundry.autosleep.access.dao.repositories.SpaceEnrollerConfigRepository;
 import org.cloudfoundry.autosleep.config.Config;
+import org.cloudfoundry.autosleep.config.Config.ServiceInstanceParameters.Enrollment;
 import org.cloudfoundry.autosleep.config.DeployedApplicationConfig;
 import org.cloudfoundry.autosleep.util.ApplicationLocker;
 import org.cloudfoundry.autosleep.worker.WorkerManagerService;
@@ -175,11 +176,9 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
                             log.debug("deleteServiceInstanceBinding on app {}", appId);
                             ApplicationInfo appInfo = appRepository.findOne(appId);
                             if (appInfo != null) {
-                                appInfo.getEnrollmentState().updateEnrollment(serviceInstance.getId(), serviceInstance
-                                        .getEnrollment() != Config.ServiceInstanceParameters.Enrollment.forced
-                                        && serviceInstance
-                                                .getEnrollment() 
-                                                   != Config.ServiceInstanceParameters.Enrollment.transient_opt_out);
+                                appInfo.getEnrollmentState().updateEnrollment(serviceInstance.getId(),
+                                        serviceInstance.getEnrollment() != Enrollment.forced
+                                                && serviceInstance.getEnrollment() != Enrollment.transient_opt_out);
                                 if (appInfo.getEnrollmentState().getStates().isEmpty()) {
                                     appRepository.delete(appId);
                                     applicationLocker.removeApplication(appId);

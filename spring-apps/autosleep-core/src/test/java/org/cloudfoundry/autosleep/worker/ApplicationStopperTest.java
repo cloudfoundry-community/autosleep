@@ -289,7 +289,7 @@ public class ApplicationStopperTest {
         when(cloudFoundryApi.getApplicationActivity(APP_UID))
                 .thenThrow(
                         new CloudFoundryException(
-                                new org.cloudfoundry.client.v2.CloudFoundryException(666 , "", "")));
+                                new org.cloudfoundry.client.v2.ClientV2Exception(null, 666 , "", "")));
         //when task is run
         applicationStopper.run();
         //then it never stopped application

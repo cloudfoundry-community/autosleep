@@ -19,7 +19,7 @@ Test Teardown   Run Keywords  Clean all service data
     Sleep               ${smallPeriod}
     Ping application
     Should be started
-
+    # Don't send more traffic and expect the enrolled app to be stopped
     Wait Until Keyword Succeeds     ${maxToWait}  10s  Should be stopped
 
 
@@ -31,6 +31,6 @@ Test Teardown   Run Keywords  Clean all service data
     Sleep               10
     Should be started
 
+    # Don't send more traffic and expect the enrolled app to be stopped
     ${maxToWait}=      Evaluate  ${DEFAULT_INACTIVITY_IN_S}+${INACTIVITY_BUFFER_IN_S}
-
     Wait Until Keyword Succeeds     ${maxToWait}  10s  Should be stopped
