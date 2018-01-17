@@ -12,7 +12,7 @@ Test Teardown   Run Keywords  Clean all service data
     [Documentation]
     ...     = Automatic restart tests =
     ...     *This test needs to be run on a multi-instances autowakeup (at least 2) to succeed*
-    ...     - Check that app that are stopped by autosleep are restarted on incoming trafic
+    ...     - Check that apps that are stopped by autosleep are restarted on incoming trafic
     ...     - Check that two parallel calls will both trigger start on multiple instances, without causing error
     ...     - Check that traffic sent during restart will receive a 503 error
 
