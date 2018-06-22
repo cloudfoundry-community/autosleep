@@ -149,7 +149,7 @@ public class WildcardProxy {
             //TODO add timeout that would log error and reset mapEntry.isStarting to false
         }
         //if exist, to prevent exception when two instances started the app in //
-        proxyMap.deleteIfExists(mapEntry.getHost());
+        proxyMap.deleteAppRoutesIfExists(appId);
         String protocol = incoming.getHeaders().get(HEADER_PROTOCOL).get(0);
         URI uri = URI.create(protocol + "://" + targetHost + path);
         RequestEntity<?> outgoing = getOutgoingRequest(incoming, uri);
