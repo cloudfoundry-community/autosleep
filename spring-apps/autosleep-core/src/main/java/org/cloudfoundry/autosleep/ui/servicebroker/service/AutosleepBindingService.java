@@ -152,24 +152,27 @@ public class AutosleepBindingService implements ServiceInstanceBindingService {
             try {
                 //call CFAPI to get routes associated to app
                 List<String> mappedRouteIds = cfApi.listApplicationRoutes(appId);
-                //retrieve saved route bindings and compare
-                List<Binding> linkedRouteBindings = bindingRepository.findByResourceIdAndType(mappedRouteIds, Route);
-                if (linkedRouteBindings.size() > 0) {
-                    //clean all bindings in common set, provided they are related to the same service instance
-                    linkedRouteBindings.stream()
-                            .filter(linkedRouteBinding -> linkedRouteBinding.getServiceInstanceId().equals(serviceId))
-                            .forEach(linkedRouteBinding -> {
-                                log.debug("detected associated route binding {}, cleaning it", linkedRouteBinding
-                                        .getServiceBindingId());
-                                try {
-                                    //we had a proxy route binding for this app, clean it before remove app binding
-                                    cfApi.unbind(linkedRouteBinding.getServiceBindingId());
-                                } catch (CloudFoundryException e) {
-                                    log.error("Autosleep was unable to clear related route binding {}.",
-                                            linkedRouteBinding.getServiceBindingId());
-                                    bindingRepository.delete(linkedRouteBinding.getServiceBindingId());
-                                }
-                            });
+                //retrieve saved route bindings and compare, but only if there are still any... 
+                //bound routes are still not in place
+                if (mappedRouteIds.size() > 0) {
+                    List<Binding> linkedRouteBindings = bindingRepository.findByResourceIdAndType(mappedRouteIds, Route);
+                    if (linkedRouteBindings.size() > 0) {
+                        //clean all bindings in common set, provided they are related to the same service instance
+                        linkedRouteBindings.stream()
+                                .filter(linkedRouteBinding -> linkedRouteBinding.getServiceInstanceId().equals(serviceId))
+                                .forEach(linkedRouteBinding -> {
+                                    log.debug("detected associated route binding {}, cleaning it", linkedRouteBinding
+                                            .getServiceBindingId());
+                                    try {
+                                        //we had a proxy route binding for this app, clean it before remove app binding
+                                        cfApi.unbind(linkedRouteBinding.getServiceBindingId());
+                                    } catch (CloudFoundryException e) {
+                                        log.error("Autosleep was unable to clear related route binding {}.",
+                                                linkedRouteBinding.getServiceBindingId());
+                                        bindingRepository.delete(linkedRouteBinding.getServiceBindingId());
+                                    }
+                                });
+                    }
                 }
                 applicationLocker.executeThreadSafe(appId,
                         () -> {
