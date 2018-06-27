@@ -192,7 +192,8 @@ DebugHelper.prototype.listServiceInstances = function(){
                 row.append($("<div>").addClass("col-xs-2 text-center text-overflow").html(serviceInstance.planId));
                 row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.idleDuration));
                 row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.excludeFromAutoEnrollment));
-                row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.forcedAutoEnrollment.toString()));
+                if (serviceInstance.forcedAutoEnrollment)
+                    row.append($("<div>").addClass("col-xs-1 text-center").html(serviceInstance.forcedAutoEnrollment.toString()));
 
                 row.append($("<div>").addClass("col-xs-1 text-center").attr("data-toggle","tooltip")
                     .attr("title","bindings").append(linkToBindings));
