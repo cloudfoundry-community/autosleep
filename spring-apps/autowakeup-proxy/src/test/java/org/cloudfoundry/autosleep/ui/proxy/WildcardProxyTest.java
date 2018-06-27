@@ -170,7 +170,7 @@ public class WildcardProxyTest {
         // and we never wait for anything
         verify(timeManager, never()).sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
         //and we removed the application from repository
-        verify(proxyMap, times(1)).deleteIfExists(HOST_TEST_VALUE);
+        verify(proxyMap, times(1)).deleteAppRoutesIfExists(APP_ID);
     }
 
     @Test
@@ -277,7 +277,7 @@ public class WildcardProxyTest {
         verify(cfApi, times(1)).startApplication(APP_ID);
         verify(timeManager, times(3)).sleep(Config.PERIOD_BETWEEN_STATE_CHECKS_DURING_RESTART);
         //and we removed the application from repository
-        verify(proxyMap, times(1)).deleteIfExists(HOST_TEST_VALUE);
+        verify(proxyMap, times(1)).deleteAppRoutesIfExists(APP_ID);
     }
 
 }
